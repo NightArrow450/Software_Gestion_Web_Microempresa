@@ -1,69 +1,32 @@
-<!DOCTYPE html>
-<html lang="es">
+@extends('layouts.app')
 
-<head>
+@section('title', 'Panel de Control')
+@section('page-title', 'Panel de Control')
 
-    <meta charset="UTF-8">
+@section('content')
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+    <div>
 
-    <title>Panel de Control | Sistema Web</title>
+        <div class="eyebrow">
+            Sprint 1 • Acceso operativo
+        </div>
 
-</head>
+        <h1>
+            Panel de Control
+        </h1>
 
-<body>
+        <p class="muted">
+            Bienvenido al Sistema Web de Gestión.
+        </p>
 
-    <h1>Panel de Control</h1>
+    </div>
 
+    @include('dashboard.partials.cards')
 
-    <h2>
-        Bienvenido,
-        {{ auth()->user()->first_name }}
-        {{ auth()->user()->last_name }}
-    </h2>
+    @include('dashboard.partials.quick-access')
 
+    @include('dashboard.partials.sprint-session')
 
-    <p>
-        <strong>Correo:</strong>
-        {{ auth()->user()->email }}
-    </p>
+    @include('dashboard.partials.roadmap')
 
-
-    <p>
-        <strong>Rol:</strong>
-        {{ auth()->user()->role?->nombre }}
-    </p>
-
-
-    <p>
-        <strong>Estado:</strong>
-
-        @if(auth()->user()->status)
-            Activo
-        @else
-            Inactivo
-        @endif
-    </p>
-
-
-    <hr>
-
-    <form
-        method="POST"
-        action="{{ route('logout') }}"
-    >
-
-        @csrf
-
-        <button type="submit">
-            Cerrar sesión
-        </button>
-
-    </form>
-
-</body>
-
-</html>
+@endsection
