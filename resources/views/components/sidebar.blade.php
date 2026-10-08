@@ -73,8 +73,10 @@
 
                 </a>
 
-                {{-- Aún no existe la ruta de roles; se mantiene el mismo aspecto visual sin enlace --}}
-                <div class="menu-link" style="cursor:default;">
+                <a
+                    href="{{ route('roles.index') }}"
+                    class="menu-link {{ request()->routeIs('roles.*') ? 'active' : '' }}"
+                >
 
                     <span class="material-symbols-outlined">
                         verified_user
@@ -82,7 +84,7 @@
 
                     Roles y Permisos
 
-                </div>
+                </a>
 
             @endif
 

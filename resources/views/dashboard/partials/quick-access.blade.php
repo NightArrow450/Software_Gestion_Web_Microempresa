@@ -54,10 +54,9 @@
                 </p>
             </a>
 
-            {{-- Se conserva el diseño original, pero todavía sin ruta --}}
-            <div
+            <a
+                href="{{ route('roles.index') }}"
                 class="quick-card"
-                style="cursor:default;"
             >
 
                 <span class="material-symbols-outlined">
@@ -67,10 +66,10 @@
                 <h3>Roles y Permisos</h3>
 
                 <p>
-                    Consultar roles y niveles de acceso del sistema.
+                    Consultar roles y administrar niveles de acceso.
                 </p>
 
-            </div>
+            </a>
 
         @endif
 
