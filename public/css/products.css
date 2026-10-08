@@ -218,3 +218,436 @@
         justify-content: flex-start;
     }
 }
+
+.sku-prefix-box {
+    margin: 18px 0;
+    padding: 16px;
+    border: 1px solid #e4e9e6;
+    border-radius: 12px;
+    background: #f8faf9;
+    display: flex;
+    gap: 18px;
+    align-items: flex-end;
+    justify-content: space-between;
+}
+
+.sku-prefix-example {
+    min-width: 280px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: #fff;
+    border: 1px solid #e4e9e6;
+    font-size: 12px;
+    color: var(--text-variant);
+}
+
+.sku-prefix-example strong,
+.sku-prefix-example span {
+    display: block;
+}
+
+.sku-prefix-example span {
+    margin-top: 4px;
+}
+
+.variant-apply-box {
+    margin-top: 16px;
+    padding: 14px;
+    border: 1px solid #e4e9e6;
+    border-radius: 10px;
+    background: #fff;
+}
+
+.variant-apply-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.variant-apply-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-link {
+    border: 0;
+    background: transparent;
+    padding: 0;
+    color: var(--primary);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.variant-check-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.variant-check-item {
+    display: flex;
+    gap: 9px;
+    align-items: flex-start;
+    padding: 10px 12px;
+    border: 1px solid #e4e9e6;
+    border-radius: 9px;
+    cursor: pointer;
+    background: #fbfcfb;
+}
+
+.variant-check-item input {
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+    accent-color: var(--primary);
+}
+
+.variant-check-item span,
+.variant-check-item strong,
+.variant-check-item small {
+    display: block;
+}
+
+.variant-check-item strong {
+    font-size: 13px;
+}
+
+.variant-check-item small {
+    margin-top: 2px;
+    color: var(--text-variant);
+    font-size: 11px;
+}
+
+.sku-preview-box {
+    margin-top: 14px;
+    padding: 14px;
+    border: 1px dashed #cfd8d2;
+    border-radius: 10px;
+    background: #f8faf9;
+}
+
+.sku-preview-title {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 10px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.sku-preview-title .material-symbols-outlined {
+    font-size: 18px;
+}
+
+.sku-preview-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.sku-preview-item {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 5px 9px;
+    border-radius: 999px;
+    background: #fff;
+    border: 1px solid #dfe6e1;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .02em;
+}
+
+@media (max-width: 900px) {
+    .sku-prefix-box {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .sku-prefix-example {
+        min-width: 0;
+    }
+
+    .variant-check-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 600px) {
+    .variant-apply-head {
+        flex-direction: column;
+    }
+
+    .variant-check-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Variantes agrupadas y bloques colapsables */
+.section-inline-actions,
+.card-head-actions,
+.variant-values-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section-inline-actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.card-head-actions {
+    justify-content: flex-end;
+}
+
+.variant-group-card {
+    border: 1px solid #e4e9e6;
+    border-radius: 12px;
+    background: var(--surface-low);
+    padding: 16px 18px;
+}
+
+.variant-group-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.variant-group-summary {
+    margin-top: 3px;
+    font-size: 12px;
+}
+
+.variant-group-config {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 180px;
+    gap: 16px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #dde4df;
+}
+
+.variant-values-head {
+    justify-content: space-between;
+    margin: 16px 0 10px;
+}
+
+.variant-values-list {
+    display: grid;
+    gap: 8px;
+}
+
+.variant-value-row {
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr) 180px 38px;
+    gap: 10px;
+    align-items: end;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #e4e9e6;
+    background: #fff;
+}
+
+.variant-value-row .form-group {
+    margin: 0;
+}
+
+.variant-value-number {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: var(--surface-low);
+    display: grid;
+    place-items: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-variant);
+    align-self: center;
+}
+
+.variant-value-remove {
+    align-self: center;
+}
+
+[data-collapsible-body] {
+    display: block;
+}
+
+.variant-group-card.is-collapsed [data-collapsible-body],
+.presentation-card.is-collapsed [data-collapsible-body] {
+    display: none;
+}
+
+.variant-group-card.is-collapsed,
+.presentation-card.is-collapsed {
+    padding-bottom: 14px;
+}
+
+.variant-group-card.is-collapsed .variant-group-head,
+.presentation-card.is-collapsed .presentation-head {
+    margin-bottom: 0;
+}
+
+.child-status-locked .form-control {
+    background: #f3f5f4;
+    color: #7b8580;
+    cursor: not-allowed;
+}
+
+.product-inactive-mode [data-child-status] {
+    opacity: .78;
+}
+
+.variant-check-item.is-inactive {
+    opacity: .62;
+    background: #f6f7f6;
+}
+
+@media (max-width: 900px) {
+    .variant-group-config,
+    .variant-value-row {
+        grid-template-columns: 1fr;
+    }
+
+    .variant-value-number,
+    .variant-value-remove {
+        justify-self: start;
+    }
+}
+
+/* ----------------------------------------------------------
+   Barra superior
+   ---------------------------------------------------------- */
+
+.form-compact-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 16px;
+
+    margin-bottom: 18px;
+}
+
+.form-compact-toolbar .muted {
+    margin-right: auto;
+    font-size: 12px;
+}
+
+
+/* ----------------------------------------------------------
+   Cabecera de sección
+   ---------------------------------------------------------- */
+
+.collapsible-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 16px;
+}
+
+
+/* ----------------------------------------------------------
+   Contenido
+   ---------------------------------------------------------- */
+
+.collapsible-section-content {
+    margin-top: 20px;
+    padding-top: 20px;
+
+    border-top: 1px solid #edf0ee;
+}
+
+
+/* ----------------------------------------------------------
+   Animación visual del botón
+   ---------------------------------------------------------- */
+
+[data-collapse-toggle]
+.material-symbols-outlined {
+    transition: transform .15s ease;
+}
+
+
+/* ----------------------------------------------------------
+   Secciones principales contraídas
+   ---------------------------------------------------------- */
+
+.main-collapsible-section.is-collapsed
+[data-collapsible-body] {
+    display: none;
+}
+
+
+/* ----------------------------------------------------------
+   Ajustar espacio cuando están minimizadas
+   ---------------------------------------------------------- */
+
+.main-collapsible-section.is-collapsed {
+    padding-bottom: 18px;
+}
+
+
+.main-collapsible-section.is-collapsed
+.collapsible-section-head {
+    margin-bottom: 0;
+}
+
+
+/* ----------------------------------------------------------
+   Mantener el título visible
+   ---------------------------------------------------------- */
+
+.main-collapsible-section.is-collapsed
+.form-section-title {
+    margin-bottom: 4px !important;
+}
+
+
+/* ----------------------------------------------------------
+   Variantes / Presentaciones existentes
+   ---------------------------------------------------------- */
+
+.variant-group-card.is-collapsed
+[data-collapsible-body],
+
+.presentation-card.is-collapsed
+[data-collapsible-body] {
+    display: none;
+}
+
+
+/* ----------------------------------------------------------
+   Responsive
+   ---------------------------------------------------------- */
+
+@media (max-width: 700px) {
+
+    .form-compact-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+
+    .form-compact-toolbar .muted {
+        margin-right: 0;
+    }
+
+
+    .form-compact-toolbar .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+
+    .collapsible-section-head {
+        align-items: flex-start;
+    }
+
+}

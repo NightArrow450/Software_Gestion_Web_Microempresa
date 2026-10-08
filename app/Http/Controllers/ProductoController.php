@@ -5,11 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Categoria;
 use App\Models\PresentacionProducto;
 use App\Models\Producto;
-use App\Models\VarianteProducto;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -79,22 +79,25 @@ class ProductoController extends Controller
 
             $producto = Producto::create($dataProducto);
 
-            $mapaVariantes = [];
+            $productoActivo = (bool) $validated['estado'];
 
-            foreach ($validated['variantes'] ?? [] as $variante) {
-                $creada = $producto->variantes()->create([
-                    'tipo' => $variante['tipo'],
-                    'valor' => $variante['valor'],
-                    'estado' => (bool) ($variante['estado'] ?? true),
-                ]);
-
-                $mapaVariantes[$variante['clave']] = $creada->id;
-            }
+            $mapaVariantes = $this->guardarVariantes(
+                $producto,
+                $validated['variantes'] ?? [],
+                false,
+                $productoActivo
+            );
 
             foreach ($validated['presentaciones'] as $presentacion) {
-                $producto->presentaciones()->create(
-                    $this->datosPresentacion($presentacion, $mapaVariantes)
-                );
+                foreach ($this->expandirPresentacion(
+                    $presentacion,
+                    $mapaVariantes,
+                    $validated['prefijo_sku'],
+                    $productoActivo
+                ) as $datos) {
+                    unset($datos['_clave_relacion']);
+                    $producto->presentaciones()->create($datos);
+                }
             }
 
             return $producto;
@@ -160,7 +163,6 @@ class ProductoController extends Controller
 
             $producto->update($dataProducto);
 
-            $mapaVariantes = [];
             $idsVariantesConservadas = collect($validated['variantes'] ?? [])
                 ->pluck('id')
                 ->filter()
@@ -168,9 +170,6 @@ class ProductoController extends Controller
                 ->values()
                 ->all();
 
-            // Eliminamos primero las variantes retiradas del formulario.
-            // La FK de presentaciones usa nullOnDelete, por lo que las presentaciones
-            // existentes se conservan y luego se actualizan con la nueva selección.
             if (empty($idsVariantesConservadas)) {
                 $producto->variantes()->delete();
             } else {
@@ -179,62 +178,63 @@ class ProductoController extends Controller
                     ->delete();
             }
 
-            foreach ($validated['variantes'] ?? [] as $variante) {
-                if (!empty($variante['id'])) {
-                    $modeloVariante = $producto->variantes()
-                        ->whereKey($variante['id'])
-                        ->first();
+            $productoActivo = (bool) $validated['estado'];
 
-                    if (!$modeloVariante) {
-                        throw ValidationException::withMessages([
-                            'variantes' => 'Una de las variantes no pertenece al producto.',
-                        ]);
-                    }
-
-                    $modeloVariante->update([
-                        'tipo' => $variante['tipo'],
-                        'valor' => $variante['valor'],
-                        'estado' => (bool) ($variante['estado'] ?? true),
-                    ]);
-                } else {
-                    $modeloVariante = $producto->variantes()->create([
-                        'tipo' => $variante['tipo'],
-                        'valor' => $variante['valor'],
-                        'estado' => (bool) ($variante['estado'] ?? true),
-                    ]);
-                }
-
-                $mapaVariantes[$variante['clave']] = $modeloVariante->id;
-            }
+            $mapaVariantes = $this->guardarVariantes(
+                $producto,
+                $validated['variantes'] ?? [],
+                true,
+                $productoActivo
+            );
 
             $idsPresentacionesConservadas = [];
 
             foreach ($validated['presentaciones'] as $presentacion) {
-                $datos = $this->datosPresentacion($presentacion, $mapaVariantes);
+                $idsExistentes = $presentacion['ids'] ?? [];
 
-                if (!empty($presentacion['id'])) {
-                    $modeloPresentacion = $producto->presentaciones()
-                        ->whereKey($presentacion['id'])
-                        ->first();
+                foreach ($this->expandirPresentacion(
+                    $presentacion,
+                    $mapaVariantes,
+                    $validated['prefijo_sku'],
+                    $productoActivo
+                ) as $datosExpandidos) {
+                    $claveRelacion = $datosExpandidos['_clave_relacion'];
+                    unset($datosExpandidos['_clave_relacion']);
 
-                    if (!$modeloPresentacion) {
-                        throw ValidationException::withMessages([
-                            'presentaciones' => 'Una de las presentaciones no pertenece al producto.',
-                        ]);
+                    $idExistente = $idsExistentes[$claveRelacion] ?? null;
+
+                    if ($idExistente) {
+                        $modelo = $producto->presentaciones()
+                            ->whereKey($idExistente)
+                            ->first();
+
+                        if (!$modelo) {
+                            throw ValidationException::withMessages([
+                                'presentaciones' => 'Una de las presentaciones no pertenece al producto.',
+                            ]);
+                        }
+
+                        $modelo->update($datosExpandidos);
+                    } else {
+                        $modelo = $producto->presentaciones()->create($datosExpandidos);
                     }
 
-                    $modeloPresentacion->update($datos);
-                } else {
-                    $modeloPresentacion = $producto->presentaciones()->create($datos);
+                    $idsPresentacionesConservadas[] = $modelo->id;
                 }
-
-                $idsPresentacionesConservadas[] = $modeloPresentacion->id;
             }
 
-            $producto->presentaciones()
-                ->whereNotIn('id', $idsPresentacionesConservadas)
-                ->delete();
+            if (empty($idsPresentacionesConservadas)) {
+                $producto->presentaciones()->delete();
+            } else {
+                $producto->presentaciones()
+                    ->whereNotIn('id', $idsPresentacionesConservadas)
+                    ->delete();
+            }
 
+            if (!$productoActivo) {
+                $producto->variantes()->update(['estado' => false]);
+                $producto->presentaciones()->update(['estado' => false]);
+            }
         });
 
         return redirect()
@@ -244,20 +244,43 @@ class ProductoController extends Controller
 
     public function toggleStatus(Producto $producto): RedirectResponse
     {
-        $producto->update([
-            'estado' => !$producto->estado,
-        ]);
+        DB::transaction(function () use ($producto) {
+            $nuevoEstado = !$producto->estado;
+
+            $producto->update([
+                'estado' => $nuevoEstado,
+            ]);
+
+            /*
+            |--------------------------------------------------------------------------
+            | Cascada de estado
+            |--------------------------------------------------------------------------
+            |
+            | Si el producto queda inactivo, ninguna variante ni presentación
+            | puede permanecer activa. Al reactivar el producto, los hijos se
+            | mantienen inactivos para que el usuario decida cuáles volver a activar.
+            |
+            */
+            if (!$nuevoEstado) {
+                $producto->variantes()->update(['estado' => false]);
+                $producto->presentaciones()->update(['estado' => false]);
+            }
+        });
 
         return back()->with(
             'success',
-            $producto->estado
-                ? 'El producto fue activado correctamente.'
-                : 'El producto fue desactivado correctamente.'
+            $producto->fresh()->estado
+                ? 'El producto fue activado correctamente. Sus variantes y presentaciones permanecen con su estado actual.'
+                : 'El producto fue desactivado junto con todas sus variantes y presentaciones.'
         );
     }
 
     private function validarFormulario(Request $request, ?Producto $producto = null): array
     {
+        $request->merge([
+            'prefijo_sku' => $this->normalizarPrefijo((string) $request->input('prefijo_sku')),
+        ]);
+
         $validator = validator($request->all(), [
             'codigo' => [
                 'required',
@@ -272,6 +295,7 @@ class ProductoController extends Controller
             'imagen_referencia' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
             'eliminar_imagen' => ['nullable', 'boolean'],
             'estado' => ['required', 'boolean'],
+            'prefijo_sku' => ['required', 'string', 'max:30', 'regex:/^[A-Z0-9]+(?:-[A-Z0-9]+)*$/'],
 
             'variantes' => ['nullable', 'array'],
             'variantes.*.id' => ['nullable', 'integer', 'exists:variantes_producto,id'],
@@ -281,30 +305,10 @@ class ProductoController extends Controller
             'variantes.*.estado' => ['required', 'boolean'],
 
             'presentaciones' => ['required', 'array', 'min:1'],
-            'presentaciones.*.id' => ['nullable', 'integer', 'exists:presentaciones_producto,id'],
-            'presentaciones.*.codigo_sku' => [
-                'required',
-                'string',
-                'max:50',
-                function ($attribute, $value, $fail) use ($request, $producto) {
-                    $partes = explode('.', $attribute);
-                    $indice = $partes[1] ?? null;
-                    $idPresentacion = $indice !== null
-                        ? $request->input("presentaciones.{$indice}.id")
-                        : null;
-
-                    $query = PresentacionProducto::where('codigo_sku', $value);
-
-                    if ($idPresentacion) {
-                        $query->where('id', '!=', $idPresentacion);
-                    }
-
-                    if ($query->exists()) {
-                        $fail('El código SKU ya está registrado.');
-                    }
-                },
-            ],
-            'presentaciones.*.variante_clave' => ['nullable', 'string', 'max:80'],
+            'presentaciones.*.ids' => ['nullable', 'array'],
+            'presentaciones.*.ids.*' => ['nullable', 'integer', 'exists:presentaciones_producto,id'],
+            'presentaciones.*.variantes_clave' => ['nullable', 'array'],
+            'presentaciones.*.variantes_clave.*' => ['string', 'max:80'],
             'presentaciones.*.tipo_envase' => ['nullable', 'string', 'max:60'],
             'presentaciones.*.contenido' => ['required', 'numeric', 'gt:0'],
             'presentaciones.*.unidad_medida' => ['required', Rule::in(['L', 'ml', 'kg', 'g'])],
@@ -316,13 +320,16 @@ class ProductoController extends Controller
             'presentaciones.*.precio_empaque' => ['nullable', 'numeric', 'min:0'],
             'presentaciones.*.estado' => ['required', 'boolean'],
         ], [
+            'prefijo_sku.required' => 'No se pudo generar el prefijo SKU. Ingresa el nombre y la marca del producto o escribe el prefijo manualmente.',
+            'prefijo_sku.regex' => 'El prefijo SKU solo puede contener letras, números y guiones.',
             'presentaciones.required' => 'Debes registrar al menos una presentación.',
             'presentaciones.min' => 'Debes registrar al menos una presentación.',
         ]);
 
-        $validator->after(function ($validator) use ($request) {
+        $validator->after(function ($validator) use ($request, $producto) {
             $variantes = $request->input('variantes', []);
             $clavesVariantes = collect($variantes)->pluck('clave')->filter()->all();
+            $datosVariantes = collect($variantes)->keyBy('clave');
             $combinaciones = [];
 
             foreach ($variantes as $indice => $variante) {
@@ -342,25 +349,18 @@ class ProductoController extends Controller
                 }
             }
 
-            $skus = [];
+            $skusGenerados = [];
+            $idsConservados = collect($request->input('presentaciones', []))
+                ->flatMap(fn ($presentacion) => array_values($presentacion['ids'] ?? []))
+                ->filter()
+                ->map(fn ($id) => (int) $id)
+                ->values()
+                ->all();
 
             foreach ($request->input('presentaciones', []) as $indice => $presentacion) {
-                $sku = mb_strtolower(trim((string) ($presentacion['codigo_sku'] ?? '')));
-
-                if ($sku !== '') {
-                    if (isset($skus[$sku])) {
-                        $validator->errors()->add(
-                            "presentaciones.{$indice}.codigo_sku",
-                            'No puedes repetir el mismo código SKU dentro del producto.'
-                        );
-                    }
-
-                    $skus[$sku] = true;
-                }
-
                 $vendeUnidad = (int) ($presentacion['venta_por_unidad'] ?? 0) === 1;
                 $vendeEmpaque = (int) ($presentacion['venta_por_empaque'] ?? 0) === 1;
-                $varianteClave = $presentacion['variante_clave'] ?? null;
+                $seleccionadas = array_values(array_unique(array_filter($presentacion['variantes_clave'] ?? [])));
 
                 if (!$vendeUnidad && !$vendeEmpaque) {
                     $validator->errors()->add(
@@ -385,10 +385,54 @@ class ProductoController extends Controller
                     }
                 }
 
-                if ($varianteClave && !in_array($varianteClave, $clavesVariantes, true)) {
+                foreach ($seleccionadas as $clave) {
+                    if (!in_array($clave, $clavesVariantes, true)) {
+                        $validator->errors()->add(
+                            "presentaciones.{$indice}.variantes_clave",
+                            'Una de las variantes seleccionadas ya no existe.'
+                        );
+                    }
+                }
+
+                $clavesObjetivo = empty($seleccionadas) ? [null] : $seleccionadas;
+
+                foreach ($clavesObjetivo as $clave) {
+                    $valorVariante = $clave ? (string) ($datosVariantes[$clave]['valor'] ?? '') : null;
+                    $sku = $this->generarSku(
+                        (string) $request->input('prefijo_sku'),
+                        $valorVariante,
+                        $presentacion['contenido'] ?? null,
+                        $presentacion['unidad_medida'] ?? null
+                    );
+
+                    if (isset($skusGenerados[$sku])) {
+                        $validator->errors()->add(
+                            "presentaciones.{$indice}.contenido",
+                            "La combinación genera un SKU duplicado: {$sku}."
+                        );
+                    }
+
+                    $skusGenerados[$sku] = true;
+                }
+            }
+
+            if (!empty($skusGenerados)) {
+                $query = PresentacionProducto::whereIn('codigo_sku', array_keys($skusGenerados));
+
+                if (!empty($idsConservados)) {
+                    $query->whereNotIn('id', $idsConservados);
+                }
+
+                if ($producto) {
+                    $query->where('producto_id', '!=', $producto->id);
+                }
+
+                $existentes = $query->pluck('codigo_sku')->all();
+
+                foreach ($existentes as $sku) {
                     $validator->errors()->add(
-                        "presentaciones.{$indice}.variante_clave",
-                        'La variante seleccionada ya no existe.'
+                        'presentaciones',
+                        "El código SKU {$sku} ya está registrado en otro producto."
                     );
                 }
             }
@@ -397,17 +441,95 @@ class ProductoController extends Controller
         return $validator->validate();
     }
 
-    private function datosPresentacion(array $presentacion, array $mapaVariantes): array
+    private function guardarVariantes(
+        Producto $producto,
+        array $variantes,
+        bool $actualizando = false,
+        bool $productoActivo = true
+    ): array
+    {
+        $mapa = [];
+
+        foreach ($variantes as $variante) {
+            if ($actualizando && !empty($variante['id'])) {
+                $modelo = $producto->variantes()
+                    ->whereKey($variante['id'])
+                    ->first();
+
+                if (!$modelo) {
+                    throw ValidationException::withMessages([
+                        'variantes' => 'Una de las variantes no pertenece al producto.',
+                    ]);
+                }
+
+                $modelo->update([
+                    'tipo' => $variante['tipo'],
+                    'valor' => $variante['valor'],
+                    'estado' => $productoActivo && (bool) ($variante['estado'] ?? true),
+                ]);
+            } else {
+                $modelo = $producto->variantes()->create([
+                    'tipo' => $variante['tipo'],
+                    'valor' => $variante['valor'],
+                    'estado' => $productoActivo && (bool) ($variante['estado'] ?? true),
+                ]);
+            }
+
+            $mapa[$variante['clave']] = [
+                'id' => $modelo->id,
+                'valor' => $modelo->valor,
+            ];
+        }
+
+        return $mapa;
+    }
+
+    private function expandirPresentacion(
+        array $presentacion,
+        array $mapaVariantes,
+        string $prefijoSku,
+        bool $productoActivo = true
+    ): array
+    {
+        $seleccionadas = array_values(array_unique(array_filter($presentacion['variantes_clave'] ?? [])));
+        $clavesObjetivo = empty($seleccionadas) ? [null] : $seleccionadas;
+        $resultado = [];
+
+        foreach ($clavesObjetivo as $clave) {
+            $variante = $clave ? ($mapaVariantes[$clave] ?? null) : null;
+
+            $datos = $this->datosPresentacion(
+                $presentacion,
+                $variante['id'] ?? null,
+                $this->generarSku(
+                    $prefijoSku,
+                    $variante['valor'] ?? null,
+                    $presentacion['contenido'],
+                    $presentacion['unidad_medida']
+                ),
+                $productoActivo
+            );
+
+            $datos['_clave_relacion'] = $clave ?: '__none__';
+            $resultado[] = $datos;
+        }
+
+        return $resultado;
+    }
+
+    private function datosPresentacion(
+        array $presentacion,
+        ?int $varianteId,
+        string $sku,
+        bool $productoActivo = true
+    ): array
     {
         $vendeUnidad = (bool) ($presentacion['venta_por_unidad'] ?? false);
         $vendeEmpaque = (bool) ($presentacion['venta_por_empaque'] ?? false);
-        $varianteClave = $presentacion['variante_clave'] ?? null;
 
         return [
-            'variante_producto_id' => $varianteClave
-                ? ($mapaVariantes[$varianteClave] ?? null)
-                : null,
-            'codigo_sku' => $presentacion['codigo_sku'],
+            'variante_producto_id' => $varianteId,
+            'codigo_sku' => $sku,
             'tipo_envase' => $presentacion['tipo_envase'] ?? null,
             'contenido' => $presentacion['contenido'],
             'unidad_medida' => $presentacion['unidad_medida'],
@@ -417,8 +539,46 @@ class ProductoController extends Controller
             'venta_por_empaque' => $vendeEmpaque,
             'precio_unitario' => $vendeUnidad ? ($presentacion['precio_unitario'] ?? null) : null,
             'precio_empaque' => $vendeEmpaque ? ($presentacion['precio_empaque'] ?? null) : null,
-            'estado' => (bool) ($presentacion['estado'] ?? true),
+            'estado' => $productoActivo && (bool) ($presentacion['estado'] ?? true),
         ];
+    }
+
+    private function generarSku(string $prefijo, ?string $valorVariante, mixed $contenido, ?string $unidad): string
+    {
+        $partes = [$this->normalizarPrefijo($prefijo)];
+
+        if ($valorVariante) {
+            $partes[] = $this->abreviar($valorVariante);
+        }
+
+        $numero = rtrim(rtrim(number_format((float) $contenido, 2, '.', ''), '0'), '.');
+        $numero = str_replace('.', 'P', $numero);
+        $unidadNormalizada = Str::upper((string) $unidad);
+
+        $partes[] = $numero.$unidadNormalizada;
+
+        return implode('-', array_filter($partes));
+    }
+
+    private function normalizarPrefijo(string $valor): string
+    {
+        $valor = Str::upper(Str::ascii(trim($valor)));
+        $valor = preg_replace('/[^A-Z0-9-]+/', '-', $valor) ?? '';
+        $valor = preg_replace('/-+/', '-', $valor) ?? '';
+
+        return trim($valor, '-');
+    }
+
+    private function abreviar(string $valor): string
+    {
+        $texto = Str::upper(Str::ascii($valor));
+        $palabras = preg_split('/[^A-Z0-9]+/', $texto, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        if (empty($palabras)) {
+            return 'VAR';
+        }
+
+        return substr($palabras[0], 0, 3);
     }
 
     private function generarCodigoSugerido(): string
