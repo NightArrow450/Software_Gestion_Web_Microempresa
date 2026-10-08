@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -19,7 +20,7 @@ Route::get('/', function () {
 
 /*
 |--------------------------------------------------------------------------
-| Rutas para invitados
+| Invitados
 |--------------------------------------------------------------------------
 */
 
@@ -29,7 +30,6 @@ Route::middleware('guest')->group(function () {
         '/login',
         [LoginController::class, 'showLoginForm']
     )->name('login');
-
 
     Route::post(
         '/login',
@@ -41,7 +41,7 @@ Route::middleware('guest')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| Rutas autenticadas
+| Usuarios autenticados
 |--------------------------------------------------------------------------
 */
 
@@ -61,11 +61,20 @@ Route::middleware('auth')->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | Gestión de usuarios - Solo Administrador
+    | Administración
     |--------------------------------------------------------------------------
     */
 
-    Route::middleware('role:Administrador')->group(function () {
+    Route::middleware(
+        'role:Administrador'
+    )->group(function () {
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Usuarios
+        |--------------------------------------------------------------------------
+        */
 
         Route::get(
             '/usuarios',
@@ -107,6 +116,86 @@ Route::middleware('auth')->group(function () {
             '/usuarios/{user}/estado',
             [UserController::class, 'toggleStatus']
         )->name('usuarios.cambiar-estado');
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Roles
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get(
+            '/roles-permisos',
+            [RolePermissionController::class, 'index']
+        )->name('roles.index');
+
+
+        Route::get(
+            '/roles-permisos/nuevo',
+            [RolePermissionController::class, 'create']
+        )->name('roles.create');
+
+
+        Route::post(
+            '/roles-permisos',
+            [RolePermissionController::class, 'store']
+        )->name('roles.store');
+
+
+        Route::get(
+            '/roles-permisos/{role}/editar',
+            [RolePermissionController::class, 'edit']
+        )->name('roles.edit');
+
+
+        Route::put(
+            '/roles-permisos/{role}',
+            [RolePermissionController::class, 'update']
+        )->name('roles.update');
+
+
+        Route::delete(
+            '/roles-permisos/{role}',
+            [RolePermissionController::class, 'destroy']
+        )->name('roles.destroy');
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Permisos
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get(
+            '/permisos/nuevo',
+            [RolePermissionController::class, 'createPermiso']
+        )->name('permisos.create');
+
+
+        Route::post(
+            '/permisos',
+            [RolePermissionController::class, 'storePermiso']
+        )->name('permisos.store');
+
+
+        Route::get(
+            '/permisos/{permiso}/editar',
+            [RolePermissionController::class, 'editPermiso']
+        )->name('permisos.edit');
+
+
+        Route::put(
+            '/permisos/{permiso}',
+            [RolePermissionController::class, 'updatePermiso']
+        )->name('permisos.update');
+
+
+        Route::delete(
+            '/permisos/{permiso}',
+            [RolePermissionController::class, 'destroyPermiso']
+        )->name('permisos.destroy');
 
     });
 
