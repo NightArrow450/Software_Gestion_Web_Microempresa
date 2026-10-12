@@ -212,11 +212,12 @@
 
                         <div class="sale-fields" data-unit-fields>
                             <div class="form-group">
-                                <label class="form-label">Precio unitario</label>
+                                <label class="form-label">Precio por unidad (base de cálculo)</label>
                                 <div class="money-prefix">
                                     <input
                                         type="number"
                                         name="presentaciones[{{ $indice }}][precio_unitario]"
+                                        data-unit-price
                                         value="{{ $presentacion['precio_unitario'] ?? '' }}"
                                         class="form-control"
                                         min="0"
@@ -224,7 +225,7 @@
                                         placeholder="0.00"
                                     >
                                 </div>
-                                <span class="form-help">Puede quedar vacío hasta tener el precio real.</span>
+                                <span class="form-help">Si se vende por caja o paquete, este precio es obligatorio aunque no se venda suelto.</span>
                             </div>
                         </div>
                     </div>
@@ -258,6 +259,7 @@
                                     <input
                                         type="number"
                                         name="presentaciones[{{ $indice }}][unidades_por_empaque]"
+                                        data-pack-quantity
                                         value="{{ $presentacion['unidades_por_empaque'] ?? '' }}"
                                         class="form-control"
                                         min="1"
@@ -272,14 +274,16 @@
                                     <input
                                         type="number"
                                         name="presentaciones[{{ $indice }}][precio_empaque]"
+                                        data-pack-price
                                         value="{{ $presentacion['precio_empaque'] ?? '' }}"
                                         class="form-control"
                                         min="0"
                                         step="0.01"
-                                        placeholder="0.00"
+                                        placeholder="Se calcula automáticamente"
+                                        readonly
                                     >
                                 </div>
-                                <span class="form-help">Usa “Caja” solo cuando la empresa realmente comercialice en caja.</span>
+                                <span class="form-help">Se calcula automáticamente: precio unitario × unidades por paquete/caja.</span>
                             </div>
                         </div>
                     </div>
@@ -385,11 +389,11 @@
 
                 <div class="sale-fields" data-unit-fields>
                     <div class="form-group">
-                        <label class="form-label">Precio unitario</label>
+                        <label class="form-label">Precio por unidad (base de cálculo)</label>
                         <div class="money-prefix">
-                            <input type="number" name="presentaciones[__INDEX__][precio_unitario]" class="form-control" min="0" step="0.01" placeholder="0.00">
+                            <input type="number" name="presentaciones[__INDEX__][precio_unitario]" class="form-control" min="0" step="0.01" placeholder="0.00" data-unit-price>
                         </div>
-                        <span class="form-help">Puede quedar vacío hasta tener el precio real.</span>
+                        <span class="form-help">Si se vende por caja o paquete, este precio es obligatorio aunque no se venda suelto.</span>
                     </div>
                 </div>
             </div>
@@ -414,15 +418,16 @@
 
                         <div class="form-group">
                             <label class="form-label">Unidades por empaque</label>
-                            <input type="number" name="presentaciones[__INDEX__][unidades_por_empaque]" class="form-control" min="1" step="1">
+                            <input type="number" name="presentaciones[__INDEX__][unidades_por_empaque]" class="form-control" min="1" step="1" data-pack-quantity>
                         </div>
                     </div>
 
                     <div class="form-group" style="margin-top:14px;">
                         <label class="form-label">Precio por empaque</label>
                         <div class="money-prefix">
-                            <input type="number" name="presentaciones[__INDEX__][precio_empaque]" class="form-control" min="0" step="0.01" placeholder="0.00">
+                            <input type="number" name="presentaciones[__INDEX__][precio_empaque]" class="form-control" min="0" step="0.01" placeholder="Se calcula automáticamente" data-pack-price readonly>
                         </div>
+                        <span class="form-help">Precio unitario × unidades del paquete/caja.</span>
                     </div>
                 </div>
             </div>

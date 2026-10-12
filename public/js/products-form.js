@@ -1243,6 +1243,28 @@
     |--------------------------------------------------------------------------
     */
 
+    function updatePackagePrice(card) {
+        const priceField = card.querySelector('[data-unit-price]');
+        const countField = card.querySelector('[data-pack-quantity]');
+        const resultField = card.querySelector('[data-pack-price]');
+        const packActive = card.querySelector('[data-sale-pack]')?.checked;
+
+        if (!resultField) return;
+        const price = Number(priceField?.value);
+        const count = Number(countField?.value);
+        const validPrice = priceField?.value !== '' && Number.isFinite(price) && price >= 0;
+        const validCount = countField?.value !== '' && Number.isInteger(count) && count > 0;
+
+        if (!packActive || !validPrice || !validCount) {
+            resultField.value = '';
+            return;
+        }
+
+        // Trabajar en céntimos evita errores visibles como 23.999999.
+        const cents = Math.round(Math.round(price * 100) * count);
+        resultField.value = (cents / 100).toFixed(2);
+    }
+
     function updateSaleVisibility(card) {
 
         const unit =
@@ -1272,7 +1294,7 @@
         if (unitFields) {
 
             unitFields.style.display =
-                unit?.checked
+                (unit?.checked || pack?.checked)
                     ? 'block'
                     : 'none';
 
@@ -1287,6 +1309,8 @@
                     : 'none';
 
         }
+
+        updatePackagePrice(card);
     }
 
 
@@ -2295,6 +2319,11 @@
     form.addEventListener(
         'input',
         (event) => {
+
+            if (event.target.matches('[data-unit-price], [data-pack-quantity]')) {
+                const row = event.target.closest('[data-presentation-row]');
+                if (row) updatePackagePrice(row);
+            }
 
             /*
             |--------------------------------------------------------------------------
