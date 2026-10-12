@@ -2921,4 +2921,146 @@
         }
     );
 
+    
+    /*
+    |--------------------------------------------------------------------------
+    | Cálculo automático del precio por empaque
+    |--------------------------------------------------------------------------
+    |
+    | Precio empaque = precio unitario x unidades por empaque.
+    | Funciona para presentaciones existentes y nuevas.
+    |
+    */
+
+    function calcularPrecioEmpaque(card) {
+
+        if (!card) {
+            return;
+        }
+
+        const precioUnitario = card.querySelector(
+            'input[name$="[precio_unitario]"]'
+        );
+
+        const unidadesEmpaque = card.querySelector(
+            'input[name$="[unidades_por_empaque]"]'
+        );
+
+        const precioEmpaque = card.querySelector(
+            'input[name$="[precio_empaque]"]'
+        );
+
+        const ventaUnidad = card.querySelector(
+            '[data-sale-unit]'
+        );
+
+        const ventaEmpaque = card.querySelector(
+            '[data-sale-pack]'
+        );
+
+        const camposUnidad = card.querySelector(
+            '[data-unit-fields]'
+        );
+
+        if (!precioUnitario || !unidadesEmpaque || !precioEmpaque) {
+            return;
+        }
+
+        // Mostrar siempre el precio unitario base cuando
+        // se vende por unidad o por paquete.
+        if (camposUnidad) {
+            camposUnidad.style.display =
+                ventaUnidad?.checked || ventaEmpaque?.checked
+                    ? 'block'
+                    : 'none';
+        }
+
+        // Impedir la modificación manual del precio de caja.
+        precioEmpaque.readOnly = true;
+
+        // Si no está habilitada la venta por empaque,
+        // no debe conservar un precio de empaque.
+        if (!ventaEmpaque?.checked) {
+            precioEmpaque.value = '';
+            return;
+        }
+
+        const precioTexto = precioUnitario.value.trim();
+        const unidadesTexto = unidadesEmpaque.value.trim();
+
+        if (precioTexto === '' || unidadesTexto === '') {
+            precioEmpaque.value = '';
+            return;
+        }
+
+        const precio = Number(precioTexto);
+        const unidades = Number(unidadesTexto);
+
+        if (
+            !Number.isFinite(precio) ||
+            !Number.isInteger(unidades) ||
+            precio < 0 ||
+            unidades < 1
+        ) {
+            precioEmpaque.value = '';
+            return;
+        }
+
+        // Calcular usando céntimos.
+        const precioCentimos = Math.round(precio * 100);
+        const totalCentimos = precioCentimos * unidades;
+
+        precioEmpaque.value = (
+            totalCentimos / 100
+        ).toFixed(2);
+    }
+
+    function actualizarPreciosEmpaque() {
+
+        presentationRows().forEach(card => {
+            calcularPrecioEmpaque(card);
+        });
+
+    }
+
+    // Recalcular al escribir el precio o la cantidad.
+    form.addEventListener('input', event => {
+
+        if (
+            event.target.matches(
+                'input[name$="[precio_unitario]"], ' +
+                'input[name$="[unidades_por_empaque]"]'
+            )
+        ) {
+            calcularPrecioEmpaque(
+                event.target.closest('[data-presentation-row]')
+            );
+        }
+
+    });
+
+    // Recalcular al marcar o desmarcar modalidades de venta.
+    form.addEventListener('change', event => {
+
+        if (
+            event.target.matches(
+                '[data-sale-unit], [data-sale-pack]'
+            )
+        ) {
+            calcularPrecioEmpaque(
+                event.target.closest('[data-presentation-row]')
+            );
+        }
+
+    });
+
+    // Actualizar automáticamente las nuevas presentaciones.
+    addPresentationButton?.addEventListener(
+        'click',
+        actualizarPreciosEmpaque
+    );
+
+    // Calcular al abrir Crear o Editar producto.
+    actualizarPreciosEmpaque();
+
 })();

@@ -517,31 +517,99 @@ class ProductoController extends Controller
         return $resultado;
     }
 
-    private function datosPresentacion(
-        array $presentacion,
-        ?int $varianteId,
-        string $sku,
-        bool $productoActivo = true
-    ): array
-    {
-        $vendeUnidad = (bool) ($presentacion['venta_por_unidad'] ?? false);
-        $vendeEmpaque = (bool) ($presentacion['venta_por_empaque'] ?? false);
+    
+private function datosPresentacion(
+    array $presentacion,
+    ?int $varianteId,
+    string $sku,
+    bool $productoActivo = true
+): array
+{
+    $vendeUnidad = (bool) (
+        $presentacion['venta_por_unidad'] ?? false
+    );
 
-        return [
-            'variante_producto_id' => $varianteId,
-            'codigo_sku' => $sku,
-            'tipo_envase' => $presentacion['tipo_envase'] ?? null,
-            'contenido' => $presentacion['contenido'],
-            'unidad_medida' => $presentacion['unidad_medida'],
-            'tipo_empaque' => $vendeEmpaque ? ($presentacion['tipo_empaque'] ?? null) : null,
-            'unidades_por_empaque' => $vendeEmpaque ? ($presentacion['unidades_por_empaque'] ?? null) : null,
-            'venta_por_unidad' => $vendeUnidad,
-            'venta_por_empaque' => $vendeEmpaque,
-            'precio_unitario' => $vendeUnidad ? ($presentacion['precio_unitario'] ?? null) : null,
-            'precio_empaque' => $vendeEmpaque ? ($presentacion['precio_empaque'] ?? null) : null,
-            'estado' => $productoActivo && (bool) ($presentacion['estado'] ?? true),
-        ];
+    $vendeEmpaque = (bool) (
+        $presentacion['venta_por_empaque'] ?? false
+    );
+
+    // Precio base de una unidad.
+    $precioBase = $presentacion['precio_unitario'] ?? null;
+
+    $precioCentimos = (
+        $precioBase !== null &&
+        $precioBase !== ''
+    )
+        ? (int) round((float) $precioBase * 100)
+        : null;
+
+    // Cantidad de unidades del paquete.
+    $unidades = $vendeEmpaque
+        ? (int) ($presentacion['unidades_por_empaque'] ?? 0)
+        : 0;
+
+    $precioEmpaque = null;
+
+    // Calcular automáticamente el precio del empaque.
+    if (
+        $vendeEmpaque &&
+        $precioCentimos !== null &&
+        $unidades > 0
+    ) {
+        $totalCentimos = $precioCentimos * $unidades;
+
+        if ($totalCentimos > 9999999999) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'presentaciones' =>
+                    'El precio calculado del empaque supera el máximo permitido.',
+            ]);
+        }
+
+        $precioEmpaque = number_format(
+            $totalCentimos / 100,
+            2,
+            '.',
+            ''
+        );
     }
+
+    return [
+        'variante_producto_id' => $varianteId,
+        'codigo_sku' => $sku,
+
+        'tipo_envase' => $presentacion['tipo_envase'] ?? null,
+
+        'contenido' => $presentacion['contenido'],
+
+        'unidad_medida' => $presentacion['unidad_medida'],
+
+        'tipo_empaque' => $vendeEmpaque
+            ? ($presentacion['tipo_empaque'] ?? null)
+            : null,
+
+        'unidades_por_empaque' => $vendeEmpaque
+            ? ($presentacion['unidades_por_empaque'] ?? null)
+            : null,
+
+        'venta_por_unidad' => $vendeUnidad,
+        'venta_por_empaque' => $vendeEmpaque,
+
+        'precio_unitario' => $precioCentimos !== null
+            ? number_format(
+                $precioCentimos / 100,
+                2,
+                '.',
+                ''
+            )
+            : null,
+
+        'precio_empaque' => $precioEmpaque,
+
+        'estado' => $productoActivo &&
+            (bool) ($presentacion['estado'] ?? true),
+    ];
+}
+
 
     private function generarSku(string $prefijo, ?string $valorVariante, mixed $contenido, ?string $unidad): string
     {

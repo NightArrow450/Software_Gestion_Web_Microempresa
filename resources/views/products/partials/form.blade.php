@@ -660,7 +660,7 @@
 @push('scripts')
 
     <script
-        src="{{ asset('js/products-form.js') }}?v=4"
+        src="{{ asset('js/products-form.js') }}?v=5"
     ></script>
 
 @endpush
