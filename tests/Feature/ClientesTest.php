@@ -48,6 +48,20 @@ class ClientesTest extends TestCase
             ['clientes.crear', 'clientes.ver']
         );
 
+        $this->assertTrue(
+        $usuario->fresh()
+            ->role
+            ->permisos()
+            ->where('nombre', 'clientes.crear')
+            ->exists(),
+            'El rol de prueba no tiene clientes.crear'
+        );
+
+        $this->assertTrue(
+            (bool) $usuario->fresh()->status,
+            'El usuario de prueba está inactivo'
+        );
+
         $this->actingAs($usuario);
 
         $respuesta = $this->post(route('clientes.store'), [
