@@ -316,8 +316,7 @@ class ProductoController extends Controller
             'presentaciones.*.unidades_por_empaque' => ['nullable', 'integer', 'min:1'],
             'presentaciones.*.venta_por_unidad' => ['required', 'boolean'],
             'presentaciones.*.venta_por_empaque' => ['required', 'boolean'],
-            'presentaciones.*.precio_unitario' => ['nullable', 'numeric', 'min:0'],
-            'presentaciones.*.precio_empaque' => ['nullable', 'numeric', 'min:0'],
+            'presentaciones.*.precio_unitario' => ['nullable', 'numeric', 'min:0', 'decimal:0,2', 'max:99999999.99'],
             'presentaciones.*.estado' => ['required', 'boolean'],
         ], [
             'prefijo_sku.required' => 'No se pudo generar el prefijo SKU. Ingresa el nombre y la marca del producto o escribe el prefijo manualmente.',
@@ -370,6 +369,25 @@ class ProductoController extends Controller
                 }
 
                 if ($vendeEmpaque) {
+                    // El precio de paquete/caja se deriva siempre del precio base por unidad.
+                    if (!isset($presentacion['precio_unitario']) || $presentacion['precio_unitario'] === '') {
+                        $validator->errors()->add(
+                            "presentaciones.{$indice}.precio_unitario",
+                            'Ingresa el precio de una unidad para calcular el precio de la caja o paquete.'
+                        );
+                    }
+
+                    if (isset($presentacion['precio_unitario'], $presentacion['unidades_por_empaque'])
+                        && is_numeric($presentacion['precio_unitario'])
+                        && filter_var($presentacion['unidades_por_empaque'], FILTER_VALIDATE_INT) !== false
+                        && (int) $presentacion['unidades_por_empaque'] >= 1
+                        && ((float) $presentacion['precio_unitario'] * (int) $presentacion['unidades_por_empaque']) > 99999999.99) {
+                        $validator->errors()->add(
+                            "presentaciones.{$indice}.unidades_por_empaque",
+                            'El precio total del empaque supera el máximo permitido.'
+                        );
+                    }
+
                     if (empty($presentacion['tipo_empaque'])) {
                         $validator->errors()->add(
                             "presentaciones.{$indice}.tipo_empaque",
@@ -526,6 +544,15 @@ class ProductoController extends Controller
     {
         $vendeUnidad = (bool) ($presentacion['venta_por_unidad'] ?? false);
         $vendeEmpaque = (bool) ($presentacion['venta_por_empaque'] ?? false);
+        $precioUnitario = ($vendeUnidad || $vendeEmpaque)
+            ? ($presentacion['precio_unitario'] ?? null)
+            : null;
+        $precioEmpaque = $vendeEmpaque
+            ? PresentacionProducto::calcularPrecioEmpaque(
+                $precioUnitario,
+                isset($presentacion['unidades_por_empaque']) ? (int) $presentacion['unidades_por_empaque'] : null
+            )
+            : null;
 
         return [
             'variante_producto_id' => $varianteId,
@@ -537,8 +564,8 @@ class ProductoController extends Controller
             'unidades_por_empaque' => $vendeEmpaque ? ($presentacion['unidades_por_empaque'] ?? null) : null,
             'venta_por_unidad' => $vendeUnidad,
             'venta_por_empaque' => $vendeEmpaque,
-            'precio_unitario' => $vendeUnidad ? ($presentacion['precio_unitario'] ?? null) : null,
-            'precio_empaque' => $vendeEmpaque ? ($presentacion['precio_empaque'] ?? null) : null,
+            'precio_unitario' => $precioUnitario,
+            'precio_empaque' => $precioEmpaque,
             'estado' => $productoActivo && (bool) ($presentacion['estado'] ?? true),
         ];
     }
