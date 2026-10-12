@@ -70,6 +70,13 @@ class RolPermisoSeeder extends Seeder
             'productos.editar',
             'productos.cambiar_estado',
 
+            
+            // Clientes
+            'clientes.ver',
+            'clientes.crear',
+            'clientes.editar',
+            'clientes.cambiar_estado',
+
 
             // Pedidos
             'pedidos.ver',
