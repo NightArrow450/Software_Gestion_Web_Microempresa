@@ -6,6 +6,7 @@
     $esAdminSidebar = $rolSidebar === 'Administrador';
     $permisosSidebar = $userSidebar->role?->permisos?->pluck('nombre')->all() ?? [];
     $puedeVerProductosSidebar = in_array('productos.ver', $permisosSidebar, true);
+    $puedeVerClientesSidebar = in_array('clientes.ver', $permisosSidebar, true);
 
     $iniciales =
         strtoupper(substr($userSidebar->first_name, 0, 1)) .
@@ -61,6 +62,18 @@
                     Catálogo de Productos
                 </a>
             @endif
+
+            
+            @if($puedeVerClientesSidebar)
+                <a
+                    href="{{ route('clientes.index') }}"
+                    class="menu-link {{ request()->routeIs('clientes.*') ? 'active' : '' }}"
+                >
+                    <span class="material-symbols-outlined">groups</span>
+                    Gestión de Clientes
+                </a>
+            @endif
+
 
             <p class="menu-title" style="margin-top:25px;">Próximos módulos</p>
 
