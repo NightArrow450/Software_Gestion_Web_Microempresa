@@ -1,0 +1,61 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class Pedido extends Model
+{
+    protected $table = 'pedidos';
+
+    protected $fillable = [
+        'cliente_id',
+        'usuario_id',
+        'fecha_pedido',
+        'fecha_entrega',
+        'condicion_pago',
+        'estado',
+        'total',
+        'observaciones',
+        'cliente_nombre',
+        'cliente_documento',
+        'cliente_telefono',
+        'cliente_mercado',
+        'cliente_puesto_referencia',
+        'cliente_distrito',
+        'cliente_direccion',
+    ];
+
+    protected $casts = [
+        'fecha_pedido' => 'date',
+        'fecha_entrega' => 'date',
+        'total' => 'decimal:2',
+    ];
+
+    public function getNumeroAttribute(): string
+    {
+        return str_pad((string) $this->id, 6, '0', STR_PAD_LEFT);
+    }
+
+    public function cliente(): BelongsTo
+    {
+        return $this->belongsTo(Cliente::class, 'cliente_id');
+    }
+
+    public function vendedor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'usuario_id');
+    }
+
+    public function detalles(): HasMany
+    {
+        return $this->hasMany(PedidoDetalle::class, 'pedido_id');
+    }
+
+    public function historialEstados(): HasMany
+    {
+        return $this->hasMany(PedidoEstadoHistorial::class, 'pedido_id');
+    }
+}

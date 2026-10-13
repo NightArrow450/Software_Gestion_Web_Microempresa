@@ -1,0 +1,24 @@
+/* Sprint 2: extensiones sobre los estilos existentes de DHACER ECO LIMP. */
+.s2-actions,.s2-table-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.s2-actions{margin-top:16px}.s2-table-actions{justify-content:flex-end}
+.s2-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px 28px}
+.s2-pagination{padding:16px 22px}.s2-pagination nav{max-width:100%}
+.s2-note{color:var(--text-variant);font-size:13px;margin:8px 0 0}
+.s2-table-actions .btn{min-height:36px;padding:7px 11px;font-size:12px}
+.s2-product-row{display:grid;grid-template-columns:minmax(240px,2.5fr) minmax(110px,1fr) 100px 110px 110px 42px;gap:10px;align-items:end;margin-bottom:12px;padding:16px;border:1px solid #e5ebe7;border-radius:12px;background:var(--surface-low)}
+.s2-product-row label{display:block;font-size:12px;font-weight:700;margin-bottom:7px}
+.s2-product-row .form-control{width:100%}
+.s2-product-row .remove-row{min-height:43px;padding:6px;width:42px}
+.s2-resumen{display:flex;justify-content:flex-end;align-items:center;gap:20px;font-size:20px;font-weight:700;margin:20px 0;color:var(--primary)}
+.s2-state{display:inline-flex;border-radius:20px;background:var(--surface-low);color:var(--primary);padding:6px 12px;font-size:12px;font-weight:700}
+.s2-detail-grid .detail-value{overflow-wrap:anywhere}
+.s2-panel-actions{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+.s2-panel-actions form{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.s2-panel-actions label{font-size:12px;font-weight:700}
+.s2-panel-actions input,.s2-panel-actions select{min-height:43px}
+.s2-error{margin:0 0 18px;padding:14px 18px;border-radius:10px;color:#962d24;background:#fff1f0;border:1px solid #ffc5c0}
+.s2-summary{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:16px;background:var(--surface-low);border-radius:12px}
+.s2-summary strong{font-size:18px}
+.s2-instructions{border-left:3px solid var(--primary);padding:12px 15px;background:var(--surface-low);margin-bottom:20px;font-size:13px}
+@media(max-width:1200px){.s2-product-row{grid-template-columns:repeat(3,minmax(0,1fr))}.s2-product-row>div:first-child{grid-column:span 3}}
+@media(max-width:720px){.s2-product-row{grid-template-columns:repeat(2,minmax(0,1fr))}.s2-product-row>div:first-child{grid-column:span 2}.s2-detail-grid{grid-template-columns:1fr}}

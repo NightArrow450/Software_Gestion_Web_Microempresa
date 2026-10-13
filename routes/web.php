@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\ClienteController;
+use App\Http\Controllers\PedidoController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\RolePermissionController;
@@ -267,5 +268,44 @@ Route::middleware('auth')->group(function () {
         ->whereNumber('cliente')
         ->middleware('permiso:clientes.cambiar_estado')
         ->name('clientes.cambiar-estado');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Gestión de Pedidos - HU-01
+    |--------------------------------------------------------------------------
+    */
+
+    Route::middleware('permiso:pedidos.ver')->group(function () {
+
+        Route::get('/pedidos', [
+            PedidoController::class,
+            'index'
+        ])->name('pedidos.index');
+
+        Route::get('/pedidos/imprimir-dos', [
+            PedidoController::class,
+            'imprimirDos'
+        ])->name('pedidos.imprimir-dos');
+
+        Route::get('/pedidos/{pedido}', [
+            PedidoController::class,
+            'show'
+        ])
+            ->whereNumber('pedido')
+            ->name('pedidos.show');
+    });
+
+    Route::middleware('permiso:pedidos.crear')->group(function () {
+
+        Route::get('/pedidos/nuevo', [
+            PedidoController::class,
+            'create'
+        ])->name('pedidos.create');
+
+        Route::post('/pedidos', [
+            PedidoController::class,
+            'store'
+        ])->name('pedidos.store');
+    });
 
 });

@@ -19,6 +19,12 @@
         true
     );
 
+    $puedeVerPedidosSidebar = in_array(
+        'pedidos.ver',
+        $permisosSidebar,
+        true
+    );
+
     $iniciales =
         strtoupper(substr($userSidebar->first_name, 0, 1)) .
         strtoupper(substr($userSidebar->last_name, 0, 1));
@@ -93,6 +99,18 @@
                         groups
                     </span>
                     Gestión de Clientes
+                </a>
+            @endif
+
+            @if($puedeVerPedidosSidebar)
+                <a
+                    href="{{ route('pedidos.index') }}"
+                    class="menu-link {{ request()->routeIs('pedidos.*') ? 'active' : '' }}"
+                >
+                    <span class="material-symbols-outlined">
+                        shopping_cart
+                    </span>
+                    Gestión de Pedidos
                 </a>
             @endif
 
