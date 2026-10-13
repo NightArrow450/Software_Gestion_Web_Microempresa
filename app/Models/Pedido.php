@@ -11,27 +11,16 @@ class Pedido extends Model
     protected $table = 'pedidos';
 
     protected $fillable = [
-        'cliente_id',
-        'usuario_id',
-        'fecha_pedido',
-        'fecha_entrega',
-        'condicion_pago',
-        'estado',
-        'total',
-        'observaciones',
-        'cliente_nombre',
-        'cliente_documento',
-        'cliente_telefono',
-        'cliente_mercado',
-        'cliente_puesto_referencia',
-        'cliente_distrito',
-        'cliente_direccion',
+        'cliente_id', 'usuario_id', 'fecha_pedido', 'fecha_entrega',
+        'condicion_pago', 'estado', 'total', 'observaciones',
+        'cliente_nombre', 'cliente_documento', 'cliente_telefono',
+        'cliente_mercado', 'cliente_puesto_referencia',
+        'cliente_distrito', 'cliente_direccion', 'procesado_por_id', 'procesado_en',
     ];
 
     protected $casts = [
-        'fecha_pedido' => 'date',
-        'fecha_entrega' => 'date',
-        'total' => 'decimal:2',
+        'fecha_pedido' => 'date', 'fecha_entrega' => 'date',
+        'procesado_en' => 'datetime', 'total' => 'decimal:2',
     ];
 
     public function getNumeroAttribute(): string
@@ -47,6 +36,11 @@ class Pedido extends Model
     public function vendedor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'usuario_id');
+    }
+
+    public function procesadoPor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'procesado_por_id');
     }
 
     public function detalles(): HasMany

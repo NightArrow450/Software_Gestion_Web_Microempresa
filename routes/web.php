@@ -308,4 +308,14 @@ Route::middleware('auth')->group(function () {
         ])->name('pedidos.store');
     });
 
+    /* HU-02: editar, confirmar y observar pedidos */
+    Route::middleware('permiso:pedidos.editar')->group(function () {
+        Route::get('/pedidos/{pedido}/editar', [PedidoController::class, 'edit'])
+            ->whereNumber('pedido')->name('pedidos.edit');
+        Route::put('/pedidos/{pedido}', [PedidoController::class, 'update'])
+            ->whereNumber('pedido')->name('pedidos.update');
+        Route::post('/pedidos/{pedido}/procesar', [PedidoController::class, 'procesar'])
+            ->whereNumber('pedido')->name('pedidos.procesar');
+    });
+
 });
