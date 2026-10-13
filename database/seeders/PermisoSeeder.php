@@ -176,6 +176,32 @@ class PermisoSeeder extends Seeder
                 'descripcion' => 'Permite consultar el seguimiento y estado de los pedidos.',
             ],
 
+             /*
+            |--------------------------------------------------------------------------
+            | Gestión de Clientes
+            |--------------------------------------------------------------------------
+            */
+
+            [
+                'nombre' => 'clientes.ver',
+                'descripcion' => 'Permite consultar los clientes registrados.',
+            ],
+
+            [
+                'nombre' => 'clientes.crear',
+                'descripcion' => 'Permite registrar nuevos clientes.',
+            ],
+
+            [
+                'nombre' => 'clientes.editar',
+                'descripcion' => 'Permite modificar los datos de los clientes.',
+            ],
+
+            [
+                'nombre' => 'clientes.cambiar_estado',
+                'descripcion' => 'Permite activar o desactivar clientes.',
+            ],
+
         ];
 
 
