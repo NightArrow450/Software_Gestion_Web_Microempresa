@@ -7,7 +7,10 @@
         ['Roles de usuario', true],
         ['Protección de rutas', true],
         ['Gestión de usuarios', true],
-        ['Catálogo de productos', false],
+        ['Catálogo de productos', true],
+        ['Clientes', true],
+        ['Registro de pedidos', true],
+        ['Procesamiento y estados', true],
     ];
 @endphp
 
@@ -16,11 +19,11 @@
     <section class="card">
 
         <h2 class="section-title">
-            Estado del Sprint 1
+            Alcance de Sprints 1 y 2
         </h2>
 
         <p class="section-description">
-            Funcionalidades desarrolladas hasta el momento.
+            Módulos disponibles en esta versión del software.
         </p>
 
         <div class="status-list">

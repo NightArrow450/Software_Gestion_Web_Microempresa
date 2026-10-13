@@ -8,7 +8,7 @@
     <div>
 
         <div class="eyebrow">
-            Sprint 1 • Acceso operativo
+            Sprint 2 • Clientes y pedidos
         </div>
 
         <h1>

@@ -1,63 +1,377 @@
 @extends('layouts.app')
+
 @section('title', 'Detalle del Pedido')
 @section('page-title', 'Detalle del Pedido')
 @section('breadcrumb', 'Inicio / Pedidos / Detalle')
-@push('styles')<link rel="stylesheet" href="{{ asset('css/sprint2.css') }}">@endpush
+
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('css/sprint2.css') }}">
+@endpush
+
 @section('content')
 @php
-    $permisos = auth()->user()->role?->permisos?->pluck('nombre')->all() ?? [];
-    $puedeEditar = in_array('pedidos.editar', $permisos, true);
-    $editable = in_array($pedido->estado, ['registrado','observado'], true);
+    $permisos = auth()->user()
+        ->role?->permisos?->pluck('nombre')->all() ?? [];
+
+    $rolActual = auth()->user()->role?->nombre;
+
+    $puedeEditar = in_array(
+        'pedidos.editar',
+        $permisos,
+        true
+    );
+
+    $puedeCancelar = in_array(
+        'pedidos.cancelar',
+        $permisos,
+        true
+    ) && in_array(
+        $rolActual,
+        ['Administrador', 'Operaciones Comerciales'],
+        true
+    );
+
+    $editable = in_array(
+        $pedido->estado,
+        ['registrado', 'observado'],
+        true
+    );
 @endphp
-<div class="page-heading"><div><div class="eyebrow">Nota de pedido</div><h1>Pedido N.º {{ $pedido->numero }}</h1>
-<p>Registrado el {{ $pedido->fecha_pedido->format('d/m/Y') }} · Entrega prevista: {{ $pedido->fecha_entrega->format('d/m/Y') }}</p></div>
-<div class="s2-actions"><a class="btn btn-secondary" href="{{ route('pedidos.index') }}"><span class="material-symbols-outlined">arrow_back</span> Volver</a>
-@if($editable && $puedeEditar)<a class="btn btn-primary" href="{{ route('pedidos.edit', $pedido) }}"><span class="material-symbols-outlined">edit</span> Editar pedido</a>@endif</div></div>
-<div class="s2-summary"><span class="s2-state">{{ ucfirst($pedido->estado) }}</span><strong>S/ {{ number_format((float)$pedido->total, 2) }}</strong>
-    <span class="muted">Vendedor: {{ $pedido->vendedor?->first_name }} {{ $pedido->vendedor?->last_name }}</span></div>
-<section class="form-section"><h2 class="form-section-title">Datos del pedido</h2><div class="s2-detail-grid">
-    @foreach([
-        'Cliente'=>$pedido->cliente_nombre,'RUC / DNI'=>$pedido->cliente_documento,'Teléfono'=>$pedido->cliente_telefono,
-        'Mercado'=>$pedido->cliente_mercado,'Puesto / referencia'=>$pedido->cliente_puesto_referencia,
-        'Distrito'=>$pedido->cliente_distrito,'Dirección'=>$pedido->cliente_direccion,
-        'Condición de pago'=>$pedido->condicion_pago === 'credito'?'Crédito':'Al contado',
-        'Observaciones'=>$pedido->observaciones
-    ] as $etiqueta=>$dato)
-        <div><div class="detail-label">{{ $etiqueta }}</div><div class="detail-value">{{ $dato ?: '—' }}</div></div>
-    @endforeach
-</div></section>
-<section class="table-card"><div class="table-header"><strong>Detalle de productos</strong></div>
-    <div class="table-container"><table class="app-table"><thead><tr><th>SKU</th><th>Producto / Presentación</th><th>Modalidad</th><th>Cantidad</th><th>P. Unitario</th><th>Importe</th></tr></thead>
-        <tbody>@foreach($pedido->detalles as $detalle)<tr><td>{{ $detalle->codigo_sku }}</td><td>{{ $detalle->descripcion_producto }}</td>
-            <td>{{ ucfirst($detalle->modalidad) }}</td><td>{{ $detalle->cantidad }}</td>
-            <td>S/ {{ number_format((float)$detalle->precio_unitario,2) }}</td><td>S/ {{ number_format((float)$detalle->importe,2) }}</td></tr>@endforeach
-            <tr><td colspan="5" style="text-align:right"><strong>TOTAL</strong></td><td><strong>S/ {{ number_format((float)$pedido->total,2) }}</strong></td></tr>
-        </tbody></table></div>
-</section>
-@if($puedeEditar && $editable)
-<section class="form-section"><h2 class="form-section-title">Procesar pedido (HU-02)</h2>
-    <p class="s2-note">Confirma el pedido si está correcto o regístralo como observado, indicando un motivo.</p>
-    <div class="s2-panel-actions" style="margin-top:16px">
-        <form action="{{ route('pedidos.procesar', $pedido) }}" method="POST">@csrf
-            <input type="hidden" name="accion" value="confirmar">
-            <button class="btn btn-primary" type="submit" onclick="return confirm('¿Confirmar este pedido para continuar su atención?')"><span class="material-symbols-outlined">check_circle</span> Confirmar pedido</button></form>
-        @if($pedido->estado === 'registrado')
-        <form action="{{ route('pedidos.procesar', $pedido) }}" method="POST">@csrf
-            <input type="hidden" name="accion" value="observar">
-            <input class="form-control" name="motivo" required maxlength="1000" placeholder="Motivo de observación">
-            <button class="btn btn-secondary" type="submit"><span class="material-symbols-outlined">report</span> Observar</button></form>
+
+<div class="page-heading">
+    <div>
+        <div class="eyebrow">Nota de pedido</div>
+
+        <h1>Pedido N.º {{ $pedido->numero }}</h1>
+
+        <p>
+            Registrado el {{ $pedido->fecha_pedido->format('d/m/Y') }}
+            · Entrega prevista:
+            {{ $pedido->fecha_entrega->format('d/m/Y') }}
+        </p>
+    </div>
+
+    <div class="s2-actions">
+        <a
+            class="btn btn-secondary"
+            href="{{ route('pedidos.index') }}"
+        >
+            <span class="material-symbols-outlined">
+                arrow_back
+            </span>
+            Volver
+        </a>
+
+        @if($editable && $puedeEditar)
+            <a
+                class="btn btn-primary"
+                href="{{ route('pedidos.edit', $pedido) }}"
+            >
+                <span class="material-symbols-outlined">
+                    edit
+                </span>
+                Editar pedido
+            </a>
         @endif
     </div>
+</div>
+
+<div class="s2-summary">
+    <span class="s2-state">
+        {{ ucfirst($pedido->estado) }}
+    </span>
+
+    <strong>
+        S/ {{ number_format((float) $pedido->total, 2) }}
+    </strong>
+
+    <span class="muted">
+        Vendedor:
+        {{ $pedido->vendedor?->first_name }}
+        {{ $pedido->vendedor?->last_name }}
+    </span>
+</div>
+
+<section class="form-section">
+    <h2 class="form-section-title">Datos del pedido</h2>
+
+    <div class="s2-detail-grid">
+        @foreach([
+            'Cliente' => $pedido->cliente_nombre,
+            'RUC / DNI' => $pedido->cliente_documento,
+            'Teléfono' => $pedido->cliente_telefono,
+            'Mercado' => $pedido->cliente_mercado,
+            'Puesto / referencia' =>
+                $pedido->cliente_puesto_referencia,
+            'Distrito' => $pedido->cliente_distrito,
+            'Dirección' => $pedido->cliente_direccion,
+            'Condición de pago' =>
+                $pedido->condicion_pago === 'credito'
+                    ? 'Crédito'
+                    : 'Al contado',
+            'Observaciones' => $pedido->observaciones,
+        ] as $etiqueta => $dato)
+            <div>
+                <div class="detail-label">
+                    {{ $etiqueta }}
+                </div>
+
+                <div class="detail-value">
+                    {{ $dato ?: '—' }}
+                </div>
+            </div>
+        @endforeach
+    </div>
 </section>
+
+<section class="table-card">
+    <div class="table-header">
+        <strong>Detalle de productos</strong>
+    </div>
+
+    <div class="table-container">
+        <table class="app-table">
+            <thead>
+                <tr>
+                    <th>SKU</th>
+                    <th>Producto / Presentación</th>
+                    <th>Modalidad</th>
+                    <th>Cantidad</th>
+                    <th>P. Unitario</th>
+                    <th>Importe</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach($pedido->detalles as $detalle)
+                    <tr>
+                        <td>{{ $detalle->codigo_sku }}</td>
+
+                        <td>
+                            {{ $detalle->descripcion_producto }}
+                        </td>
+
+                        <td>
+                            {{ ucfirst($detalle->modalidad) }}
+                        </td>
+
+                        <td>{{ $detalle->cantidad }}</td>
+
+                        <td>
+                            S/ {{ number_format((float) $detalle->precio_unitario, 2) }}
+                        </td>
+
+                        <td>
+                            S/ {{ number_format((float) $detalle->importe, 2) }}
+                        </td>
+                    </tr>
+                @endforeach
+
+                <tr>
+                    <td colspan="5" style="text-align:right;">
+                        <strong>TOTAL</strong>
+                    </td>
+
+                    <td>
+                        <strong>
+                            S/ {{ number_format((float) $pedido->total, 2) }}
+                        </strong>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+@if($puedeEditar && $editable)
+    <section class="form-section">
+        <h2 class="form-section-title">
+            Procesar pedido (HU-02)
+        </h2>
+
+        <p class="s2-note">
+            Confirma el pedido si está correcto o regístralo
+            como observado, indicando un motivo.
+        </p>
+
+        <div
+            class="s2-panel-actions"
+            style="margin-top:16px;"
+        >
+            <form
+                action="{{ route('pedidos.procesar', $pedido) }}"
+                method="POST"
+            >
+                @csrf
+
+                <input
+                    type="hidden"
+                    name="accion"
+                    value="confirmar"
+                >
+
+                <button
+                    class="btn btn-primary"
+                    type="submit"
+                    onclick="return confirm('¿Confirmar este pedido para continuar su atención?')"
+                >
+                    <span class="material-symbols-outlined">
+                        check_circle
+                    </span>
+                    Confirmar pedido
+                </button>
+            </form>
+
+            @if($pedido->estado === 'registrado')
+                <form
+                    action="{{ route('pedidos.procesar', $pedido) }}"
+                    method="POST"
+                >
+                    @csrf
+
+                    <input
+                        type="hidden"
+                        name="accion"
+                        value="observar"
+                    >
+
+                    <input
+                        class="form-control"
+                        name="motivo"
+                        required
+                        maxlength="1000"
+                        placeholder="Motivo de observación"
+                    >
+
+                    <button
+                        class="btn btn-secondary"
+                        type="submit"
+                    >
+                        <span class="material-symbols-outlined">
+                            report
+                        </span>
+                        Observar
+                    </button>
+                </form>
+            @endif
+        </div>
+    </section>
 @endif
-<section class="form-section"><h2 class="form-section-title">Historial de estados</h2>
-    <div class="table-container"><table class="app-table"><thead><tr><th>Fecha y hora</th><th>Estado anterior</th><th>Estado nuevo</th><th>Responsable</th><th>Motivo</th></tr></thead>
-    <tbody>@foreach($pedido->historialEstados as $evento)<tr><td>{{ $evento->created_at?->timezone('America/Lima')->format('d/m/Y H:i') }}</td><td>{{ $evento->estado_anterior ?: '—' }}</td>
-        <td><strong>{{ ucfirst($evento->estado_nuevo) }}</strong></td><td>{{ $evento->usuario?->first_name }} {{ $evento->usuario?->last_name }}</td>
-        <td>{{ $evento->motivo ?: '—' }}</td></tr>@endforeach</tbody></table></div>
-    <p class="s2-note">La interfaz ampliada de seguimiento y trazabilidad corresponde al Sprint 5.</p>
+
+@if(
+    $puedeCancelar &&
+    in_array(
+        $pedido->estado,
+        ['registrado', 'observado', 'confirmado'],
+        true
+    )
+)
+    <section class="form-section">
+        <h2 class="form-section-title">
+            Cancelación con trazabilidad
+        </h2>
+
+        <p class="s2-note">
+            Administración y Operaciones Comerciales pueden
+            cancelar pedidos indicando un motivo obligatorio.
+        </p>
+
+        <form
+            action="{{ route('pedidos.cancelar', $pedido) }}"
+            method="POST"
+            class="s2-panel-actions"
+        >
+            @csrf
+
+            <input
+                class="form-control"
+                style="min-width:280px;"
+                name="motivo"
+                required
+                maxlength="1000"
+                placeholder="Motivo obligatorio de cancelación"
+                value="{{ old('motivo') }}"
+            >
+
+            <button
+                class="btn btn-secondary"
+                style="border-color:#b42318;color:#b42318;"
+                type="submit"
+                onclick="return confirm('¿Cancelar el pedido? No se eliminará el historial.')"
+            >
+                Cancelar pedido
+            </button>
+        </form>
+    </section>
+@endif
+
+<section class="form-section">
+    <h2 class="form-section-title">Historial de estados</h2>
+
+    <div class="table-container">
+        <table class="app-table">
+            <thead>
+                <tr>
+                    <th>Fecha y hora</th>
+                    <th>Estado anterior</th>
+                    <th>Estado nuevo</th>
+                    <th>Responsable</th>
+                    <th>Motivo</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach($pedido->historialEstados as $evento)
+                    <tr>
+                        <td>
+                            {{ $evento->created_at?->timezone('America/Lima')->format('d/m/Y H:i') }}
+                        </td>
+
+                        <td>
+                            {{ $evento->estado_anterior ?: '—' }}
+                        </td>
+
+                        <td>
+                            <strong>
+                                {{ ucfirst($evento->estado_nuevo) }}
+                            </strong>
+                        </td>
+
+                        <td>
+                            {{ $evento->usuario?->first_name }}
+                            {{ $evento->usuario?->last_name }}
+                        </td>
+
+                        <td>
+                            {{ $evento->motivo ?: '—' }}
+                        </td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+
+    <p class="s2-note">
+        La interfaz ampliada de seguimiento y trazabilidad
+        corresponde al Sprint 5.
+    </p>
 </section>
-<section class="form-section"><h2 class="form-section-title">Imprimir en formato original</h2>
-    <p class="s2-note">Selecciona otra nota desde <a href="{{ route('pedidos.index') }}" style="color:var(--primary)">Gestión de Pedidos</a> para imprimir dos pedidos distintos juntos en hoja A4 horizontal.</p>
+
+<section class="form-section">
+    <h2 class="form-section-title">
+        Imprimir en formato original
+    </h2>
+
+    <p class="s2-note">
+        Selecciona otra nota desde
+        <a
+            href="{{ route('pedidos.index') }}"
+            style="color:var(--primary);"
+        >
+            Gestión de Pedidos
+        </a>
+        para imprimir dos pedidos distintos juntos
+        en hoja A4 horizontal.
+    </p>
 </section>
 @endsection

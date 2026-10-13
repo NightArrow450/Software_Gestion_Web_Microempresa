@@ -21,19 +21,15 @@ class RolPermisoSeeder extends Seeder
             'Administrador'
         )->firstOrFail();
 
-
         $operacionesComerciales = Role::where(
             'nombre',
             'Operaciones Comerciales'
         )->firstOrFail();
 
-
         $produccionReparto = Role::where(
             'nombre',
             'Producción/Reparto'
         )->firstOrFail();
-
-
 
         /*
         |--------------------------------------------------------------------------
@@ -45,12 +41,8 @@ class RolPermisoSeeder extends Seeder
         */
 
         $administrador->permisos()->sync(
-
             Permiso::pluck('id')->toArray()
-
         );
-
-
 
         /*
         |--------------------------------------------------------------------------
@@ -63,26 +55,23 @@ class RolPermisoSeeder extends Seeder
             // Dashboard
             'dashboard.ver',
 
-
             // Productos
             'productos.ver',
             'productos.crear',
             'productos.editar',
             'productos.cambiar_estado',
 
-            
             // Clientes
             'clientes.ver',
             'clientes.crear',
             'clientes.editar',
             'clientes.cambiar_estado',
 
-
             // Pedidos
             'pedidos.ver',
             'pedidos.crear',
             'pedidos.editar',
-
+            'pedidos.cancelar',
 
             // Inventario
             'inventario.ver',
@@ -90,36 +79,31 @@ class RolPermisoSeeder extends Seeder
             'inventario.salida',
             'inventario.ajustar',
 
-
             // Cumplimiento
             'cumplimiento.preparar',
             'cumplimiento.despachar',
             'cumplimiento.entregar',
 
-
             // Seguimiento
             'seguimiento.ver',
-
         ];
 
-
         $operacionesComerciales->permisos()->sync(
-
             Permiso::whereIn(
                 'nombre',
                 $permisosOperaciones
             )
             ->pluck('id')
             ->toArray()
-
         );
-
-
 
         /*
         |--------------------------------------------------------------------------
         | PRODUCCIÓN / REPARTO
         |--------------------------------------------------------------------------
+        |
+        | Este rol no puede cancelar pedidos.
+        |
         */
 
         $permisosProduccion = [
@@ -127,14 +111,11 @@ class RolPermisoSeeder extends Seeder
             // Dashboard
             'dashboard.ver',
 
-
             // Productos
             'productos.ver',
 
-
             // Pedidos
             'pedidos.ver',
-
 
             // Inventario
             'inventario.ver',
@@ -142,28 +123,22 @@ class RolPermisoSeeder extends Seeder
             'inventario.salida',
             'inventario.ajustar',
 
-
             // Cumplimiento
             'cumplimiento.preparar',
             'cumplimiento.despachar',
             'cumplimiento.entregar',
 
-
             // Seguimiento
             'seguimiento.ver',
-
         ];
 
-
         $produccionReparto->permisos()->sync(
-
             Permiso::whereIn(
                 'nombre',
                 $permisosProduccion
             )
             ->pluck('id')
             ->toArray()
-
         );
     }
 }

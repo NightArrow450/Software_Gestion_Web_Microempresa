@@ -18,8 +18,8 @@
             </strong>
 
             <div class="section-description">
-                Pedidos, inventario, cumplimiento y seguimiento
-                serán implementados en los siguientes Sprints.
+                Clientes y pedidos disponibles. Inventario, cumplimiento y seguimiento
+                corresponden a los siguientes Sprints.
             </div>
 
         </div>
@@ -28,7 +28,7 @@
 
 
     <span class="roadmap-badge">
-        SPRINT 1 • EN DESARROLLO
+        SPRINT 2 • CLIENTES Y PEDIDOS
     </span>
 
 </div>

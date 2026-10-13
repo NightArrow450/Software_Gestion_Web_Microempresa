@@ -4,6 +4,9 @@
     $permisosAccesos = $usuarioAccesos->role?->permisos?->pluck('nombre')->all() ?? [];
     $puedeVerProductos = in_array('productos.ver', $permisosAccesos, true);
     $puedeCrearProductos = in_array('productos.crear', $permisosAccesos, true);
+    $puedeVerClientes = in_array('clientes.ver', $permisosAccesos, true);
+    $puedeVerPedidos = in_array('pedidos.ver', $permisosAccesos, true);
+    $puedeCrearPedidos = in_array('pedidos.crear', $permisosAccesos, true);
 @endphp
 
 <section class="section">
@@ -46,6 +49,28 @@
                 <span class="material-symbols-outlined">add_box</span>
                 <h3>Nuevo Producto</h3>
                 <p>Registrar un nuevo producto en el catálogo.</p>
+            </a>
+        @endif
+
+        @if($puedeVerClientes)
+            <a href="{{ route('clientes.index') }}" class="quick-card">
+                <span class="material-symbols-outlined">contacts</span>
+                <h3>Clientes</h3>
+                <p>Administrar clientes y su información de mercado.</p>
+            </a>
+        @endif
+        @if($puedeVerPedidos)
+            <a href="{{ route('pedidos.index') }}" class="quick-card">
+                <span class="material-symbols-outlined">receipt_long</span>
+                <h3>Pedidos</h3>
+                <p>Revisar estados e imprimir dos notas en A4 horizontal.</p>
+            </a>
+        @endif
+        @if($puedeCrearPedidos)
+            <a href="{{ route('pedidos.create') }}" class="quick-card">
+                <span class="material-symbols-outlined">add_shopping_cart</span>
+                <h3>Nuevo Pedido</h3>
+                <p>Registrar un pedido desde el catálogo de presentaciones.</p>
             </a>
         @endif
     </div>

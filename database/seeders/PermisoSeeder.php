@@ -111,6 +111,11 @@ class PermisoSeeder extends Seeder
             ],
 
             [
+                'nombre' => 'pedidos.cancelar',
+                'descripcion' => 'Permite cancelar pedidos indicando un motivo.',
+            ],
+
+            [
                 'nombre' => 'pedidos.editar',
                 'descripcion' => 'Permite modificar los pedidos registrados.',
             ],
