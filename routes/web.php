@@ -318,4 +318,10 @@ Route::middleware('auth')->group(function () {
             ->whereNumber('pedido')->name('pedidos.procesar');
     });
 
+    /* HU-03: cancelación y trazabilidad de cambios de estado */
+    Route::post('/pedidos/{pedido}/cancelar', [PedidoController::class, 'cancelar'])
+        ->whereNumber('pedido')
+        ->middleware('permiso:pedidos.cancelar')
+        ->name('pedidos.cancelar');
+
 });
