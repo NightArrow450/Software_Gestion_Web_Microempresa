@@ -75,10 +75,52 @@ class PedidoController extends Controller
     public function show(Pedido $pedido): View
     {
         $pedido->load([
-            'cliente', 'vendedor', 'detalles',
+            'cliente', 'vendedor', 'procesadoPor', 'detalles',
             'historialEstados' => fn ($q) => $q->with('usuario')->orderBy('id'),
         ]);
         return view('orders.show', compact('pedido'));
+    }
+
+    public function edit(Pedido $pedido): View
+    {
+        abort_unless(in_array($pedido->estado, ['registrado', 'observado'], true), 403,
+            'Solo pueden editarse pedidos registrados u observados.');
+        $pedido->load('detalles');
+        return view('orders.edit', array_merge($this->opcionesFormulario(), compact('pedido')));
+    }
+
+    public function update(Request $request, Pedido $pedido, CalculadoraPedido $calculadora): RedirectResponse
+    {
+        $data = $this->validarPedido($request);
+
+        DB::transaction(function () use ($pedido, $data, $calculadora) {
+            $pedido = Pedido::whereKey($pedido->id)->lockForUpdate()->firstOrFail();
+            if (!in_array($pedido->estado, ['registrado', 'observado'], true)) {
+                throw ValidationException::withMessages(['pedido' => 'Ya no se puede editar un pedido procesado.']);
+            }
+            $cliente = Cliente::whereKey($data['cliente_id'])->where('estado', true)->first();
+            if (!$cliente) {
+                throw ValidationException::withMessages(['cliente_id' => 'Selecciona un cliente activo.']);
+            }
+            [$detalles, $total] = $this->prepararDetalles($data['detalles'], $calculadora);
+            $pedido->update(array_merge($this->cabecera($data, $cliente), ['total' => $total]));
+            $pedido->detalles()->delete();
+            $pedido->detalles()->createMany($detalles);
+        });
+
+        return redirect()->route('pedidos.show', $pedido)
+            ->with('success', 'Se actualizó el pedido sin modificar su número.');
+    }
+
+    public function procesar(Request $request, Pedido $pedido): RedirectResponse
+    {
+        $data = $request->validate([
+            'accion' => ['required', Rule::in(['confirmar', 'observar'])],
+            'motivo' => ['nullable', 'string', 'max:1000', 'required_if:accion,observar'],
+        ]);
+        $nuevoEstado = $data['accion'] === 'confirmar' ? 'confirmado' : 'observado';
+        $this->actualizarEstado($pedido, $nuevoEstado, $request, $data['motivo'] ?? null);
+        return back()->with('success', 'El pedido pasó a estado '.ucfirst($nuevoEstado).'.');
     }
 
     public function imprimirDos(Request $request): View
@@ -92,6 +134,38 @@ class PedidoController extends Controller
         return view('orders.print-two', [
             'pedidos' => collect([$pedidos[$data['pedido_1']], $pedidos[$data['pedido_2']]]),
         ]);
+    }
+
+    private function actualizarEstado(Pedido $pedido, string $nuevo, Request $request, ?string $motivo): void
+    {
+        $transiciones = [
+            'registrado' => ['confirmado', 'observado'],
+            'observado' => ['confirmado'],
+            // La preparación/despacho/entrega se implementará en Sprint 4.
+        ];
+
+        DB::transaction(function () use ($pedido, $nuevo, $request, $motivo, $transiciones) {
+            $pedido = Pedido::whereKey($pedido->id)->lockForUpdate()->firstOrFail();
+            if (!in_array($nuevo, $transiciones[$pedido->estado] ?? [], true)) {
+                throw ValidationException::withMessages(['estado' => 'Transición no permitida desde '.$pedido->estado.'.']);
+            }
+            if ($nuevo === 'confirmado' && (!$pedido->detalles()->exists() || !$pedido->cliente()->exists())) {
+                throw ValidationException::withMessages(['estado' => 'El pedido requiere cliente y productos.']);
+            }
+            $anterior = $pedido->estado;
+            $cambios = ['estado' => $nuevo];
+            if (in_array($nuevo, ['confirmado', 'observado'], true)) {
+                $cambios['procesado_por_id'] = $request->user()->id;
+                $cambios['procesado_en'] = now();
+            }
+            $pedido->update($cambios);
+            $pedido->historialEstados()->create([
+                'usuario_id' => $request->user()->id,
+                'estado_anterior' => $anterior,
+                'estado_nuevo' => $nuevo,
+                'motivo' => $motivo,
+            ]);
+        });
     }
 
     private function validarPedido(Request $request): array
@@ -187,7 +261,7 @@ class PedidoController extends Controller
         $presentaciones = PresentacionProducto::with(['producto', 'variante'])
             ->where('estado', true)
             ->whereHas('producto', fn ($q) => $q->where('estado', true))
-            ->where('precio_unitario', '>', 0)
+            ->whereNotNull('precio_unitario')
             ->where(function ($q) {
                 $q->whereNull('variante_producto_id')
                     ->orWhereHas('variante', fn ($q) => $q->where('estado', true));
