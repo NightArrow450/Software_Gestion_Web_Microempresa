@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\PedidoController;
+use App\Http\Controllers\ImpresionPedidosController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\RolePermissionController;
@@ -282,8 +283,16 @@ Route::middleware('auth')->group(function () {
             'index'
         ])->name('pedidos.index');
 
+        // Corrección posterior al Sprint 2: imprimir por fecha, dos notas por hoja.
+        // Debe ir antes de /pedidos/{pedido}.
+        Route::get('/pedidos/imprimir-por-fecha', [
+            ImpresionPedidosController::class,
+            'porFecha'
+        ])->name('pedidos.imprimir-por-fecha');
+
+        // URL anterior conservada para HU-01; ahora también bloquea cancelados.
         Route::get('/pedidos/imprimir-dos', [
-            PedidoController::class,
+            ImpresionPedidosController::class,
             'imprimirDos'
         ])->name('pedidos.imprimir-dos');
 

@@ -1,4 +1,4 @@
-/* Nota física de DHACER ECO LIMP adaptada a 2 pedidos distintos por A4 apaisada. */
+/* Notas físicas DHACER ECO LIMP: dos notas distintas por hoja A4 horizontal, varias hojas por fecha. */
 *{box-sizing:border-box}
 body{background:#f3f4f6;color:#111;margin:0;font-family:Arial,Helvetica,sans-serif}
 .print-controls{max-width:1100px;margin:12px auto;font-size:13px;display:flex;gap:12px;align-items:center}
@@ -37,7 +37,8 @@ body{background:#f3f4f6;color:#111;margin:0;font-family:Arial,Helvetica,sans-ser
 @media print{
   html,body{padding:0;margin:0;background:#fff!important}
   .print-controls{display:none!important}
-  .a4-hoja{width:297mm;height:210mm;margin:0;box-shadow:none;break-after:page}
+  .a4-hoja{width:297mm;height:210mm;margin:0;box-shadow:none;break-after:page;page-break-after:always;}
+  .a4-hoja:last-child{break-after:auto;page-break-after:auto;}
   .nota{break-inside:avoid}
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }

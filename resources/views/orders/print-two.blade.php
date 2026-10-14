@@ -2,15 +2,16 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Notas de pedido {{ $pedidos[0]->numero }} y {{ $pedidos[1]->numero }} - DHACER ECO LIMP</title>
+<title>Notas de pedido{{ !empty($fechaImpresion) ? " del ".\Carbon\Carbon::parse($fechaImpresion)->format("d/m/Y") : "" }} - DHACER ECO LIMP</title>
 <link rel="stylesheet" href="{{ asset('css/nota-pedido.css') }}">
 </head>
 <body>
-<div class="print-controls"><button onclick="window.print()">Imprimir notas (A4 horizontal)</button>
-    <p>Selecciona A4 · Horizontal · Escala 100 % · Desactivar encabezados y pies del navegador. Cada nota es un pedido diferente.</p>
+<div class="print-controls"><button onclick="window.print()">Imprimir {{ $pedidos->count() }} nota(s) en A4 horizontal</button>
+    <p>Selecciona A4 · Horizontal · Escala 100 % · Desactivar encabezados y pies del navegador. Dos notas diferentes por hoja. Total: {{ $pedidos->count() }} nota(s) / {{ $pedidos->chunk(2)->count() }} hoja(s). No se incluyen pedidos cancelados.</p>
 </div>
+@foreach($pedidos->chunk(2) as $par)
 <main class="a4-hoja">
-@foreach($pedidos as $pedido)
+@foreach($par as $pedido)
 <section class="nota" aria-label="Nota N.º {{ $pedido->numero }}">
     <header class="nota-encabezado">
         <div class="nota-logo"><img src="{{ asset('images/logo.png') }}" alt="Eco Limp"><small>Los profesionales en productos de limpieza</small></div>
@@ -53,5 +54,6 @@
 </section>
 @endforeach
 </main>
+@endforeach
 </body>
 </html>

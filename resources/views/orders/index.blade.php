@@ -30,15 +30,42 @@
 <td style="text-align:right"><a class="btn btn-secondary" href="{{ route('pedidos.show',$pedido) }}">Ver detalle</a></td></tr>
 @empty<tr><td colspan="7"><div class="empty-inline">Todavía no hay pedidos registrados.</div></td></tr>@endforelse</tbody>
 </table></div><div class="s2-pagination">{{ $pedidos->links() }}</div></section>
-<section class="form-section" style="margin-top:24px"><h2 class="form-section-title">Imprimir dos notas en A4 horizontal</h2>
-<p class="s2-note">Selecciona dos pedidos diferentes. Se conservará el número propio y el diseño de la nota física para cada uno.</p>
-<form action="{{ route('pedidos.imprimir-dos') }}" method="GET" target="_blank" class="s2-panel-actions" style="margin-top:15px">
-    <div class="form-group"><label class="form-label" for="pedido_1">Primera nota</label><select required class="form-control" id="pedido_1" name="pedido_1">
-        <option value="">Seleccionar</option>@foreach($opcionesImpresion as $p)<option value="{{ $p->id }}">N.º {{ $p->numero }} — {{ $p->cliente_nombre }}</option>@endforeach
-    </select></div>
-    <div class="form-group"><label class="form-label" for="pedido_2">Segunda nota</label><select required class="form-control" id="pedido_2" name="pedido_2">
-        <option value="">Seleccionar</option>@foreach($opcionesImpresion as $p)<option value="{{ $p->id }}">N.º {{ $p->numero }} — {{ $p->cliente_nombre }}</option>@endforeach
-    </select></div>
-    <button class="btn btn-primary" type="submit"><span class="material-symbols-outlined">print</span> Vista previa A4</button>
-</form></section>
+<section class="form-section" style="margin-top:24px">
+    <h2 class="form-section-title">Imprimir notas de pedido por fecha</h2>
+    <p class="s2-note">
+        Selecciona el día de los pedidos que deseas imprimir: hoy, el día 18
+        u otra fecha. Se incluirán <strong>todos los pedidos no cancelados</strong>
+        registrados ese día, ordenados por número, colocando
+        <strong>dos notas distintas por cada hoja A4 horizontal</strong>.
+        Si queda una nota impar, ocupará la mitad izquierda de la última hoja.
+    </p>
+
+    @if($errors->has('fecha_pedido'))
+        <p class="s2-error" role="alert">{{ $errors->first('fecha_pedido') }}</p>
+    @endif
+    @if($errors->has('pedidos'))
+        <p class="s2-error" role="alert">{{ $errors->first('pedidos') }}</p>
+    @endif
+
+    <form action="{{ route('pedidos.imprimir-por-fecha') }}"
+          method="GET"
+          target="_blank"
+          class="s2-panel-actions"
+          style="margin-top:15px">
+        <div class="form-group">
+            <label class="form-label" for="fecha_pedido_imprimir">Fecha del pedido</label>
+            <input class="form-control"
+                   type="date"
+                   id="fecha_pedido_imprimir"
+                   name="fecha_pedido"
+                   value="{{ old('fecha_pedido', now('America/Lima')->toDateString()) }}"
+                   required>
+        </div>
+        <button class="btn btn-primary" type="submit">
+            <span class="material-symbols-outlined">print</span>
+            Ver notas de esa fecha
+        </button>
+    </form>
+    <p class="s2-note">No se imprimen pedidos con estado <strong>Cancelado</strong>, incluso si se intenta acceder mediante la URL antigua.</p>
+</section>
 @endsection
