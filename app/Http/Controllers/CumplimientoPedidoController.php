@@ -70,4 +70,26 @@ class CumplimientoPedidoController extends Controller
             ->with('success', 'Pedido listo para despacho.');
     }
 
+    public function despachar(
+        Request $request,
+        Pedido $pedido,
+        TransicionCumplimiento $transiciones
+    ): RedirectResponse {
+        $datos = $request->validate([
+            'observacion_despacho' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $observacion = trim((string) ($datos['observacion_despacho'] ?? ''));
+        $transiciones->registrar(
+            $pedido, 'listo_despacho', 'despachado', $request->user()->id,
+            ['despachado_por_id' => $request->user()->id,
+             'despachado_en' => now(),
+             'observacion_despacho' => $observacion !== '' ? $observacion : null],
+            $observacion !== '' ? $observacion : 'Pedido despachado.'
+        );
+
+        return redirect()->route('cumplimiento.show', $pedido)
+            ->with('success', 'Se registró el despacho del pedido.');
+    }
+
 }
