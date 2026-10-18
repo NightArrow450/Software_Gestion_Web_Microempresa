@@ -151,6 +151,11 @@
                     <span class="material-symbols-outlined">travel_explore</span>
                     Consultar estado
                 </a>
+                <a href="{{ route('seguimiento.historial') }}"
+                   class="menu-link {{ request()->routeIs('seguimiento.historial') ? 'active' : '' }}">
+                    <span class="material-symbols-outlined">history</span>
+                    Historial de pedidos
+                </a>
             @endif
         </nav>
     </div>

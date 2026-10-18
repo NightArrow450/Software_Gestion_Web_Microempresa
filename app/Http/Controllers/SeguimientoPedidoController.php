@@ -49,4 +49,38 @@ class SeguimientoPedidoController extends Controller
 
         return view('seguimiento.trazabilidad', compact('pedido'));
     }
+
+    public function historial(Request $request): View
+    {
+        $data = $request->validate([
+            'fecha_desde' => ['nullable', 'date_format:Y-m-d'],
+            'fecha_hasta' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:fecha_desde'],
+            'cliente' => ['nullable', 'string', 'max:180'],
+            'estado' => ['nullable', 'in:registrado,observado,confirmado,cancelado,en_preparacion,listo_despacho,despachado,entregado'],
+        ]);
+
+        $filtros = [
+            'fecha_desde' => $data['fecha_desde'] ?? '',
+            'fecha_hasta' => $data['fecha_hasta'] ?? '',
+            'cliente' => trim((string) ($data['cliente'] ?? '')),
+            'estado' => $data['estado'] ?? '',
+        ];
+
+        $pedidos = Pedido::query()
+            ->when($filtros['fecha_desde'] !== '', fn ($q) => $q->whereDate('fecha_pedido', '>=', $filtros['fecha_desde']))
+            ->when($filtros['fecha_hasta'] !== '', fn ($q) => $q->whereDate('fecha_pedido', '<=', $filtros['fecha_hasta']))
+            ->when($filtros['cliente'] !== '', fn ($q) => $q->where('cliente_nombre', 'like', '%'.$filtros['cliente'].'%'))
+            ->when($filtros['estado'] !== '', fn ($q) => $q->where('estado', $filtros['estado']))
+            ->orderByDesc('fecha_pedido')->orderByDesc('id')
+            ->paginate(15)->withQueryString();
+
+        $estados = [
+            'registrado' => 'Registrado', 'observado' => 'Observado',
+            'confirmado' => 'Confirmado', 'cancelado' => 'Cancelado',
+            'en_preparacion' => 'En preparación', 'listo_despacho' => 'Listo para despacho',
+            'despachado' => 'Despachado', 'entregado' => 'Entregado',
+        ];
+
+        return view('seguimiento.historial', compact('pedidos', 'filtros', 'estados'));
+    }
 }
