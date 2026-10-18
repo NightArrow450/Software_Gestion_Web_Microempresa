@@ -25,6 +25,8 @@
         true
     );
 
+    $puedeVerInventarioSidebar = in_array('inventario.ver', $permisosSidebar, true);
+
     $iniciales =
         strtoupper(substr($userSidebar->first_name, 0, 1)) .
         strtoupper(substr($userSidebar->last_name, 0, 1));
@@ -114,23 +116,16 @@
                 </a>
             @endif
 
-            <p class="menu-title" style="margin-top:25px;">
-                Próximos módulos
-            </p>
+            @if($puedeVerInventarioSidebar)
+                <p class="menu-title" style="margin-top:25px;">Inventario</p>
+                <a href="{{ route('inventario.index') }}"
+                   class="menu-link {{ request()->routeIs('inventario.index') ? 'active' : '' }}">
+                    <span class="material-symbols-outlined">inventory</span>
+                    Disponibilidad
+                </a>
+            @endif
 
-            <div class="menu-link menu-disabled">
-                <span class="material-symbols-outlined">
-                    warehouse
-                </span>
-
-                <span style="flex:1;">
-                    Inventario
-                </span>
-
-                <span class="menu-soon">
-                    Próximamente
-                </span>
-            </div>
+            <p class="menu-title" style="margin-top:25px;">Próximos módulos</p>
 
             <div class="menu-link menu-disabled">
                 <span class="material-symbols-outlined">
