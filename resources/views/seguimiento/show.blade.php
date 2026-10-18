@@ -41,4 +41,9 @@
         @endforeach
     </div>
 </section>
+<section class="seg-panel">
+    <h2>Recorrido del pedido</h2>
+    <p class="seg-ayuda">Consulta cronológica de estados, responsables y motivos registrados.</p>
+    <a class="btn btn-primary" href="{{ route('seguimiento.trazabilidad', $pedido) }}">Ver trazabilidad completa</a>
+</section>
 @endsection

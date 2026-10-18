@@ -38,4 +38,15 @@ class SeguimientoPedidoController extends Controller
 
         return view('seguimiento.show', compact('pedido'));
     }
+
+    public function trazabilidad(Pedido $pedido): View
+    {
+        // La relación impide mostrar eventos de otros pedidos.
+        $pedido->load([
+            'historialEstados' => fn ($q) => $q->with('usuario')
+                ->orderBy('created_at')->orderBy('id'),
+        ]);
+
+        return view('seguimiento.trazabilidad', compact('pedido'));
+    }
 }
