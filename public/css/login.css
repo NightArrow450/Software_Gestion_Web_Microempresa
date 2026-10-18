@@ -1,0 +1,21 @@
+body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings:
+                'FILL' 0,
+                'wght' 400,
+                'GRAD' 0,
+                'opsz' 24;
+        }
+
+.login-brand { flex-wrap: wrap; justify-content: center; }
+body { overflow-wrap: anywhere; }
+input:not([type="checkbox"]) { font-size: 16px; min-width: 0; }
+button { min-width: 44px; min-height: 44px; }
+label:has(input[type="checkbox"]) { min-height: 44px; }
+#password { padding-right: 64px; }
+@media (max-width: 390px) {
+    .login-brand h1 { font-size: 21px; }
+}
