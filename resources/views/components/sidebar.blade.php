@@ -128,6 +128,11 @@
                     <span class="material-symbols-outlined">swap_horiz</span>
                     Movimientos
                 </a>
+                <a href="{{ route('inventario.stock') }}"
+                   class="menu-link {{ request()->routeIs('inventario.stock*') ? 'active' : '' }}">
+                    <span class="material-symbols-outlined">notification_important</span>
+                    Stock y alertas
+                </a>
             @endif
 
             <p class="menu-title" style="margin-top:25px;">Próximos módulos</p>
