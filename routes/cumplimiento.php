@@ -19,3 +19,9 @@ Route::middleware(['auth', 'permiso:cumplimiento.preparar'])->group(function () 
         [CumplimientoPedidoController::class, 'finalizarPreparacion'])
         ->whereNumber('pedido')->name('cumplimiento.finalizar-preparacion');
 });
+
+
+Route::post('/cumplimiento/{pedido}/despachar',
+    [CumplimientoPedidoController::class, 'despachar'])
+    ->middleware(['auth','permiso:cumplimiento.despachar'])
+    ->whereNumber('pedido')->name('cumplimiento.despachar');
