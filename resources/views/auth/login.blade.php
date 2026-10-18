@@ -12,9 +12,9 @@
 
     <title>Iniciar sesión | DHACER ECO LIMP</title>
 
-<script src="https://cdn.tailwindcss.com"></script>
+@vite('resources/css/app.css')
 
-<script src="{{ asset('js/login.js') }}"></script>
+<script src="{{ asset('js/login.js') }}" defer></script>
 
 <link
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
@@ -62,7 +62,7 @@
                 class="
                     h-2
                     w-full
-                    bg-gradient-to-r
+                    bg-linear-to-r
                     from-secondary
                     via-primary
                     to-primary-container
