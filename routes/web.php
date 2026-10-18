@@ -335,5 +335,10 @@ Route::middleware('auth')->group(function () {
 
 });
 
-/* Sprint 3: rutas de inventario aisladas, con sus propios permisos. */
-require __DIR__.'/inventario.php';
+/* Sprint 3: inventario de productos e insumos; registrar sus rutas. */
+if (is_file(__DIR__.'/inventario.php')) {
+    require __DIR__.'/inventario.php';
+}
+
+/* Sprint 4: cumplimiento (preparacion, despacho, entrega). */
+require __DIR__.'/cumplimiento.php';

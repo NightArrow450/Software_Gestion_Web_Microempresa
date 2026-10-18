@@ -116,6 +116,15 @@
                 </a>
             @endif
 
+
+            @if($puedeVerPedidosSidebar)
+                <a href="{{ route('cumplimiento.index') }}"
+                   class="menu-link {{ request()->routeIs('cumplimiento.*') ? 'active' : '' }}">
+                    <span class="material-symbols-outlined">local_shipping</span>
+                    Preparación, despacho y entrega
+                </a>
+            @endif
+
             @if($puedeVerInventarioSidebar)
                 <p class="menu-title" style="margin-top:25px;">Inventario</p>
                 <a href="{{ route('inventario.index') }}"
