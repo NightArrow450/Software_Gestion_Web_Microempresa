@@ -285,7 +285,6 @@
 
             <input
                 class="form-control"
-                style="min-width:280px;"
                 name="motivo"
                 required
                 maxlength="1000"
