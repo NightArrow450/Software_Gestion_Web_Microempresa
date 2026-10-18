@@ -10,7 +10,7 @@
     <p>Selecciona A4 · Horizontal · Escala 100 % · Desactivar encabezados y pies del navegador. Dos notas diferentes por hoja. Total: {{ $pedidos->count() }} nota(s) / {{ $pedidos->chunk(2)->count() }} hoja(s). No se incluyen pedidos cancelados.</p>
 </div>
 @foreach($pedidos->chunk(2) as $par)
-<main class="a4-hoja">
+<div class="print-preview" tabindex="0" role="region" aria-label="Vista previa de notas de pedido"><main class="a4-hoja">
 @foreach($par as $pedido)
 <section class="nota" aria-label="Nota N.º {{ $pedido->numero }}">
     <header class="nota-encabezado">
@@ -35,7 +35,7 @@
         <div><b>DIRECCIÓN:</b> {{ $pedido->cliente_direccion ?: '—' }}</div>
         <div><b>ENTREGA:</b> {{ $pedido->fecha_entrega->format('d/m/Y') }}</div>
     </div>
-    <table class="nota-tabla"><colgroup><col class="cant"><col class="desc"><col class="precio"><col class="importe"></colgroup>
+    <div class="table-container"><table class="nota-tabla"><colgroup><col class="cant"><col class="desc"><col class="precio"><col class="importe"></colgroup>
         <thead><tr><th>CANTIDAD</th><th>DESCRIPCIÓN DEL PRODUCTO</th><th>P.U.</th><th>IMPORTE</th></tr></thead>
         <tbody>
         @foreach($pedido->detalles->take(18) as $detalle)<tr><td class="centrado">{{ $detalle->cantidad }}</td>
@@ -47,13 +47,13 @@
         @endfor
         </tbody><tfoot><tr><td colspan="2" rowspan="1" class="sin-borde" style="border-left:0;border-bottom:0"></td>
             <th>TOTAL S/</th><td class="derecha total-numero">{{ number_format((float)$pedido->total,2) }}</td></tr></tfoot>
-    </table>
+    </table></div>
     <footer class="nota-pie"><div class="nota-qr"><img src="{{ asset('images/qr-contacto.png') }}" alt="QR de contacto"><b>QR: CONTACTO</b></div>
         <div class="firma"><div></div><span>AUTORIZADO POR:</span></div><div class="firma"><div></div><span>RECIBIDO POR:</span></div></footer>
     <div class="nota-continuacion">@if($pedido->detalles->count()>18) La nota muestra 18 de {{ $pedido->detalles->count() }} ítems. Consulta el pedido digital para el detalle completo. @endif</div>
 </section>
 @endforeach
-</main>
+</main></div>
 @endforeach
 </body>
 </html>

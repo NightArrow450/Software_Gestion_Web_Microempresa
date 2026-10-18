@@ -29,17 +29,17 @@
 </section>
 <section class="seg-panel">
     <div class="table-container">
-        <table class="seg-tabla">
+        <table class="mobile-cards seg-tabla">
             <thead><tr><th>N.º</th><th>Cliente</th><th>Fecha</th><th>Entrega prevista</th><th>Estado actual</th><th>Consulta</th></tr></thead>
             <tbody>
             @forelse($pedidos as $pedido)
                 <tr>
-                    <td>{{ $pedido->numero }}</td>
-                    <td>{{ $pedido->cliente_nombre }}</td>
-                    <td>{{ $pedido->fecha_pedido?->format('d/m/Y') }}</td>
-                    <td>{{ $pedido->fecha_entrega?->format('d/m/Y') }}</td>
-                    <td><span class="seg-estado">{{ ucfirst(str_replace('_', ' ', $pedido->estado)) }}</span></td>
-                    <td><a class="seg-enlace" href="{{ route('seguimiento.show', $pedido) }}">Ver estado</a></td>
+                    <td data-label="N.º">{{ $pedido->numero }}</td>
+                    <td data-label="Cliente">{{ $pedido->cliente_nombre }}</td>
+                    <td data-label="Fecha">{{ $pedido->fecha_pedido?->format('d/m/Y') }}</td>
+                    <td data-label="Entrega prevista">{{ $pedido->fecha_entrega?->format('d/m/Y') }}</td>
+                    <td data-label="Estado actual"><span class="seg-estado">{{ ucfirst(str_replace('_', ' ', $pedido->estado)) }}</span></td>
+                    <td data-label="Consulta"><a class="seg-enlace" href="{{ route('seguimiento.show', $pedido) }}">Ver estado</a></td>
                 </tr>
             @empty
                 <tr><td colspan="6" class="seg-vacio">No se encontraron pedidos con estos criterios.</td></tr>

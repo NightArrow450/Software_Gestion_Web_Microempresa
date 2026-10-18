@@ -1039,3 +1039,14 @@ select {
     .topbar > div:first-of-type { margin-right: auto; min-width: 0; }
     .sidebar > div { flex-shrink: 0; }
 }
+
+/* Las etiquetas se conservan en las celdas al apilar las tablas anchas. */
+@media screen and (max-width: 650px) {
+    .mobile-cards, .mobile-cards tbody { display: block; width: 100%; }
+    .mobile-cards thead { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); }
+    .mobile-cards tbody tr { display: block; margin-bottom: 14px; border: 1px solid var(--outline-variant); border-radius: 10px; overflow: hidden; }
+    .mobile-cards tbody td { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 12px; padding: 12px; overflow-wrap: anywhere; }
+    .mobile-cards td[data-label]::before { content: attr(data-label); font-weight: 700; color: var(--text-variant); }
+    .mobile-cards td[colspan] { display: block; }
+    .mobile-cards td > * { min-width: 0; white-space: normal; }
+}

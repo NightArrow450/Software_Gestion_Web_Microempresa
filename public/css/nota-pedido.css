@@ -42,3 +42,13 @@ body{background:#f3f4f6;color:#111;margin:0;font-family:Arial,Helvetica,sans-ser
   .nota{break-inside:avoid}
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
+
+.table-container { width: 100%; overflow-x: auto; }
+@media screen {
+    .print-preview { max-width: 100%; overflow-x: auto; }
+    .print-controls { padding: 12px; flex-wrap: wrap; }
+    .print-controls > * { min-width: 0; max-width: 100%; }
+}
+@media print {
+    .print-preview, .nota > .table-container { display: contents; }
+}

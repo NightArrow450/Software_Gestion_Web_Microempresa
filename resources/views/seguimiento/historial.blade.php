@@ -31,17 +31,17 @@
 </section>
 <section class="seg-panel">
     <p class="seg-ayuda">Resultados: {{ $pedidos->total() }} pedido(s). Se muestran 15 por página.</p>
-    <div class="table-container"><table class="seg-tabla">
+    <div class="table-container"><table class="mobile-cards seg-tabla">
         <thead><tr><th>N.º</th><th>Fecha pedido</th><th>Cliente</th><th>Estado</th><th>Total</th><th>Consulta</th></tr></thead>
         <tbody>
             @forelse($pedidos as $pedido)
                 <tr>
-                    <td>{{ $pedido->numero }}</td>
-                    <td>{{ $pedido->fecha_pedido?->format('d/m/Y') }}</td>
-                    <td>{{ $pedido->cliente_nombre }}</td>
-                    <td><span class="seg-estado">{{ $estados[$pedido->estado] ?? ucfirst(str_replace('_',' ',$pedido->estado)) }}</span></td>
-                    <td>S/ {{ number_format((float) $pedido->total, 2) }}</td>
-                    <td><a class="seg-enlace" href="{{ route('seguimiento.show', $pedido) }}">Ver detalle</a></td>
+                    <td data-label="N.º">{{ $pedido->numero }}</td>
+                    <td data-label="Fecha pedido">{{ $pedido->fecha_pedido?->format('d/m/Y') }}</td>
+                    <td data-label="Cliente">{{ $pedido->cliente_nombre }}</td>
+                    <td data-label="Estado"><span class="seg-estado">{{ $estados[$pedido->estado] ?? ucfirst(str_replace('_',' ',$pedido->estado)) }}</span></td>
+                    <td data-label="Total">S/ {{ number_format((float) $pedido->total, 2) }}</td>
+                    <td data-label="Consulta"><a class="seg-enlace" href="{{ route('seguimiento.show', $pedido) }}">Ver detalle</a></td>
                 </tr>
             @empty
                 <tr><td colspan="6" class="seg-vacio">No se encontraron pedidos para los filtros seleccionados.</td></tr>
