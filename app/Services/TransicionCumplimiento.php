@@ -7,11 +7,16 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Transiciones del cumplimiento: siempre en transaccion, bloqueo de fila e historial.
- * No modifica las existencias del inventario (Sprint 3).
+ * Las transiciones de cumplimiento son atómicas y auditadas.
+ * Al despachar descuenta el stock real en la MISMA transacción.
  */
 class TransicionCumplimiento
 {
+    public function __construct(
+        private readonly DescontarInventarioPorDespacho $inventarioDespacho
+    ) {
+    }
+
     public function registrar(
         Pedido $pedido,
         string $estadoRequerido,
@@ -34,6 +39,12 @@ class TransicionCumplimiento
                 ]);
             }
 
+            // Solo DESPACHO genera salida automática. Si falta cualquier
+            // producto, se abortan el stock, el historial y el cambio de estado.
+            if ($estadoNuevo === 'despachado') {
+                $this->inventarioDespacho->ejecutar($actual, $usuarioId);
+            }
+
             $anterior = $actual->estado;
             DB::table('pedidos')->where('id', $actual->id)->update(array_merge(
                 [
@@ -49,6 +60,6 @@ class TransicionCumplimiento
                 'estado_nuevo' => $estadoNuevo,
                 'motivo' => $motivo,
             ]);
-        });
+        }, 3);
     }
 }
