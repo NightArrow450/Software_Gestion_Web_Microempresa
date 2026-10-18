@@ -3,6 +3,10 @@
 @endphp
 
 <header class="topbar">
+    <button type="button" class="menu-toggle" aria-controls="app-sidebar"
+        aria-expanded="false" aria-label="Abrir menú de navegación">
+        <span class="material-symbols-outlined" aria-hidden="true">menu</span>
+    </button>
 
     <div>
 

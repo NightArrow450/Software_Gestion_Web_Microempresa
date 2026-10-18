@@ -36,6 +36,7 @@
 <body>
 
     @include('components.sidebar')
+    <div class="sidebar-overlay" hidden aria-hidden="true"></div>
 
     <div class="app-content">
 
@@ -51,6 +52,7 @@
 
     </div>
 
+    <script src="{{ asset('js/layout.js') }}" defer></script>
     @stack('scripts')
 
 </body>

@@ -63,6 +63,8 @@ select {
     bottom: 0;
 
     width: 296px;
+    height: 100dvh;
+    overflow-y: auto;
 
     background: #ffffff;
     border-right: 1px solid #edf0ee;
@@ -967,7 +969,9 @@ select {
 @media (max-width: 950px) {
 
     .sidebar {
-        display: none;
+        width: min(296px, calc(100% - 32px));
+        transform: translateX(-100%);
+        visibility: hidden;
     }
 
     .app-content {
@@ -1020,4 +1024,18 @@ select {
         grid-template-columns: 1fr;
     }
 
+}
+
+/* Navegación móvil accesible. */
+.menu-toggle, .menu-close { display: none; }
+.sidebar-overlay[hidden] { display: none; }
+.sidebar-overlay { position: fixed; inset: 0; background: #0009; z-index: 40; }
+.menu-open { overflow: hidden; }
+@media (max-width: 950px) {
+    .menu-toggle, .menu-close { display: inline-grid; place-items: center; min-width: 44px; min-height: 44px; border: 0; border-radius: 8px; background: var(--surface-low); color: var(--primary); cursor: pointer; flex-shrink: 0; }
+    .menu-close { align-self: flex-end; margin: 8px 12px 0; }
+    .menu-open .sidebar { transform: translateX(0); visibility: visible; }
+    .topbar { gap: 12px; }
+    .topbar > div:first-of-type { margin-right: auto; min-width: 0; }
+    .sidebar > div { flex-shrink: 0; }
 }
