@@ -92,4 +92,26 @@ class CumplimientoPedidoController extends Controller
             ->with('success', 'Se registró el despacho del pedido.');
     }
 
+    public function entregar(
+        Request $request,
+        Pedido $pedido,
+        TransicionCumplimiento $transiciones
+    ): RedirectResponse {
+        $datos = $request->validate([
+            'observacion_entrega' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $observacion = trim((string) ($datos['observacion_entrega'] ?? ''));
+        $transiciones->registrar(
+            $pedido, 'despachado', 'entregado', $request->user()->id,
+            ['entregado_por_id' => $request->user()->id,
+             'entregado_en' => now(),
+             'observacion_entrega' => $observacion !== '' ? $observacion : null],
+            $observacion !== '' ? $observacion : 'Entrega confirmada.'
+        );
+
+        return redirect()->route('cumplimiento.show', $pedido)
+            ->with('success', 'Entrega confirmada correctamente.');
+    }
+
 }
