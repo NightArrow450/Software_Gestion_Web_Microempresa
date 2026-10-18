@@ -144,21 +144,14 @@
                 </a>
             @endif
 
-            <p class="menu-title" style="margin-top:25px;">Próximos módulos</p>
-
-            <div class="menu-link menu-disabled">
-                <span class="material-symbols-outlined">
-                    local_shipping
-                </span>
-
-                <span style="flex:1;">
-                    Seguimiento
-                </span>
-
-                <span class="menu-soon">
-                    Próximamente
-                </span>
-            </div>
+            @if(in_array('seguimiento.ver', $permisosSidebar, true))
+                <p class="menu-title" style="margin-top:25px;">Seguimiento</p>
+                <a href="{{ route('seguimiento.index') }}"
+                   class="menu-link {{ request()->routeIs('seguimiento.index') || request()->routeIs('seguimiento.show') || request()->routeIs('seguimiento.trazabilidad') ? 'active' : '' }}">
+                    <span class="material-symbols-outlined">travel_explore</span>
+                    Consultar estado
+                </a>
+            @endif
         </nav>
     </div>
 
