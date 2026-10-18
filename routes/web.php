@@ -342,3 +342,6 @@ if (is_file(__DIR__.'/inventario.php')) {
 
 /* Sprint 4: cumplimiento (preparacion, despacho, entrega). */
 require __DIR__.'/cumplimiento.php';
+
+/* Sprint 5: seguimiento, trazabilidad e historial; solo lectura. */
+require __DIR__.'/seguimiento.php';
