@@ -334,3 +334,6 @@ Route::middleware('auth')->group(function () {
         ->name('pedidos.cancelar');
 
 });
+
+/* Sprint 3: rutas de inventario aisladas, con sus propios permisos. */
+require __DIR__.'/inventario.php';
