@@ -95,11 +95,11 @@
 
     function mostrarResultados() {
         cerrarResultados();
-        const texto = buscar.value.trim().toLowerCase();
+        const texto = window.BusquedaPedidos.normalizar(buscar.value);
         if (!texto) return;
         const opciones = [];
         presentaciones.forEach(p => {
-            if (!`${p.nombre} ${p.sku}`.toLowerCase().includes(texto)) return;
+            if (!window.BusquedaPedidos.coincide(p, texto)) return;
             if (p.unidad && p.precio_unidad !== null) opciones.push([p, 'unidad', p.precio_unidad]);
             if (p.empaque && p.precio_empaque !== null) opciones.push([p, 'empaque', p.precio_empaque]);
         });
