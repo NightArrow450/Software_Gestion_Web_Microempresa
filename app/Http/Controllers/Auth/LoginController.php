@@ -28,41 +28,36 @@ class LoginController extends Controller
                 'string',
             ],
         ], [
-            'email.required' =>
-                'El correo electrónico es obligatorio.',
+            'email.required' => 'El correo electrónico es obligatorio.',
 
-            'email.email' =>
-                'Ingresa un correo electrónico válido.',
+            'email.email' => 'Ingresa un correo electrónico válido.',
 
-            'password.required' =>
-                'La contraseña es obligatoria.',
+            'password.required' => 'La contraseña es obligatoria.',
         ]);
 
-        $usuario = User::where(
-            'email',
-            $credenciales['email']
+        $usuario = User::whereRaw(
+            'LOWER(email) = ?',
+            [mb_strtolower($credenciales['email'])]
         )->first();
 
         if (
-            !$usuario ||
-            !Hash::check(
+            ! $usuario ||
+            ! Hash::check(
                 $credenciales['password'],
                 $usuario->password
             )
         ) {
             return back()
                 ->withErrors([
-                    'email' =>
-                        'Correo electrónico o contraseña incorrectos.',
+                    'email' => 'Correo electrónico o contraseña incorrectos.',
                 ])
                 ->onlyInput('email');
         }
 
-        if (!$usuario->status) {
+        if (! $usuario->status) {
             return back()
                 ->withErrors([
-                    'email' =>
-                        'Tu cuenta se encuentra inactiva. Comunícate con el administrador.',
+                    'email' => 'Tu cuenta se encuentra inactiva. Comunícate con el administrador.',
                 ])
                 ->onlyInput('email');
         }

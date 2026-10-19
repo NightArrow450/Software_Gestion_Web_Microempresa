@@ -31,7 +31,7 @@
                     value="{{ old('first_name', $editing ? $user->first_name : '') }}"
                     class="form-control"
                     placeholder="Ingrese los nombres"
-                    maxlength="100"
+                    minlength="2" maxlength="100"
                     required
                 >
             </div>
@@ -46,7 +46,7 @@
                     value="{{ old('last_name', $editing ? $user->last_name : '') }}"
                     class="form-control"
                     placeholder="Ingrese los apellidos"
-                    maxlength="100"
+                    minlength="2" maxlength="100"
                     required
                 >
             </div>
@@ -88,14 +88,14 @@
                     id="password"
                     name="password"
                     class="form-control"
-                    placeholder="{{ $editing ? 'Dejar vacío para conservar la actual' : 'Mínimo 8 caracteres' }}"
-                    autocomplete="new-password"
+                    placeholder="{{ $editing ? 'Dejar vacío para conservar la actual' : 'Mínimo 10 caracteres' }}"
+                    autocomplete="new-password" minlength="10"
                     @if(!$editing) required @endif
                 >
 
                 @if($editing)
                     <span class="form-help">
-                        Déjala vacía si no deseas cambiar la contraseña.
+                        Déjala vacía si no deseas cambiar la contraseña. Usa al menos 10 caracteres, con mayúsculas, minúsculas y números.
                     </span>
                 @endif
             </div>
@@ -110,7 +110,7 @@
                     id="password_confirmation"
                     name="password_confirmation"
                     class="form-control"
-                    autocomplete="new-password"
+                    autocomplete="new-password" minlength="10"
                     @if(!$editing) required @endif
                 >
             </div>
