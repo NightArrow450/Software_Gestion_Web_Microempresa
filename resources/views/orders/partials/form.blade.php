@@ -9,7 +9,9 @@
 <section class="form-section">
     <h2 class="form-section-title">Datos de la nota de pedido</h2>
     <div class="form-grid">
-        <div class="form-group"><label for="cliente_id" class="form-label">Cliente *</label>
+        <div class="form-group s2-cliente-busqueda"><label for="buscar-cliente" class="form-label">Cliente *</label>
+            <input class="form-control" type="search" id="buscar-cliente" placeholder="Escribe el nombre, documento o mercado" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="resultados-clientes" hidden>
+            <div class="s2-sugerencias" id="resultados-clientes" role="listbox" hidden></div>
             <select class="form-control" id="cliente_id" name="cliente_id" required>
                 <option value="">Selecciona un cliente activo</option>
                 @foreach($clientes as $cliente)<option value="{{ $cliente->id }}" @selected((string)old('cliente_id', $pedido->cliente_id ?? '') === (string)$cliente->id)>{{ $cliente->nombre }} — {{ $cliente->mercado ?: 'Sin mercado' }}</option>@endforeach
@@ -59,6 +61,12 @@
 <script>
 window.configuracionSprint2 = {
     presentaciones: {{ Illuminate\Support\Js::from($presentaciones) }},
+    clientes: {{ Illuminate\Support\Js::from($clientes->map(fn($cliente) => [
+        'id' => $cliente->id,
+        'nombre' => $cliente->nombre,
+        'documento' => $cliente->documento,
+        'mercado' => $cliente->mercado,
+    ])->values()->all()) }},
     filas: {{ Illuminate\Support\Js::from($filasPrevias) }}
 };
 </script>

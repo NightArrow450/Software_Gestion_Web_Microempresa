@@ -12,6 +12,74 @@
     let indice = 0;
     let opcionActiva = -1;
 
+    // Cliente: reutiliza la lista de clientes activos que ya entrega Laravel.
+    const clienteSelector = document.getElementById('cliente_id');
+    const clienteBuscador = document.getElementById('buscar-cliente');
+    const clientesResultados = document.getElementById('resultados-clientes');
+    const clientes = config.clientes || [];
+    if (clienteSelector && clienteBuscador && clientesResultados) {
+        clienteBuscador.hidden = false;
+        clienteSelector.hidden = true;
+        clienteSelector.required = false;
+        clienteBuscador.required = true;
+        const inicial = clientes.find(c => String(c.id) === clienteSelector.value);
+        clienteBuscador.value = inicial ? inicial.nombre : '';
+        if (!inicial) clienteBuscador.setCustomValidity('Selecciona un cliente activo de la lista.');
+
+        function cerrarClientes() {
+            clientesResultados.hidden = true;
+            clientesResultados.replaceChildren();
+            clienteBuscador.setAttribute('aria-expanded', 'false');
+        }
+
+        function mostrarClientes() {
+            cerrarClientes();
+            const texto = window.BusquedaPedidos.normalizar(clienteBuscador.value);
+            const encontrados = clientes.filter(c =>
+                window.BusquedaPedidos.normalizar(`${c.nombre} ${c.documento || ''} ${c.mercado || ''}`).includes(texto)
+            );
+            encontrados.slice(0, 10).forEach(cliente => {
+                const boton = document.createElement('button');
+                boton.type = 'button';
+                boton.className = 's2-sugerencia';
+                boton.setAttribute('role', 'option');
+                const titulo = document.createElement('span');
+                titulo.className = 's2-sugerencia-titulo';
+                titulo.textContent = cliente.nombre;
+                const detalle = document.createElement('span');
+                detalle.className = 's2-sugerencia-detalle';
+                detalle.textContent = [cliente.documento, cliente.mercado].filter(Boolean).join(' · ') || 'Sin datos adicionales';
+                boton.append(titulo, detalle);
+                boton.addEventListener('click', () => {
+                    clienteSelector.value = String(cliente.id);
+                    clienteBuscador.value = cliente.nombre;
+                    clienteBuscador.setCustomValidity('');
+                    cerrarClientes();
+                    buscar.focus();
+                });
+                clientesResultados.append(boton);
+            });
+            clientesResultados.hidden = encontrados.length === 0;
+            clienteBuscador.setAttribute('aria-expanded', encontrados.length ? 'true' : 'false');
+        }
+        clienteBuscador.addEventListener('input', () => {
+            clienteSelector.value = '';
+            clienteBuscador.setCustomValidity('Selecciona un cliente activo de la lista.');
+            mostrarClientes();
+        });
+        clienteBuscador.addEventListener('focus', mostrarClientes);
+        clienteBuscador.addEventListener('keydown', event => {
+            if (event.key === 'Escape') cerrarClientes();
+            if (event.key === 'Enter' && !clientesResultados.hidden) {
+                const primero = clientesResultados.querySelector('button');
+                if (primero) { event.preventDefault(); primero.click(); }
+            }
+        });
+        document.addEventListener('click', event => {
+            if (!document.querySelector('.s2-cliente-busqueda').contains(event.target)) cerrarClientes();
+        });
+    }
+
     const fechaPedido = document.getElementById('fecha_pedido');
     const fechaEntrega = document.getElementById('fecha_entrega');
     function limitarEntrega() {
