@@ -27,7 +27,7 @@
 
     <link
         rel="stylesheet"
-        href="{{ asset('css/stitch.css') }}?v=3"
+        href="{{ asset('css/stitch.css') }}?v=4"
     >
 
     @stack('styles')

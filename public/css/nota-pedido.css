@@ -38,7 +38,7 @@ body{background:#f3f4f6;color:#111;margin:0;font-family:Arial,Helvetica,sans-ser
   html,body{padding:0;margin:0;background:#fff!important}
   .print-controls{display:none!important}
   .a4-hoja{width:297mm;height:210mm;margin:0;box-shadow:none;break-after:page;page-break-after:always;}
-  .a4-hoja:last-child{break-after:auto;page-break-after:auto;}
+  .print-preview:last-of-type .a4-hoja{break-after:auto;page-break-after:auto;}
   .nota{break-inside:avoid}
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }

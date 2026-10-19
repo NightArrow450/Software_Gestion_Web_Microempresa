@@ -1090,3 +1090,7 @@ select {
     .page .check-row { min-height: 44px; }
     .page .s2-product-row > *, .page .seg-filtros > * { min-width: 0; }
 }
+
+.pagination-nav { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.pagination-links { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.pagination-links [aria-disabled="true"] { opacity: .6; cursor: default; }
