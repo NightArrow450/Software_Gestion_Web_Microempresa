@@ -239,7 +239,7 @@
                         class="form-control"
                         name="motivo"
                         required
-                        maxlength="1000"
+                        minlength="10" maxlength="1000"
                         placeholder="Motivo de observación"
                     >
 
@@ -287,7 +287,7 @@
                 class="form-control"
                 name="motivo"
                 required
-                maxlength="1000"
+                minlength="10" maxlength="1000"
                 placeholder="Motivo obligatorio de cancelación"
                 value="{{ old('motivo') }}"
             >
