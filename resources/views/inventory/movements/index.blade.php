@@ -28,19 +28,19 @@
         <a class="btn btn-secondary" href="{{ route('inventario.movimientos.index') }}">Limpiar</a></div>
 </form></section>
 <section class="table-card"><div class="table-header"><strong>Historial de movimientos</strong><span class="muted">{{ $movimientos->total() }} resultado(s)</span></div>
-    <div class="table-container"><table class="app-table"><thead><tr>
+    <div class="table-container"><table class="mobile-cards app-table"><thead><tr>
         <th>Fecha y hora</th><th>Clase</th><th>Código</th><th>Producto / Insumo</th><th>Tipo</th><th>Cambio</th>
         <th>Antes</th><th>Después</th><th>Pedido vinculado</th><th>Responsable</th><th>Motivo</th>
     </tr></thead><tbody>
     @forelse($movimientos as $m)
-        <tr><td>{{ $m->created_at?->timezone('America/Lima')->format('d/m/Y H:i') }}</td>
-        <td>{{ $m->insumo_id ? 'Insumo' : 'Producto' }}</td>
-        <td>{{ $m->insumo?->codigo ?? $m->presentacion?->codigo_sku }}</td>
-        <td>{{ $m->insumo?->nombre ?? $m->presentacion?->producto?->nombre }}</td>
-        <td>{{ ucfirst($m->tipo) }}</td>
-        <td>{{ $m->tipo==='salida' ? '-' : ($m->tipo==='entrada' ? '+' : '±') }}{{ $m->cantidad }}</td>
-        <td>{{ $m->stock_anterior }}</td><td><strong>{{ $m->stock_nuevo }}</strong></td>
-        <td>
+        <tr><td data-label="Fecha y hora">{{ $m->created_at?->timezone('America/Lima')->format('d/m/Y H:i') }}</td>
+        <td data-label="Clase">{{ $m->insumo_id ? 'Insumo' : 'Producto' }}</td>
+        <td data-label="Código">{{ $m->insumo?->codigo ?? $m->presentacion?->codigo_sku }}</td>
+        <td data-label="Producto / Insumo">{{ $m->insumo?->nombre ?? $m->presentacion?->producto?->nombre }}</td>
+        <td data-label="Tipo">{{ ucfirst($m->tipo) }}</td>
+        <td data-label="Cambio">{{ $m->tipo==='salida' ? '-' : ($m->tipo==='entrada' ? '+' : '±') }}{{ $m->cantidad }}</td>
+        <td data-label="Antes">{{ $m->stock_anterior }}</td><td data-label="Después"><strong>{{ $m->stock_nuevo }}</strong></td>
+        <td data-label="Pedido vinculado">
             @if($m->pedido_id)
                 @if(auth()->user()->role?->tienePermiso('pedidos.ver'))
                     <a href="{{ route('pedidos.show', $m->pedido_id) }}">N.º {{ str_pad((string) $m->pedido_id, 6, '0', STR_PAD_LEFT) }}</a>
@@ -51,8 +51,8 @@
                 Manual
             @endif
         </td>
-        <td>{{ $m->usuario?->first_name }} {{ $m->usuario?->last_name }}</td>
-        <td>{{ $m->motivo }}</td></tr>
+        <td data-label="Responsable">{{ $m->usuario?->first_name }} {{ $m->usuario?->last_name }}</td>
+        <td data-label="Motivo">{{ $m->motivo }}</td></tr>
     @empty<tr><td colspan="11">No se han registrado movimientos.</td></tr>@endforelse
     </tbody></table></div><div class="s3-pagination">{{ $movimientos->links() }}</div>
 </section>

@@ -13,7 +13,7 @@
         @yield('title', 'Sistema Web') | DHACER ECO LIMP
     </title>
 
-    <script src="https://cdn.tailwindcss.com"></script>
+    @vite('resources/css/app.css')
 
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap"
@@ -27,7 +27,7 @@
 
     <link
         rel="stylesheet"
-        href="{{ asset('css/stitch.css') }}?v=3"
+        href="{{ asset('css/stitch.css') }}?v=4"
     >
 
     @stack('styles')
@@ -36,6 +36,7 @@
 <body>
 
     @include('components.sidebar')
+    <div class="sidebar-overlay" hidden aria-hidden="true"></div>
 
     <div class="app-content">
 
@@ -51,6 +52,7 @@
 
     </div>
 
+    <script src="{{ asset('js/layout.js') }}" defer></script>
     @stack('scripts')
 
 </body>

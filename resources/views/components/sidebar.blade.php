@@ -32,7 +32,10 @@
         strtoupper(substr($userSidebar->last_name, 0, 1));
 @endphp
 
-<aside class="sidebar">
+<aside class="sidebar" id="app-sidebar" aria-label="Menú de navegación" tabindex="-1">
+    <button type="button" class="menu-close" aria-label="Cerrar menú de navegación">
+        <span class="material-symbols-outlined" aria-hidden="true">close</span>
+    </button>
     <div>
         <div class="brand">
             <img src="{{ asset('images/logo.png') }}" alt="Eco Limp">

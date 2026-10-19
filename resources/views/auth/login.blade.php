@@ -12,117 +12,25 @@
 
     <title>Iniciar sesión | DHACER ECO LIMP</title>
 
+@vite('resources/css/app.css')
 
-    <script src="https://cdn.tailwindcss.com"></script>
+<script src="{{ asset('js/login.js') }}" defer></script>
 
-
-    <script>
-        tailwind.config = {
-            darkMode: "class",
-
-            theme: {
-                extend: {
-
-                    colors: {
-                        "on-secondary": "#ffffff",
-                        "on-error": "#ffffff",
-                        "on-secondary-fixed-variant": "#00504a",
-                        "surface-bright": "#faf8ff",
-                        "secondary-container": "#99efe5",
-                        "on-primary-fixed-variant": "#005137",
-                        "error-container": "#ffdad6",
-                        "on-secondary-fixed": "#00201d",
-                        "error": "#ba1a1a",
-                        "on-primary-fixed": "#002114",
-                        "on-primary-container": "#f5fff7",
-                        "tertiary-container": "#a36700",
-                        "inverse-on-surface": "#eef0ff",
-                        "outline": "#6d7a72",
-                        "on-secondary-container": "#006f67",
-                        "on-tertiary-fixed-variant": "#653e00",
-                        "surface-container-lowest": "#ffffff",
-                        "surface-container-low": "#f2f3ff",
-                        "on-background": "#131b2e",
-                        "surface-container-high": "#e2e7ff",
-                        "on-error-container": "#93000a",
-                        "on-tertiary-container": "#fffbff",
-                        "background": "#faf8ff",
-                        "secondary": "#006a63",
-                        "surface-variant": "#dae2fd",
-                        "primary": "#006948",
-                        "surface-container": "#eaedff",
-                        "on-tertiary": "#ffffff",
-                        "inverse-surface": "#283044",
-                        "surface-dim": "#d2d9f4",
-                        "outline-variant": "#bccac0",
-                        "inverse-primary": "#68dba9",
-                        "secondary-fixed": "#9cf2e8",
-                        "surface": "#faf8ff",
-                        "on-tertiary-fixed": "#2a1700",
-                        "on-primary": "#ffffff",
-                        "tertiary-fixed": "#ffddb8",
-                        "secondary-fixed-dim": "#80d5cb",
-                        "primary-fixed": "#85f8c4",
-                        "primary-container": "#00855d",
-                        "tertiary-fixed-dim": "#ffb95f",
-                        "on-surface-variant": "#3d4a42",
-                        "surface-tint": "#006c4a",
-                        "tertiary": "#825100",
-                        "primary-fixed-dim": "#68dba9",
-                        "surface-container-highest": "#dae2fd",
-                        "on-surface": "#131b2e"
-                    },
-
-                    borderRadius: {
-                        DEFAULT: "0.25rem",
-                        lg: "0.5rem",
-                        xl: "0.75rem",
-                        full: "9999px"
-                    },
-
-                    fontFamily: {
-                        inter: ["Inter", "sans-serif"]
-                    }
-
-                }
-            }
-        };
-    </script>
-
-
-    <link
+<link
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
         rel="stylesheet"
     >
 
-
-    <link
+<link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap"
         rel="stylesheet"
     >
 
-
-    <style>
-
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-
-        .material-symbols-outlined {
-            font-variation-settings:
-                'FILL' 0,
-                'wght' 400,
-                'GRAD' 0,
-                'opsz' 24;
-        }
-
-    </style>
+<link rel="stylesheet" href="{{ asset('css/login.css') }}">
 
 </head>
 
-
 <body class="bg-surface text-on-surface antialiased">
-
 
 <main
     class="
@@ -139,8 +47,7 @@
 
     <div class="w-full max-w-xl">
 
-
-        <div
+<div
             class="
                 w-full
                 bg-surface-container-lowest
@@ -150,24 +57,21 @@
             "
         >
 
-
-            {{-- FRANJA SUPERIOR --}}
+{{-- FRANJA SUPERIOR --}}
             <div
                 class="
                     h-2
                     w-full
-                    bg-gradient-to-r
+                    bg-linear-to-r
                     from-secondary
                     via-primary
                     to-primary-container
                 "
             ></div>
 
+<div class="p-6 sm:p-10">
 
-            <div class="p-6 sm:p-10">
-
-
-                {{-- LOGO --}}
+{{-- LOGO --}}
                 <div
                     class="
                         flex
@@ -197,8 +101,7 @@
 
                     </div>
 
-
-                    <div class="inline-flex items-center gap-2">
+<div class="login-brand inline-flex items-center gap-2">
 
                         <h1
                             class="
@@ -211,8 +114,7 @@
                             DHACER ECO LIMP
                         </h1>
 
-
-                        <span
+<span
                             class="
                                 text-xs
                                 font-semibold
@@ -228,8 +130,7 @@
 
                     </div>
 
-
-                    <p
+<p
                         class="
                             text-sm
                             text-on-surface-variant
@@ -239,8 +140,7 @@
                         Sistema Web de Gestión
                     </p>
 
-
-                    <div
+<div
                         class="
                             w-12
                             h-0.5
@@ -252,9 +152,7 @@
 
                 </div>
 
-
-
-                {{-- TÍTULO --}}
+{{-- TÍTULO --}}
                 <div class="mb-6">
 
                     <h2
@@ -279,9 +177,7 @@
 
                 </div>
 
-
-
-                {{-- MENSAJE DE ÉXITO --}}
+{{-- MENSAJE DE ÉXITO --}}
                 @if(session('success'))
 
                     <div
@@ -306,8 +202,7 @@
                             check_circle
                         </span>
 
-
-                        <div>
+<div>
 
                             <p
                                 class="
@@ -335,9 +230,7 @@
 
                 @endif
 
-
-
-                {{-- ERRORES --}}
+{{-- ERRORES --}}
                 @if($errors->any())
 
                     <div
@@ -362,8 +255,7 @@
                             error
                         </span>
 
-
-                        <div>
+<div>
 
                             <p
                                 class="
@@ -375,8 +267,7 @@
                                 No se pudo iniciar sesión
                             </p>
 
-
-                            @foreach($errors->all() as $error)
+@foreach($errors->all() as $error)
 
                                 <p
                                     class="
@@ -396,9 +287,7 @@
 
                 @endif
 
-
-
-                {{-- FORMULARIO --}}
+{{-- FORMULARIO --}}
                 <form
                     method="POST"
                     action="{{ route('login.authenticate') }}"
@@ -407,9 +296,7 @@
 
                     @csrf
 
-
-
-                    {{-- CORREO --}}
+{{-- CORREO --}}
                     <div class="flex flex-col gap-2">
 
                         <label
@@ -423,8 +310,7 @@
                             Correo electrónico
                         </label>
 
-
-                        <div class="relative flex items-center">
+<div class="relative flex items-center">
 
                             <div
                                 class="
@@ -448,8 +334,7 @@
 
                             </div>
 
-
-                            <input
+<input
                                 type="email"
                                 id="email"
                                 name="email"
@@ -491,8 +376,7 @@
 
                         </div>
 
-
-                        @error('email')
+@error('email')
 
                             <p
                                 class="
@@ -521,9 +405,7 @@
 
                     </div>
 
-
-
-                    {{-- CONTRASEÑA --}}
+{{-- CONTRASEÑA --}}
                     <div class="flex flex-col gap-2">
 
                         <label
@@ -537,8 +419,7 @@
                             Contraseña
                         </label>
 
-
-                        <div class="relative flex items-center">
+<div class="relative flex items-center">
 
                             <div
                                 class="
@@ -562,8 +443,7 @@
 
                             </div>
 
-
-                            <input
+<input
                                 type="password"
                                 id="password"
                                 name="password"
@@ -600,10 +480,9 @@
                                 "
                             >
 
-
-                            <button
+<button
                                 type="button"
-                                onclick="togglePasswordVisibility()"
+                                id="password-toggle" aria-label="Mostrar contraseña" aria-controls="password" aria-pressed="false"
 
                                 class="
                                     absolute
@@ -620,7 +499,7 @@
                             >
 
                                 <span
-                                    id="eye-icon"
+                                    id="eye-icon" aria-hidden="true"
                                     class="
                                         material-symbols-outlined
                                         text-xl
@@ -633,8 +512,7 @@
 
                         </div>
 
-
-                        @error('password')
+@error('password')
 
                             <p
                                 class="
@@ -663,9 +541,7 @@
 
                     </div>
 
-
-
-                    {{-- RECORDAR --}}
+{{-- RECORDAR --}}
                     <div
                         class="
                             flex
@@ -704,8 +580,7 @@
                                 "
                             >
 
-
-                            <span
+<span
                                 class="
                                     text-sm
                                     text-on-surface-variant
@@ -716,8 +591,7 @@
 
                         </label>
 
-
-                        <div
+<div
                             class="
                                 inline-flex
                                 items-center
@@ -750,9 +624,7 @@
 
                     </div>
 
-
-
-                    {{-- BOTÓN --}}
+{{-- BOTÓN --}}
                     <div class="pt-2">
 
                         <button
@@ -800,9 +672,7 @@
 
                 </form>
 
-
-
-                {{-- INFORMACIÓN --}}
+{{-- INFORMACIÓN --}}
                 <div
                     class="
                         mt-8
@@ -836,8 +706,7 @@
 
                     </div>
 
-
-                    <div>
+<div>
 
                         <p
                             class="
@@ -867,9 +736,7 @@
 
                 </div>
 
-
-
-                {{-- SEGURIDAD --}}
+{{-- SEGURIDAD --}}
                 <div
                     class="
                         mt-6
@@ -899,14 +766,11 @@
 
                 </div>
 
-
-            </div>
+</div>
 
         </div>
 
-
-
-        {{-- FOOTER --}}
+{{-- FOOTER --}}
         <div class="mt-8 text-center px-4">
 
             <p
@@ -924,8 +788,7 @@
                 — Sistema Web de Gestión.
             </p>
 
-
-            <p
+<p
                 class="
                     text-xs
                     text-outline
@@ -937,42 +800,9 @@
 
         </div>
 
-
-    </div>
+</div>
 
 </main>
-
-
-
-<script>
-
-    function togglePasswordVisibility() {
-
-        const passwordInput =
-            document.getElementById('password');
-
-        const eyeIcon =
-            document.getElementById('eye-icon');
-
-
-        if (passwordInput.type === 'password') {
-
-            passwordInput.type = 'text';
-
-            eyeIcon.textContent = 'visibility_off';
-
-        } else {
-
-            passwordInput.type = 'password';
-
-            eyeIcon.textContent = 'visibility';
-
-        }
-
-    }
-
-</script>
-
 
 </body>
 
