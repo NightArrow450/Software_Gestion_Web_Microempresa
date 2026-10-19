@@ -645,6 +645,14 @@ class PedidoController extends Controller
             )
             ->whereNotNull('precio_unitario')
             ->where(function ($q) {
+                $q->where('venta_por_unidad', true)
+                    ->orWhere(function ($empaque) {
+                        $empaque->where('venta_por_empaque', true)
+                            ->whereNotNull('unidades_por_empaque')
+                            ->where('unidades_por_empaque', '>', 0);
+                    });
+            })
+            ->where(function ($q) {
                 $q->whereNull('variante_producto_id')
                     ->orWhereHas(
                         'variante',
@@ -663,8 +671,8 @@ class PedidoController extends Controller
                             : '')
                         .' · '.$p->contenido.' '
                         .$p->unidad_medida,
-                    'unidad' => (bool) $p->venta_por_unidad,
-                    'empaque' => (bool) $p->venta_por_empaque,
+                    'unidad' => (bool) $p->venta_por_unidad && $p->precio_unitario !== null,
+                    'empaque' => (bool) $p->venta_por_empaque && $p->precio_empaque !== null && (int) $p->unidades_por_empaque > 0,
                     'precio_unidad' => $p->precio_unitario,
                     'precio_empaque' => $p->precio_empaque,
                 ];

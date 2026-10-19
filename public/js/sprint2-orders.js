@@ -6,7 +6,79 @@
     const contenedor = document.getElementById('filas-pedido');
     const plantilla = document.getElementById('plantilla-fila');
     const totalElemento = document.getElementById('s2-total');
+    const buscar = document.getElementById('buscar-presentacion');
+    const resultados = document.getElementById('resultados-presentaciones');
+    const aviso = document.getElementById('aviso-buscador');
     let indice = 0;
+    let opcionActiva = -1;
+
+    // Cliente: reutiliza la lista de clientes activos que ya entrega Laravel.
+    const clienteSelector = document.getElementById('cliente_id');
+    const clienteBuscador = document.getElementById('buscar-cliente');
+    const clientesResultados = document.getElementById('resultados-clientes');
+    const clientes = config.clientes || [];
+    if (clienteSelector && clienteBuscador && clientesResultados) {
+        clienteBuscador.hidden = false;
+        clienteSelector.hidden = true;
+        clienteSelector.required = false;
+        clienteBuscador.required = true;
+        const inicial = clientes.find(c => String(c.id) === clienteSelector.value);
+        clienteBuscador.value = inicial ? inicial.nombre : '';
+        if (!inicial) clienteBuscador.setCustomValidity('Selecciona un cliente activo de la lista.');
+
+        function cerrarClientes() {
+            clientesResultados.hidden = true;
+            clientesResultados.replaceChildren();
+            clienteBuscador.setAttribute('aria-expanded', 'false');
+        }
+
+        function mostrarClientes() {
+            cerrarClientes();
+            const texto = window.BusquedaPedidos.normalizar(clienteBuscador.value);
+            const encontrados = clientes.filter(c =>
+                window.BusquedaPedidos.normalizar(`${c.nombre} ${c.documento || ''} ${c.mercado || ''}`).includes(texto)
+            );
+            encontrados.slice(0, 10).forEach(cliente => {
+                const boton = document.createElement('button');
+                boton.type = 'button';
+                boton.className = 's2-sugerencia';
+                boton.setAttribute('role', 'option');
+                const titulo = document.createElement('span');
+                titulo.className = 's2-sugerencia-titulo';
+                titulo.textContent = cliente.nombre;
+                const detalle = document.createElement('span');
+                detalle.className = 's2-sugerencia-detalle';
+                detalle.textContent = [cliente.documento, cliente.mercado].filter(Boolean).join(' · ') || 'Sin datos adicionales';
+                boton.append(titulo, detalle);
+                boton.addEventListener('click', () => {
+                    clienteSelector.value = String(cliente.id);
+                    clienteBuscador.value = cliente.nombre;
+                    clienteBuscador.setCustomValidity('');
+                    cerrarClientes();
+                    buscar.focus();
+                });
+                clientesResultados.append(boton);
+            });
+            clientesResultados.hidden = encontrados.length === 0;
+            clienteBuscador.setAttribute('aria-expanded', encontrados.length ? 'true' : 'false');
+        }
+        clienteBuscador.addEventListener('input', () => {
+            clienteSelector.value = '';
+            clienteBuscador.setCustomValidity('Selecciona un cliente activo de la lista.');
+            mostrarClientes();
+        });
+        clienteBuscador.addEventListener('focus', mostrarClientes);
+        clienteBuscador.addEventListener('keydown', event => {
+            if (event.key === 'Escape') cerrarClientes();
+            if (event.key === 'Enter' && !clientesResultados.hidden) {
+                const primero = clientesResultados.querySelector('button');
+                if (primero) { event.preventDefault(); primero.click(); }
+            }
+        });
+        document.addEventListener('click', event => {
+            if (!document.querySelector('.s2-cliente-busqueda').contains(event.target)) cerrarClientes();
+        });
+    }
 
     const fechaPedido = document.getElementById('fecha_pedido');
     const fechaEntrega = document.getElementById('fecha_entrega');
@@ -37,6 +109,10 @@
             totalCentimos += importe;
         });
         totalElemento.textContent = 'S/ ' + (totalCentimos / 100).toFixed(2);
+        const cantidadLineas = contenedor.children.length;
+        if (cantidadLineas > 0 && cantidadLineas < 18) {
+            aviso.textContent = `${cantidadLineas} de 18 líneas utilizadas.`;
+        }
     }
 
     function configurarModalidad(fila, preferencia) {
@@ -44,36 +120,155 @@
         const producto = presentaciones.find(p => String(p.id) === id);
         const selector = fila.querySelector('.js-modalidad');
         selector.replaceChildren();
-        if (producto?.unidad) selector.add(new Option('Unidad', 'unidad'));
-        if (producto?.empaque) selector.add(new Option('Empaque', 'empaque'));
+        if (producto?.unidad && producto.precio_unidad !== null) selector.add(new Option('Unidad', 'unidad'));
+        if (producto?.empaque && producto.precio_empaque !== null) selector.add(new Option('Empaque', 'empaque'));
         if (!selector.options.length) selector.add(new Option('Sin forma de venta', ''));
         if (Array.from(selector.options).some(option => option.value === preferencia)) selector.value = preferencia;
         recalcular();
     }
 
-    function agregarFila(datos = {}) {
+    function agregarFila(datos) {
+        const producto = presentaciones.find(p => String(p.id) === String(datos.presentacion_producto_id));
+        if (!producto) return null;
+        const repetida = Array.from(contenedor.querySelectorAll('.s2-product-row')).find(fila =>
+            fila.querySelector('.js-presentacion').value === String(producto.id) &&
+            fila.querySelector('.js-modalidad').value === (datos.modalidad || 'unidad')
+        );
+        if (repetida) {
+            const cantidadCampo = repetida.querySelector('.js-cantidad');
+            const nuevaCantidad = window.BusquedaPedidos.cantidadAcumulada(cantidadCampo.value, datos.cantidad || 1);
+            if (nuevaCantidad === null) {
+                aviso.textContent = 'Una línea no puede superar las 10 000 unidades o empaques.';
+                cantidadCampo.focus();
+                return null;
+            }
+            cantidadCampo.value = String(nuevaCantidad);
+            recalcular();
+            cantidadCampo.focus();
+            return repetida;
+        }
+        if (contenedor.children.length >= 18) {
+            aviso.textContent = 'La nota física admite como máximo 18 líneas. Elimina una línea para continuar.';
+            return null;
+        }
         const fragmento = plantilla.content.cloneNode(true);
         const fila = fragmento.querySelector('.s2-product-row');
         fila.querySelectorAll('[name]').forEach(elemento => elemento.name = elemento.name.replaceAll('__INDEX__', String(indice)));
         indice++;
-        const selector = fila.querySelector('.js-presentacion');
-        selector.add(new Option('Selecciona una presentación', ''));
-        presentaciones.forEach(p => selector.add(new Option(p.nombre + ' | ' + p.sku, String(p.id))));
-        selector.value = String(datos.presentacion_producto_id || '');
+        fila.querySelector('.js-presentacion').value = producto.id;
+        fila.querySelector('.js-nombre-producto').textContent = `${producto.nombre} | ${producto.sku}`;
         fila.querySelector('.js-cantidad').value = datos.cantidad || 1;
         contenedor.appendChild(fragmento);
         const actual = contenedor.lastElementChild;
         configurarModalidad(actual, datos.modalidad || 'unidad');
-        actual.querySelector('.js-presentacion').addEventListener('change', () => configurarModalidad(actual, 'unidad'));
-        actual.querySelector('.js-modalidad').addEventListener('change', recalcular);
-        actual.querySelector('.js-cantidad').addEventListener('input', recalcular);
-        actual.querySelector('.js-eliminar').addEventListener('click', () => {
-            if (contenedor.children.length <= 1) return;
-            actual.remove();
+        let modalidadAnterior = actual.querySelector('.js-modalidad').value;
+        actual.querySelector('.js-modalidad').addEventListener('change', () => {
+            const existente = Array.from(contenedor.querySelectorAll('.s2-product-row')).find(fila =>
+                fila !== actual &&
+                fila.querySelector('.js-presentacion').value === actual.querySelector('.js-presentacion').value &&
+                fila.querySelector('.js-modalidad').value === actual.querySelector('.js-modalidad').value
+            );
+            if (existente) {
+                const suma = window.BusquedaPedidos.cantidadAcumulada(existente.querySelector('.js-cantidad').value, actual.querySelector('.js-cantidad').value);
+                if (suma === null) {
+                    actual.querySelector('.js-modalidad').value = modalidadAnterior;
+                    aviso.textContent = 'La cantidad acumulada excede el máximo de 10 000.';
+                    return;
+                }
+                existente.querySelector('.js-cantidad').value = String(suma);
+                actual.remove();
+                existente.querySelector('.js-cantidad').focus();
+            } else {
+                modalidadAnterior = actual.querySelector('.js-modalidad').value;
+            }
             recalcular();
         });
+        actual.querySelector('.js-cantidad').addEventListener('input', recalcular);
+        actual.querySelector('.js-eliminar').addEventListener('click', () => {
+            actual.remove();
+            recalcular();
+            buscar.focus();
+        });
         recalcular();
+        return actual;
     }
-    document.getElementById('agregar-fila').addEventListener('click', () => agregarFila());
-    (Array.isArray(config.filas) && config.filas.length ? config.filas : [{}]).forEach(agregarFila);
+
+    function cerrarResultados() {
+        resultados.replaceChildren();
+        resultados.hidden = true;
+        buscar.setAttribute('aria-expanded', 'false');
+        opcionActiva = -1;
+        buscar.removeAttribute('aria-activedescendant');
+    }
+
+    function elegir(presentacion, modalidad) {
+        const fila = agregarFila({ presentacion_producto_id: presentacion.id, modalidad, cantidad: 1 });
+        if (!fila) return;
+        cerrarResultados();
+        buscar.value = '';
+        buscar.focus();
+    }
+
+    function mostrarResultados() {
+        cerrarResultados();
+        const texto = window.BusquedaPedidos.normalizar(buscar.value);
+        if (!texto) return;
+        const opciones = [];
+        presentaciones.forEach(p => {
+            if (!window.BusquedaPedidos.coincide(p, texto)) return;
+            if (p.unidad && p.precio_unidad !== null) opciones.push([p, 'unidad', p.precio_unidad]);
+            if (p.empaque && p.precio_empaque !== null) opciones.push([p, 'empaque', p.precio_empaque]);
+        });
+        opciones.slice(0, 12).forEach(([p, modalidad, precio]) => {
+            const boton = document.createElement('button');
+            boton.type = 'button';
+            boton.className = 's2-sugerencia';
+            boton.setAttribute('role', 'option');
+            boton.id = `s2-resultado-${resultados.children.length}`;
+            const titulo = document.createElement('span');
+            titulo.className = 's2-sugerencia-titulo';
+            titulo.textContent = p.nombre;
+            const detalle = document.createElement('span');
+            detalle.className = 's2-sugerencia-detalle';
+            detalle.textContent = `${p.sku} · ${modalidad === 'unidad' ? 'Unidad' : 'Empaque'} · S/ ${Number(precio).toFixed(2)}`;
+            boton.append(titulo, detalle);
+            boton.addEventListener('click', () => elegir(p, modalidad));
+            resultados.append(boton);
+        });
+        resultados.hidden = false;
+        buscar.setAttribute('aria-expanded', 'true');
+        aviso.textContent = opciones.length ? `${opciones.length} coincidencias; se muestran hasta 12.` : 'No hay coincidencias.';
+        if (!opciones.length) cerrarResultados();
+    }
+
+    buscar.addEventListener('input', mostrarResultados);
+    buscar.addEventListener('focus', mostrarResultados);
+    buscar.addEventListener('keydown', event => {
+        const botones = Array.from(resultados.querySelectorAll('.s2-sugerencia'));
+        if (!botones.length) return;
+        if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            event.preventDefault();
+            opcionActiva = (opcionActiva + (event.key === 'ArrowDown' ? 1 : -1) + botones.length) % botones.length;
+            botones.forEach((b, i) => {
+                b.classList.toggle('is-active', i === opcionActiva);
+                b.setAttribute('aria-selected', i === opcionActiva ? 'true' : 'false');
+            });
+            buscar.setAttribute('aria-activedescendant', botones[opcionActiva].id);
+            botones[opcionActiva].scrollIntoView({ block: 'nearest' });
+        } else if (event.key === 'Enter' && !resultados.hidden) {
+            event.preventDefault();
+            botones[Math.max(opcionActiva, 0)].click();
+        } else if (event.key === 'Escape' || event.key === 'Tab') cerrarResultados();
+    });
+    document.addEventListener('click', event => {
+        if (!document.getElementById('busqueda-productos').contains(event.target)) cerrarResultados();
+    });
+    document.getElementById('agregar-fila').addEventListener('click', () => buscar.focus());
+    (Array.isArray(config.filas) ? config.filas : []).forEach(agregarFila);
+    document.getElementById('form-pedido').addEventListener('submit', event => {
+        if (contenedor.children.length) return;
+        event.preventDefault();
+        aviso.textContent = 'Debes agregar al menos un producto.';
+        buscar.focus();
+    });
 })();

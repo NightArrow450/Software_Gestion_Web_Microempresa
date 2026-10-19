@@ -62,6 +62,11 @@
             Volver
         </a>
 
+        <button type="button" class="btn btn-secondary" id="copiar-resumen-whatsapp">
+            <span class="material-symbols-outlined">content_copy</span>
+            Copiar resumen para WhatsApp
+        </button>
+
         @if($editable && $puedeEditar)
             <a
                 class="btn btn-primary"
@@ -75,6 +80,8 @@
         @endif
     </div>
 </div>
+<p id="estado-copia-whatsapp" class="s2-note" role="status" aria-live="polite"></p>
+<textarea id="resumen-whatsapp-manual" class="form-control" rows="8" readonly hidden aria-label="Resumen del pedido para copiar manualmente"></textarea>
 
 <div class="s2-summary">
     <span class="s2-state">
@@ -374,3 +381,52 @@
     </p>
 </section>
 @endsection
+
+@push('scripts')
+<script>
+(() => {
+    'use strict';
+    const boton = document.getElementById('copiar-resumen-whatsapp');
+    if (!boton) return;
+    const resumen = {{ Illuminate\Support\Js::from([
+        'numero' => $pedido->numero,
+        'cliente' => $pedido->cliente_nombre,
+        'fecha' => $pedido->fecha_entrega?->format('d/m/Y'),
+        'condicion' => $pedido->condicion_pago === 'credito' ? 'Crédito' : 'Al contado',
+        'total' => number_format((float) $pedido->total, 2, '.', ''),
+        'productos' => $pedido->detalles->map(fn($detalle) => [
+            'descripcion' => $detalle->descripcion_producto,
+            'modalidad' => $detalle->modalidad,
+            'cantidad' => $detalle->cantidad,
+            'importe' => number_format((float) $detalle->importe, 2, '.', ''),
+        ])->values()->all(),
+    ]) }};
+    boton.addEventListener('click', async () => {
+        const lineas = [
+            `PEDIDO N.º ${resumen.numero}`,
+            `Cliente: ${resumen.cliente}`,
+            `Entrega prevista: ${resumen.fecha}`,
+            `Condición de pago: ${resumen.condicion}`,
+            '', 'Productos:',
+            ...resumen.productos.map((p, i) => `${i + 1}. ${p.descripcion} | ${p.cantidad} ${p.modalidad}(s) | S/ ${p.importe}`),
+            '', `TOTAL: S/ ${resumen.total}`,
+        ];
+        const texto = lineas.join('\n');
+        const estado = document.getElementById('estado-copia-whatsapp');
+        const manual = document.getElementById('resumen-whatsapp-manual');
+        try {
+            if (!navigator.clipboard?.writeText) throw new Error('Portapapeles no disponible');
+            await navigator.clipboard.writeText(texto);
+            estado.textContent = 'Resumen copiado. Puedes pegarlo en un chat de WhatsApp.';
+            manual.hidden = true;
+        } catch (_) {
+            manual.value = texto;
+            manual.hidden = false;
+            manual.focus();
+            manual.select();
+            estado.textContent = 'Tu navegador no permitió copiar automáticamente. Copia el texto seleccionado y pégalo en WhatsApp.';
+        }
+    });
+})();
+</script>
+@endpush
