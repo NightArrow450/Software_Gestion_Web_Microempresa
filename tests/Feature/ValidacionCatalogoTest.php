@@ -99,6 +99,23 @@ class ValidacionCatalogoTest extends TestCase
         ];
     }
 
+    public function test_edicion_invalida_conserva_producto_presentacion_y_precio(): void
+    {
+        $datos = $this->producto();
+        $this->post(route('productos.store'), $datos)->assertSessionHasNoErrors();
+        $producto = Producto::firstOrFail();
+        $presentacion = $producto->presentaciones()->firstOrFail();
+        $datos['nombre'] = 'Nombre que no debe guardarse';
+        $datos['presentaciones'][0]['ids'] = ['__none__' => $presentacion->id];
+        $datos['presentaciones'][0]['precio_unitario'] = 0;
+
+        $this->put(route('productos.update', $producto), $datos)->assertSessionHasErrors('presentaciones.0.precio_unitario');
+        $this->assertSame('Detergente', $producto->fresh()->nombre);
+        $this->assertSame('2.50', $presentacion->fresh()->precio_unitario);
+        $this->assertSame('30.00', $presentacion->fresh()->precio_empaque);
+        $this->assertDatabaseCount('presentaciones_producto', 1);
+    }
+
     #[DataProvider('limitesValidos')]
     public function test_acepta_limites_y_conserva_precio_automatico(int $unidades, string $precio, string $total): void
     {

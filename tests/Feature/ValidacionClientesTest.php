@@ -6,6 +6,7 @@ use App\Models\Cliente;
 use App\Models\Permiso;
 use App\Models\Role;
 use App\Models\User;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
@@ -66,6 +67,24 @@ class ValidacionClientesTest extends TestCase
             'teléfono con letras' => ['telefono', '987abc654321'],
             'correo inválido' => ['correo', 'correo inválido'],
         ];
+    }
+
+    public function test_acepta_nombre_minimo_y_ce_en_ambos_limites(): void
+    {
+        $this->autenticar();
+        foreach (['AB1234567', 'AB1234567890'] as $documento) {
+            $this->post(route('clientes.store'), ['nombre' => 'Ana', 'documento' => strtolower($documento)])
+                ->assertSessionHasNoErrors();
+            $this->assertDatabaseHas('clientes', ['nombre' => 'Ana', 'documento' => $documento]);
+        }
+    }
+
+    public function test_el_indice_impide_duplicados_que_omiten_el_controlador(): void
+    {
+        Cliente::create(['nombre' => 'Cliente Uno', 'documento' => '12345678']);
+
+        $this->expectException(UniqueConstraintViolationException::class);
+        Cliente::create(['nombre' => 'Cliente Dos', 'documento' => '12345678']);
     }
 
     #[DataProvider('invalidos')]

@@ -108,6 +108,34 @@ class ValidacionPedidosTest extends TestCase
         ];
     }
 
+    public function test_conserva_el_maximo_de_dieciocho_lineas(): void
+    {
+        $datos = $this->escenario();
+        $base = PresentacionProducto::firstOrFail();
+        for ($indice = 2; $indice <= 19; $indice++) {
+            $presentacion = $base->replicate();
+            $presentacion->codigo_sku = 'LINEA-'.$indice;
+            $presentacion->save();
+            $datos['detalles'][] = ['presentacion_producto_id' => $presentacion->id, 'modalidad' => 'unidad', 'cantidad' => 1];
+        }
+
+        $this->post(route('pedidos.store'), $datos)->assertSessionHasErrors('detalles');
+        $this->assertDatabaseCount('pedidos', 0);
+        array_pop($datos['detalles']);
+        $this->post(route('pedidos.store'), $datos)->assertSessionHasNoErrors();
+        $this->assertDatabaseCount('pedido_detalles', 18);
+    }
+
+    public function test_rechaza_lineas_duplicadas_sin_guardar_un_pedido_parcial(): void
+    {
+        $datos = $this->escenario();
+        $datos['detalles'][] = $datos['detalles'][0];
+
+        $this->post(route('pedidos.store'), $datos)->assertSessionHasErrors('detalles.1.presentacion_producto_id');
+        $this->assertDatabaseCount('pedidos', 0);
+        $this->assertDatabaseCount('pedido_detalles', 0);
+    }
+
     #[DataProvider('motivos')]
     public function test_valida_longitud_del_motivo_y_conserva_transiciones(string $accion, int $longitud, bool $valido): void
     {

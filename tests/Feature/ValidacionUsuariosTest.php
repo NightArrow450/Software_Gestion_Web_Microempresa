@@ -50,6 +50,23 @@ class ValidacionUsuariosTest extends TestCase
         ];
     }
 
+    public function test_acepta_nombres_de_dos_letras_y_contrasena_de_diez_caracteres(): void
+    {
+        $datos = array_replace($this->datos(), ['first_name' => 'Li', 'last_name' => 'Wu', 'password' => 'Abcdefgh12', 'password_confirmation' => 'Abcdefgh12']);
+
+        $this->post(route('usuarios.store'), $datos)->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('users', ['first_name' => 'Li', 'last_name' => 'Wu']);
+    }
+
+    public function test_conserva_la_confirmacion_de_contrasena(): void
+    {
+        $datos = $this->datos();
+        $datos['password_confirmation'] = 'OtraSegura123';
+
+        $this->post(route('usuarios.store'), $datos)->assertSessionHasErrors('password');
+        $this->assertDatabaseCount('users', 1);
+    }
+
     #[DataProvider('invalidos')]
     public function test_rechaza_datos_invalidos_en_alta_y_edicion(string $campo, string $valor): void
     {
