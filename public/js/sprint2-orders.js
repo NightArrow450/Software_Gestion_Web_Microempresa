@@ -41,6 +41,10 @@
             totalCentimos += importe;
         });
         totalElemento.textContent = 'S/ ' + (totalCentimos / 100).toFixed(2);
+        const cantidadLineas = contenedor.children.length;
+        if (cantidadLineas > 0 && cantidadLineas < 18) {
+            aviso.textContent = `${cantidadLineas} de 18 líneas utilizadas.`;
+        }
     }
 
     function configurarModalidad(fila, preferencia) {
@@ -58,6 +62,10 @@
     function agregarFila(datos) {
         const producto = presentaciones.find(p => String(p.id) === String(datos.presentacion_producto_id));
         if (!producto) return null;
+        if (contenedor.children.length >= 18) {
+            aviso.textContent = 'La nota física admite como máximo 18 líneas. Elimina una línea para continuar.';
+            return null;
+        }
         const fragmento = plantilla.content.cloneNode(true);
         const fila = fragmento.querySelector('.s2-product-row');
         fila.querySelectorAll('[name]').forEach(elemento => elemento.name = elemento.name.replaceAll('__INDEX__', String(indice)));
@@ -88,7 +96,8 @@
     }
 
     function elegir(presentacion, modalidad) {
-        agregarFila({ presentacion_producto_id: presentacion.id, modalidad, cantidad: 1 });
+        const fila = agregarFila({ presentacion_producto_id: presentacion.id, modalidad, cantidad: 1 });
+        if (!fila) return;
         cerrarResultados();
         buscar.value = '';
         buscar.focus();
