@@ -31,12 +31,18 @@
 <section class="form-section">
     <div class="page-heading" style="margin-bottom:14px"><div><h2 class="form-section-title" style="margin-bottom:4px">Productos solicitados</h2>
         <div class="s2-note">El precio se obtiene del catálogo. Admite unidad o empaque si está habilitado. Máximo 18 líneas por nota física.</div></div>
-        <button type="button" class="btn btn-secondary" id="agregar-fila"><span class="material-symbols-outlined">add</span> Agregar producto</button></div>
+        <button type="button" class="btn btn-secondary" id="agregar-fila"><span class="material-symbols-outlined">search</span> Buscar producto</button></div>
     @if(count($presentaciones) === 0)<div class="s2-error">No existen presentaciones activas. Crea presentaciones y registra precios en Catálogo de Productos antes de agregar un pedido.</div>@endif
+    <div class="form-group s2-busqueda" id="busqueda-productos">
+        <label class="form-label" for="buscar-presentacion">Buscar producto por nombre o SKU</label>
+        <input class="form-control" type="search" id="buscar-presentacion" placeholder="Ej.: Quita, lejía o código SKU" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="resultados-presentaciones">
+        <div class="s2-sugerencias" id="resultados-presentaciones" role="listbox" hidden></div>
+        <p class="s2-note" id="aviso-buscador" aria-live="polite">Escribe para buscar. Selecciona la presentación y modalidad de venta.</p>
+    </div>
     <div id="filas-pedido"></div>
     <template id="plantilla-fila">
         <div class="s2-product-row">
-            <div><label>Producto / SKU *</label><select class="form-control js-presentacion" name="detalles[__INDEX__][presentacion_producto_id]" required></select></div>
+            <div><label>Producto / SKU *</label><input type="hidden" class="js-presentacion" name="detalles[__INDEX__][presentacion_producto_id]"><div class="form-control s2-nombre-producto js-nombre-producto"></div></div>
             <div><label>Venta por *</label><select class="form-control js-modalidad" name="detalles[__INDEX__][modalidad]" required></select></div>
             <div><label>Cantidad *</label><input class="form-control js-cantidad" name="detalles[__INDEX__][cantidad]" type="number" min="1" max="10000" step="1" required value="1"></div>
             <div><label>Precio S/</label><input class="form-control js-precio" readonly placeholder="—" tabindex="-1"></div>

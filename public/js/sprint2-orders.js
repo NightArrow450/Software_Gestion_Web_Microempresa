@@ -6,7 +6,11 @@
     const contenedor = document.getElementById('filas-pedido');
     const plantilla = document.getElementById('plantilla-fila');
     const totalElemento = document.getElementById('s2-total');
+    const buscar = document.getElementById('buscar-presentacion');
+    const resultados = document.getElementById('resultados-presentaciones');
+    const aviso = document.getElementById('aviso-buscador');
     let indice = 0;
+    let opcionActiva = -1;
 
     const fechaPedido = document.getElementById('fecha_pedido');
     const fechaEntrega = document.getElementById('fecha_entrega');
@@ -44,36 +48,106 @@
         const producto = presentaciones.find(p => String(p.id) === id);
         const selector = fila.querySelector('.js-modalidad');
         selector.replaceChildren();
-        if (producto?.unidad) selector.add(new Option('Unidad', 'unidad'));
-        if (producto?.empaque) selector.add(new Option('Empaque', 'empaque'));
+        if (producto?.unidad && producto.precio_unidad !== null) selector.add(new Option('Unidad', 'unidad'));
+        if (producto?.empaque && producto.precio_empaque !== null) selector.add(new Option('Empaque', 'empaque'));
         if (!selector.options.length) selector.add(new Option('Sin forma de venta', ''));
         if (Array.from(selector.options).some(option => option.value === preferencia)) selector.value = preferencia;
         recalcular();
     }
 
-    function agregarFila(datos = {}) {
+    function agregarFila(datos) {
+        const producto = presentaciones.find(p => String(p.id) === String(datos.presentacion_producto_id));
+        if (!producto) return null;
         const fragmento = plantilla.content.cloneNode(true);
         const fila = fragmento.querySelector('.s2-product-row');
         fila.querySelectorAll('[name]').forEach(elemento => elemento.name = elemento.name.replaceAll('__INDEX__', String(indice)));
         indice++;
-        const selector = fila.querySelector('.js-presentacion');
-        selector.add(new Option('Selecciona una presentación', ''));
-        presentaciones.forEach(p => selector.add(new Option(p.nombre + ' | ' + p.sku, String(p.id))));
-        selector.value = String(datos.presentacion_producto_id || '');
+        fila.querySelector('.js-presentacion').value = producto.id;
+        fila.querySelector('.js-nombre-producto').textContent = `${producto.nombre} | ${producto.sku}`;
         fila.querySelector('.js-cantidad').value = datos.cantidad || 1;
         contenedor.appendChild(fragmento);
         const actual = contenedor.lastElementChild;
         configurarModalidad(actual, datos.modalidad || 'unidad');
-        actual.querySelector('.js-presentacion').addEventListener('change', () => configurarModalidad(actual, 'unidad'));
         actual.querySelector('.js-modalidad').addEventListener('change', recalcular);
         actual.querySelector('.js-cantidad').addEventListener('input', recalcular);
         actual.querySelector('.js-eliminar').addEventListener('click', () => {
-            if (contenedor.children.length <= 1) return;
             actual.remove();
             recalcular();
+            buscar.focus();
         });
         recalcular();
+        return actual;
     }
-    document.getElementById('agregar-fila').addEventListener('click', () => agregarFila());
-    (Array.isArray(config.filas) && config.filas.length ? config.filas : [{}]).forEach(agregarFila);
+
+    function cerrarResultados() {
+        resultados.replaceChildren();
+        resultados.hidden = true;
+        buscar.setAttribute('aria-expanded', 'false');
+        opcionActiva = -1;
+    }
+
+    function elegir(presentacion, modalidad) {
+        agregarFila({ presentacion_producto_id: presentacion.id, modalidad, cantidad: 1 });
+        cerrarResultados();
+        buscar.value = '';
+        buscar.focus();
+    }
+
+    function mostrarResultados() {
+        cerrarResultados();
+        const texto = buscar.value.trim().toLowerCase();
+        if (!texto) return;
+        const opciones = [];
+        presentaciones.forEach(p => {
+            if (!`${p.nombre} ${p.sku}`.toLowerCase().includes(texto)) return;
+            if (p.unidad && p.precio_unidad !== null) opciones.push([p, 'unidad', p.precio_unidad]);
+            if (p.empaque && p.precio_empaque !== null) opciones.push([p, 'empaque', p.precio_empaque]);
+        });
+        opciones.slice(0, 12).forEach(([p, modalidad, precio]) => {
+            const boton = document.createElement('button');
+            boton.type = 'button';
+            boton.className = 's2-sugerencia';
+            boton.setAttribute('role', 'option');
+            const titulo = document.createElement('span');
+            titulo.className = 's2-sugerencia-titulo';
+            titulo.textContent = p.nombre;
+            const detalle = document.createElement('span');
+            detalle.className = 's2-sugerencia-detalle';
+            detalle.textContent = `${p.sku} · ${modalidad === 'unidad' ? 'Unidad' : 'Empaque'} · S/ ${Number(precio).toFixed(2)}`;
+            boton.append(titulo, detalle);
+            boton.addEventListener('click', () => elegir(p, modalidad));
+            resultados.append(boton);
+        });
+        resultados.hidden = false;
+        buscar.setAttribute('aria-expanded', 'true');
+        aviso.textContent = opciones.length ? `${opciones.length} coincidencias; se muestran hasta 12.` : 'No hay coincidencias.';
+        if (!opciones.length) cerrarResultados();
+    }
+
+    buscar.addEventListener('input', mostrarResultados);
+    buscar.addEventListener('focus', mostrarResultados);
+    buscar.addEventListener('keydown', event => {
+        const botones = Array.from(resultados.querySelectorAll('.s2-sugerencia'));
+        if (!botones.length) return;
+        if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            event.preventDefault();
+            opcionActiva = (opcionActiva + (event.key === 'ArrowDown' ? 1 : -1) + botones.length) % botones.length;
+            botones.forEach((b, i) => b.classList.toggle('is-active', i === opcionActiva));
+            botones[opcionActiva].scrollIntoView({ block: 'nearest' });
+        } else if (event.key === 'Enter' && !resultados.hidden) {
+            event.preventDefault();
+            botones[Math.max(opcionActiva, 0)].click();
+        } else if (event.key === 'Escape') cerrarResultados();
+    });
+    document.addEventListener('click', event => {
+        if (!document.getElementById('busqueda-productos').contains(event.target)) cerrarResultados();
+    });
+    document.getElementById('agregar-fila').addEventListener('click', () => buscar.focus());
+    (Array.isArray(config.filas) ? config.filas : []).forEach(agregarFila);
+    document.getElementById('form-pedido').addEventListener('submit', event => {
+        if (contenedor.children.length) return;
+        event.preventDefault();
+        aviso.textContent = 'Debes agregar al menos un producto.';
+        buscar.focus();
+    });
 })();
