@@ -139,4 +139,26 @@ class MejoraBuscadorPedidosTest extends TestCase
         $this->post(route('pedidos.store'), $this->pedidoDatos($cliente->id, $presentacion->id))->assertForbidden();
     }
 
+    public function test_buscador_de_clientes_solo_recibe_clientes_activos(): void
+    {
+        $this->actingAs($this->usuario(['pedidos.crear']));
+        [$cliente] = $this->datosCatalogo();
+        Cliente::create(['nombre' => 'Cliente Inactivo', 'estado' => false]);
+        $this->get(route('pedidos.create'))
+            ->assertOk()
+            ->assertSee('buscar-cliente')
+            ->assertViewHas('clientes', fn ($clientes) => $clientes->count() === 1 && $clientes->first()->id === $cliente->id);
+    }
+
+    public function test_detalle_del_pedido_incluye_boton_para_copiar_resumen_sin_enviar_mensaje(): void
+    {
+        $this->actingAs($this->usuario(['pedidos.crear', 'pedidos.ver']));
+        [$cliente, , $presentacion] = $this->datosCatalogo();
+        $this->post(route('pedidos.store'), $this->pedidoDatos($cliente->id, $presentacion->id))->assertRedirect();
+        $this->get(route('pedidos.show', Pedido::firstOrFail()))
+            ->assertOk()
+            ->assertSee('copiar-resumen-whatsapp')
+            ->assertSee('Copiar resumen para WhatsApp');
+    }
+
 }
