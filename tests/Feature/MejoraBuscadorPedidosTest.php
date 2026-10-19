@@ -91,4 +91,22 @@ class MejoraBuscadorPedidosTest extends TestCase
             ->assertSessionHasErrors('detalles.1.presentacion_producto_id');
         $this->assertDatabaseCount('pedidos', 0);
     }
+    public function test_mismo_formulario_de_busqueda_en_creacion_y_edicion_y_bloqueo_de_confirmados(): void
+    {
+        $this->actingAs($this->usuario(['pedidos.crear', 'pedidos.editar', 'pedidos.ver']));
+        [$cliente, , $presentacion] = $this->datosCatalogo();
+        $this->get(route('pedidos.create'))->assertOk()->assertSee('buscar-presentacion');
+
+        $datos = $this->pedidoDatos($cliente->id, $presentacion->id);
+        $this->post(route('pedidos.store'), $datos)->assertRedirect();
+        $pedido = Pedido::firstOrFail();
+        $this->get(route('pedidos.edit', $pedido))
+            ->assertOk()->assertSee('buscar-presentacion')->assertSee('QUIT-500');
+
+        $pedido->update(['estado' => 'confirmado']);
+        $this->get(route('pedidos.edit', $pedido))->assertForbidden();
+        $this->put(route('pedidos.update', $pedido), $datos)
+            ->assertSessionHasErrors('pedido');
+    }
+
 }
