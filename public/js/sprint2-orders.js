@@ -84,6 +84,7 @@
         resultados.hidden = true;
         buscar.setAttribute('aria-expanded', 'false');
         opcionActiva = -1;
+        buscar.removeAttribute('aria-activedescendant');
     }
 
     function elegir(presentacion, modalidad) {
@@ -108,6 +109,7 @@
             boton.type = 'button';
             boton.className = 's2-sugerencia';
             boton.setAttribute('role', 'option');
+            boton.id = `s2-resultado-${resultados.children.length}`;
             const titulo = document.createElement('span');
             titulo.className = 's2-sugerencia-titulo';
             titulo.textContent = p.nombre;
@@ -132,12 +134,16 @@
         if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
             event.preventDefault();
             opcionActiva = (opcionActiva + (event.key === 'ArrowDown' ? 1 : -1) + botones.length) % botones.length;
-            botones.forEach((b, i) => b.classList.toggle('is-active', i === opcionActiva));
+            botones.forEach((b, i) => {
+                b.classList.toggle('is-active', i === opcionActiva);
+                b.setAttribute('aria-selected', i === opcionActiva ? 'true' : 'false');
+            });
+            buscar.setAttribute('aria-activedescendant', botones[opcionActiva].id);
             botones[opcionActiva].scrollIntoView({ block: 'nearest' });
         } else if (event.key === 'Enter' && !resultados.hidden) {
             event.preventDefault();
             botones[Math.max(opcionActiva, 0)].click();
-        } else if (event.key === 'Escape') cerrarResultados();
+        } else if (event.key === 'Escape' || event.key === 'Tab') cerrarResultados();
     });
     document.addEventListener('click', event => {
         if (!document.getElementById('busqueda-productos').contains(event.target)) cerrarResultados();
