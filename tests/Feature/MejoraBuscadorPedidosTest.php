@@ -109,4 +109,34 @@ class MejoraBuscadorPedidosTest extends TestCase
             ->assertSessionHasErrors('pedido');
     }
 
+    public function test_catalogo_de_sugerencias_excluye_inactivos_y_sin_precio(): void
+    {
+        $this->actingAs($this->usuario(['pedidos.crear']));
+        [, $producto, $activa] = $this->datosCatalogo();
+        $sinPrecio = $activa->replicate();
+        $sinPrecio->codigo_sku = 'SIN-PRECIO';
+        $sinPrecio->precio_unitario = null;
+        $sinPrecio->precio_empaque = null;
+        $sinPrecio->save();
+        $inactiva = $activa->replicate();
+        $inactiva->codigo_sku = 'SKU-INACTIVO';
+        $inactiva->estado = false;
+        $inactiva->save();
+
+        $respuesta = $this->get(route('pedidos.create'))->assertOk();
+        $respuesta->assertViewHas('presentaciones', function (array $presentaciones) use ($activa) {
+            return count($presentaciones) === 1 && (int) $presentaciones[0]['id'] === $activa->id;
+        });
+        $producto->update(['estado' => false]);
+        $this->get(route('pedidos.create'))->assertViewHas('presentaciones', fn (array $items) => count($items) === 0);
+    }
+
+    public function test_rutas_de_pedidos_no_permiten_acceso_sin_permiso(): void
+    {
+        $this->actingAs($this->usuario(['pedidos.ver']));
+        [$cliente, , $presentacion] = $this->datosCatalogo();
+        $this->get(route('pedidos.create'))->assertForbidden();
+        $this->post(route('pedidos.store'), $this->pedidoDatos($cliente->id, $presentacion->id))->assertForbidden();
+    }
+
 }

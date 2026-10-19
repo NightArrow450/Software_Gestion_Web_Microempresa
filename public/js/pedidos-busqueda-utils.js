@@ -12,5 +12,9 @@
     function coincide(producto, texto) {
         return normalizar(`${producto.nombre} ${producto.sku}`).includes(normalizar(texto));
     }
-    return Object.freeze({ normalizar, coincide });
+    function cantidadAcumulada(actual, adicional) {
+        const total = Number(actual) + Number(adicional);
+        return Number.isSafeInteger(total) && total >= 1 && total <= 10000 ? total : null;
+    }
+    return Object.freeze({ normalizar, coincide, cantidadAcumulada });
 });

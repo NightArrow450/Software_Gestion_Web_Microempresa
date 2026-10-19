@@ -68,8 +68,8 @@
         );
         if (repetida) {
             const cantidadCampo = repetida.querySelector('.js-cantidad');
-            const nuevaCantidad = Number(cantidadCampo.value) + Number(datos.cantidad || 1);
-            if (!Number.isSafeInteger(nuevaCantidad) || nuevaCantidad > 10000) {
+            const nuevaCantidad = window.BusquedaPedidos.cantidadAcumulada(cantidadCampo.value, datos.cantidad || 1);
+            if (nuevaCantidad === null) {
                 aviso.textContent = 'Una línea no puede superar las 10 000 unidades o empaques.';
                 cantidadCampo.focus();
                 return null;
@@ -101,8 +101,8 @@
                 fila.querySelector('.js-modalidad').value === actual.querySelector('.js-modalidad').value
             );
             if (existente) {
-                const suma = Number(existente.querySelector('.js-cantidad').value) + Number(actual.querySelector('.js-cantidad').value);
-                if (suma > 10000) {
+                const suma = window.BusquedaPedidos.cantidadAcumulada(existente.querySelector('.js-cantidad').value, actual.querySelector('.js-cantidad').value);
+                if (suma === null) {
                     actual.querySelector('.js-modalidad').value = modalidadAnterior;
                     aviso.textContent = 'La cantidad acumulada excede el máximo de 10 000.';
                     return;
