@@ -116,6 +116,15 @@
                 </a>
             @endif
 
+
+            @if($puedeVerPedidosSidebar)
+                <a href="{{ route('cumplimiento.index') }}"
+                   class="menu-link {{ request()->routeIs('cumplimiento.*') ? 'active' : '' }}">
+                    <span class="material-symbols-outlined">local_shipping</span>
+                    Preparación, despacho y entrega
+                </a>
+            @endif
+
             @if($puedeVerInventarioSidebar)
                 <p class="menu-title" style="margin-top:25px;">Inventario</p>
                 <a href="{{ route('inventario.index') }}"
@@ -135,21 +144,19 @@
                 </a>
             @endif
 
-            <p class="menu-title" style="margin-top:25px;">Próximos módulos</p>
-
-            <div class="menu-link menu-disabled">
-                <span class="material-symbols-outlined">
-                    local_shipping
-                </span>
-
-                <span style="flex:1;">
-                    Seguimiento
-                </span>
-
-                <span class="menu-soon">
-                    Próximamente
-                </span>
-            </div>
+            @if(in_array('seguimiento.ver', $permisosSidebar, true))
+                <p class="menu-title" style="margin-top:25px;">Seguimiento</p>
+                <a href="{{ route('seguimiento.index') }}"
+                   class="menu-link {{ request()->routeIs('seguimiento.index') || request()->routeIs('seguimiento.show') || request()->routeIs('seguimiento.trazabilidad') ? 'active' : '' }}">
+                    <span class="material-symbols-outlined">travel_explore</span>
+                    Consultar estado
+                </a>
+                <a href="{{ route('seguimiento.historial') }}"
+                   class="menu-link {{ request()->routeIs('seguimiento.historial') ? 'active' : '' }}">
+                    <span class="material-symbols-outlined">history</span>
+                    Historial de pedidos
+                </a>
+            @endif
         </nav>
     </div>
 

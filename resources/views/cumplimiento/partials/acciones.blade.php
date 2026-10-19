@@ -19,7 +19,10 @@
             @csrf
             <label for="observacion_despacho">Observación de despacho (opcional)</label>
             <textarea id="observacion_despacho" name="observacion_despacho" maxlength="1000" class="form-control" rows="3">{{ old('observacion_despacho') }}</textarea>
-            <button type="submit" class="btn btn-primary" onclick="return confirm('¿Registrar salida del pedido?')">Registrar despacho</button>
+            <p class="muted">Al despachar se descontarán automáticamente las unidades terminadas del inventario.
+               Si falta stock, el despacho será rechazado sin descontar nada. Registra primero las
+               unidades envasadas mediante una entrada de inventario.</p>
+            <button type="submit" class="btn btn-primary" onclick="return confirm('¿Despachar este pedido y descontar las unidades del inventario?')">Registrar despacho</button>
         </form>
     @elseif($puedeEntregar && $pedido->estado === 'despachado')
         <form method="POST" action="{{ route('cumplimiento.entregar', $pedido) }}">

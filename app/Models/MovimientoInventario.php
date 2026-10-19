@@ -10,12 +10,13 @@ class MovimientoInventario extends Model
     protected $table = 'movimientos_inventario';
 
     protected $fillable = [
-        'presentacion_producto_id', 'insumo_id', 'usuario_id', 'tipo', 'cantidad',
-        'stock_anterior', 'stock_nuevo', 'motivo',
+        'presentacion_producto_id', 'insumo_id', 'pedido_id', 'usuario_id',
+        'tipo', 'cantidad', 'stock_anterior', 'stock_nuevo', 'motivo',
     ];
 
     protected $casts = [
-        'cantidad' => 'decimal:3', 'stock_anterior' => 'decimal:3',
+        'cantidad' => 'decimal:3',
+        'stock_anterior' => 'decimal:3',
         'stock_nuevo' => 'decimal:3',
     ];
 
@@ -32,5 +33,10 @@ class MovimientoInventario extends Model
     public function usuario(): BelongsTo
     {
         return $this->belongsTo(User::class, 'usuario_id');
+    }
+
+    public function pedido(): BelongsTo
+    {
+        return $this->belongsTo(Pedido::class, 'pedido_id');
     }
 }
