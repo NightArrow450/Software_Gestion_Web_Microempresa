@@ -8,6 +8,21 @@
     const totalElemento = document.getElementById('s2-total');
     let indice = 0;
 
+    const fechaPedido = document.getElementById('fecha_pedido');
+    const fechaEntrega = document.getElementById('fecha_entrega');
+    function limitarEntrega() {
+        fechaEntrega.min = fechaPedido.value;
+        const limite = new Date(`${fechaPedido.value}T12:00:00Z`);
+        if (Number.isNaN(limite.getTime())) {
+            fechaEntrega.removeAttribute('max');
+            return;
+        }
+        limite.setUTCDate(limite.getUTCDate() + 90);
+        fechaEntrega.max = limite.toISOString().slice(0, 10);
+    }
+    fechaPedido.addEventListener('change', limitarEntrega);
+    limitarEntrega();
+
     function recalcular() {
         let totalCentimos = 0;
         contenedor.querySelectorAll('.s2-product-row').forEach(fila => {

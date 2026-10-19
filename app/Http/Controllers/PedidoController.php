@@ -6,6 +6,7 @@ use App\Models\Cliente;
 use App\Models\Pedido;
 use App\Models\PresentacionProducto;
 use App\Services\CalculadoraPedido;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -91,7 +92,7 @@ class PedidoController extends Controller
                 ->where('estado', true)
                 ->first();
 
-            if (!$cliente) {
+            if (! $cliente) {
                 throw ValidationException::withMessages([
                     'cliente_id' => 'Selecciona un cliente activo.',
                 ]);
@@ -185,7 +186,7 @@ class PedidoController extends Controller
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            if (!in_array(
+            if (! in_array(
                 $pedido->estado,
                 ['registrado', 'observado'],
                 true
@@ -199,7 +200,7 @@ class PedidoController extends Controller
                 ->where('estado', true)
                 ->first();
 
-            if (!$cliente) {
+            if (! $cliente) {
                 throw ValidationException::withMessages([
                     'cliente_id' => 'Selecciona un cliente activo.',
                 ]);
@@ -241,6 +242,7 @@ class PedidoController extends Controller
                 'string',
                 'max:1000',
                 'required_if:accion,observar',
+                Rule::when($request->input('accion') === 'observar', 'min:10'),
             ],
         ]);
 
@@ -286,6 +288,7 @@ class PedidoController extends Controller
             'motivo' => [
                 'required',
                 'string',
+                'min:10',
                 'max:1000',
             ],
         ]);
@@ -367,7 +370,7 @@ class PedidoController extends Controller
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            if (!in_array(
+            if (! in_array(
                 $nuevo,
                 $transiciones[$pedido->estado] ?? [],
                 true
@@ -380,8 +383,8 @@ class PedidoController extends Controller
             if (
                 $nuevo === 'confirmado' &&
                 (
-                    !$pedido->detalles()->exists() ||
-                    !$pedido->cliente()->exists()
+                    ! $pedido->detalles()->exists() ||
+                    ! $pedido->cliente()->exists()
                 )
             ) {
                 throw ValidationException::withMessages([
@@ -417,7 +420,8 @@ class PedidoController extends Controller
 
     private function validarPedido(Request $request): array
     {
-        return $request->validate([
+        $hoy = CarbonImmutable::today('America/Lima');
+        $datos = $request->validate([
             'cliente_id' => [
                 'required',
                 'integer',
@@ -425,11 +429,13 @@ class PedidoController extends Controller
             ],
             'fecha_pedido' => [
                 'required',
-                'date',
+                'date_format:Y-m-d',
+                'after_or_equal:'.$hoy->subDays(30)->toDateString(),
+                'before_or_equal:'.$hoy->toDateString(),
             ],
             'fecha_entrega' => [
                 'required',
-                'date',
+                'date_format:Y-m-d',
                 'after_or_equal:fecha_pedido',
             ],
             'condicion_pago' => [
@@ -460,14 +466,21 @@ class PedidoController extends Controller
                 'required',
                 'integer',
                 'min:1',
-                'max:100000',
+                'max:10000',
             ],
         ], [
-            'detalles.max' =>
-                'La nota física admite hasta 18 líneas de productos por pedido.',
-            'fecha_entrega.after_or_equal' =>
-                'La fecha de entrega no puede ser anterior a la fecha del pedido.',
+            'detalles.max' => 'La nota física admite hasta 18 líneas de productos por pedido.',
+            'fecha_entrega.after_or_equal' => 'La fecha de entrega no puede ser anterior a la fecha del pedido.',
         ]);
+
+        $limiteEntrega = CarbonImmutable::parse($datos['fecha_pedido'], 'America/Lima')->addDays(90);
+        if (CarbonImmutable::parse($datos['fecha_entrega'], 'America/Lima')->greaterThan($limiteEntrega)) {
+            throw ValidationException::withMessages([
+                'fecha_entrega' => 'La fecha de entrega no puede superar los 90 días desde la fecha del pedido.',
+            ]);
+        }
+
+        return $datos;
     }
 
     private function prepararDetalles(
@@ -475,9 +488,9 @@ class PedidoController extends Controller
         CalculadoraPedido $calculadora
     ): array {
         $presentaciones = PresentacionProducto::with([
-                'producto',
-                'variante',
-            ])
+            'producto',
+            'variante',
+        ])
             ->whereIn(
                 'id',
                 array_column($filas, 'presentacion_producto_id')
@@ -495,8 +508,7 @@ class PedidoController extends Controller
 
             if (in_array($clave, $combinaciones, true)) {
                 throw ValidationException::withMessages([
-                    "detalles.{$i}.presentacion_producto_id" =>
-                        'Esta presentación y modalidad ya están registradas en otra fila.',
+                    "detalles.{$i}.presentacion_producto_id" => 'Esta presentación y modalidad ya están registradas en otra fila.',
                 ]);
             }
 
@@ -507,17 +519,16 @@ class PedidoController extends Controller
             );
 
             if (
-                !$presentacion ||
-                !$presentacion->estado ||
-                !$presentacion->producto?->estado ||
+                ! $presentacion ||
+                ! $presentacion->estado ||
+                ! $presentacion->producto?->estado ||
                 (
                     $presentacion->variante &&
-                    !$presentacion->variante->estado
+                    ! $presentacion->variante->estado
                 )
             ) {
                 throw ValidationException::withMessages([
-                    "detalles.{$i}.presentacion_producto_id" =>
-                        'Esta presentación está inactiva.',
+                    "detalles.{$i}.presentacion_producto_id" => 'Esta presentación está inactiva.',
                 ]);
             }
 
@@ -527,18 +538,17 @@ class PedidoController extends Controller
                 (
                     $empaque &&
                     (
-                        !$presentacion->venta_por_empaque ||
-                        !$presentacion->unidades_por_empaque
+                        ! $presentacion->venta_por_empaque ||
+                        ! $presentacion->unidades_por_empaque
                     )
                 ) ||
                 (
-                    !$empaque &&
-                    !$presentacion->venta_por_unidad
+                    ! $empaque &&
+                    ! $presentacion->venta_por_unidad
                 )
             ) {
                 throw ValidationException::withMessages([
-                    "detalles.{$i}.modalidad" =>
-                        'Forma de venta no habilitada.',
+                    "detalles.{$i}.modalidad" => 'Forma de venta no habilitada.',
                 ]);
             }
 
@@ -548,8 +558,7 @@ class PedidoController extends Controller
 
             if ($precio === null) {
                 throw ValidationException::withMessages([
-                    "detalles.{$i}.modalidad" =>
-                        'Debes registrar primero el precio en el catálogo.',
+                    "detalles.{$i}.modalidad" => 'Debes registrar primero el precio en el catálogo.',
                 ]);
             }
 
@@ -613,8 +622,7 @@ class PedidoController extends Controller
             'cliente_documento' => $cliente->documento,
             'cliente_telefono' => $cliente->telefono,
             'cliente_mercado' => $cliente->mercado,
-            'cliente_puesto_referencia' =>
-                $cliente->puesto_referencia,
+            'cliente_puesto_referencia' => $cliente->puesto_referencia,
             'cliente_distrito' => $cliente->distrito,
             'cliente_direccion' => $cliente->direccion,
         ];
@@ -627,9 +635,9 @@ class PedidoController extends Controller
             ->get();
 
         $presentaciones = PresentacionProducto::with([
-                'producto',
-                'variante',
-            ])
+            'producto',
+            'variante',
+        ])
             ->where('estado', true)
             ->whereHas(
                 'producto',

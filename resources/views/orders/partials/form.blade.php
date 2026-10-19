@@ -18,7 +18,7 @@
         </div>
         <div class="form-group"><label class="form-label">Vendedor responsable</label><div class="form-control" style="background:var(--surface-low)">{{ $editando ? ($pedido->vendedor?->first_name.' '.$pedido->vendedor?->last_name) : auth()->user()->first_name.' '.auth()->user()->last_name }}</div></div>
         <div class="form-group"><label class="form-label" for="fecha_pedido">Fecha de registro *</label>
-            <input class="form-control" type="date" id="fecha_pedido" name="fecha_pedido" required value="{{ old('fecha_pedido', $editando ? $pedido->fecha_pedido->format('Y-m-d') : now('America/Lima')->toDateString()) }}"></div>
+            <input class="form-control" type="date" id="fecha_pedido" name="fecha_pedido" required min="{{ today('America/Lima')->subDays(30)->toDateString() }}" max="{{ today('America/Lima')->toDateString() }}" value="{{ old('fecha_pedido', $editando ? $pedido->fecha_pedido->format('Y-m-d') : now('America/Lima')->toDateString()) }}"></div>
         <div class="form-group"><label class="form-label" for="fecha_entrega">Fecha prevista de entrega *</label>
             <input class="form-control" type="date" id="fecha_entrega" name="fecha_entrega" required value="{{ old('fecha_entrega', $editando ? $pedido->fecha_entrega->format('Y-m-d') : now('America/Lima')->toDateString()) }}"></div>
         <div class="form-group"><label class="form-label" for="condicion_pago">Condición de pago *</label>
@@ -38,7 +38,7 @@
         <div class="s2-product-row">
             <div><label>Producto / SKU *</label><select class="form-control js-presentacion" name="detalles[__INDEX__][presentacion_producto_id]" required></select></div>
             <div><label>Venta por *</label><select class="form-control js-modalidad" name="detalles[__INDEX__][modalidad]" required></select></div>
-            <div><label>Cantidad *</label><input class="form-control js-cantidad" name="detalles[__INDEX__][cantidad]" type="number" min="1" max="100000" step="1" required value="1"></div>
+            <div><label>Cantidad *</label><input class="form-control js-cantidad" name="detalles[__INDEX__][cantidad]" type="number" min="1" max="10000" step="1" required value="1"></div>
             <div><label>Precio S/</label><input class="form-control js-precio" readonly placeholder="—" tabindex="-1"></div>
             <div><label>Importe S/</label><input class="form-control js-importe" readonly placeholder="0.00" tabindex="-1"></div>
             <button type="button" class="btn btn-danger remove-row js-eliminar" aria-label="Eliminar producto"><span class="material-symbols-outlined">delete</span></button>

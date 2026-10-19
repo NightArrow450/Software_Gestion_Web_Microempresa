@@ -4,8 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Role;
 use App\Models\User;
+use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 
 class UserController extends Controller
 {
@@ -54,7 +55,6 @@ class UserController extends Controller
         );
     }
 
-
     /*
     |--------------------------------------------------------------------------
     | Formulario nuevo usuario
@@ -71,7 +71,6 @@ class UserController extends Controller
         );
     }
 
-
     /*
     |--------------------------------------------------------------------------
     | Registrar usuario
@@ -80,30 +79,37 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
+        $this->normalizarCorreo($request);
+
         $validated = $request->validate([
             'first_name' => [
                 'required',
                 'string',
+                'min:2',
+                "regex:~\A[\p{L}\p{M}]+(?:[ '’\-][\p{L}\p{M}]+)*\z~u",
                 'max:100',
             ],
 
             'last_name' => [
                 'required',
                 'string',
+                'min:2',
+                "regex:~\A[\p{L}\p{M}]+(?:[ '’\-][\p{L}\p{M}]+)*\z~u",
                 'max:100',
             ],
 
             'email' => [
                 'required',
-                'email',
+                'bail',
+                'email:rfc',
                 'max:255',
-                'unique:users,email',
+                $this->correoUnico(),
             ],
 
             'password' => [
                 'required',
                 'string',
-                'min:8',
+                $this->reglaContrasena(),
                 'confirmed',
             ],
 
@@ -117,38 +123,27 @@ class UserController extends Controller
                 'boolean',
             ],
         ], [
-            'first_name.required' =>
-                'Los nombres son obligatorios.',
+            'first_name.required' => 'Los nombres son obligatorios.',
 
-            'last_name.required' =>
-                'Los apellidos son obligatorios.',
+            'last_name.required' => 'Los apellidos son obligatorios.',
 
-            'email.required' =>
-                'El correo electrónico es obligatorio.',
+            'email.required' => 'El correo electrónico es obligatorio.',
 
-            'email.email' =>
-                'Ingresa un correo electrónico válido.',
+            'email.email' => 'Ingresa un correo electrónico válido.',
 
-            'email.unique' =>
-                'Este correo electrónico ya está registrado.',
+            'email.unique' => 'Este correo electrónico ya está registrado.',
 
-            'password.required' =>
-                'La contraseña es obligatoria.',
+            'password.required' => 'La contraseña es obligatoria.',
 
-            'password.min' =>
-                'La contraseña debe tener al menos 8 caracteres.',
+            'password.min' => 'La contraseña debe tener al menos 10 caracteres.',
 
-            'password.confirmed' =>
-                'Las contraseñas no coinciden.',
+            'password.confirmed' => 'Las contraseñas no coinciden.',
 
-            'role_id.required' =>
-                'Selecciona un rol.',
+            'role_id.required' => 'Selecciona un rol.',
 
-            'role_id.exists' =>
-                'El rol seleccionado no es válido.',
+            'role_id.exists' => 'El rol seleccionado no es válido.',
 
-            'status.required' =>
-                'Selecciona un estado.',
+            'status.required' => 'Selecciona un estado.',
         ]);
 
         User::create([
@@ -168,7 +163,6 @@ class UserController extends Controller
             );
     }
 
-
     /*
     |--------------------------------------------------------------------------
     | Ver usuario
@@ -184,7 +178,6 @@ class UserController extends Controller
             compact('user')
         );
     }
-
 
     /*
     |--------------------------------------------------------------------------
@@ -202,7 +195,6 @@ class UserController extends Controller
         );
     }
 
-
     /*
     |--------------------------------------------------------------------------
     | Actualizar usuario
@@ -213,32 +205,38 @@ class UserController extends Controller
         Request $request,
         User $user
     ) {
+        $this->normalizarCorreo($request);
+
         $validated = $request->validate([
             'first_name' => [
                 'required',
                 'string',
+                'min:2',
+                "regex:~\A[\p{L}\p{M}]+(?:[ '’\-][\p{L}\p{M}]+)*\z~u",
                 'max:100',
             ],
 
             'last_name' => [
                 'required',
                 'string',
+                'min:2',
+                "regex:~\A[\p{L}\p{M}]+(?:[ '’\-][\p{L}\p{M}]+)*\z~u",
                 'max:100',
             ],
 
             'email' => [
                 'required',
-                'email',
+                'bail',
+                'email:rfc',
                 'max:255',
 
-                Rule::unique('users', 'email')
-                    ->ignore($user->id),
+                $this->correoUnico($user),
             ],
 
             'password' => [
                 'nullable',
                 'string',
-                'min:8',
+                $this->reglaContrasena(),
                 'confirmed',
             ],
 
@@ -269,12 +267,11 @@ class UserController extends Controller
 
         if (
             auth()->id() === $user->id &&
-            !$data['status']
+            ! $data['status']
         ) {
             return back()
                 ->withErrors([
-                    'status' =>
-                        'No puedes desactivar tu propia cuenta mientras estás utilizando el sistema.',
+                    'status' => 'No puedes desactivar tu propia cuenta mientras estás utilizando el sistema.',
                 ])
                 ->withInput();
         }
@@ -285,7 +282,7 @@ class UserController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        if (!empty($validated['password'])) {
+        if (! empty($validated['password'])) {
             $data['password'] = $validated['password'];
         }
 
@@ -299,12 +296,42 @@ class UserController extends Controller
             );
     }
 
-
     /*
     |--------------------------------------------------------------------------
     | Activar / desactivar usuario
     |--------------------------------------------------------------------------
     */
+
+    private function normalizarCorreo(Request $request): void
+    {
+        if (is_string($request->input('email'))) {
+            $request->merge(['email' => mb_strtolower(trim($request->input('email')))]);
+        }
+    }
+
+    private function correoUnico(?User $user = null): Closure
+    {
+        return function (string $attribute, mixed $value, Closure $fail) use ($user): void {
+            $query = User::whereRaw('LOWER(email) = ?', [mb_strtolower($value)]);
+            if ($user) {
+                $query->where('id', '!=', $user->id);
+            }
+            if ($query->exists()) {
+                $fail('Este correo electrónico ya está registrado.');
+            }
+        };
+    }
+
+    private function reglaContrasena(): Password
+    {
+        $regla = Password::min(10)->letters()->mixedCase()->numbers();
+
+        if (app()->environment('production')) {
+            $regla->uncompromised();
+        }
+
+        return $regla;
+    }
 
     public function toggleStatus(User $user)
     {
@@ -316,7 +343,7 @@ class UserController extends Controller
         }
 
         $user->update([
-            'status' => !$user->status,
+            'status' => ! $user->status,
         ]);
 
         $message = $user->status

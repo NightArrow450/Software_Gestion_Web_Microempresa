@@ -11,6 +11,7 @@ use App\Models\Producto;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
 class RegistroPedidosTest extends TestCase
@@ -45,6 +46,7 @@ class RegistroPedidosTest extends TestCase
 
     private function datosBase(): array
     {
+        $this->travelTo(Carbon::parse('2026-10-18 12:00:00', 'America/Lima'));
         $cliente = Cliente::create([
             'nombre' => 'Bodega Central',
             'estado' => true,

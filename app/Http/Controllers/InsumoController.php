@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Insumo;
+use Closure;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -17,10 +18,21 @@ class InsumoController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $request->merge(['codigo' => strtoupper(trim((string) $request->input('codigo', '')))]);
+        if (is_string($request->input('codigo'))) {
+            $request->merge(['codigo' => strtoupper(trim($request->input('codigo')))]);
+        }
         $datos = $request->validate([
-            'codigo' => ['required', 'string', 'max:50', 'unique:insumos,codigo'],
-            'nombre' => ['required', 'string', 'max:160'],
+            'codigo' => ['required', 'string', 'max:50', 'regex:/\A[A-Z0-9_-]+\z/', 'unique:insumos,codigo'],
+            'nombre' => ['bail', 'required', 'string', 'max:160', function (string $attribute, mixed $value, Closure $fail) use ($request): void {
+                if (! is_string($request->input('categoria'))) {
+                    return;
+                }
+                $duplicado = Insumo::where('categoria', $request->input('categoria'))->pluck('nombre')
+                    ->contains(fn (string $nombre): bool => mb_strtolower(trim($nombre)) === mb_strtolower(trim($value)));
+                if ($duplicado) {
+                    $fail('Ya existe un insumo con este nombre en la categoría seleccionada.');
+                }
+            }],
             'categoria' => ['required', Rule::in(['Envases', 'Tapas', 'Etiquetas', 'Químicos', 'Otros'])],
             'unidad_medida' => ['required', Rule::in(['unidad', 'litro', 'kilogramo', 'metro', 'paquete'])],
             'cantidad_actual' => ['required', 'numeric', 'min:0', 'max:1000000000', 'decimal:0,3'],
