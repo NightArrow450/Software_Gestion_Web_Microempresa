@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Cliente;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class ClienteController extends Controller
@@ -64,7 +65,7 @@ class ClienteController extends Controller
 
     public function update(Request $request, Cliente $cliente): RedirectResponse
     {
-        $validated = $this->validarFormulario($request);
+        $validated = $this->validarFormulario($request, $cliente);
 
         $cliente->update($validated);
 
@@ -76,7 +77,7 @@ class ClienteController extends Controller
     public function toggleStatus(Cliente $cliente): RedirectResponse
     {
         $cliente->update([
-            'estado' => !$cliente->estado,
+            'estado' => ! $cliente->estado,
         ]);
 
         return back()->with(
@@ -87,13 +88,26 @@ class ClienteController extends Controller
         );
     }
 
-    private function validarFormulario(Request $request): array
+    private function validarFormulario(Request $request, ?Cliente $cliente = null): array
     {
+        if (is_string($request->input('documento'))) {
+            $request->merge(['documento' => strtoupper(trim($request->input('documento'))) ?: null]);
+        }
+        $telefono = $request->input('telefono');
+        if (is_string($telefono) && preg_match('/\A(?:\+51)?[0-9 ()-]+\z/', $telefono)) {
+            $internacional = str_starts_with($telefono, '+51');
+            $telefono = preg_replace('/\D/', '', $internacional ? substr($telefono, 3) : $telefono);
+            if ($internacional && strlen($telefono) === 8 && str_starts_with($telefono, '1')) {
+                $telefono = '0'.$telefono;
+            }
+            $request->merge(['telefono' => $telefono]);
+        }
+
         return $request->validate([
-            'nombre' => ['required', 'string', 'max:180'],
-            'documento' => ['nullable', 'string', 'max:20'],
-            'telefono' => ['nullable', 'string', 'max:30'],
-            'correo' => ['nullable', 'email', 'max:180'],
+            'nombre' => ['required', 'string', 'min:3', 'max:180', "regex:~\A(?=.*\\p{L})(?!.* {2})[\\p{L}\\p{M}\\p{N} .&'’()/-]+\\z~u"],
+            'documento' => ['nullable', 'string', 'regex:/\A(?:[0-9]{8}|(?:10|15|17|20)[0-9]{9}|(?![0-9]{11}\z)[A-Z0-9]{9,12})\z/', Rule::unique('clientes', 'documento')->ignore($cliente?->id)],
+            'telefono' => ['nullable', 'string', 'regex:/\A(?:9[0-9]{8}|01[0-9]{7})\z/'],
+            'correo' => ['nullable', 'email:rfc', 'max:180'],
             'mercado' => ['nullable', 'string', 'max:150'],
             'puesto_referencia' => ['nullable', 'string', 'max:180'],
             'distrito' => ['nullable', 'string', 'max:120'],
@@ -101,6 +115,9 @@ class ClienteController extends Controller
         ], [
             'nombre.required' => 'El nombre del cliente es obligatorio.',
             'correo.email' => 'Ingrese un correo electrónico válido.',
+            'nombre.regex' => 'El nombre debe contener letras y no puede tener espacios dobles ni caracteres no permitidos.',
+            'documento.regex' => 'Ingrese un DNI de 8 dígitos, un RUC de 11 dígitos que comience con 10, 15, 17 o 20, o un CE alfanumérico de 9 a 12 caracteres.',
+            'telefono.regex' => 'Ingrese un móvil de 9 dígitos que comience con 9 o un fijo de Lima con 01 y 7 dígitos. Puede anteponer +51.',
         ]);
     }
 }

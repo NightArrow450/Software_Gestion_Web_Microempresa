@@ -19,7 +19,7 @@
         <div class="form-grid">
             @foreach([
                 'nombre' => ['Nombre / Razón social', 180],
-                'documento' => ['RUC / DNI', 20],
+                'documento' => ['DNI / RUC / CE (opcional)', 12],
                 'telefono' => ['Teléfono', 30],
                 'correo' => ['Correo electrónico (opcional)', 180],
             ] as $campo => $datos)
@@ -30,13 +30,14 @@
                     </label>
 
                     <input
-                        type="{{ $campo === 'correo' ? 'email' : 'text' }}"
+                        type="{{ $campo === 'correo' ? 'email' : ($campo === 'telefono' ? 'tel' : 'text') }}"
                         id="{{ $campo }}"
                         name="{{ $campo }}"
                         class="form-control"
                         maxlength="{{ $datos[1] }}"
                         value="{{ old($campo, $cliente->{$campo} ?? '') }}"
                         @required($campo === 'nombre')
+                        @if($campo === 'nombre') minlength="3" @endif
                     >
 
                     @error($campo)
