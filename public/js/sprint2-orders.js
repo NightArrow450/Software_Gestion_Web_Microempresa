@@ -62,6 +62,23 @@
     function agregarFila(datos) {
         const producto = presentaciones.find(p => String(p.id) === String(datos.presentacion_producto_id));
         if (!producto) return null;
+        const repetida = Array.from(contenedor.querySelectorAll('.s2-product-row')).find(fila =>
+            fila.querySelector('.js-presentacion').value === String(producto.id) &&
+            fila.querySelector('.js-modalidad').value === (datos.modalidad || 'unidad')
+        );
+        if (repetida) {
+            const cantidadCampo = repetida.querySelector('.js-cantidad');
+            const nuevaCantidad = Number(cantidadCampo.value) + Number(datos.cantidad || 1);
+            if (!Number.isSafeInteger(nuevaCantidad) || nuevaCantidad > 10000) {
+                aviso.textContent = 'Una línea no puede superar las 10 000 unidades o empaques.';
+                cantidadCampo.focus();
+                return null;
+            }
+            cantidadCampo.value = String(nuevaCantidad);
+            recalcular();
+            cantidadCampo.focus();
+            return repetida;
+        }
         if (contenedor.children.length >= 18) {
             aviso.textContent = 'La nota física admite como máximo 18 líneas. Elimina una línea para continuar.';
             return null;
@@ -76,7 +93,28 @@
         contenedor.appendChild(fragmento);
         const actual = contenedor.lastElementChild;
         configurarModalidad(actual, datos.modalidad || 'unidad');
-        actual.querySelector('.js-modalidad').addEventListener('change', recalcular);
+        let modalidadAnterior = actual.querySelector('.js-modalidad').value;
+        actual.querySelector('.js-modalidad').addEventListener('change', () => {
+            const existente = Array.from(contenedor.querySelectorAll('.s2-product-row')).find(fila =>
+                fila !== actual &&
+                fila.querySelector('.js-presentacion').value === actual.querySelector('.js-presentacion').value &&
+                fila.querySelector('.js-modalidad').value === actual.querySelector('.js-modalidad').value
+            );
+            if (existente) {
+                const suma = Number(existente.querySelector('.js-cantidad').value) + Number(actual.querySelector('.js-cantidad').value);
+                if (suma > 10000) {
+                    actual.querySelector('.js-modalidad').value = modalidadAnterior;
+                    aviso.textContent = 'La cantidad acumulada excede el máximo de 10 000.';
+                    return;
+                }
+                existente.querySelector('.js-cantidad').value = String(suma);
+                actual.remove();
+                existente.querySelector('.js-cantidad').focus();
+            } else {
+                modalidadAnterior = actual.querySelector('.js-modalidad').value;
+            }
+            recalcular();
+        });
         actual.querySelector('.js-cantidad').addEventListener('input', recalcular);
         actual.querySelector('.js-eliminar').addEventListener('click', () => {
             actual.remove();
