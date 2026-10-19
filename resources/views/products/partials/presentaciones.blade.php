@@ -220,12 +220,12 @@
                                         data-unit-price
                                         value="{{ $presentacion['precio_unitario'] ?? '' }}"
                                         class="form-control"
-                                        min="0"
+                                        min="0.01" max="999999.99"
                                         step="0.01"
                                         placeholder="0.00"
                                     >
                                 </div>
-                                <span class="form-help">Si se vende por caja o paquete, este precio es obligatorio aunque no se venda suelto.</span>
+                                <span class="form-help">Precio mayor que cero, hasta S/ 999 999,99. Obligatorio para vender por caja o paquete.</span>
                             </div>
                         </div>
                     </div>
@@ -262,7 +262,7 @@
                                         data-pack-quantity
                                         value="{{ $presentacion['unidades_por_empaque'] ?? '' }}"
                                         class="form-control"
-                                        min="1"
+                                        min="2" max="1000"
                                         step="1"
                                     >
                                 </div>
@@ -277,7 +277,7 @@
                                         data-pack-price
                                         value="{{ $presentacion['precio_empaque'] ?? '' }}"
                                         class="form-control"
-                                        min="0"
+                                        min="0.01" max="999999.99"
                                         step="0.01"
                                         placeholder="Se calcula automáticamente"
                                         readonly
@@ -391,9 +391,9 @@
                     <div class="form-group">
                         <label class="form-label">Precio por unidad (base de cálculo)</label>
                         <div class="money-prefix">
-                            <input type="number" name="presentaciones[__INDEX__][precio_unitario]" class="form-control" min="0" step="0.01" placeholder="0.00" data-unit-price>
+                            <input type="number" name="presentaciones[__INDEX__][precio_unitario]" class="form-control" min="0.01" max="999999.99" step="0.01" placeholder="0.00" data-unit-price>
                         </div>
-                        <span class="form-help">Si se vende por caja o paquete, este precio es obligatorio aunque no se venda suelto.</span>
+                        <span class="form-help">Precio mayor que cero, hasta S/ 999 999,99. Obligatorio para vender por caja o paquete.</span>
                     </div>
                 </div>
             </div>
@@ -418,14 +418,14 @@
 
                         <div class="form-group">
                             <label class="form-label">Unidades por empaque</label>
-                            <input type="number" name="presentaciones[__INDEX__][unidades_por_empaque]" class="form-control" min="1" step="1" data-pack-quantity>
+                            <input type="number" name="presentaciones[__INDEX__][unidades_por_empaque]" class="form-control" min="2" max="1000" step="1" data-pack-quantity>
                         </div>
                     </div>
 
                     <div class="form-group" style="margin-top:14px;">
                         <label class="form-label">Precio por empaque</label>
                         <div class="money-prefix">
-                            <input type="number" name="presentaciones[__INDEX__][precio_empaque]" class="form-control" min="0" step="0.01" placeholder="Se calcula automáticamente" data-pack-price readonly>
+                            <input type="number" name="presentaciones[__INDEX__][precio_empaque]" class="form-control" min="0.01" max="999999.99" step="0.01" placeholder="Se calcula automáticamente" data-pack-price readonly>
                         </div>
                         <span class="form-help">Precio unitario × unidades del paquete/caja.</span>
                     </div>

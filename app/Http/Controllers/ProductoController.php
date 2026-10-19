@@ -208,7 +208,7 @@ class ProductoController extends Controller
                             ->whereKey($idExistente)
                             ->first();
 
-                        if (!$modelo) {
+                        if (! $modelo) {
                             throw ValidationException::withMessages([
                                 'presentaciones' => 'Una de las presentaciones no pertenece al producto.',
                             ]);
@@ -231,7 +231,7 @@ class ProductoController extends Controller
                     ->delete();
             }
 
-            if (!$productoActivo) {
+            if (! $productoActivo) {
                 $producto->variantes()->update(['estado' => false]);
                 $producto->presentaciones()->update(['estado' => false]);
             }
@@ -245,7 +245,7 @@ class ProductoController extends Controller
     public function toggleStatus(Producto $producto): RedirectResponse
     {
         DB::transaction(function () use ($producto) {
-            $nuevoEstado = !$producto->estado;
+            $nuevoEstado = ! $producto->estado;
 
             $producto->update([
                 'estado' => $nuevoEstado,
@@ -261,7 +261,7 @@ class ProductoController extends Controller
             | mantienen inactivos para que el usuario decida cuáles volver a activar.
             |
             */
-            if (!$nuevoEstado) {
+            if (! $nuevoEstado) {
                 $producto->variantes()->update(['estado' => false]);
                 $producto->presentaciones()->update(['estado' => false]);
             }
@@ -286,6 +286,7 @@ class ProductoController extends Controller
                 'required',
                 'string',
                 'max:20',
+                'regex:/\A[A-Z0-9_-]+\z/',
                 Rule::unique('productos', 'codigo')->ignore($producto?->id),
             ],
             'categoria_id' => ['required', 'integer', 'exists:categorias,id'],
@@ -310,13 +311,13 @@ class ProductoController extends Controller
             'presentaciones.*.variantes_clave' => ['nullable', 'array'],
             'presentaciones.*.variantes_clave.*' => ['string', 'max:80'],
             'presentaciones.*.tipo_envase' => ['nullable', 'string', 'max:60'],
-            'presentaciones.*.contenido' => ['required', 'numeric', 'gt:0'],
+            'presentaciones.*.contenido' => ['required', 'numeric', 'gt:0', 'decimal:0,2', 'max:99999999.99'],
             'presentaciones.*.unidad_medida' => ['required', Rule::in(['L', 'ml', 'kg', 'g'])],
             'presentaciones.*.tipo_empaque' => ['nullable', Rule::in(['Paquete', 'Caja'])],
             'presentaciones.*.unidades_por_empaque' => ['nullable', 'integer', 'min:1'],
             'presentaciones.*.venta_por_unidad' => ['required', 'boolean'],
             'presentaciones.*.venta_por_empaque' => ['required', 'boolean'],
-            'presentaciones.*.precio_unitario' => ['nullable', 'numeric', 'min:0', 'decimal:0,2', 'max:99999999.99'],
+            'presentaciones.*.precio_unitario' => ['nullable', 'numeric', 'gt:0', 'decimal:0,2', 'max:999999.99'],
             'presentaciones.*.estado' => ['required', 'boolean'],
         ], [
             'prefijo_sku.required' => 'No se pudo generar el prefijo SKU. Ingresa el nombre y la marca del producto o escribe el prefijo manualmente.',
@@ -326,6 +327,9 @@ class ProductoController extends Controller
         ]);
 
         $validator->after(function ($validator) use ($request, $producto) {
+            if ($validator->errors()->isNotEmpty()) {
+                return;
+            }
             $variantes = $request->input('variantes', []);
             $clavesVariantes = collect($variantes)->pluck('clave')->filter()->all();
             $datosVariantes = collect($variantes)->keyBy('clave');
@@ -361,7 +365,7 @@ class ProductoController extends Controller
                 $vendeEmpaque = (int) ($presentacion['venta_por_empaque'] ?? 0) === 1;
                 $seleccionadas = array_values(array_unique(array_filter($presentacion['variantes_clave'] ?? [])));
 
-                if (!$vendeUnidad && !$vendeEmpaque) {
+                if (! $vendeUnidad && ! $vendeEmpaque) {
                     $validator->errors()->add(
                         "presentaciones.{$indice}.venta_por_unidad",
                         'Cada presentación debe venderse por unidad, por empaque o por ambas formas.'
@@ -370,7 +374,7 @@ class ProductoController extends Controller
 
                 if ($vendeEmpaque) {
                     // El precio de paquete/caja se deriva siempre del precio base por unidad.
-                    if (!isset($presentacion['precio_unitario']) || $presentacion['precio_unitario'] === '') {
+                    if (! isset($presentacion['precio_unitario']) || $presentacion['precio_unitario'] === '') {
                         $validator->errors()->add(
                             "presentaciones.{$indice}.precio_unitario",
                             'Ingresa el precio de una unidad para calcular el precio de la caja o paquete.'
@@ -381,7 +385,7 @@ class ProductoController extends Controller
                         && is_numeric($presentacion['precio_unitario'])
                         && filter_var($presentacion['unidades_por_empaque'], FILTER_VALIDATE_INT) !== false
                         && (int) $presentacion['unidades_por_empaque'] >= 1
-                        && ((float) $presentacion['precio_unitario'] * (int) $presentacion['unidades_por_empaque']) > 99999999.99) {
+                        && ((float) $presentacion['precio_unitario'] * (int) $presentacion['unidades_por_empaque']) > 999999.99) {
                         $validator->errors()->add(
                             "presentaciones.{$indice}.unidades_por_empaque",
                             'El precio total del empaque supera el máximo permitido.'
@@ -395,16 +399,16 @@ class ProductoController extends Controller
                         );
                     }
 
-                    if (empty($presentacion['unidades_por_empaque']) || (int) $presentacion['unidades_por_empaque'] < 1) {
+                    if (empty($presentacion['unidades_por_empaque']) || (int) $presentacion['unidades_por_empaque'] < 2 || (int) $presentacion['unidades_por_empaque'] > 1000) {
                         $validator->errors()->add(
                             "presentaciones.{$indice}.unidades_por_empaque",
-                            'Indica cuántas unidades contiene el empaque.'
+                            'El empaque debe contener entre 2 y 1000 unidades.'
                         );
                     }
                 }
 
                 foreach ($seleccionadas as $clave) {
-                    if (!in_array($clave, $clavesVariantes, true)) {
+                    if (! in_array($clave, $clavesVariantes, true)) {
                         $validator->errors()->add(
                             "presentaciones.{$indice}.variantes_clave",
                             'Una de las variantes seleccionadas ya no existe.'
@@ -434,10 +438,10 @@ class ProductoController extends Controller
                 }
             }
 
-            if (!empty($skusGenerados)) {
+            if (! empty($skusGenerados)) {
                 $query = PresentacionProducto::whereIn('codigo_sku', array_keys($skusGenerados));
 
-                if (!empty($idsConservados)) {
+                if (! empty($idsConservados)) {
                     $query->whereNotIn('id', $idsConservados);
                 }
 
@@ -464,17 +468,16 @@ class ProductoController extends Controller
         array $variantes,
         bool $actualizando = false,
         bool $productoActivo = true
-    ): array
-    {
+    ): array {
         $mapa = [];
 
         foreach ($variantes as $variante) {
-            if ($actualizando && !empty($variante['id'])) {
+            if ($actualizando && ! empty($variante['id'])) {
                 $modelo = $producto->variantes()
                     ->whereKey($variante['id'])
                     ->first();
 
-                if (!$modelo) {
+                if (! $modelo) {
                     throw ValidationException::withMessages([
                         'variantes' => 'Una de las variantes no pertenece al producto.',
                     ]);
@@ -507,8 +510,7 @@ class ProductoController extends Controller
         array $mapaVariantes,
         string $prefijoSku,
         bool $productoActivo = true
-    ): array
-    {
+    ): array {
         $seleccionadas = array_values(array_unique(array_filter($presentacion['variantes_clave'] ?? [])));
         $clavesObjetivo = empty($seleccionadas) ? [null] : $seleccionadas;
         $resultado = [];
@@ -540,8 +542,7 @@ class ProductoController extends Controller
         ?int $varianteId,
         string $sku,
         bool $productoActivo = true
-    ): array
-    {
+    ): array {
         $vendeUnidad = (bool) ($presentacion['venta_por_unidad'] ?? false);
         $vendeEmpaque = (bool) ($presentacion['venta_por_empaque'] ?? false);
         $precioUnitario = ($vendeUnidad || $vendeEmpaque)
