@@ -189,4 +189,35 @@ class ListaGeneralPreparacionTest extends TestCase
         $this->assertDatabaseHas('pedidos', ['id' => $pedido->id, 'estado' => 'confirmado']);
         $this->assertDatabaseCount('movimientos_inventario', 0);
     }
+    public function test_no_combina_skus_distintos_aunque_tengan_el_mismo_nombre(): void
+    {
+        $usuario = $this->usuario();
+        $uno = $this->presentacion('DISTINTO-A', 4, 'Lejía');
+        $dos = $this->presentacion('DISTINTO-B', 4, 'Lejía');
+        $this->detalle($this->pedido($usuario), $uno, 'empaque', 1);
+        $this->detalle($this->pedido($usuario), $dos, 'empaque', 1);
+        $contenido = $this->actingAs($usuario)->get(route('cumplimiento.lista-preparacion'))
+            ->assertOk()->getContent();
+        $this->assertSame(1, substr_count($contenido, 'SKU: DISTINTO-A'));
+        $this->assertSame(1, substr_count($contenido, 'SKU: DISTINTO-B'));
+        $this->assertSame(2, substr_count($contenido, '1 empaque'));
+    }
+
+    public function test_unidades_vendidas_solas_no_se_multiplican_por_empaque(): void
+    {
+        $usuario = $this->usuario();
+        $presentacion = $this->presentacion('VENTA-UNIDAD', 15);
+        $this->detalle($this->pedido($usuario), $presentacion, 'unidad', 12);
+        $respuesta = $this->actingAs($usuario)->get(route('cumplimiento.lista-preparacion'));
+        $respuesta->assertOk()->assertSee('12 unidades')->assertSee('>12</strong>', false)
+            ->assertDontSee('>180</strong>', false);
+    }
+
+    public function test_lista_vacia_no_cambia_inventario(): void
+    {
+        $usuario = $this->usuario();
+        $this->actingAs($usuario)->get(route('cumplimiento.lista-preparacion'))
+            ->assertOk()->assertSee('No hay productos pendientes de preparación.');
+        $this->assertDatabaseCount('movimientos_inventario', 0);
+    }
 }
