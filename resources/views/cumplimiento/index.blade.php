@@ -12,12 +12,16 @@
             <h1>Cumplimiento de pedidos</h1>
             <p class="muted">Consulta la etapa operativa de los pedidos confirmados.</p>
         </div>
-        <a href="{{ route('pedidos.index') }}" class="btn btn-secondary">Ver todos los pedidos</a>
+        <div class="cumplimiento-enlaces">
+            <a href="{{ route('cumplimiento.lista-preparacion') }}" class="btn btn-primary">Ver lista general de preparación</a>
+            <a href="{{ route('pedidos.index') }}" class="btn btn-secondary">Ver todos los pedidos</a>
+        </div>
     </div>
 
     <div class="cumplimiento-nota">
-        El inventario de productos e insumos se administra en su propio módulo (Sprint 3).
-        Este flujo registra las etapas operativas y no descuenta existencias automáticamente.
+        La preparación organiza los pedidos sin descontar existencias.
+        Al registrar el despacho se valida y descuenta el inventario de productos terminados.
+        La lista general de preparación es de solo lectura.
     </div>
 
     <section class="cumplimiento-tarjeta">

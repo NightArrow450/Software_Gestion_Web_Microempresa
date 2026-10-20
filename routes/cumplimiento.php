@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['auth', 'permiso:pedidos.ver'])->group(function () {
     Route::get('/cumplimiento', [CumplimientoPedidoController::class, 'index'])
         ->name('cumplimiento.index');
+    Route::get('/cumplimiento/lista-preparacion', [CumplimientoPedidoController::class, 'listaPreparacion'])
+        ->name('cumplimiento.lista-preparacion');
     Route::get('/cumplimiento/{pedido}', [CumplimientoPedidoController::class, 'show'])
         ->whereNumber('pedido')->name('cumplimiento.show');
 });
