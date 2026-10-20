@@ -11,3 +11,35 @@
 .cumplimiento-tabla th,.cumplimiento-tabla td { text-align:left; padding:11px; border-bottom:1px solid #e5e7eb; }
 .cumplimiento-tabla th { background:#f5f7f6; }
 .cumplimiento-link { color:#046944; font-weight:600; }
+
+
+/* Fase 3 - lista general de preparación y salida a impresora */
+.cumplimiento-enlaces { display:flex; flex-wrap:wrap; gap:10px; }
+.cumplimiento-sku { display:block; font-size:12px; color:#64748b; margin-top:3px; }
+.cumplimiento-sin-dato { color:#92400e; font-weight:600; }
+.cumplimiento-rango { margin:10px 0; color:#475569; }
+.cumplimiento-filtros > div { display:grid; gap:6px; flex:1; min-width:170px; }
+.cumplimiento-filtros input[type="date"] { max-width:260px; }
+.cumplimiento-filtros button { align-self:end; }
+.cumplimiento-error { margin-top:8px; color:#b91c1c; }
+@media(max-width:640px) {
+    .cumplimiento-encabezado, .cumplimiento-enlaces { align-items:stretch; flex-direction:column; }
+    .cumplimiento-enlaces .btn, .cumplimiento-filtros button { width:100%; }
+    .cumplimiento-filtros > div { width:100%; }
+    .cumplimiento-tabla { min-width:560px; }
+}
+@media print {
+    @page { size:A4 portrait; margin:12mm; }
+    body { background:#fff !important; color:#111827 !important; }
+    .sidebar, .sidebar-overlay, .topbar, .cumplimiento-no-imprimir, .menu-toggle { display:none !important; }
+    .app-content { width:100% !important; margin:0 !important; padding:0 !important; }
+    .page { margin:0 !important; padding:0 !important; max-width:none !important; }
+    .cumplimiento-encabezado { margin-bottom:8mm; }
+    .cumplimiento-tarjeta { border:0 !important; padding:0 !important; margin:6mm 0 !important; box-shadow:none !important; }
+    .cumplimiento-tabla { min-width:0 !important; width:100% !important; font-size:10pt; }
+    .cumplimiento-tabla th, .cumplimiento-tabla td { padding:7px 5px !important; }
+    .cumplimiento-tabla thead { display:table-header-group; }
+    .cumplimiento-tabla tr { break-inside:avoid; page-break-inside:avoid; }
+    .table-container { overflow:visible !important; }
+    .cumplimiento-nota { background:#fff !important; color:#374151; border:1px solid #d1d5db; }
+}

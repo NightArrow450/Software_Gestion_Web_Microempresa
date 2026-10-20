@@ -11,8 +11,33 @@
             <h1>Lista general de preparación</h1>
             <p class="muted">Productos de los pedidos confirmados o en preparación.</p>
         </div>
-        <a href="{{ route('cumplimiento.index') }}" class="btn btn-secondary">Volver a cumplimiento</a>
+        <a href="{{ route('cumplimiento.index') }}" class="btn btn-secondary cumplimiento-no-imprimir">Volver a cumplimiento</a>
     </div>
+
+    <section class="cumplimiento-tarjeta cumplimiento-no-imprimir" aria-label="Filtros de entrega">
+        <form method="GET" action="{{ route('cumplimiento.lista-preparacion') }}" class="cumplimiento-filtros">
+            <div>
+                <label for="fecha_desde"><strong>Entrega desde</strong></label>
+                <input class="form-control" type="date" name="fecha_desde" id="fecha_desde"
+                       value="{{ $fechaDesde }}" required>
+            </div>
+            <div>
+                <label for="fecha_hasta"><strong>Entrega hasta (opcional)</strong></label>
+                <input class="form-control" type="date" name="fecha_hasta" id="fecha_hasta"
+                       min="{{ $fechaDesde }}" value="{{ $fechaHasta }}">
+            </div>
+            <button type="submit" class="btn btn-primary">Filtrar</button>
+            <button type="button" class="btn btn-secondary" onclick="window.print()">Imprimir</button>
+        </form>
+        @if($errors->any())
+            <div role="alert" class="cumplimiento-error">
+                @foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach
+            </div>
+        @endif
+    </section>
+    <p class="cumplimiento-rango">Entrega desde <strong>{{ \Carbon\Carbon::parse($fechaDesde)->format('d/m/Y') }}</strong>
+        @if($fechaHasta) hasta <strong>{{ \Carbon\Carbon::parse($fechaHasta)->format('d/m/Y') }}</strong> @endif
+    </p>
 
     <div class="cumplimiento-nota" role="note">
         Esta lista usa las <strong>cantidades solicitadas</strong> de los pedidos pendientes.

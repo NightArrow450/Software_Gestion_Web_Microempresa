@@ -32,9 +32,18 @@ class CumplimientoPedidoController extends Controller
     /** Consolida productos pendientes sin afectar existencias. */
     public function listaPreparacion(Request $request): View
     {
+        $filtros = $request->validate([
+            'fecha_desde' => ['nullable', 'date_format:Y-m-d'],
+            'fecha_hasta' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:fecha_desde'],
+        ]);
+        $fechaDesde = $filtros['fecha_desde'] ?? now('America/Lima')->toDateString();
+        $fechaHasta = $filtros['fecha_hasta'] ?? null;
+
         $pedidos = Pedido::query()
             ->with(['detalles.presentacion.producto'])
             ->whereIn('estado', ['confirmado', 'en_preparacion'])
+            ->whereDate('fecha_entrega', '>=', $fechaDesde)
+            ->when($fechaHasta !== null, fn ($q) => $q->whereDate('fecha_entrega', '<=', $fechaHasta))
             ->orderBy('fecha_entrega')
             ->orderBy('id')
             ->get();
@@ -81,7 +90,7 @@ class CumplimientoPedidoController extends Controller
 
         $filas = collect(array_values($agrupados));
 
-        return view('cumplimiento.lista-preparacion', compact('filas'));
+        return view('cumplimiento.lista-preparacion', compact('filas', 'fechaDesde', 'fechaHasta'));
     }
 
     public function show(Pedido $pedido): View

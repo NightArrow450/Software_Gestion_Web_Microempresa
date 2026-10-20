@@ -139,4 +139,31 @@ class ListaGeneralPreparacionTest extends TestCase
             ->assertSee('parcialmente preparadas')
             ->assertSee('catálogo actual');
     }
+    public function test_filtra_fecha_de_entrega_y_por_defecto_desde_hoy_lima(): void
+    {
+        $usuario = $this->usuario();
+        $presentacion = $this->presentacion('FECHA-1');
+        $ayer = now('America/Lima')->subDay()->toDateString();
+        $hoy = now('America/Lima')->toDateString();
+        $manana = now('America/Lima')->addDay()->toDateString();
+        $this->detalle($this->pedido($usuario, 'confirmado', $ayer), $presentacion, 'unidad', 90);
+        $this->detalle($this->pedido($usuario, 'confirmado', $hoy), $presentacion, 'unidad', 2);
+        $this->detalle($this->pedido($usuario, 'confirmado', $manana), $presentacion, 'unidad', 3);
+
+        $this->actingAs($usuario)->get(route('cumplimiento.lista-preparacion'))
+            ->assertOk()->assertSee('5 unidades')->assertDontSee('95 unidades')
+            ->assertSee('name="fecha_desde"', false)->assertSee('Imprimir');
+
+        $this->actingAs($usuario)->get(route('cumplimiento.lista-preparacion', [
+            'fecha_desde' => $ayer, 'fecha_hasta' => $hoy,
+        ]))->assertOk()->assertSee('92 unidades');
+    }
+
+    public function test_rechaza_rango_de_fechas_invertido(): void
+    {
+        $usuario = $this->usuario();
+        $this->actingAs($usuario)->get(route('cumplimiento.lista-preparacion', [
+            'fecha_desde' => '2026-10-20', 'fecha_hasta' => '2026-10-19',
+        ]))->assertSessionHasErrors('fecha_hasta');
+    }
 }
