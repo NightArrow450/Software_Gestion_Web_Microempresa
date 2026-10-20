@@ -28,6 +28,45 @@ class CumplimientoPedidoController extends Controller
         return view('cumplimiento.index', compact('pedidos', 'estado', 'estados'));
     }
 
+
+    /** Lista inicial de productos por pedido, sin afectar existencias. */
+    public function listaPreparacion(Request $request): View
+    {
+        $pedidos = Pedido::query()
+            ->with(['detalles.presentacion.producto'])
+            ->whereIn('estado', ['confirmado', 'en_preparacion'])
+            ->orderBy('fecha_entrega')
+            ->orderBy('id')
+            ->get();
+
+        $filas = collect();
+        foreach ($pedidos as $pedido) {
+            foreach ($pedido->detalles as $detalle) {
+                $presentacion = $detalle->presentacion;
+                $cantidad = (int) $detalle->cantidad;
+                $porEmpaque = (int) ($presentacion?->unidades_por_empaque ?? 0);
+                $esEmpaque = $detalle->modalidad === 'empaque';
+                $totalUnidades = $esEmpaque
+                    ? ($porEmpaque > 0 ? $cantidad * $porEmpaque : null)
+                    : $cantidad;
+
+                $filas->push([
+                    'producto' => $presentacion?->producto?->nombre ?? $detalle->descripcion_producto,
+                    'sku' => $detalle->codigo_sku,
+                    'presentacion' => $presentacion
+                        ? rtrim(rtrim(number_format((float) $presentacion->contenido, 2, '.', ''), '0'), '.') . ' ' . $presentacion->unidad_medida
+                        : 'Presentación histórica',
+                    'modalidad' => $detalle->modalidad,
+                    'por_empaque' => $esEmpaque && $porEmpaque > 0 ? $porEmpaque : null,
+                    'cantidad' => $cantidad,
+                    'total_unidades' => $totalUnidades,
+                ]);
+            }
+        }
+
+        return view('cumplimiento.lista-preparacion', compact('filas'));
+    }
+
     public function show(Pedido $pedido): View
     {
         $pedido->load([

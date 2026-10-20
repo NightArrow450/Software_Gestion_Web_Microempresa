@@ -12,7 +12,10 @@
             <h1>Cumplimiento de pedidos</h1>
             <p class="muted">Consulta la etapa operativa de los pedidos confirmados.</p>
         </div>
-        <a href="{{ route('pedidos.index') }}" class="btn btn-secondary">Ver todos los pedidos</a>
+        <div class="cumplimiento-enlaces">
+            <a href="{{ route('cumplimiento.lista-preparacion') }}" class="btn btn-primary">Ver lista general de preparación</a>
+            <a href="{{ route('pedidos.index') }}" class="btn btn-secondary">Ver todos los pedidos</a>
+        </div>
     </div>
 
     <div class="cumplimiento-nota">
