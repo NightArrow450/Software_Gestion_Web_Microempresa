@@ -16,6 +16,7 @@
         </div>
         <div class="s2-actions">
             <a class="btn btn-secondary" href="{{ route('cumplimiento.index') }}">Volver a cumplimiento</a>
+            <a class="btn btn-secondary" href="{{ route('cumplimiento.lista-preparacion') }}">Ver lista general de preparación</a>
             <a class="btn btn-secondary" href="{{ route('pedidos.show', $pedido) }}">Ver pedido original</a>
         </div>
     </div>

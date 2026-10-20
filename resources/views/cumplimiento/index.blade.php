@@ -19,8 +19,9 @@
     </div>
 
     <div class="cumplimiento-nota">
-        El inventario de productos e insumos se administra en su propio módulo (Sprint 3).
-        Este flujo registra las etapas operativas y no descuenta existencias automáticamente.
+        La preparación organiza los pedidos sin descontar existencias.
+        Al registrar el despacho se valida y descuenta el inventario de productos terminados.
+        La lista general de preparación es de solo lectura.
     </div>
 
     <section class="cumplimiento-tarjeta">

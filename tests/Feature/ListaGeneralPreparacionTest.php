@@ -166,4 +166,27 @@ class ListaGeneralPreparacionTest extends TestCase
             'fecha_desde' => '2026-10-20', 'fecha_hasta' => '2026-10-19',
         ]))->assertSessionHasErrors('fecha_hasta');
     }
+    public function test_acceso_requiere_login_y_permiso_de_consulta(): void
+    {
+        $this->get(route('cumplimiento.lista-preparacion'))
+            ->assertRedirect(route('login'));
+        $sinPermiso = $this->usuario([]);
+        $this->actingAs($sinPermiso)->get(route('cumplimiento.lista-preparacion'))
+            ->assertForbidden();
+    }
+
+    public function test_lista_es_solo_lectura_y_el_detalle_individual_sigue_disponible(): void
+    {
+        $usuario = $this->usuario();
+        $presentacion = $this->presentacion('SOLO-LECTURA', 4);
+        $pedido = $this->pedido($usuario);
+        $this->detalle($pedido, $presentacion, 'empaque', 2);
+
+        $this->actingAs($usuario)->get(route('cumplimiento.lista-preparacion'))->assertOk();
+        $this->actingAs($usuario)->get(route('cumplimiento.show', $pedido))
+            ->assertOk()->assertSee('Ver lista general de preparación')
+            ->assertSee('Ver pedido original');
+        $this->assertDatabaseHas('pedidos', ['id' => $pedido->id, 'estado' => 'confirmado']);
+        $this->assertDatabaseCount('movimientos_inventario', 0);
+    }
 }
