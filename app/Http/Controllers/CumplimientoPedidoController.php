@@ -29,7 +29,7 @@ class CumplimientoPedidoController extends Controller
     }
 
 
-    /** Lista inicial de productos por pedido, sin afectar existencias. */
+    /** Consolida productos pendientes sin afectar existencias. */
     public function listaPreparacion(Request $request): View
     {
         $pedidos = Pedido::query()
@@ -39,7 +39,9 @@ class CumplimientoPedidoController extends Controller
             ->orderBy('id')
             ->get();
 
-        $filas = collect();
+        // La identidad de una fila es el ID de presentación + modalidad.
+        // Para detalles históricos sin ID, se usa su SKU registrado en el pedido.
+        $agrupados = [];
         foreach ($pedidos as $pedido) {
             foreach ($pedido->detalles as $detalle) {
                 $presentacion = $detalle->presentacion;
@@ -50,19 +52,34 @@ class CumplimientoPedidoController extends Controller
                     ? ($porEmpaque > 0 ? $cantidad * $porEmpaque : null)
                     : $cantidad;
 
-                $filas->push([
-                    'producto' => $presentacion?->producto?->nombre ?? $detalle->descripcion_producto,
-                    'sku' => $detalle->codigo_sku,
-                    'presentacion' => $presentacion
-                        ? rtrim(rtrim(number_format((float) $presentacion->contenido, 2, '.', ''), '0'), '.') . ' ' . $presentacion->unidad_medida
-                        : 'Presentación histórica',
-                    'modalidad' => $detalle->modalidad,
-                    'por_empaque' => $esEmpaque && $porEmpaque > 0 ? $porEmpaque : null,
-                    'cantidad' => $cantidad,
-                    'total_unidades' => $totalUnidades,
-                ]);
+                $clave = ($detalle->presentacion_producto_id !== null
+                    ? 'id:' . $detalle->presentacion_producto_id
+                    : 'sku:' . $detalle->codigo_sku) . '|' . $detalle->modalidad;
+
+                if (!isset($agrupados[$clave])) {
+                    $agrupados[$clave] = [
+                        'producto' => $presentacion?->producto?->nombre ?? $detalle->descripcion_producto,
+                        'sku' => $detalle->codigo_sku,
+                        'presentacion' => $presentacion
+                            ? rtrim(rtrim(number_format((float) $presentacion->contenido, 2, '.', ''), '0'), '.') . ' ' . $presentacion->unidad_medida
+                            : 'Presentación histórica',
+                        'modalidad' => $detalle->modalidad,
+                        'por_empaque' => $esEmpaque && $porEmpaque > 0 ? $porEmpaque : null,
+                        'cantidad' => 0,
+                        'total_unidades' => 0,
+                    ];
+                }
+
+                $agrupados[$clave]['cantidad'] += $cantidad;
+                // Si una cantidad no puede calcularse, nunca se presenta un total inventado.
+                $agrupados[$clave]['total_unidades'] =
+                    $agrupados[$clave]['total_unidades'] === null || $totalUnidades === null
+                        ? null
+                        : $agrupados[$clave]['total_unidades'] + $totalUnidades;
             }
         }
+
+        $filas = collect(array_values($agrupados));
 
         return view('cumplimiento.lista-preparacion', compact('filas'));
     }

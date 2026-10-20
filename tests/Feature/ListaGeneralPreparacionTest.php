@@ -89,4 +89,42 @@ class ListaGeneralPreparacionTest extends TestCase
             ->assertSee('Empaque')
             ->assertSee('>12</strong>', false);
     }
+    public function test_tres_pedidos_suman_diez_empaques_y_cuarenta_unidades(): void
+    {
+        $usuario = $this->usuario();
+        $presentacion = $this->presentacion('LEJ-5L', 4);
+        foreach ([3, 5, 2] as $cantidad) {
+            $this->detalle($this->pedido($usuario), $presentacion, 'empaque', $cantidad);
+        }
+        $contenido = $this->actingAs($usuario)
+            ->get(route('cumplimiento.lista-preparacion'))->assertOk()->getContent();
+
+        $this->assertStringContainsString('10 empaques', $contenido);
+        $this->assertStringContainsString('>40</strong>', $contenido);
+        $this->assertSame(1, substr_count($contenido, 'SKU: LEJ-5L'));
+    }
+
+    public function test_agrupa_por_sku_y_modalidad_y_excluye_estados_terminados(): void
+    {
+        $usuario = $this->usuario();
+        $uno = $this->presentacion('LEJ-A', 4, 'Lejía');
+        $dos = $this->presentacion('LEJ-B', 6, 'Lejía');
+        $this->detalle($this->pedido($usuario, 'confirmado'), $uno, 'empaque', 3);
+        $this->detalle($this->pedido($usuario, 'en_preparacion'), $uno, 'unidad', 5);
+        $this->detalle($this->pedido($usuario, 'en_preparacion'), $dos, 'empaque', 2);
+        foreach (['registrado', 'observado', 'cancelado', 'listo_despacho', 'despachado', 'entregado'] as $estado) {
+            $excluido = $this->presentacion('EXCL-' . $estado, 4, 'No preparar ' . $estado);
+            $this->detalle($this->pedido($usuario, $estado), $excluido, 'unidad', 99);
+        }
+
+        $respuesta = $this->actingAs($usuario)->get(route('cumplimiento.lista-preparacion'));
+        $respuesta->assertOk()->assertSee('3 empaques')->assertSee('5 unidades')
+            ->assertSee('2 empaques')->assertSee('>12</strong>', false);
+        $html = $respuesta->getContent();
+        $this->assertSame(2, substr_count($html, 'SKU: LEJ-A'));
+        $this->assertSame(1, substr_count($html, 'SKU: LEJ-B'));
+        foreach (['registrado', 'observado', 'cancelado', 'listo_despacho', 'despachado', 'entregado'] as $estado) {
+            $respuesta->assertDontSee('SKU: EXCL-' . $estado);
+        }
+    }
 }
