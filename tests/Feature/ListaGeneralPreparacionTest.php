@@ -127,4 +127,16 @@ class ListaGeneralPreparacionTest extends TestCase
             $respuesta->assertDontSee('SKU: EXCL-' . $estado);
         }
     }
+    public function test_explicacion_visible_y_empaque_historico_sin_multiplicador(): void
+    {
+        $usuario = $this->usuario();
+        $this->detalle($this->pedido($usuario), null, 'empaque', 2, 'SKU-HISTORICO');
+        $this->actingAs($usuario)->get(route('cumplimiento.lista-preparacion'))
+            ->assertOk()
+            ->assertSee('SKU-HISTORICO')
+            ->assertSee('2 empaques')
+            ->assertSee('No disponible')
+            ->assertSee('parcialmente preparadas')
+            ->assertSee('catálogo actual');
+    }
 }

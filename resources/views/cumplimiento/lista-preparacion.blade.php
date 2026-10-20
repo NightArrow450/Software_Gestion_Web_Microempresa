@@ -14,6 +14,13 @@
         <a href="{{ route('cumplimiento.index') }}" class="btn btn-secondary">Volver a cumplimiento</a>
     </div>
 
+    <div class="cumplimiento-nota" role="note">
+        Esta lista usa las <strong>cantidades solicitadas</strong> de los pedidos pendientes.
+        El sistema todavía no registra unidades parcialmente preparadas por producto.
+        Para empaques, el total de unidades se calcula con las unidades por empaque del
+        catálogo actual; si no existe ese dato, se indica «No disponible».
+    </div>
+
     <section class="cumplimiento-tarjeta">
         <div class="table-container">
             <table class="cumplimiento-tabla">
