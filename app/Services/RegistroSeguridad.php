@@ -11,6 +11,10 @@ class RegistroSeguridad
     /** @param array<string, mixed> $contexto */
     public static function registrar(string $evento, Request $request, array $contexto = []): void
     {
+        if (str_starts_with($evento, 'rol_') || str_starts_with($evento, 'permiso_')) {
+            $entidad = str_starts_with($evento, 'rol_') ? 'rol' : 'permiso';
+            RegistroAuditoria::registrar($evento, $entidad, (int) ($contexto[$entidad.'_id'] ?? 0), $contexto);
+        }
         Log::channel('seguridad')->info($evento, [
             'usuario_id' => $request->user()?->id,
             'ip' => $request->ip(),

@@ -44,6 +44,17 @@ return [
             'transaction_mode' => 'DEFERRED',
         ],
 
+        'mysql_concurrencia' => [
+            'driver' => 'mysql',
+            'host' => env('MYSQL_TEST_HOST', '127.0.0.1'),
+            'port' => env('MYSQL_TEST_PORT', '3306'),
+            'database' => env('MYSQL_TEST_DATABASE', 'dhacer_eco_limp_test_concurrencia'),
+            'username' => env('MYSQL_TEST_USERNAME', ''),
+            'password' => env('MYSQL_TEST_PASSWORD', ''),
+            'charset' => 'utf8mb4', 'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '', 'strict' => true, 'engine' => 'InnoDB',
+        ],
+
         'mysql' => [
             'driver' => 'mysql',
             'url' => env('DB_URL'),

@@ -5,7 +5,11 @@
         : [['presentacion_producto_id'=>'', 'modalidad'=>'unidad','cantidad'=>1]]);
 @endphp
 <form method="POST" id="form-pedido" action="{{ $editando ? route('pedidos.update', $pedido) : route('pedidos.store') }}">
-@csrf @if($editando) @method('PUT') @endif
+@csrf @include('components.token-operacion')
+@if(isset($pedido))
+<input type="hidden" name="_version" value="{{ $pedido->version }}">
+<input type="hidden" name="_updated_at" value="{{ $pedido->getRawOriginal('updated_at') }}">
+@endif @if($editando) @method('PUT') @endif
 <section class="form-section">
     <h2 class="form-section-title">Datos de la nota de pedido</h2>
     <div class="form-grid">

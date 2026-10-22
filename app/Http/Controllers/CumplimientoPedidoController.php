@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Pedido;
-use App\Services\TransicionCumplimiento;
+use App\Services\TransicionesPedido;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -119,7 +119,7 @@ class CumplimientoPedidoController extends Controller
     public function iniciarPreparacion(
         Request $request,
         Pedido $pedido,
-        TransicionCumplimiento $transiciones
+        TransicionesPedido $transiciones
     ): RedirectResponse {
         $transiciones->registrar(
             $pedido, 'confirmado', 'en_preparacion', $request->user()->id,
@@ -135,7 +135,7 @@ class CumplimientoPedidoController extends Controller
     public function finalizarPreparacion(
         Request $request,
         Pedido $pedido,
-        TransicionCumplimiento $transiciones
+        TransicionesPedido $transiciones
     ): RedirectResponse {
         $transiciones->registrar(
             $pedido, 'en_preparacion', 'listo_despacho', $request->user()->id,
@@ -151,7 +151,7 @@ class CumplimientoPedidoController extends Controller
     public function despachar(
         Request $request,
         Pedido $pedido,
-        TransicionCumplimiento $transiciones
+        TransicionesPedido $transiciones
     ): RedirectResponse {
         $datos = $request->validate([
             'observacion_despacho' => ['nullable', 'string', 'max:1000'],
@@ -173,7 +173,7 @@ class CumplimientoPedidoController extends Controller
     public function entregar(
         Request $request,
         Pedido $pedido,
-        TransicionCumplimiento $transiciones
+        TransicionesPedido $transiciones
     ): RedirectResponse {
         $datos = $request->validate([
             'observacion_entrega' => ['nullable', 'string', 'max:1000'],

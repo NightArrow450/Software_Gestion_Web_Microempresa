@@ -8,6 +8,10 @@
     action="{{ $editando ? route('clientes.update', $cliente) : route('clientes.store') }}"
 >
     @csrf
+@if(isset($cliente))
+<input type="hidden" name="_version" value="{{ $cliente->version }}">
+<input type="hidden" name="_updated_at" value="{{ $cliente->getRawOriginal('updated_at') }}">
+@endif
 
     @if($editando)
         @method('PUT')

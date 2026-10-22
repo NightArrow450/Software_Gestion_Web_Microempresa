@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Inventario;
 use App\Models\Insumo;
+use App\Models\Inventario;
 use App\Models\MovimientoInventario;
 use App\Models\PresentacionProducto;
+use App\Services\RegistroAuditoria;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -30,9 +31,9 @@ class MovimientoInventarioController extends Controller
         ]);
 
         $movimientos = MovimientoInventario::with(['presentacion.producto', 'insumo', 'usuario'])
-            ->when(!empty($datos['tipo']), fn ($q) => $q->where('tipo', $datos['tipo']))
-            ->when(!empty($datos['fecha']), fn ($q) => $q->whereDate('created_at', $datos['fecha']))
-            ->when(!empty($datos['buscar']), function ($q) use ($datos) {
+            ->when(! empty($datos['tipo']), fn ($q) => $q->where('tipo', $datos['tipo']))
+            ->when(! empty($datos['fecha']), fn ($q) => $q->whereDate('created_at', $datos['fecha']))
+            ->when(! empty($datos['buscar']), function ($q) use ($datos) {
                 $buscar = trim($datos['buscar']);
                 $q->where(function ($q) use ($buscar) {
                     $q->whereHas('presentacion', function ($p) use ($buscar) {
@@ -63,7 +64,7 @@ class MovimientoInventarioController extends Controller
             ->whereHas('producto', fn ($q) => $q->where('estado', true))
             ->where(function ($q) {
                 $q->whereNull('variante_producto_id')
-                  ->orWhereHas('variante', fn ($v) => $v->where('estado', true));
+                    ->orWhereHas('variante', fn ($v) => $v->where('estado', true));
             })->orderBy('codigo_sku')->get();
 
         $existencias = Inventario::whereIn('presentacion_producto_id', $presentaciones->pluck('id'))
@@ -86,8 +87,8 @@ class MovimientoInventarioController extends Controller
             'motivo' => ['required', 'string', 'min:5', 'max:1000'],
         ]);
 
-        $esProducto = !empty($datos['presentacion_producto_id']);
-        $esInsumo = !empty($datos['insumo_id']);
+        $esProducto = ! empty($datos['presentacion_producto_id']);
+        $esInsumo = ! empty($datos['insumo_id']);
         if ($esProducto === $esInsumo) {
             throw ValidationException::withMessages([
                 'insumo_id' => 'Selecciona solo un producto terminado O un insumo.',
@@ -110,8 +111,8 @@ class MovimientoInventarioController extends Controller
             if ($esProducto) {
                 $presentacion = PresentacionProducto::whereKey($datos['presentacion_producto_id'])
                     ->lockForUpdate()->firstOrFail();
-                if (!$presentacion->estado || !$presentacion->producto?->estado ||
-                    ($presentacion->variante && !$presentacion->variante->estado)) {
+                if (! $presentacion->estado || ! $presentacion->producto?->estado ||
+                    ($presentacion->variante && ! $presentacion->variante->estado)) {
                     throw ValidationException::withMessages([
                         'presentacion_producto_id' => 'La presentación está inactiva.',
                     ]);
@@ -126,7 +127,7 @@ class MovimientoInventarioController extends Controller
                 $anteriorMil = (int) $item->cantidad_actual * 1000;
             } else {
                 $item = Insumo::whereKey($datos['insumo_id'])->lockForUpdate()->firstOrFail();
-                if (!$item->estado) {
+                if (! $item->estado) {
                     throw ValidationException::withMessages(['insumo_id' => 'El insumo está inactivo.']);
                 }
                 $anteriorMil = (int) round((float) $item->cantidad_actual * 1000);
@@ -155,7 +156,7 @@ class MovimientoInventarioController extends Controller
                     : number_format($nuevoMil / 1000, 3, '.', ''),
             ]);
 
-            MovimientoInventario::create([
+            $movimiento = MovimientoInventario::create([
                 'presentacion_producto_id' => $esProducto ? $datos['presentacion_producto_id'] : null,
                 'insumo_id' => $esProducto ? null : $datos['insumo_id'],
                 'usuario_id' => $usuario->id,
@@ -165,6 +166,11 @@ class MovimientoInventarioController extends Controller
                 'stock_nuevo' => number_format($nuevoMil / 1000, 3, '.', ''),
                 'motivo' => trim($datos['motivo']),
             ]);
+            RegistroAuditoria::registrar('stock_'.$datos['tipo'], $esProducto ? 'presentacion_producto' : 'insumo', (int) ($datos['presentacion_producto_id'] ?? $datos['insumo_id']), [
+                'movimiento_id' => $movimiento->id, 'stock_anterior' => $movimiento->stock_anterior,
+                'stock_nuevo' => $movimiento->stock_nuevo, 'motivo' => $movimiento->motivo,
+            ]);
+
         }, 3);
 
         return redirect()->route('inventario.movimientos.index')

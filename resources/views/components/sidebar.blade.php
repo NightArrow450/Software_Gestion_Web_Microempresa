@@ -160,6 +160,9 @@
                     Historial de pedidos
                 </a>
             @endif
+            @if($rolSidebar === 'Administrador' && in_array('auditoria.ver', $permisosSidebar, true))
+            <a href="{{ route('auditoria.index') }}" class="menu-link {{ request()->routeIs('auditoria.index') ? 'active' : '' }}"><span class="material-symbols-outlined">policy</span>Auditoría</a>
+            @endif
         </nav>
     </div>
 

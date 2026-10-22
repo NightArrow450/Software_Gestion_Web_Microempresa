@@ -53,6 +53,7 @@
     </div>
 
     <script src="{{ asset('js/layout.js') }}" defer></script>
+    <script src="{{ asset('js/formularios-seguros.js') }}" defer></script>
     @stack('scripts')
 
 </body>

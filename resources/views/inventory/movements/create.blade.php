@@ -9,7 +9,7 @@
     <a class="btn btn-secondary" href="{{ route('inventario.movimientos.index') }}">Volver</a></div>
 <section class="form-section">
 <form method="POST" action="{{ route('inventario.movimientos.store') }}">
-    @csrf
+    @csrf @include('components.token-operacion')
     <div class="s3-formgrid">
         <div class="form-group"><label class="form-label" for="presentacion_producto_id">Producto terminado (opcional)</label>
             <select class="form-control" name="presentacion_producto_id" id="presentacion_producto_id">

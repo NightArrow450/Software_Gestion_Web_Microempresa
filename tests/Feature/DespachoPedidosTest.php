@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Categoria;
 use App\Models\Cliente;
+use App\Models\Insumo;
 use App\Models\Inventario;
 use App\Models\MovimientoInventario;
 use App\Models\Pedido;
@@ -12,7 +13,11 @@ use App\Models\PresentacionProducto;
 use App\Models\Producto;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\TransicionesPedido;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Validation\ValidationException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class DespachoPedidosTest extends TestCase
@@ -32,6 +37,7 @@ class DespachoPedidosTest extends TestCase
             );
             $rol->permisos()->attach($permiso->id);
         }
+
         return User::create([
             'first_name' => 'Operador', 'last_name' => 'Prueba',
             'email' => 'operador@local.test', 'password' => 'password123',
@@ -48,6 +54,7 @@ class DespachoPedidosTest extends TestCase
             'nombre' => 'Producto '.$sku,
             'estado' => true,
         ]);
+
         return PresentacionProducto::create([
             'producto_id' => $producto->id,
             'codigo_sku' => $sku,
@@ -90,6 +97,7 @@ class DespachoPedidosTest extends TestCase
             'presentacion_producto_id' => $presentacion->id,
             'cantidad_actual' => $existencias,
         ]);
+
         return $pedido;
     }
 
@@ -234,5 +242,117 @@ class DespachoPedidosTest extends TestCase
             ->assertSessionHasErrors('inventario');
         $this->assertSame('listo_despacho', $p->fresh()->estado);
         $this->assertDatabaseCount('movimientos_inventario', 0);
+    }
+
+    public function test_informa_todos_los_sku_faltantes_sin_modificar_datos(): void
+    {
+        $usuario = $this->usuario(['pedidos.ver', 'cumplimiento.despachar']);
+        $pedido = $this->pedido($usuario, 'listo_despacho', 1);
+        $primero = $pedido->detalles()->firstOrFail();
+        $otra = $this->presentacion('FALTANTE-2');
+        $pedido->detalles()->create(array_merge($primero->only([
+            'descripcion_producto', 'modalidad', 'cantidad', 'precio_unitario', 'importe',
+        ]), ['presentacion_producto_id' => $otra->id, 'codigo_sku' => $otra->codigo_sku]));
+
+        $this->actingAs($usuario)->post(route('cumplimiento.despachar', $pedido))
+            ->assertSessionHasErrors(['inventario']);
+        $mensajes = session('errors')->get('inventario');
+        $this->assertCount(2, $mensajes);
+        $this->assertStringContainsString($primero->codigo_sku, $mensajes[0]);
+        $this->assertStringContainsString('necesitas 2 unidad(es) y hay 1', $mensajes[0]);
+        $this->assertStringContainsString('FALTANTE-2', $mensajes[1]);
+        $this->assertSame(1, (int) Inventario::firstOrFail()->cantidad_actual);
+        $this->assertSame('listo_despacho', $pedido->fresh()->estado);
+        $this->assertDatabaseCount('movimientos_inventario', 0);
+        $this->assertDatabaseCount('pedido_estados_historial', 0);
+    }
+
+    public function test_restriccion_de_bd_impide_segunda_salida_del_mismo_despacho(): void
+    {
+        $usuario = $this->usuario(['pedidos.ver', 'cumplimiento.despachar']);
+        $pedido = $this->pedido($usuario);
+        $this->actingAs($usuario)->post(route('cumplimiento.despachar', $pedido))->assertRedirect();
+        $movimiento = MovimientoInventario::firstOrFail();
+        $this->assertSame('despacho', $movimiento->origen_tipo);
+        $this->assertSame((string) $pedido->id, $movimiento->origen_id);
+        $this->expectException(QueryException::class);
+        MovimientoInventario::create($movimiento->only($movimiento->getFillable()));
+    }
+
+    public function test_entradas_del_mismo_producto_con_origenes_distintos_no_colisionan(): void
+    {
+        $usuario = $this->usuario(['pedidos.ver']);
+        $pedido = $this->pedido($usuario);
+        $presentacion = $pedido->detalles()->firstOrFail()->presentacion_producto_id;
+        foreach (['parcial-1', 'parcial-2'] as $origen) {
+            MovimientoInventario::create([
+                'presentacion_producto_id' => $presentacion, 'usuario_id' => $usuario->id,
+                'tipo' => 'entrada', 'cantidad' => 1, 'stock_anterior' => 10, 'stock_nuevo' => 11,
+                'motivo' => 'Operación simulada', 'origen_tipo' => 'simulado', 'origen_id' => $origen,
+            ]);
+        }
+        $this->assertDatabaseCount('movimientos_inventario', 2);
+    }
+
+    public function test_stock_exacto_y_dos_pedidos_compitiendo_no_generan_negativos(): void
+    {
+        $usuario = $this->usuario(['pedidos.ver', 'cumplimiento.despachar']);
+        $primero = $this->pedido($usuario, 'listo_despacho', 2);
+        $segundo = $this->pedido($usuario);
+        $detalle = $primero->detalles()->firstOrFail();
+        $segundo->detalles()->firstOrFail()->update($detalle->only(['presentacion_producto_id', 'codigo_sku']));
+        $insumo = Insumo::create(['codigo' => 'SIN-TOCAR', 'nombre' => 'Envase', 'categoria' => 'Envases', 'unidad_medida' => 'unidad', 'cantidad_actual' => 5]);
+        $this->actingAs($usuario)->post(route('cumplimiento.despachar', $primero))->assertRedirect();
+        $this->post(route('cumplimiento.despachar', $segundo))->assertSessionHasErrors('inventario');
+        $this->assertDatabaseHas('inventarios', ['presentacion_producto_id' => $detalle->presentacion_producto_id, 'cantidad_actual' => 0]);
+        $this->assertSame('listo_despacho', $segundo->fresh()->estado);
+        $this->assertSame('5.000', $insumo->fresh()->cantidad_actual);
+        $this->assertDatabaseCount('movimientos_inventario', 1);
+    }
+
+    public function test_cancelar_estados_logisticos_no_crea_movimientos(): void
+    {
+        $usuario = $this->usuario(['pedidos.ver', 'pedidos.cancelar']);
+        $usuario->role->update(['nombre' => 'Administrador']);
+        foreach (['en_preparacion', 'listo_despacho', 'despachado', 'entregado'] as $estado) {
+            $pedido = $this->pedido($usuario, $estado);
+            $this->actingAs($usuario)->post(route('pedidos.cancelar', $pedido), ['motivo' => 'Cancelación de prueba rechazada'])->assertSessionHasErrors('estado');
+            $this->assertSame($estado, $pedido->fresh()->estado);
+        }
+        $this->assertDatabaseCount('movimientos_inventario', 0);
+        $this->assertDatabaseCount('pedido_estados_historial', 0);
+    }
+
+    public static function transiciones(): array
+    {
+        $permitidas = ['registrado' => ['confirmado', 'observado', 'cancelado'], 'observado' => ['confirmado', 'cancelado'], 'confirmado' => ['en_preparacion', 'cancelado'], 'en_preparacion' => ['listo_despacho'], 'listo_despacho' => ['despachado'], 'despachado' => ['entregado']];
+        $casos = [];
+        foreach (['registrado', 'observado', 'confirmado', 'en_preparacion', 'listo_despacho', 'despachado', 'entregado', 'cancelado'] as $origen) {
+            foreach (['registrado', 'observado', 'confirmado', 'en_preparacion', 'listo_despacho', 'despachado', 'entregado', 'cancelado'] as $destino) {
+                $casos[$origen.' a '.$destino] = [$origen, $destino, in_array($destino, $permitidas[$origen] ?? [], true)];
+            }
+        }
+
+        return $casos;
+    }
+
+    #[DataProvider('transiciones')]
+    public function test_matriz_completa_de_transiciones(string $origen, string $destino, bool $permitida): void
+    {
+        $usuario = $this->usuario(['pedidos.ver']);
+        $pedido = $this->pedido($usuario, $origen);
+        try {
+            app(TransicionesPedido::class)->registrar($pedido, null, $destino, $usuario->id, [], 'Transición de prueba');
+            $this->assertTrue($permitida, 'La transición debía rechazarse.');
+            $this->assertSame($destino, $pedido->fresh()->estado);
+            $this->assertDatabaseCount('pedido_estados_historial', 1);
+            $this->assertDatabaseCount('movimientos_inventario', $destino === 'despachado' ? 1 : 0);
+        } catch (ValidationException $exception) {
+            $this->assertFalse($permitida, 'La transición debía permitirse.');
+            $this->assertArrayHasKey('estado', $exception->errors());
+            $this->assertSame($origen, $pedido->fresh()->estado);
+            $this->assertDatabaseCount('pedido_estados_historial', 0);
+            $this->assertDatabaseCount('movimientos_inventario', 0);
+        }
     }
 }

@@ -95,16 +95,19 @@ class DescontarInventarioPorDespacho
             ->keyBy('presentacion_producto_id');
 
         // Validación de TODOS los SKU antes de descontar uno solo.
+        $faltantes = [];
         foreach ($cantidades as $id => $requerido) {
             $disponible = (int) ($inventarios->get($id)?->cantidad_actual ?? 0);
             if ($disponible < $requerido) {
                 $sku = $presentaciones->get($id)->codigo_sku;
-                throw ValidationException::withMessages([
-                    'inventario' => 'Stock insuficiente para '.$sku
+                $faltantes[] = 'Stock insuficiente para '.$sku
                         .': necesitas '.$requerido.' unidad(es) y hay '.$disponible
-                        .'. Registra las existencias en Inventario antes del despacho.',
-                ]);
+                        .'. Registra las existencias en Inventario antes del despacho.';
             }
+        }
+
+        if ($faltantes !== []) {
+            throw ValidationException::withMessages(['inventario' => $faltantes]);
         }
 
         foreach ($cantidades as $id => $requerido) {

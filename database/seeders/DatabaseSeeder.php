@@ -18,7 +18,6 @@ class DatabaseSeeder extends Seeder
 
             RoleSeeder::class,
 
-
             /*
             |--------------------------------------------------------------------------
             | Administrador inicial
@@ -26,7 +25,6 @@ class DatabaseSeeder extends Seeder
             */
 
             AdminUserSeeder::class,
-
 
             /*
             |--------------------------------------------------------------------------
@@ -36,7 +34,6 @@ class DatabaseSeeder extends Seeder
 
             PermisoSeeder::class,
 
-
             /*
             |--------------------------------------------------------------------------
             | Asignación de permisos a los roles
@@ -44,6 +41,7 @@ class DatabaseSeeder extends Seeder
             */
 
             RolPermisoSeeder::class,
+            AuditoriaPermisoSeeder::class,
 
         ]);
     }

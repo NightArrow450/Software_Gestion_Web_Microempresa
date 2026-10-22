@@ -171,11 +171,11 @@ class ProductoController extends Controller
                 ->all();
 
             if (empty($idsVariantesConservadas)) {
-                $producto->variantes()->delete();
+                $producto->variantes()->update(['estado' => false]);
             } else {
                 $producto->variantes()
                     ->whereNotIn('id', $idsVariantesConservadas)
-                    ->delete();
+                    ->update(['estado' => false]);
             }
 
             $productoActivo = (bool) $validated['estado'];
@@ -224,11 +224,11 @@ class ProductoController extends Controller
             }
 
             if (empty($idsPresentacionesConservadas)) {
-                $producto->presentaciones()->delete();
+                $producto->presentaciones()->update(['estado' => false]);
             } else {
                 $producto->presentaciones()
                     ->whereNotIn('id', $idsPresentacionesConservadas)
-                    ->delete();
+                    ->update(['estado' => false]);
             }
 
             if (! $productoActivo) {
