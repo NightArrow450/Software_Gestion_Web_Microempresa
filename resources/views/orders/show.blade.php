@@ -209,7 +209,7 @@
                 action="{{ route('pedidos.procesar', $pedido) }}"
                 method="POST"
             >
-                @csrf
+                @csrf @include('components.token-operacion')
 
                 <input
                     type="hidden"
@@ -234,7 +234,7 @@
                     action="{{ route('pedidos.procesar', $pedido) }}"
                     method="POST"
                 >
-                    @csrf
+                    @csrf @include('components.token-operacion')
 
                     <input
                         type="hidden"
@@ -288,7 +288,7 @@
             method="POST"
             class="s2-panel-actions"
         >
-            @csrf
+            @csrf @include('components.token-operacion')
 
             <input
                 class="form-control"

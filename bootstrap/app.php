@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\SaludController;
 use App\Http\Middleware\CabecerasSeguridad;
+use App\Http\Middleware\EvitarDobleEnvio;
 use App\Http\Middleware\ExigirCambioPassword;
 use App\Http\Middleware\ForzarHttps;
 use App\Http\Middleware\PermisoMiddleware;
@@ -35,7 +36,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->prepend(CabecerasSeguridad::class);
         $middleware->replace(TrustProxies::class, ProxiesConfiables::class);
         $middleware->append(ForzarHttps::class);
-        $middleware->web(append: [ExigirCambioPassword::class]);
+        $middleware->web(append: [ExigirCambioPassword::class, EvitarDobleEnvio::class]);
 
         $middleware->alias([
 

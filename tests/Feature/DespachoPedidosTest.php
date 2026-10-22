@@ -285,7 +285,7 @@ class DespachoPedidosTest extends TestCase
             MovimientoInventario::create([
                 'presentacion_producto_id' => $presentacion, 'usuario_id' => $usuario->id,
                 'tipo' => 'entrada', 'cantidad' => 1, 'stock_anterior' => 10, 'stock_nuevo' => 11,
-                'motivo' => 'Operación simulada', 'origen_tipo' => 'simulado', 'origen_id' => $origen,
+                'motivo' => 'OperaciÃ³n simulada', 'origen_tipo' => 'simulado', 'origen_id' => $origen,
             ]);
         }
         $this->assertDatabaseCount('movimientos_inventario', 2);
@@ -313,7 +313,7 @@ class DespachoPedidosTest extends TestCase
         $usuario->role->update(['nombre' => 'Administrador']);
         foreach (['en_preparacion', 'listo_despacho', 'despachado', 'entregado'] as $estado) {
             $pedido = $this->pedido($usuario, $estado);
-            $this->actingAs($usuario)->post(route('pedidos.cancelar', $pedido), ['motivo' => 'Cancelación de prueba rechazada'])->assertSessionHasErrors('estado');
+            $this->actingAs($usuario)->post(route('pedidos.cancelar', $pedido), ['motivo' => 'CancelaciÃ³n de prueba rechazada'])->assertSessionHasErrors('estado');
             $this->assertSame($estado, $pedido->fresh()->estado);
         }
         $this->assertDatabaseCount('movimientos_inventario', 0);

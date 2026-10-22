@@ -17,7 +17,7 @@ class IntegridadHistoricaTest extends TestCase
     public function test_no_se_puede_borrar_producto_con_presentaciones(): void
     {
         $categoria = Categoria::create(['nombre' => 'Prueba', 'estado' => true]);
-        $producto = Producto::create(['codigo' => 'HIST', 'nombre' => 'Histórico', 'categoria_id' => $categoria->id, 'estado' => true]);
+        $producto = Producto::create(['codigo' => 'HIST', 'nombre' => 'HistÃ³rico', 'categoria_id' => $categoria->id, 'estado' => true]);
         PresentacionProducto::create(['producto_id' => $producto->id, 'codigo_sku' => 'HIST-1', 'contenido' => 1, 'unidad_medida' => 'L', 'estado' => true]);
         $this->expectException(QueryException::class);
         $producto->delete();

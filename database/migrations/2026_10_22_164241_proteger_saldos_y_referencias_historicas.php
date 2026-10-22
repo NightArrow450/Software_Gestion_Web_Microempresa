@@ -19,13 +19,13 @@ return new class extends Migration
     {
         foreach (['inventarios', 'insumos'] as $tabla) {
             if (DB::table($tabla)->where('cantidad_actual', '<', 0)->exists()) {
-                throw new RuntimeException("Hay saldos negativos en $tabla. La migración no regulariza ni elimina datos.");
+                throw new RuntimeException("Hay saldos negativos en $tabla. La migraciÃ³n no regulariza ni elimina datos.");
             }
         }
         foreach (self::REFERENCIAS as $tabla => $columnas) {
             foreach ($columnas as $columna => $destino) {
                 if (DB::table($tabla.' as origen')->leftJoin($destino.' as destino', 'origen.'.$columna, '=', 'destino.id')->whereNotNull('origen.'.$columna)->whereNull('destino.id')->exists()) {
-                    throw new RuntimeException("Hay referencias huérfanas en $tabla.$columna. Revísalas antes de migrar.");
+                    throw new RuntimeException("Hay referencias huÃ©rfanas en $tabla.$columna. RevÃ­salas antes de migrar.");
                 }
             }
         }
@@ -56,6 +56,6 @@ return new class extends Migration
                 DB::statement("ALTER TABLE $tabla DROP CHECK {$tabla}_saldo_no_negativo");
             }
         }
-        // Las referencias RESTRICT se conservan al revertir para no debilitar la protección histórica.
+        // Las referencias RESTRICT se conservan al revertir para no debilitar la protecciÃ³n histÃ³rica.
     }
 };

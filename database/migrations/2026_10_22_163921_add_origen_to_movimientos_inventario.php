@@ -13,7 +13,7 @@ return new class extends Migration
             || DB::table('movimientos_inventario')->whereNotNull('pedido_id')->where(function ($query) {
                 $query->where('tipo', '<>', 'salida')->orWhereNull('presentacion_producto_id');
             })->exists()) {
-            throw new RuntimeException('Hay movimientos con destino u origen de despacho inconsistente. RevÌsalos antes de migrar; no se modificÛ ning˙n dato.');
+            throw new RuntimeException('Hay movimientos con destino u origen de despacho inconsistente. Rev√≠salos antes de migrar; no se modific√≥ ning√∫n dato.');
         }
         Schema::table('movimientos_inventario', function (Blueprint $table) {
             $table->string('origen_tipo', 40)->nullable();
@@ -29,7 +29,7 @@ return new class extends Migration
             foreach (['INSERT', 'UPDATE'] as $evento) {
                 $columnas = ['presentacion_producto_id', 'insumo_id', 'origen_tipo', 'origen_id', 'pedido_id', 'tipo'];
                 $expresion = preg_replace('/\\b('.implode('|', $columnas).')\\b/', 'NEW.$1', $condicion);
-                DB::unprepared('CREATE TRIGGER movimientos_origen_'.strtolower($evento)." BEFORE $evento ON movimientos_inventario WHEN NOT ($expresion) BEGIN SELECT RAISE(ABORT, 'Origen o destino de movimiento inv·lido'); END");
+                DB::unprepared('CREATE TRIGGER movimientos_origen_'.strtolower($evento)." BEFORE $evento ON movimientos_inventario WHEN NOT ($expresion) BEGIN SELECT RAISE(ABORT, 'Origen o destino de movimiento inv√°lido'); END");
             }
         } else {
             DB::statement("ALTER TABLE movimientos_inventario ADD CONSTRAINT movimientos_origen_valido CHECK ($condicion)");
