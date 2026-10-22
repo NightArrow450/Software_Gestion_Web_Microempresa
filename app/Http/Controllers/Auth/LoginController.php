@@ -7,6 +7,8 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\RateLimiter;
 
 class LoginController extends Controller
 {
@@ -35,6 +37,16 @@ class LoginController extends Controller
             'password.required' => 'La contraseña es obligatoria.',
         ]);
 
+        $credenciales['email'] = mb_strtolower(trim($credenciales['email']));
+        $clave = 'login:'.hash('sha256', $credenciales['email'].'|'.$request->ip());
+        if (RateLimiter::tooManyAttempts($clave, 5)) {
+            $segundos = RateLimiter::availableIn($clave);
+            Log::channel('seguridad')->warning('login_bloqueado', ['email' => $credenciales['email'], 'ip' => $request->ip()]);
+
+            return back()->withErrors(['email' => 'Demasiados intentos fallidos. Intenta nuevamente en '.$segundos.' segundos.'])
+                ->onlyInput('email')->header('Retry-After', (string) $segundos);
+        }
+
         $usuario = User::whereRaw(
             'LOWER(email) = ?',
             [mb_strtolower($credenciales['email'])]
@@ -47,6 +59,9 @@ class LoginController extends Controller
                 $usuario->password
             )
         ) {
+            RateLimiter::hit($clave, 60);
+            Log::channel('seguridad')->warning('login_fallido', ['email' => $credenciales['email'], 'ip' => $request->ip()]);
+
             return back()
                 ->withErrors([
                     'email' => 'Correo electrónico o contraseña incorrectos.',
@@ -55,12 +70,17 @@ class LoginController extends Controller
         }
 
         if (! $usuario->status) {
+            RateLimiter::hit($clave, 60);
+            Log::channel('seguridad')->warning('login_fallido', ['email' => $credenciales['email'], 'ip' => $request->ip(), 'motivo' => 'cuenta_inactiva']);
+
             return back()
                 ->withErrors([
                     'email' => 'Tu cuenta se encuentra inactiva. Comunícate con el administrador.',
                 ])
                 ->onlyInput('email');
         }
+
+        RateLimiter::clear($clave);
 
         Auth::login(
             $usuario,

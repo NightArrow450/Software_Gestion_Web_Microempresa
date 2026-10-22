@@ -51,6 +51,13 @@ return [
     */
 
     'channels' => [
+        'seguridad' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/seguridad.log'),
+            'level' => 'info',
+            'days' => 30,
+            'replace_placeholders' => true,
+        ],
 
         'stack' => [
             'driver' => 'stack',
