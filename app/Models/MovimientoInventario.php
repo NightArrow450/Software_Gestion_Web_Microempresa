@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Str;
 
 class MovimientoInventario extends Model
 {
@@ -11,7 +12,7 @@ class MovimientoInventario extends Model
 
     protected $fillable = [
         'presentacion_producto_id', 'insumo_id', 'pedido_id', 'usuario_id',
-        'tipo', 'cantidad', 'stock_anterior', 'stock_nuevo', 'motivo',
+        'origen_tipo', 'origen_id', 'tipo', 'cantidad', 'stock_anterior', 'stock_nuevo', 'motivo',
     ];
 
     protected $casts = [
@@ -19,6 +20,17 @@ class MovimientoInventario extends Model
         'stock_anterior' => 'decimal:3',
         'stock_nuevo' => 'decimal:3',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $movimiento): void {
+            if ($movimiento->origen_tipo === null && $movimiento->origen_id === null) {
+                $movimiento->origen_tipo = $movimiento->pedido_id !== null ? 'despacho' : 'manual';
+                $movimiento->origen_id = $movimiento->pedido_id !== null
+                    ? (string) $movimiento->pedido_id : (string) Str::ulid();
+            }
+        });
+    }
 
     public function presentacion(): BelongsTo
     {

@@ -5,12 +5,14 @@ namespace Tests\Feature;
 use App\Models\Categoria;
 use App\Models\Cliente;
 use App\Models\Inventario;
+use App\Models\MovimientoInventario;
 use App\Models\Pedido;
 use App\Models\Permiso;
 use App\Models\PresentacionProducto;
 use App\Models\Producto;
 use App\Models\Role;
 use App\Models\User;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -259,5 +261,32 @@ class DespachoPedidosTest extends TestCase
         $this->assertSame('listo_despacho', $pedido->fresh()->estado);
         $this->assertDatabaseCount('movimientos_inventario', 0);
         $this->assertDatabaseCount('pedido_estados_historial', 0);
+    }
+
+    public function test_restriccion_de_bd_impide_segunda_salida_del_mismo_despacho(): void
+    {
+        $usuario = $this->usuario(['pedidos.ver', 'cumplimiento.despachar']);
+        $pedido = $this->pedido($usuario);
+        $this->actingAs($usuario)->post(route('cumplimiento.despachar', $pedido))->assertRedirect();
+        $movimiento = MovimientoInventario::firstOrFail();
+        $this->assertSame('despacho', $movimiento->origen_tipo);
+        $this->assertSame((string) $pedido->id, $movimiento->origen_id);
+        $this->expectException(QueryException::class);
+        MovimientoInventario::create($movimiento->only($movimiento->getFillable()));
+    }
+
+    public function test_entradas_del_mismo_producto_con_origenes_distintos_no_colisionan(): void
+    {
+        $usuario = $this->usuario(['pedidos.ver']);
+        $pedido = $this->pedido($usuario);
+        $presentacion = $pedido->detalles()->firstOrFail()->presentacion_producto_id;
+        foreach (['parcial-1', 'parcial-2'] as $origen) {
+            MovimientoInventario::create([
+                'presentacion_producto_id' => $presentacion, 'usuario_id' => $usuario->id,
+                'tipo' => 'entrada', 'cantidad' => 1, 'stock_anterior' => 10, 'stock_nuevo' => 11,
+                'motivo' => 'Operación simulada', 'origen_tipo' => 'simulado', 'origen_id' => $origen,
+            ]);
+        }
+        $this->assertDatabaseCount('movimientos_inventario', 2);
     }
 }
