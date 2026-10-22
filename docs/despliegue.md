@@ -10,7 +10,7 @@ Conservar el .env local: APP_ENV=local, APP_DEBUG=true, APP_URL por HTTP y SESSI
 
 Usar .env.production.example como referencia para las variables del servicio, sin subir secretos. Crear una APP_KEY privada y estable para la instancia nueva; no regenerarla en una instancia existente. Completar la conexión MySQL y APP_URL con los valores reales al desplegar. No se incluyen credenciales reales en el repositorio.
 
-APP_ENV=production activa HTTPS y, en la fase de cabeceras, HSTS. APP_DEBUG=false evita diagnósticos públicos. SESSION_SECURE_COOKIE=true requiere HTTPS. LOG_STACK=stderr,seguridad y LOG_LEVEL=warning mantienen los avisos de la aplicación; el canal de seguridad conserva también eventos informativos.
+APP_ENV=production activa HTTPS y HSTS. APP_DEBUG=false evita diagnósticos públicos. SESSION_SECURE_COOKIE=true requiere HTTPS. LOG_STACK=stderr,seguridad y LOG_LEVEL=warning mantienen los avisos de la aplicación; el canal de seguridad conserva también eventos informativos.
 
 ADMIN_EMAIL y ADMIN_PASSWORD son obligatorios al ejecutar AdminUserSeeder en producción. La contraseña inicial exige al menos 10 caracteres, mayúsculas, minúsculas y números. El seeder asigna contraseña e indicador obligatorio SOLO al crear. Si encuentra la cuenta, conserva ambos valores y solo garantiza su rol y estado. No es una herramienta de restablecimiento.
 

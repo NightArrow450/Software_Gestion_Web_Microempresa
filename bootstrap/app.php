@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\SaludController;
 use App\Http\Middleware\CabecerasSeguridad;
 use App\Http\Middleware\ExigirCambioPassword;
 use App\Http\Middleware\ForzarHttps;
@@ -14,6 +15,7 @@ use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Route;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
@@ -24,6 +26,9 @@ return Application::configure(basePath: dirname(__DIR__))
         web: __DIR__.'/../routes/web.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
+        then: function (): void {
+            Route::get('/salud', SaludController::class)->name('salud');
+        },
     )
 
     ->withMiddleware(function (Middleware $middleware): void {
