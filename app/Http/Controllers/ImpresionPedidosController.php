@@ -23,7 +23,7 @@ class ImpresionPedidosController extends Controller
             'fecha_pedido' => ['required', 'date_format:Y-m-d'],
         ]);
 
-        $pedidos = Pedido::with(['vendedor', 'detalles'])
+        $pedidos = Pedido::with(['vendedor', 'detalles.presentacion'])
             ->whereDate('fecha_pedido', $datos['fecha_pedido'])
             ->where('estado', '!=', 'cancelado')
             ->orderBy('id')
@@ -52,7 +52,7 @@ class ImpresionPedidosController extends Controller
             'pedido_2' => ['required', 'integer', 'exists:pedidos,id', 'different:pedido_1'],
         ]);
 
-        $pedidosEncontrados = Pedido::with(['vendedor', 'detalles'])
+        $pedidosEncontrados = Pedido::with(['vendedor', 'detalles.presentacion'])
             ->whereIn('id', [$datos['pedido_1'], $datos['pedido_2']])
             ->where('estado', '!=', 'cancelado')
             ->get()

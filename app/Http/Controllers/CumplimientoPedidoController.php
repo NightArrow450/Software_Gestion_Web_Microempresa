@@ -14,7 +14,7 @@ class CumplimientoPedidoController extends Controller
     {
         $estados = ['confirmado', 'en_preparacion', 'listo_despacho', 'despachado', 'entregado'];
         $estado = (string) $request->query('estado', '');
-        if (!in_array($estado, $estados, true)) {
+        if (! in_array($estado, $estados, true)) {
             $estado = '';
         }
 
@@ -27,7 +27,6 @@ class CumplimientoPedidoController extends Controller
 
         return view('cumplimiento.index', compact('pedidos', 'estado', 'estados'));
     }
-
 
     /** Consolida productos pendientes sin afectar existencias. */
     public function listaPreparacion(Request $request): View
@@ -48,29 +47,29 @@ class CumplimientoPedidoController extends Controller
             ->orderBy('id')
             ->get();
 
-        // La identidad de una fila es el ID de presentación + modalidad.
+        // La identidad de una fila es el ID de presentación + modalidad + tamaño.
         // Para detalles históricos sin ID, se usa su SKU registrado en el pedido.
         $agrupados = [];
         foreach ($pedidos as $pedido) {
             foreach ($pedido->detalles as $detalle) {
                 $presentacion = $detalle->presentacion;
                 $cantidad = (int) $detalle->cantidad;
-                $porEmpaque = (int) ($presentacion?->unidades_por_empaque ?? 0);
+                $porEmpaque = (int) $detalle->unidadesPorEmpaqueEfectivas();
                 $esEmpaque = $detalle->modalidad === 'empaque';
                 $totalUnidades = $esEmpaque
                     ? ($porEmpaque > 0 ? $cantidad * $porEmpaque : null)
                     : $cantidad;
 
                 $clave = ($detalle->presentacion_producto_id !== null
-                    ? 'id:' . $detalle->presentacion_producto_id
-                    : 'sku:' . $detalle->codigo_sku) . '|' . $detalle->modalidad;
+                    ? 'id:'.$detalle->presentacion_producto_id
+                    : 'sku:'.$detalle->codigo_sku).'|'.$detalle->modalidad.'|'.$porEmpaque;
 
-                if (!isset($agrupados[$clave])) {
+                if (! isset($agrupados[$clave])) {
                     $agrupados[$clave] = [
                         'producto' => $presentacion?->producto?->nombre ?? $detalle->descripcion_producto,
                         'sku' => $detalle->codigo_sku,
                         'presentacion' => $presentacion
-                            ? rtrim(rtrim(number_format((float) $presentacion->contenido, 2, '.', ''), '0'), '.') . ' ' . $presentacion->unidad_medida
+                            ? rtrim(rtrim(number_format((float) $presentacion->contenido, 2, '.', ''), '0'), '.').' '.$presentacion->unidad_medida
                             : 'Presentación histórica',
                         'modalidad' => $detalle->modalidad,
                         'por_empaque' => $esEmpaque && $porEmpaque > 0 ? $porEmpaque : null,
@@ -96,7 +95,7 @@ class CumplimientoPedidoController extends Controller
     public function show(Pedido $pedido): View
     {
         $pedido->load([
-            'detalles', 'cliente', 'vendedor',
+            'detalles.presentacion', 'cliente', 'vendedor',
             'historialEstados' => fn ($q) => $q->with('usuario')->orderBy('id'),
         ]);
 
@@ -111,7 +110,7 @@ class CumplimientoPedidoController extends Controller
         $transiciones->registrar(
             $pedido, 'confirmado', 'en_preparacion', $request->user()->id,
             ['preparacion_iniciada_por_id' => $request->user()->id,
-             'preparacion_iniciada_en' => now()],
+                'preparacion_iniciada_en' => now()],
             'Preparación iniciada.'
         );
 
@@ -127,7 +126,7 @@ class CumplimientoPedidoController extends Controller
         $transiciones->registrar(
             $pedido, 'en_preparacion', 'listo_despacho', $request->user()->id,
             ['preparacion_finalizada_por_id' => $request->user()->id,
-             'preparacion_finalizada_en' => now()],
+                'preparacion_finalizada_en' => now()],
             'Preparación finalizada. Pedido listo para despacho.'
         );
 
@@ -148,8 +147,8 @@ class CumplimientoPedidoController extends Controller
         $transiciones->registrar(
             $pedido, 'listo_despacho', 'despachado', $request->user()->id,
             ['despachado_por_id' => $request->user()->id,
-             'despachado_en' => now(),
-             'observacion_despacho' => $observacion !== '' ? $observacion : null],
+                'despachado_en' => now(),
+                'observacion_despacho' => $observacion !== '' ? $observacion : null],
             $observacion !== '' ? $observacion : 'Pedido despachado.'
         );
 
@@ -170,13 +169,12 @@ class CumplimientoPedidoController extends Controller
         $transiciones->registrar(
             $pedido, 'despachado', 'entregado', $request->user()->id,
             ['entregado_por_id' => $request->user()->id,
-             'entregado_en' => now(),
-             'observacion_entrega' => $observacion !== '' ? $observacion : null],
+                'entregado_en' => now(),
+                'observacion_entrega' => $observacion !== '' ? $observacion : null],
             $observacion !== '' ? $observacion : 'Entrega confirmada.'
         );
 
         return redirect()->route('cumplimiento.show', $pedido)
             ->with('success', 'Entrega confirmada correctamente.');
     }
-
 }

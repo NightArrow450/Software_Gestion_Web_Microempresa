@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Inventario;
 use App\Models\Insumo;
+use App\Models\Inventario;
 use App\Models\Pedido;
 use App\Models\PresentacionProducto;
 use Illuminate\Http\Request;
@@ -46,7 +46,7 @@ class DisponibilidadInventarioController extends Controller
         $revision = collect();
         $puedeAtender = null;
 
-        if (!empty($datos['pedido_id'])) {
+        if (! empty($datos['pedido_id'])) {
             $pedidoConsulta = Pedido::with(['detalles.presentacion'])
                 ->where('estado', '!=', 'cancelado')
                 ->findOrFail($datos['pedido_id']);
@@ -55,7 +55,7 @@ class DisponibilidadInventarioController extends Controller
             foreach ($pedidoConsulta->detalles as $detalle) {
                 $id = $detalle->presentacion_producto_id;
                 $presentacion = $detalle->presentacion;
-                if (!$id || !$presentacion) {
+                if (! $id || ! $presentacion) {
                     $clave = 'sin-presentacion-'.$detalle->id;
                     $solicitado[$clave] = [
                         'sku' => $detalle->codigo_sku,
@@ -64,12 +64,13 @@ class DisponibilidadInventarioController extends Controller
                         'presentacion_id' => null,
                         'error' => 'La presentación del pedido ya no existe.',
                     ];
+
                     continue;
                 }
                 $multiplicador = $detalle->modalidad === 'empaque'
-                    ? (int) $presentacion->unidades_por_empaque : 1;
+                    ? (int) $detalle->unidadesPorEmpaqueEfectivas() : 1;
                 $unidades = $multiplicador * (int) $detalle->cantidad;
-                if (!isset($solicitado[$id])) {
+                if (! isset($solicitado[$id])) {
                     $solicitado[$id] = [
                         'sku' => $detalle->codigo_sku,
                         'nombre' => $detalle->descripcion_producto,
@@ -90,7 +91,8 @@ class DisponibilidadInventarioController extends Controller
             $revision = collect($solicitado)->map(function ($fila) use ($cantidadesPedido) {
                 $fila['disponible'] = $fila['presentacion_id']
                     ? (int) ($cantidadesPedido[$fila['presentacion_id']] ?? 0) : 0;
-                $fila['alcanza'] = !$fila['error'] && $fila['disponible'] >= $fila['necesario'];
+                $fila['alcanza'] = ! $fila['error'] && $fila['disponible'] >= $fila['necesario'];
+
                 return $fila;
             })->values();
             $puedeAtender = $revision->isNotEmpty() && $revision->every(fn ($f) => $f['alcanza']);
@@ -101,8 +103,8 @@ class DisponibilidadInventarioController extends Controller
             ->where('estado', true)
             ->when($buscar !== '', fn ($q) => $q->where(function ($f) use ($buscar) {
                 $f->where('codigo', 'like', "%{$buscar}%")
-                  ->orWhere('nombre', 'like', "%{$buscar}%")
-                  ->orWhere('categoria', 'like', "%{$buscar}%");
+                    ->orWhere('nombre', 'like', "%{$buscar}%")
+                    ->orWhere('categoria', 'like', "%{$buscar}%");
             }))
             ->orderBy('categoria')->orderBy('nombre')
             ->paginate(15, ['*'], 'insumos_pagina')->withQueryString();

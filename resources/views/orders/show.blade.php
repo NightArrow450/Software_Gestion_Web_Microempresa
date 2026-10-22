@@ -159,7 +159,7 @@
                         </td>
 
                         <td>
-                            {{ ucfirst($detalle->modalidad) }}
+                            {{ $detalle->descripcionModalidad() }}
                         </td>
 
                         <td>{{ $detalle->cantidad }}</td>
@@ -397,6 +397,7 @@
         'productos' => $pedido->detalles->map(fn($detalle) => [
             'descripcion' => $detalle->descripcion_producto,
             'modalidad' => $detalle->modalidad,
+            'empaque' => $detalle->descripcionModalidad(),
             'cantidad' => $detalle->cantidad,
             'importe' => number_format((float) $detalle->importe, 2, '.', ''),
         ])->values()->all(),
@@ -408,7 +409,7 @@
             `Entrega prevista: ${resumen.fecha}`,
             `Condición de pago: ${resumen.condicion}`,
             '', 'Productos:',
-            ...resumen.productos.map((p, i) => `${i + 1}. ${p.descripcion} | ${p.cantidad} ${p.modalidad}(s) | S/ ${p.importe}`),
+            ...resumen.productos.map((p, i) => `${i + 1}. ${p.descripcion} | ${p.cantidad} ${p.modalidad}(s)${p.modalidad === 'empaque' ? ' · ' + p.empaque : ''} | S/ ${p.importe}`),
             '', `TOTAL: S/ ${resumen.total}`,
         ];
         const texto = lineas.join('\n');

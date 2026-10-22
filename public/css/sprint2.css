@@ -37,3 +37,6 @@
 /* Búsqueda de clientes conservando el selector nativo como alternativa sin JS. */
 .s2-cliente-busqueda{position:relative}
 .s2-cliente-busqueda .s2-sugerencias{top:70px}
+.s2-tamano-empaque{margin-top:10px}
+.s2-tamano-empaque[hidden]{display:none}
+.s2-tamano-empaque .form-control{min-height:44px}

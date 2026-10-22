@@ -1,7 +1,7 @@
 @php
     $editando = isset($pedido);
     $filasPrevias = old('detalles', $editando
-        ? $pedido->detalles->map(fn($d) => ['presentacion_producto_id' => $d->presentacion_producto_id, 'modalidad' => $d->modalidad, 'cantidad' => $d->cantidad])->all()
+        ? $pedido->detalles->map(fn($d) => ['presentacion_producto_id' => $d->presentacion_producto_id, 'modalidad' => $d->modalidad, 'cantidad' => $d->cantidad, 'unidades_por_empaque' => $d->unidades_por_empaque ?? $d->presentacion?->unidades_por_empaque])->all()
         : [['presentacion_producto_id'=>'', 'modalidad'=>'unidad','cantidad'=>1]]);
 @endphp
 <form method="POST" id="form-pedido" action="{{ $editando ? route('pedidos.update', $pedido) : route('pedidos.store') }}">
@@ -45,7 +45,13 @@
     <template id="plantilla-fila">
         <div class="s2-product-row">
             <div><label>Producto / SKU *</label><input type="hidden" class="js-presentacion" name="detalles[__INDEX__][presentacion_producto_id]"><div class="form-control s2-nombre-producto js-nombre-producto"></div></div>
-            <div><label>Venta por *</label><select class="form-control js-modalidad" name="detalles[__INDEX__][modalidad]" required></select></div>
+            <div><label>Venta por *</label><select class="form-control js-modalidad" name="detalles[__INDEX__][modalidad]" required></select>
+                <div class="s2-tamano-empaque js-campo-empaque" hidden>
+                    <label class="js-label-empaque">Unidades por empaque *</label>
+                    <input class="form-control js-tamano-empaque" name="detalles[__INDEX__][unidades_por_empaque]" type="number" min="2" max="1000" step="1" inputmode="numeric" required disabled>
+                    <span class="form-help js-descripcion-empaque" aria-live="polite"></span>
+                </div>
+            </div>
             <div><label>Cantidad *</label><input class="form-control js-cantidad" name="detalles[__INDEX__][cantidad]" type="number" min="1" max="10000" step="1" required value="1"></div>
             <div><label>Precio S/</label><input class="form-control js-precio" readonly placeholder="—" tabindex="-1"></div>
             <div><label>Importe S/</label><input class="form-control js-importe" readonly placeholder="0.00" tabindex="-1"></div>
