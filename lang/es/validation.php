@@ -157,6 +157,7 @@ return [
     'ulid' => 'El campo :attribute debe ser un identificador ULID válido.',
     'uuid' => 'El campo :attribute debe ser un identificador UUID válido.',
     'attributes' => [
+        'password_actual' => 'contraseña actual',
         'nombre' => 'nombre', 'first_name' => 'nombres', 'last_name' => 'apellidos',
         'email' => 'correo electrónico', 'correo' => 'correo electrónico', 'password' => 'contraseña',
         'password_confirmation' => 'confirmación de contraseña', 'role_id' => 'rol', 'status' => 'estado',
