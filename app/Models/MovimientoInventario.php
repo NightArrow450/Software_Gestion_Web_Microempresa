@@ -23,6 +23,8 @@ class MovimientoInventario extends Model
 
     protected static function booted(): void
     {
+        static::updating(fn () => throw new \LogicException('Los movimientos de inventario son inmutables. Registra un movimiento de ajuste.'));
+        static::deleting(fn () => throw new \LogicException('El historial de inventario no puede eliminarse.'));
         static::creating(function (self $movimiento): void {
             if ($movimiento->origen_tipo === null && $movimiento->origen_id === null) {
                 $movimiento->origen_tipo = $movimiento->pedido_id !== null ? 'despacho' : 'manual';
