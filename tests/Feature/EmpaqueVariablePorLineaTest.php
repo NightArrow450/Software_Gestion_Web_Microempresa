@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Categoria;
 use App\Models\Cliente;
+use App\Models\Inventario;
 use App\Models\Pedido;
 use App\Models\Permiso;
 use App\Models\PresentacionProducto;
@@ -196,5 +197,84 @@ class EmpaqueVariablePorLineaTest extends TestCase
         $this->get(route('pedidos.edit', Pedido::firstOrFail()))->assertOk()
             ->assertSee('js-tamano-empaque')
             ->assertViewHas('pedido', fn (Pedido $pedido): bool => $pedido->detalles->first()->unidades_por_empaque === 15);
+    }
+
+    public function test_cinco_cajas_de_quince_conservan_precio_lista_disponibilidad_y_despacho_al_cambiar_catalogo(): void
+    {
+        [$datos, $presentacion] = $this->escenario();
+        $this->post(route('pedidos.store'), $datos)->assertSessionHasNoErrors();
+        $pedido = Pedido::firstOrFail();
+        $pedido->update(['estado' => 'confirmado']);
+        $presentacion->update(['unidades_por_empaque' => 20, 'precio_unitario' => '3.00']);
+        Inventario::create(['presentacion_producto_id' => $presentacion->id, 'cantidad_actual' => 100]);
+
+        $this->get(route('cumplimiento.lista-preparacion'))->assertOk()->assertSee('Empaque de 15')
+            ->assertViewHas('filas', fn ($filas): bool => $filas->count() === 1 && $filas[0]['total_unidades'] === 75 && $filas[0]['cantidad'] === 5);
+        $this->get(route('inventario.index', ['pedido_id' => $pedido->id]))->assertOk()
+            ->assertViewHas('revision', fn ($revision): bool => $revision[0]['necesario'] === 75 && $revision[0]['alcanza'] === true);
+        $this->get(route('pedidos.show', $pedido))->assertOk()->assertSee('Empaque de 15')->assertDontSee('Empaque de 20');
+        $this->get(route('cumplimiento.show', $pedido))->assertOk()->assertSee('Empaque de 15');
+        $this->get(route('pedidos.imprimir-por-fecha', ['fecha_pedido' => today()->toDateString()]))->assertOk()->assertSee('Empaque de 15');
+        $this->assertDatabaseHas('pedido_detalles', ['pedido_id' => $pedido->id, 'unidades_por_empaque' => 15, 'precio_unitario' => '37.50', 'importe' => '187.50']);
+        $this->assertSame('187.50', $pedido->fresh()->total);
+
+        $pedido->update(['estado' => 'listo_despacho']);
+        $this->post(route('cumplimiento.despachar', $pedido))->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('inventarios', ['presentacion_producto_id' => $presentacion->id, 'cantidad_actual' => 25]);
+        $this->assertDatabaseHas('movimientos_inventario', ['pedido_id' => $pedido->id, 'cantidad' => 75, 'stock_anterior' => 100, 'stock_nuevo' => 25, 'insumo_id' => null]);
+        $this->assertSame('despachado', $pedido->fresh()->estado);
+    }
+
+    public function test_doce_y_quince_separan_la_lista_y_suman_un_solo_descuento_por_presentacion(): void
+    {
+        [$datos, $presentacion] = $this->escenario();
+        $datos['detalles'][] = array_replace($datos['detalles'][0], ['unidades_por_empaque' => 12]);
+        $this->post(route('pedidos.store'), $datos)->assertSessionHasNoErrors();
+        $pedido = Pedido::firstOrFail();
+        $pedido->update(['estado' => 'confirmado']);
+        Inventario::create(['presentacion_producto_id' => $presentacion->id, 'cantidad_actual' => 200]);
+
+        $this->get(route('cumplimiento.lista-preparacion'))->assertOk()->assertSee('Empaque de 12')->assertSee('Empaque de 15')
+            ->assertViewHas('filas', fn ($filas): bool => $filas->count() === 2 && $filas->pluck('total_unidades')->sort()->values()->all() === [60, 75]);
+        $this->get(route('inventario.index', ['pedido_id' => $pedido->id]))->assertOk()
+            ->assertViewHas('revision', fn ($revision): bool => $revision->count() === 1 && $revision[0]['necesario'] === 135);
+
+        $pedido->update(['estado' => 'listo_despacho']);
+        $this->post(route('cumplimiento.despachar', $pedido))->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('inventarios', ['presentacion_producto_id' => $presentacion->id, 'cantidad_actual' => 65]);
+        $this->assertDatabaseHas('movimientos_inventario', ['pedido_id' => $pedido->id, 'cantidad' => 135]);
+        $this->assertDatabaseCount('movimientos_inventario', 1);
+    }
+
+    public function test_linea_antigua_null_respalda_con_catalogo_en_todos_los_consumidores(): void
+    {
+        [$datos, $presentacion] = $this->escenario();
+        $this->post(route('pedidos.store'), $datos)->assertSessionHasNoErrors();
+        $pedido = Pedido::firstOrFail();
+        $pedido->detalles()->update(['unidades_por_empaque' => null]);
+        $pedido->update(['estado' => 'confirmado']);
+        Inventario::create(['presentacion_producto_id' => $presentacion->id, 'cantidad_actual' => 100]);
+
+        $this->get(route('cumplimiento.lista-preparacion'))->assertOk()->assertSee('Empaque de 12')
+            ->assertViewHas('filas', fn ($filas): bool => $filas[0]['total_unidades'] === 60);
+        $this->get(route('inventario.index', ['pedido_id' => $pedido->id]))->assertOk()
+            ->assertViewHas('revision', fn ($revision): bool => $revision[0]['necesario'] === 60);
+        $this->get(route('pedidos.show', $pedido))->assertOk()->assertSee('Empaque de 12');
+        $this->get(route('pedidos.imprimir-por-fecha', ['fecha_pedido' => today()->toDateString()]))->assertOk()->assertSee('Empaque de 12');
+        $pedido->update(['estado' => 'listo_despacho']);
+        $this->post(route('cumplimiento.despachar', $pedido))->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('movimientos_inventario', ['pedido_id' => $pedido->id, 'cantidad' => 60]);
+        $this->assertDatabaseHas('inventarios', ['presentacion_producto_id' => $presentacion->id, 'cantidad_actual' => 40]);
+    }
+
+    public function test_lista_conserva_unidades_historicas_aun_sin_presentacion(): void
+    {
+        [$datos] = $this->escenario();
+        $this->post(route('pedidos.store'), $datos)->assertSessionHasNoErrors();
+        $pedido = Pedido::firstOrFail();
+        $pedido->update(['estado' => 'confirmado']);
+        $pedido->detalles()->update(['presentacion_producto_id' => null]);
+        $this->get(route('cumplimiento.lista-preparacion'))->assertOk()->assertSee('Presentación histórica')->assertSee('Empaque de 15')
+            ->assertViewHas('filas', fn ($filas): bool => $filas[0]['total_unidades'] === 75);
     }
 }

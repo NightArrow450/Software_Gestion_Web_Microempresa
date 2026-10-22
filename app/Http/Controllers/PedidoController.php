@@ -138,7 +138,7 @@ class PedidoController extends Controller
             'cliente',
             'vendedor',
             'procesadoPor',
-            'detalles',
+            'detalles.presentacion',
             'historialEstados' => fn ($q) => $q
                 ->with('usuario')
                 ->orderBy('id'),

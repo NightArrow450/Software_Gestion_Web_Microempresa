@@ -31,6 +31,28 @@ class PedidoDetalle extends Model
         return $this->belongsTo(Pedido::class, 'pedido_id');
     }
 
+    public function unidadesPorEmpaqueEfectivas(?PresentacionProducto $presentacion = null): ?int
+    {
+        if ($this->modalidad !== 'empaque') {
+            return null;
+        }
+
+        $unidades = $this->unidades_por_empaque ?? ($presentacion ?? $this->presentacion)?->unidades_por_empaque;
+
+        return $unidades === null ? null : (int) $unidades;
+    }
+
+    public function descripcionModalidad(): string
+    {
+        if ($this->modalidad !== 'empaque') {
+            return ucfirst($this->modalidad);
+        }
+
+        $unidades = $this->unidadesPorEmpaqueEfectivas();
+
+        return $unidades > 0 ? 'Empaque de '.$unidades : 'Empaque (tamaño no disponible)';
+    }
+
     public function presentacion(): BelongsTo
     {
         return $this->belongsTo(

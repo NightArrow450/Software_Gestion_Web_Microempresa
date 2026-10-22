@@ -43,8 +43,8 @@ class DescontarInventarioPorDespacho
             ]);
         }
 
-        // Usamos el catálogo SOLO para conocer las unidades por empaque;
-        // el precio del pedido nunca participa en la salida de inventario.
+        // El catálogo respalda únicamente tamaños históricos que no se guardaron.
+        // El precio del pedido nunca participa en la salida de inventario.
         $presentaciones = PresentacionProducto::query()
             ->whereIn('id', $ids)
             ->orderBy('id')
@@ -57,7 +57,7 @@ class DescontarInventarioPorDespacho
             $id = (int) $detalle->presentacion_producto_id;
             $presentacion = $presentaciones->get($id);
 
-            if (!$presentacion) {
+            if (! $presentacion) {
                 throw ValidationException::withMessages([
                     'inventario' => 'La presentación del producto '.$detalle->codigo_sku.' no existe.',
                 ]);
@@ -71,7 +71,7 @@ class DescontarInventarioPorDespacho
             }
 
             if ($detalle->modalidad === 'empaque') {
-                $factor = (int) $presentacion->unidades_por_empaque;
+                $factor = (int) $detalle->unidadesPorEmpaqueEfectivas($presentacion);
                 if ($factor < 1) {
                     throw ValidationException::withMessages([
                         'inventario' => 'Configura las unidades por empaque de '.$detalle->codigo_sku.' antes de despachar.',

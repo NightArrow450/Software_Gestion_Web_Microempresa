@@ -45,7 +45,7 @@
                     <tr>
                         <td>{{ $detalle->codigo_sku }}</td>
                         <td>{{ $detalle->descripcion_producto }}</td>
-                        <td>{{ ucfirst($detalle->modalidad) }}</td>
+                        <td>{{ $detalle->descripcionModalidad() }}</td>
                         <td>{{ $detalle->cantidad }}</td>
                     </tr>
                 @endforeach
