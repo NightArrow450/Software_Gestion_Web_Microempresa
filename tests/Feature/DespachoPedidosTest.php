@@ -13,8 +13,11 @@ use App\Models\PresentacionProducto;
 use App\Models\Producto;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\TransicionesPedido;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Validation\ValidationException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class DespachoPedidosTest extends TestCase
@@ -318,5 +321,38 @@ class DespachoPedidosTest extends TestCase
         }
         $this->assertDatabaseCount('movimientos_inventario', 0);
         $this->assertDatabaseCount('pedido_estados_historial', 0);
+    }
+
+    public static function transiciones(): array
+    {
+        $permitidas = ['registrado' => ['confirmado', 'observado', 'cancelado'], 'observado' => ['confirmado', 'cancelado'], 'confirmado' => ['en_preparacion', 'cancelado'], 'en_preparacion' => ['listo_despacho'], 'listo_despacho' => ['despachado'], 'despachado' => ['entregado']];
+        $casos = [];
+        foreach (['registrado', 'observado', 'confirmado', 'en_preparacion', 'listo_despacho', 'despachado', 'entregado', 'cancelado'] as $origen) {
+            foreach (['registrado', 'observado', 'confirmado', 'en_preparacion', 'listo_despacho', 'despachado', 'entregado', 'cancelado'] as $destino) {
+                $casos[$origen.' a '.$destino] = [$origen, $destino, in_array($destino, $permitidas[$origen] ?? [], true)];
+            }
+        }
+
+        return $casos;
+    }
+
+    #[DataProvider('transiciones')]
+    public function test_matriz_completa_de_transiciones(string $origen, string $destino, bool $permitida): void
+    {
+        $usuario = $this->usuario(['pedidos.ver']);
+        $pedido = $this->pedido($usuario, $origen);
+        try {
+            app(TransicionesPedido::class)->registrar($pedido, null, $destino, $usuario->id, [], 'Transición de prueba');
+            $this->assertTrue($permitida, 'La transición debía rechazarse.');
+            $this->assertSame($destino, $pedido->fresh()->estado);
+            $this->assertDatabaseCount('pedido_estados_historial', 1);
+            $this->assertDatabaseCount('movimientos_inventario', $destino === 'despachado' ? 1 : 0);
+        } catch (ValidationException $exception) {
+            $this->assertFalse($permitida, 'La transición debía permitirse.');
+            $this->assertArrayHasKey('estado', $exception->errors());
+            $this->assertSame($origen, $pedido->fresh()->estado);
+            $this->assertDatabaseCount('pedido_estados_historial', 0);
+            $this->assertDatabaseCount('movimientos_inventario', 0);
+        }
     }
 }

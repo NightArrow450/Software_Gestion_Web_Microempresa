@@ -6,6 +6,7 @@ use App\Models\Cliente;
 use App\Models\Pedido;
 use App\Models\PresentacionProducto;
 use App\Services\CalculadoraPedido;
+use App\Services\TransicionesPedido;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -344,78 +345,9 @@ class PedidoController extends Controller
         Request $request,
         ?string $motivo
     ): void {
-        $transiciones = [
-            'registrado' => [
-                'confirmado',
-                'observado',
-                'cancelado',
-            ],
-            'observado' => [
-                'confirmado',
-                'cancelado',
-            ],
-            'confirmado' => [
-                'cancelado',
-            ],
-        ];
-
-        DB::transaction(function () use (
-            $pedido,
-            $nuevo,
-            $request,
-            $motivo,
-            $transiciones
-        ) {
-            $pedido = Pedido::whereKey($pedido->id)
-                ->lockForUpdate()
-                ->firstOrFail();
-
-            if (! in_array(
-                $nuevo,
-                $transiciones[$pedido->estado] ?? [],
-                true
-            )) {
-                throw ValidationException::withMessages([
-                    'estado' => 'Transición no permitida desde '.$pedido->estado.'.',
-                ]);
-            }
-
-            if (
-                $nuevo === 'confirmado' &&
-                (
-                    ! $pedido->detalles()->exists() ||
-                    ! $pedido->cliente()->exists()
-                )
-            ) {
-                throw ValidationException::withMessages([
-                    'estado' => 'El pedido requiere cliente y productos.',
-                ]);
-            }
-
-            $anterior = $pedido->estado;
-
-            $cambios = [
-                'estado' => $nuevo,
-            ];
-
-            if (in_array(
-                $nuevo,
-                ['confirmado', 'observado'],
-                true
-            )) {
-                $cambios['procesado_por_id'] = $request->user()->id;
-                $cambios['procesado_en'] = now();
-            }
-
-            $pedido->update($cambios);
-
-            $pedido->historialEstados()->create([
-                'usuario_id' => $request->user()->id,
-                'estado_anterior' => $anterior,
-                'estado_nuevo' => $nuevo,
-                'motivo' => $motivo,
-            ]);
-        });
+        app(TransicionesPedido::class)->registrar(
+            $pedido, null, $nuevo, $request->user()->id, [], $motivo
+        );
     }
 
     private function validarPedido(Request $request): array
