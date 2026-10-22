@@ -112,7 +112,7 @@ class ValidacionUsuariosTest extends TestCase
         $this->withoutMiddleware(PreventRequestForgery::class);
         $this->mock(UncompromisedVerifier::class)->shouldReceive('verify')->once()->with(['value' => 'Segura12345', 'threshold' => 0])->andReturn($segura);
 
-        $respuesta = $this->post(route('usuarios.store'), $datos);
+        $respuesta = $this->post('https://localhost/usuarios', $datos);
 
         if ($segura) {
             $respuesta->assertSessionHasNoErrors();
