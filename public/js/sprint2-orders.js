@@ -101,11 +101,18 @@
             const producto = presentaciones.find(p => String(p.id) === fila.querySelector('.js-presentacion').value);
             const modalidad = fila.querySelector('.js-modalidad').value;
             const cantidad = Number(fila.querySelector('.js-cantidad').value);
-            const precio = producto && (modalidad === 'empaque' ? producto.precio_empaque : producto.precio_unidad);
-            const centimos = precio === null || precio === undefined || precio === '' ? NaN : Math.round(Number(precio) * 100);
+            const tamano = fila.querySelector('.js-tamano-empaque');
+            const esEmpaque = modalidad === 'empaque';
+            fila.querySelector('.js-campo-empaque').hidden = !esEmpaque;
+            tamano.disabled = !esEmpaque;
+            fila.querySelector('.js-descripcion-empaque').textContent = esEmpaque
+                ? `${producto?.tipo_empaque || 'Empaque'} de ${tamano.value || '…'}` : '';
+            const precio = window.BusquedaPedidos.precioLineaCentimos(producto, modalidad, tamano.value);
+            const centimos = precio === null ? NaN : precio;
             const importe = Number.isInteger(cantidad) && cantidad > 0 && Number.isFinite(centimos) ? centimos * cantidad : 0;
             fila.querySelector('.js-precio').value = Number.isFinite(centimos) ? (centimos / 100).toFixed(2) : 'Sin precio';
             fila.querySelector('.js-importe').value = (importe / 100).toFixed(2);
+            fila.querySelector('.js-cantidad').setCustomValidity(importe > 99999999 ? 'El importe de una línea no puede superar S/ 999 999,99.' : '');
             totalCentimos += importe;
         });
         totalElemento.textContent = 'S/ ' + (totalCentimos / 100).toFixed(2);
@@ -130,9 +137,10 @@
     function agregarFila(datos) {
         const producto = presentaciones.find(p => String(p.id) === String(datos.presentacion_producto_id));
         if (!producto) return null;
+        const tamano = datos.unidades_por_empaque ?? producto.unidades_por_empaque;
+        const clave = window.BusquedaPedidos.claveLinea(producto.id, datos.modalidad || 'unidad', tamano);
         const repetida = Array.from(contenedor.querySelectorAll('.s2-product-row')).find(fila =>
-            fila.querySelector('.js-presentacion').value === String(producto.id) &&
-            fila.querySelector('.js-modalidad').value === (datos.modalidad || 'unidad')
+            claveFila(fila) === clave
         );
         if (repetida) {
             const cantidadCampo = repetida.querySelector('.js-cantidad');
@@ -158,20 +166,29 @@
         fila.querySelector('.js-presentacion').value = producto.id;
         fila.querySelector('.js-nombre-producto').textContent = `${producto.nombre} | ${producto.sku}`;
         fila.querySelector('.js-cantidad').value = datos.cantidad || 1;
+        const tamanoCampo = fila.querySelector('.js-tamano-empaque');
+        tamanoCampo.value = tamano ?? '';
+        tamanoCampo.id = `tamano-empaque-${indice}`;
+        fila.querySelector('.js-label-empaque').htmlFor = tamanoCampo.id;
         contenedor.appendChild(fragmento);
         const actual = contenedor.lastElementChild;
         configurarModalidad(actual, datos.modalidad || 'unidad');
         let modalidadAnterior = actual.querySelector('.js-modalidad').value;
-        actual.querySelector('.js-modalidad').addEventListener('change', () => {
+        let tamanoAnterior = tamanoCampo.value;
+        function consolidarDuplicado() {
+            if (actual.querySelector('.js-modalidad').value === 'empaque' && !tamanoCampo.checkValidity()) {
+                recalcular();
+                return;
+            }
             const existente = Array.from(contenedor.querySelectorAll('.s2-product-row')).find(fila =>
-                fila !== actual &&
-                fila.querySelector('.js-presentacion').value === actual.querySelector('.js-presentacion').value &&
-                fila.querySelector('.js-modalidad').value === actual.querySelector('.js-modalidad').value
+                fila !== actual && claveFila(fila) === claveFila(actual)
             );
             if (existente) {
                 const suma = window.BusquedaPedidos.cantidadAcumulada(existente.querySelector('.js-cantidad').value, actual.querySelector('.js-cantidad').value);
                 if (suma === null) {
                     actual.querySelector('.js-modalidad').value = modalidadAnterior;
+                    tamanoCampo.value = tamanoAnterior;
+                    recalcular();
                     aviso.textContent = 'La cantidad acumulada excede el máximo de 10 000.';
                     return;
                 }
@@ -180,9 +197,16 @@
                 existente.querySelector('.js-cantidad').focus();
             } else {
                 modalidadAnterior = actual.querySelector('.js-modalidad').value;
+                tamanoAnterior = tamanoCampo.value;
             }
             recalcular();
+        }
+        actual.querySelector('.js-modalidad').addEventListener('change', () => {
+            recalcular();
+            consolidarDuplicado();
         });
+        tamanoCampo.addEventListener('input', recalcular);
+        tamanoCampo.addEventListener('change', consolidarDuplicado);
         actual.querySelector('.js-cantidad').addEventListener('input', recalcular);
         actual.querySelector('.js-eliminar').addEventListener('click', () => {
             actual.remove();
@@ -191,6 +215,14 @@
         });
         recalcular();
         return actual;
+    }
+
+    function claveFila(fila) {
+        return window.BusquedaPedidos.claveLinea(
+            fila.querySelector('.js-presentacion').value,
+            fila.querySelector('.js-modalidad').value,
+            fila.querySelector('.js-tamano-empaque').value
+        );
     }
 
     function cerrarResultados() {
@@ -230,7 +262,7 @@
             titulo.textContent = p.nombre;
             const detalle = document.createElement('span');
             detalle.className = 's2-sugerencia-detalle';
-            detalle.textContent = `${p.sku} · ${modalidad === 'unidad' ? 'Unidad' : 'Empaque'} · S/ ${Number(precio).toFixed(2)}`;
+            detalle.textContent = `${p.sku} · ${modalidad === 'unidad' ? 'Unidad' : `${p.tipo_empaque || 'Empaque'} de ${p.unidades_por_empaque}`} · S/ ${Number(precio).toFixed(2)}`;
             boton.append(titulo, detalle);
             boton.addEventListener('click', () => elegir(p, modalidad));
             resultados.append(boton);

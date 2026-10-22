@@ -183,4 +183,18 @@ class EmpaqueVariablePorLineaTest extends TestCase
         $this->post(route('pedidos.store'), $datos)->assertSessionHasErrors('detalles.1.presentacion_producto_id');
         $this->assertDatabaseCount('pedidos', 0);
     }
+
+    public function test_formulario_incluye_tamano_editable_y_catalogo_con_factor(): void
+    {
+        [$datos, $presentacion] = $this->escenario();
+        $this->get(route('pedidos.create'))->assertOk()
+            ->assertSee('js-tamano-empaque')
+            ->assertSee('min="2" max="1000" step="1"', false)
+            ->assertViewHas('presentaciones', fn (array $filas): bool => $filas[0]['unidades_por_empaque'] === 12 && $filas[0]['tipo_empaque'] === 'Caja');
+        $this->post(route('pedidos.store'), $datos)->assertSessionHasNoErrors();
+        $presentacion->update(['unidades_por_empaque' => 20]);
+        $this->get(route('pedidos.edit', Pedido::firstOrFail()))->assertOk()
+            ->assertSee('js-tamano-empaque')
+            ->assertViewHas('pedido', fn (Pedido $pedido): bool => $pedido->detalles->first()->unidades_por_empaque === 15);
+    }
 }

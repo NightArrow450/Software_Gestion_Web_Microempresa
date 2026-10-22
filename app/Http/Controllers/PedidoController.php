@@ -159,7 +159,7 @@ class PedidoController extends Controller
             'Solo pueden editarse pedidos registrados u observados.'
         );
 
-        $pedido->load('detalles');
+        $pedido->load('detalles.presentacion');
 
         return view(
             'orders.edit',
@@ -703,6 +703,8 @@ class PedidoController extends Controller
                     'empaque' => (bool) $p->venta_por_empaque && $p->precio_empaque !== null && (int) $p->unidades_por_empaque > 0,
                     'precio_unidad' => $p->precio_unitario,
                     'precio_empaque' => $p->precio_empaque,
+                    'unidades_por_empaque' => $p->unidades_por_empaque,
+                    'tipo_empaque' => $p->tipo_empaque ?: 'Empaque',
                 ];
             })
             ->values()

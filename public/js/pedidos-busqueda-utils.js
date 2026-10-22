@@ -19,5 +19,22 @@
     function claveLinea(presentacionId, modalidad, tamano) {
         return `${Number(presentacionId)}|${modalidad}|${modalidad === 'empaque' ? Number(tamano) : ''}`;
     }
-    return Object.freeze({ normalizar, coincide, cantidadAcumulada, claveLinea });
+    function precioLineaCentimos(producto, modalidad, tamano) {
+        if (!producto) return null;
+        let precio = producto.precio_unidad;
+        if (modalidad === 'empaque') {
+            const unidades = Number(tamano);
+            if (!Number.isInteger(unidades) || unidades < 2 || unidades > 1000) return null;
+            if (unidades === Number(producto.unidades_por_empaque)) {
+                precio = producto.precio_empaque;
+            } else {
+                if (precio === null || precio === undefined || precio === '') return null;
+                return Math.round(Number(precio) * 100) * unidades;
+            }
+        }
+        if (precio === null || precio === undefined || precio === '') return null;
+        const centimos = Math.round(Number(precio) * 100);
+        return Number.isSafeInteger(centimos) ? centimos : null;
+    }
+    return Object.freeze({ normalizar, coincide, cantidadAcumulada, claveLinea, precioLineaCentimos });
 });
