@@ -19,3 +19,10 @@ test('sumar un SKU y modalidad repetidos acumula cantidad válida', () => {
     assert.equal(util.cantidadAcumulada(9999, 2), null);
     assert.equal(util.cantidadAcumulada('abc', 2), null);
 });
+
+test('la identidad distingue cajas de 12 y 15 e ignora tamaño en unidad', () => {
+    assert.notEqual(util.claveLinea(1, 'empaque', 12), util.claveLinea(1, 'empaque', 15));
+    assert.equal(util.claveLinea('1', 'empaque', '15'), util.claveLinea(1, 'empaque', 15));
+    assert.equal(util.claveLinea(1, 'unidad', 12), util.claveLinea(1, 'unidad', 15));
+    assert.notEqual(util.claveLinea(1, 'unidad', 12), util.claveLinea(1, 'empaque', 12));
+});

@@ -510,17 +510,6 @@ class PedidoController extends Controller
         $totalCentimos = 0;
 
         foreach ($filas as $i => $fila) {
-            $clave = $fila['presentacion_producto_id']
-                .'-'.$fila['modalidad'];
-
-            if (in_array($clave, $combinaciones, true)) {
-                throw ValidationException::withMessages([
-                    "detalles.{$i}.presentacion_producto_id" => 'Esta presentación y modalidad ya están registradas en otra fila.',
-                ]);
-            }
-
-            $combinaciones[] = $clave;
-
             $presentacion = $presentaciones->get(
                 (int) $fila['presentacion_producto_id']
             );
@@ -547,6 +536,14 @@ class PedidoController extends Controller
                     "detalles.{$i}.unidades_por_empaque" => 'El empaque debe contener entre 2 y 1000 unidades. Indica un tamaño válido.',
                 ]);
             }
+
+            $clave = $presentacion->id.'|'.$fila['modalidad'].'|'.($empaque ? (int) $tamanoEmpaque : '');
+            if (isset($combinaciones[$clave])) {
+                throw ValidationException::withMessages([
+                    "detalles.{$i}.presentacion_producto_id" => 'Esta presentación, modalidad y tamaño de empaque ya están registrados en otra fila.',
+                ]);
+            }
+            $combinaciones[$clave] = true;
 
             if (
                 (

@@ -16,5 +16,8 @@
         const total = Number(actual) + Number(adicional);
         return Number.isSafeInteger(total) && total >= 1 && total <= 10000 ? total : null;
     }
-    return Object.freeze({ normalizar, coincide, cantidadAcumulada });
+    function claveLinea(presentacionId, modalidad, tamano) {
+        return `${Number(presentacionId)}|${modalidad}|${modalidad === 'empaque' ? Number(tamano) : ''}`;
+    }
+    return Object.freeze({ normalizar, coincide, cantidadAcumulada, claveLinea });
 });

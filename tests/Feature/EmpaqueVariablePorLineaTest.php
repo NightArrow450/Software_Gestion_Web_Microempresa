@@ -153,4 +153,34 @@ class EmpaqueVariablePorLineaTest extends TestCase
         $this->post(route('pedidos.store'), $datos)->assertSessionHasErrors('detalles.0.cantidad');
         $this->assertDatabaseCount('pedidos', 1);
     }
+
+    public function test_cajas_de_doce_y_quince_son_lineas_distintas_del_mismo_pedido(): void
+    {
+        [$datos] = $this->escenario();
+        $datos['detalles'][] = array_replace($datos['detalles'][0], ['unidades_por_empaque' => 12]);
+        $this->post(route('pedidos.store'), $datos)->assertSessionHasNoErrors();
+        $this->assertDatabaseCount('pedido_detalles', 2);
+        $this->assertDatabaseHas('pedido_detalles', ['unidades_por_empaque' => 12, 'importe' => '150.00']);
+        $this->assertDatabaseHas('pedido_detalles', ['unidades_por_empaque' => 15, 'importe' => '187.50']);
+        $this->assertSame('337.50', Pedido::firstOrFail()->total);
+    }
+
+    public function test_dos_cajas_de_quince_repetidas_se_rechazan_en_servidor(): void
+    {
+        [$datos] = $this->escenario();
+        $datos['detalles'][] = $datos['detalles'][0];
+        $this->post(route('pedidos.store'), $datos)->assertSessionHasErrors('detalles.1.presentacion_producto_id');
+        $this->assertDatabaseCount('pedidos', 0);
+        $this->assertDatabaseCount('pedido_detalles', 0);
+    }
+
+    public function test_tamano_omitido_y_explicito_del_catalogo_son_duplicados(): void
+    {
+        [$datos] = $this->escenario();
+        $datos['detalles'][0]['unidades_por_empaque'] = 12;
+        $datos['detalles'][] = $datos['detalles'][0];
+        unset($datos['detalles'][1]['unidades_por_empaque']);
+        $this->post(route('pedidos.store'), $datos)->assertSessionHasErrors('detalles.1.presentacion_producto_id');
+        $this->assertDatabaseCount('pedidos', 0);
+    }
 }
