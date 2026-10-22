@@ -42,8 +42,10 @@
     <div class="cumplimiento-nota" role="note">
         Esta lista usa las <strong>cantidades solicitadas</strong> de los pedidos pendientes.
         El sistema todavía no registra unidades parcialmente preparadas por producto.
-        Para empaques, el total de unidades se calcula con las unidades por empaque del
-        catálogo actual; si no existe ese dato, se indica «No disponible».
+        Se suman las unidades físicas del mismo producto, variante y presentación.
+        Para empaques se usa el tamaño histórico de cada línea; solo las líneas antiguas sin ese dato
+        usan el catálogo actual como respaldo. Si no puede calcularse el total, se indica «No disponible».
+        Consulta «Ver detalle» para el armado de los empaques.
     </div>
 
     <section class="cumplimiento-tarjeta">
@@ -52,8 +54,7 @@
                 <thead>
                     <tr>
                         <th scope="col">Producto</th>
-                        <th scope="col">Presentación y modalidad</th>
-                        <th scope="col">Cantidad solicitada</th>
+                        <th scope="col">Presentación</th>
                         <th scope="col">Total de unidades</th>
                     </tr>
                 </thead>
@@ -62,10 +63,21 @@
                     <tr>
                         <td>
                             <strong>{{ $fila['producto'] }}</strong>
-                            <small class="cumplimiento-sku">SKU: {{ $fila['sku'] }}</small>
+                            @if($fila['variante'])<small class="cumplimiento-sku">Variante: {{ $fila['variante'] }}</small>@endif
+                            <small class="cumplimiento-sku">SKU: {{ implode(', ', $fila['skus']) }}</small>
+                            <details class="cumplimiento-desglose">
+                                <summary>Ver detalle de empaques y unidades</summary>
+                                <ul>
+                                    @foreach($fila['desglose'] as $detalle)
+                                        <li>
+                                            {{ $detalle['cantidad'] }} {{ $detalle['modalidad'] === 'empaque' ? ($detalle['cantidad'] === 1 ? 'empaque' : 'empaques') : ($detalle['cantidad'] === 1 ? 'unidad' : 'unidades') }}@if($detalle['modalidad'] === 'empaque') de {{ $detalle['por_empaque'] ?? 'tamaño no disponible' }}@endif
+                                            = {{ $detalle['total_unidades'] === null ? 'No disponible' : $detalle['total_unidades'].' unidades' }}
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </details>
                         </td>
-                        <td>{{ $fila['presentacion'] }} · {{ $fila['modalidad'] === 'empaque' ? 'Empaque' : 'Unidad' }}@if($fila['modalidad'] === 'empaque' && $fila['por_empaque']) de {{ $fila['por_empaque'] }} @endif</td>
-                        <td>{{ $fila['cantidad'] }} {{ $fila['modalidad'] === 'empaque' ? ($fila['cantidad'] === 1 ? 'empaque' : 'empaques') : ($fila['cantidad'] === 1 ? 'unidad' : 'unidades') }}</td>
+                        <td>{{ $fila['presentacion'] }}@if($fila['envase'])<small class="cumplimiento-sku">{{ $fila['envase'] }}</small>@endif</td>
                         <td>
                             @if($fila['total_unidades'] === null)
                                 <span class="cumplimiento-sin-dato">No disponible</span>
@@ -75,10 +87,28 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="4">No hay productos pendientes de preparación.</td></tr>
+                    <tr><td colspan="3">No hay productos pendientes de preparación.</td></tr>
                 @endforelse
                 </tbody>
             </table>
         </div>
     </section>
 @endsection
+
+@push('scripts')
+<script>
+(() => {
+    const detalles = Array.from(document.querySelectorAll('.cumplimiento-desglose'));
+    let abiertos = null;
+    window.addEventListener('beforeprint', () => {
+        abiertos ??= detalles.map(detalle => detalle.open);
+        detalles.forEach(detalle => detalle.open = true);
+    });
+    window.addEventListener('afterprint', () => {
+        if (abiertos === null) return;
+        detalles.forEach((detalle, indice) => detalle.open = abiertos[indice]);
+        abiertos = null;
+    });
+})();
+</script>
+@endpush
