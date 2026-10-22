@@ -9,6 +9,7 @@ use App\Http\Middleware\ForzarHttps;
 use App\Http\Middleware\PermisoMiddleware;
 use App\Http\Middleware\ProxiesConfiables;
 use App\Http\Middleware\RoleMiddleware;
+use App\Http\Middleware\TransaccionAccionesSensibles;
 use App\Services\RegistroSeguridad;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -37,7 +38,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->prepend(CabecerasSeguridad::class);
         $middleware->replace(TrustProxies::class, ProxiesConfiables::class);
         $middleware->append(ForzarHttps::class);
-        $middleware->web(append: [ExigirCambioPassword::class, EvitarDobleEnvio::class, EvitarEdicionObsoleta::class]);
+        $middleware->web(append: [ExigirCambioPassword::class, EvitarDobleEnvio::class, EvitarEdicionObsoleta::class, TransaccionAccionesSensibles::class]);
 
         $middleware->alias([
 

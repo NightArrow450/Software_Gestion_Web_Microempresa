@@ -67,6 +67,10 @@ class TransicionesPedido
                 'estado_nuevo' => $estadoNuevo,
                 'motivo' => $motivo,
             ]);
+            if ($estadoNuevo === 'cancelado') {
+                RegistroAuditoria::registrar('pedido_cancelado', 'pedido', $actual->id, ['motivo' => $motivo]);
+            }
+
         }, 3);
     }
 }

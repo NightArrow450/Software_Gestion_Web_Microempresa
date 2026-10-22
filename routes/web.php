@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\Auth\CambioPasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\CategoriaController;
@@ -348,3 +349,5 @@ require __DIR__.'/cumplimiento.php';
 
 /* Sprint 5: seguimiento, trazabilidad e historial; solo lectura. */
 require __DIR__.'/seguimiento.php';
+
+Route::get('/auditoria', [AuditoriaController::class, 'index'])->middleware(['auth', 'role:Administrador', 'permiso:auditoria.ver'])->name('auditoria.index');
