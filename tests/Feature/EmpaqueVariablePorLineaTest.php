@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Categoria;
 use App\Models\Cliente;
+use App\Models\Insumo;
 use App\Models\Inventario;
 use App\Models\Pedido;
 use App\Models\Permiso;
@@ -276,5 +277,87 @@ class EmpaqueVariablePorLineaTest extends TestCase
         $pedido->detalles()->update(['presentacion_producto_id' => null]);
         $this->get(route('cumplimiento.lista-preparacion'))->assertOk()->assertSee('Presentación histórica')->assertSee('Empaque de 15')
             ->assertViewHas('filas', fn ($filas): bool => $filas[0]['total_unidades'] === 75);
+    }
+
+    public function test_stock_insuficiente_en_otro_sku_revierte_todo_el_despacho(): void
+    {
+        [$datos, $presentacion] = $this->escenario();
+        $otra = $presentacion->replicate();
+        $otra->codigo_sku = 'PRO-2-L';
+        $otra->save();
+        $datos['detalles'][] = ['presentacion_producto_id' => $otra->id, 'modalidad' => 'unidad', 'cantidad' => 2];
+        $this->post(route('pedidos.store'), $datos)->assertSessionHasNoErrors();
+        $pedido = Pedido::firstOrFail();
+        $pedido->update(['estado' => 'listo_despacho']);
+        Inventario::create(['presentacion_producto_id' => $presentacion->id, 'cantidad_actual' => 100]);
+        Inventario::create(['presentacion_producto_id' => $otra->id, 'cantidad_actual' => 1]);
+
+        $this->post(route('cumplimiento.despachar', $pedido))->assertSessionHasErrors('inventario');
+        $this->assertDatabaseHas('inventarios', ['presentacion_producto_id' => $presentacion->id, 'cantidad_actual' => 100]);
+        $this->assertDatabaseHas('inventarios', ['presentacion_producto_id' => $otra->id, 'cantidad_actual' => 1]);
+        $this->assertSame('listo_despacho', $pedido->fresh()->estado);
+        $this->assertDatabaseCount('movimientos_inventario', 0);
+        $this->assertDatabaseCount('pedido_estados_historial', 1);
+        $this->assertNull($pedido->fresh()->despachado_en);
+    }
+
+    public function test_no_descuenta_dos_veces_ni_descuenta_insumos(): void
+    {
+        [$datos, $presentacion] = $this->escenario();
+        $insumo = Insumo::create(['codigo' => 'ENV-1L', 'nombre' => 'Botella vacía', 'categoria' => 'Envases', 'unidad_medida' => 'unidad', 'cantidad_actual' => '100.000']);
+        $this->post(route('pedidos.store'), $datos)->assertSessionHasNoErrors();
+        $pedido = Pedido::firstOrFail();
+        $pedido->update(['estado' => 'listo_despacho']);
+        Inventario::create(['presentacion_producto_id' => $presentacion->id, 'cantidad_actual' => 100]);
+
+        $this->post(route('cumplimiento.despachar', $pedido))->assertSessionHasNoErrors();
+        $this->post(route('cumplimiento.despachar', $pedido))->assertSessionHasErrors('estado');
+        $this->assertDatabaseHas('inventarios', ['presentacion_producto_id' => $presentacion->id, 'cantidad_actual' => 25]);
+        $this->assertDatabaseHas('insumos', ['id' => $insumo->id, 'cantidad_actual' => '100.000']);
+        $this->assertDatabaseHas('movimientos_inventario', ['pedido_id' => $pedido->id, 'cantidad' => 75, 'insumo_id' => null]);
+        $this->assertDatabaseCount('movimientos_inventario', 1);
+        $this->assertDatabaseCount('pedido_estados_historial', 2);
+    }
+
+    public function test_modalidad_unidad_descuenta_solo_la_cantidad_sin_multiplicar(): void
+    {
+        [$datos, $presentacion] = $this->escenario();
+        $datos['detalles'][0]['modalidad'] = 'unidad';
+        $this->post(route('pedidos.store'), $datos)->assertSessionHasNoErrors();
+        $pedido = Pedido::firstOrFail();
+        $pedido->update(['estado' => 'confirmado']);
+        Inventario::create(['presentacion_producto_id' => $presentacion->id, 'cantidad_actual' => 100]);
+        $this->get(route('cumplimiento.lista-preparacion'))->assertOk()
+            ->assertViewHas('filas', fn ($filas): bool => $filas[0]['total_unidades'] === 5 && $filas[0]['por_empaque'] === null);
+
+        $pedido->update(['estado' => 'listo_despacho']);
+        $this->post(route('cumplimiento.despachar', $pedido))->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('pedido_detalles', ['pedido_id' => $pedido->id, 'unidades_por_empaque' => null]);
+        $this->assertDatabaseHas('inventarios', ['presentacion_producto_id' => $presentacion->id, 'cantidad_actual' => 95]);
+        $this->assertDatabaseHas('movimientos_inventario', ['pedido_id' => $pedido->id, 'cantidad' => 5]);
+    }
+
+    public function test_permisos_existentes_siguen_exigiendose_con_empaque_variable(): void
+    {
+        [$datos, $presentacion, $usuario] = $this->escenario([]);
+        $this->post(route('pedidos.store'), $datos)->assertForbidden();
+        $this->assertDatabaseCount('pedidos', 0);
+        $usuario->role->permisos()->attach(Permiso::firstOrCreate(['nombre' => 'pedidos.crear'])->id);
+        $usuario->unsetRelation('role');
+        $this->post(route('pedidos.store'), $datos)->assertSessionHasNoErrors();
+        $pedido = Pedido::firstOrFail();
+        $usuario->role->permisos()->detach();
+        $usuario->unsetRelation('role');
+
+        $this->get(route('pedidos.edit', $pedido))->assertForbidden();
+        $this->put(route('pedidos.update', $pedido), $datos)->assertForbidden();
+        $this->get(route('cumplimiento.lista-preparacion'))->assertForbidden();
+        $this->get(route('inventario.index', ['pedido_id' => $pedido->id]))->assertForbidden();
+        $pedido->update(['estado' => 'listo_despacho']);
+        Inventario::create(['presentacion_producto_id' => $presentacion->id, 'cantidad_actual' => 100]);
+        $this->post(route('cumplimiento.despachar', $pedido))->assertForbidden();
+        $this->assertSame('listo_despacho', $pedido->fresh()->estado);
+        $this->assertDatabaseHas('inventarios', ['cantidad_actual' => 100]);
+        $this->assertDatabaseCount('movimientos_inventario', 0);
     }
 }
