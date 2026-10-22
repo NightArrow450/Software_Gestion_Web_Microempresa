@@ -468,7 +468,14 @@ class PedidoController extends Controller
                 'min:1',
                 'max:10000',
             ],
+            'detalles.*.unidades_por_empaque' => [
+                'exclude_unless:detalles.*.modalidad,empaque',
+                'nullable', 'integer', 'min:2', 'max:1000',
+            ],
         ], [
+            'detalles.*.unidades_por_empaque.integer' => 'Las unidades por empaque deben ser un número entero entre 2 y 1000.',
+            'detalles.*.unidades_por_empaque.min' => 'El empaque debe contener entre 2 y 1000 unidades.',
+            'detalles.*.unidades_por_empaque.max' => 'El empaque debe contener entre 2 y 1000 unidades.',
             'detalles.max' => 'La nota física admite hasta 18 líneas de productos por pedido.',
             'fecha_entrega.after_or_equal' => 'La fecha de entrega no puede ser anterior a la fecha del pedido.',
         ]);
@@ -533,13 +540,19 @@ class PedidoController extends Controller
             }
 
             $empaque = $fila['modalidad'] === 'empaque';
+            $tamanoEmpaque = $empaque ? ($fila['unidades_por_empaque'] ?? $presentacion->unidades_por_empaque) : null;
+
+            if ($empaque && (filter_var($tamanoEmpaque, FILTER_VALIDATE_INT) === false || $tamanoEmpaque < 2 || $tamanoEmpaque > 1000)) {
+                throw ValidationException::withMessages([
+                    "detalles.{$i}.unidades_por_empaque" => 'El empaque debe contener entre 2 y 1000 unidades. Indica un tamaño válido.',
+                ]);
+            }
 
             if (
                 (
                     $empaque &&
                     (
-                        ! $presentacion->venta_por_empaque ||
-                        ! $presentacion->unidades_por_empaque
+                        ! $presentacion->venta_por_empaque
                     )
                 ) ||
                 (
@@ -556,6 +569,17 @@ class PedidoController extends Controller
                 ? $presentacion->precio_empaque
                 : $presentacion->precio_unitario;
 
+            if ($empaque) {
+                if ($presentacion->precio_unitario === null) {
+                    throw ValidationException::withMessages([
+                        "detalles.{$i}.modalidad" => 'Registra el precio unitario de la presentación para calcular el precio del empaque.',
+                    ]);
+                }
+                if ((int) $tamanoEmpaque !== (int) $presentacion->unidades_por_empaque) {
+                    $precio = $calculadora->calcularImporte((int) $tamanoEmpaque, $presentacion->precio_unitario);
+                }
+            }
+
             if ($precio === null) {
                 throw ValidationException::withMessages([
                     "detalles.{$i}.modalidad" => 'Debes registrar primero el precio en el catálogo.',
@@ -566,6 +590,12 @@ class PedidoController extends Controller
                 (int) $fila['cantidad'],
                 (string) $precio
             );
+
+            if ((float) $importe > 999999.99) {
+                throw ValidationException::withMessages([
+                    "detalles.{$i}.cantidad" => 'El importe de una línea no puede superar S/ 999 999,99.',
+                ]);
+            }
 
             $totalCentimos += (int) round(
                 (float) $importe * 100
@@ -584,7 +614,7 @@ class PedidoController extends Controller
             if ($empaque) {
                 $descripcion .= ' · '
                     .($presentacion->tipo_empaque ?: 'Empaque')
-                    .' x'.$presentacion->unidades_por_empaque;
+                    .' de '.$tamanoEmpaque;
             }
 
             $detalles[] = [
@@ -596,6 +626,7 @@ class PedidoController extends Controller
                 ),
                 'codigo_sku' => $presentacion->codigo_sku,
                 'modalidad' => $fila['modalidad'],
+                'unidades_por_empaque' => $empaque ? (int) $tamanoEmpaque : null,
                 'cantidad' => $fila['cantidad'],
                 'precio_unitario' => $precio,
                 'importe' => $importe,

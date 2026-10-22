@@ -12,6 +12,7 @@ use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class EmpaqueVariablePorLineaTest extends TestCase
@@ -59,5 +60,97 @@ class EmpaqueVariablePorLineaTest extends TestCase
             return $datos;
         })->all());
         $this->assertSame('199.99', $pedido->fresh()->total);
+    }
+
+    public function test_cinco_cajas_de_quince_recalculan_precio_e_importe_en_servidor(): void
+    {
+        [$datos] = $this->escenario();
+        $datos['detalles'][0]['precio_unitario'] = '0.01';
+        $datos['detalles'][0]['importe'] = '0.01';
+        $datos['total'] = '0.01';
+
+        $this->post(route('pedidos.store'), $datos)->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('pedido_detalles', ['unidades_por_empaque' => 15, 'precio_unitario' => '37.50', 'cantidad' => 5, 'importe' => '187.50']);
+        $this->assertDatabaseHas('pedidos', ['total' => '187.50']);
+    }
+
+    public function test_omitir_tamano_copia_catalogo_y_editar_guarda_nuevo_tamano(): void
+    {
+        [$datos] = $this->escenario();
+        unset($datos['detalles'][0]['unidades_por_empaque']);
+        $this->post(route('pedidos.store'), $datos)->assertSessionHasNoErrors();
+        $pedido = Pedido::firstOrFail();
+        $this->assertDatabaseHas('pedido_detalles', ['unidades_por_empaque' => 12, 'precio_unitario' => '30.00']);
+
+        $datos['detalles'][0]['unidades_por_empaque'] = 15;
+        $this->put(route('pedidos.update', $pedido), $datos)->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('pedido_detalles', ['unidades_por_empaque' => 15, 'precio_unitario' => '37.50']);
+        $this->assertSame('187.50', $pedido->fresh()->total);
+    }
+
+    public static function tamanosInvalidos(): array
+    {
+        return ['uno' => [1], 'mil uno' => [1001], 'decimal' => ['2.5'], 'texto' => ['doce'], 'arreglo' => [[15]]];
+    }
+
+    #[DataProvider('tamanosInvalidos')]
+    public function test_tamano_invalido_rechaza_alta_y_edicion_sin_cambiar_datos(mixed $tamano): void
+    {
+        [$datos] = $this->escenario();
+        $this->post(route('pedidos.store'), $datos)->assertSessionHasNoErrors();
+        $pedido = Pedido::firstOrFail();
+        $datos['detalles'][0]['unidades_por_empaque'] = $tamano;
+
+        $this->post(route('pedidos.store'), $datos)->assertSessionHasErrors('detalles.0.unidades_por_empaque');
+        $this->put(route('pedidos.update', $pedido), $datos)->assertSessionHasErrors('detalles.0.unidades_por_empaque');
+        $this->assertDatabaseCount('pedidos', 1);
+        $this->assertDatabaseHas('pedido_detalles', ['unidades_por_empaque' => 15, 'importe' => '187.50']);
+    }
+
+    public static function tamanosValidos(): array
+    {
+        return ['dos' => [2, '5.00'], 'mil' => [1000, '2500.00']];
+    }
+
+    #[DataProvider('tamanosValidos')]
+    public function test_acepta_tamanos_limite(int $tamano, string $precio): void
+    {
+        [$datos] = $this->escenario();
+        $datos['detalles'][0]['unidades_por_empaque'] = $tamano;
+        $this->post(route('pedidos.store'), $datos)->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('pedido_detalles', ['unidades_por_empaque' => $tamano, 'precio_unitario' => $precio]);
+    }
+
+    public function test_unidad_ignora_el_tamano_incluso_si_es_invalido(): void
+    {
+        [$datos] = $this->escenario();
+        $datos['detalles'][0]['modalidad'] = 'unidad';
+        $datos['detalles'][0]['unidades_por_empaque'] = ['manipulado'];
+        $this->post(route('pedidos.store'), $datos)->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('pedido_detalles', ['unidades_por_empaque' => null, 'precio_unitario' => '2.50', 'importe' => '12.50']);
+    }
+
+    public function test_sin_precio_base_rechaza_empaque_con_mensaje_claro(): void
+    {
+        [$datos, $presentacion] = $this->escenario();
+        $presentacion->update(['precio_unitario' => null, 'precio_empaque' => '30.00']);
+        $this->post(route('pedidos.store'), $datos)->assertSessionHasErrors([
+            'detalles.0.modalidad' => 'Registra el precio unitario de la presentación para calcular el precio del empaque.',
+        ]);
+        $this->assertDatabaseCount('pedidos', 0);
+    }
+
+    public function test_importe_de_linea_respeta_tope_inclusivo(): void
+    {
+        [$datos, $presentacion] = $this->escenario();
+        $presentacion->update(['precio_unitario' => '333333.33']);
+        $datos['detalles'][0]['unidades_por_empaque'] = 3;
+        $datos['detalles'][0]['cantidad'] = 1;
+        $this->post(route('pedidos.store'), $datos)->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('pedido_detalles', ['importe' => '999999.99']);
+
+        $datos['detalles'][0]['cantidad'] = 2;
+        $this->post(route('pedidos.store'), $datos)->assertSessionHasErrors('detalles.0.cantidad');
+        $this->assertDatabaseCount('pedidos', 1);
     }
 }
