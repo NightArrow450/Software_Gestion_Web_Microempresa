@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Permiso;
 use App\Models\Role;
+use App\Services\RegistroSeguridad;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -22,9 +23,9 @@ class RolePermissionController extends Controller
     public function index(): View
     {
         $roles = Role::withCount([
-                'users',
-                'permisos',
-            ])
+            'users',
+            'permisos',
+        ])
             ->orderByDesc('es_sistema')
             ->orderBy('id')
             ->get();
@@ -38,7 +39,6 @@ class RolePermissionController extends Controller
             'permisos'
         ));
     }
-
 
     /*
     |--------------------------------------------------------------------------
@@ -58,7 +58,6 @@ class RolePermissionController extends Controller
             'permisosAgrupados'
         ));
     }
-
 
     public function store(Request $request): RedirectResponse
     {
@@ -81,7 +80,7 @@ class RolePermissionController extends Controller
             ],
         ]);
 
-        DB::transaction(function () use ($validated) {
+        $role = DB::transaction(function () use ($validated) {
 
             $role = Role::create([
                 'nombre' => $validated['nombre'],
@@ -93,7 +92,10 @@ class RolePermissionController extends Controller
             );
 
             $role->permisos()->sync($permisos);
+
+            return $role;
         });
+        RegistroSeguridad::registrar('rol_creado', $request, ['rol_id' => $role->id, 'permisos_nuevos' => $role->permisos()->pluck('permisos.id')->all()]);
 
         return redirect()
             ->route('roles.index')
@@ -102,7 +104,6 @@ class RolePermissionController extends Controller
                 'El nuevo rol fue creado correctamente.'
             );
     }
-
 
     /*
     |--------------------------------------------------------------------------
@@ -133,7 +134,6 @@ class RolePermissionController extends Controller
         ));
     }
 
-
     public function update(
         Request $request,
         Role $role
@@ -155,7 +155,7 @@ class RolePermissionController extends Controller
         | Los roles base no pueden cambiar de nombre.
         */
 
-        if (!$role->es_sistema) {
+        if (! $role->es_sistema) {
 
             $rules['nombre'] = [
                 'required',
@@ -170,6 +170,7 @@ class RolePermissionController extends Controller
         }
 
         $validated = $request->validate($rules);
+        $permisosAnteriores = $role->permisos()->pluck('permisos.id')->all();
 
         DB::transaction(function () use (
             $validated,
@@ -181,13 +182,12 @@ class RolePermissionController extends Controller
             | cambiar de nombre.
             */
 
-            if (!$role->es_sistema) {
+            if (! $role->es_sistema) {
 
                 $role->update([
                     'nombre' => $validated['nombre'],
                 ]);
             }
-
 
             /*
             |--------------------------------------------------------------------------
@@ -207,7 +207,6 @@ class RolePermissionController extends Controller
                 return;
             }
 
-
             /*
             |--------------------------------------------------------------------------
             | Otros roles
@@ -220,6 +219,7 @@ class RolePermissionController extends Controller
 
             $role->permisos()->sync($permisos);
         });
+        RegistroSeguridad::registrar('rol_actualizado', $request, ['rol_id' => $role->id, 'permisos_anteriores' => $permisosAnteriores, 'permisos_nuevos' => $role->permisos()->pluck('permisos.id')->all()]);
 
         return redirect()
             ->route('roles.index')
@@ -229,14 +229,13 @@ class RolePermissionController extends Controller
             );
     }
 
-
     /*
     |--------------------------------------------------------------------------
     | Eliminar Rol
     |--------------------------------------------------------------------------
     */
 
-    public function destroy(Role $role): RedirectResponse
+    public function destroy(Request $request, Role $role): RedirectResponse
     {
         if ($role->es_sistema) {
 
@@ -264,6 +263,7 @@ class RolePermissionController extends Controller
 
             $role->delete();
         });
+        RegistroSeguridad::registrar('rol_eliminado', $request, ['rol_id' => $role->id]);
 
         return redirect()
             ->route('roles.index')
@@ -272,7 +272,6 @@ class RolePermissionController extends Controller
                 'El rol fue eliminado correctamente.'
             );
     }
-
 
     /*
     |--------------------------------------------------------------------------
@@ -284,7 +283,6 @@ class RolePermissionController extends Controller
     {
         return view('permisos.create');
     }
-
 
     public function storePermiso(
         Request $request
@@ -306,12 +304,11 @@ class RolePermissionController extends Controller
             ],
         ]);
 
-        DB::transaction(function () use ($validated) {
+        $permiso = DB::transaction(function () use ($validated) {
 
             $permiso = Permiso::create([
                 'nombre' => $validated['nombre'],
-                'descripcion' =>
-                    $validated['descripcion'] ?? null,
+                'descripcion' => $validated['descripcion'] ?? null,
 
                 'es_sistema' => false,
             ]);
@@ -331,10 +328,13 @@ class RolePermissionController extends Controller
                 $administrador
                     ->permisos()
                     ->syncWithoutDetaching([
-                        $permiso->id
+                        $permiso->id,
                     ]);
             }
+
+            return $permiso;
         });
+        RegistroSeguridad::registrar('permiso_creado', $request, ['permiso_id' => $permiso->id]);
 
         return redirect()
             ->route('roles.index')
@@ -343,7 +343,6 @@ class RolePermissionController extends Controller
                 'El permiso fue creado correctamente.'
             );
     }
-
 
     /*
     |--------------------------------------------------------------------------
@@ -360,7 +359,6 @@ class RolePermissionController extends Controller
             compact('permiso')
         );
     }
-
 
     public function updatePermiso(
         Request $request,
@@ -379,7 +377,7 @@ class RolePermissionController extends Controller
         | Los permisos base conservan su clave técnica.
         */
 
-        if (!$permiso->es_sistema) {
+        if (! $permiso->es_sistema) {
 
             $rules['nombre'] = [
                 'required',
@@ -399,8 +397,7 @@ class RolePermissionController extends Controller
         if ($permiso->es_sistema) {
 
             $permiso->update([
-                'descripcion' =>
-                    $validated['descripcion'] ?? null,
+                'descripcion' => $validated['descripcion'] ?? null,
             ]);
 
         } else {
@@ -408,10 +405,11 @@ class RolePermissionController extends Controller
             $permiso->update([
                 'nombre' => $validated['nombre'],
 
-                'descripcion' =>
-                    $validated['descripcion'] ?? null,
+                'descripcion' => $validated['descripcion'] ?? null,
             ]);
         }
+
+        RegistroSeguridad::registrar('permiso_actualizado', $request, ['permiso_id' => $permiso->id]);
 
         return redirect()
             ->route('roles.index')
@@ -421,7 +419,6 @@ class RolePermissionController extends Controller
             );
     }
 
-
     /*
     |--------------------------------------------------------------------------
     | Eliminar Permiso
@@ -429,6 +426,7 @@ class RolePermissionController extends Controller
     */
 
     public function destroyPermiso(
+        Request $request,
         Permiso $permiso
     ): RedirectResponse {
 
@@ -472,6 +470,7 @@ class RolePermissionController extends Controller
 
             $permiso->delete();
         });
+        RegistroSeguridad::registrar('permiso_eliminado', $request, ['permiso_id' => $permiso->id]);
 
         return redirect()
             ->route('roles.index')
@@ -480,7 +479,6 @@ class RolePermissionController extends Controller
                 'El permiso fue eliminado correctamente.'
             );
     }
-
 
     /*
     |--------------------------------------------------------------------------
@@ -505,12 +503,10 @@ class RolePermissionController extends Controller
             ) {
 
                 return [
-                    $this->nombreGrupo($clave)
-                        => $items
+                    $this->nombreGrupo($clave) => $items,
                 ];
             });
     }
-
 
     private function nombreGrupo(
         string $clave
@@ -531,7 +527,6 @@ class RolePermissionController extends Controller
             ?? Str::headline($clave);
     }
 
-
     /*
     | usuarios.* y roles.* continúan siendo
     | exclusivamente del Administrador.
@@ -542,9 +537,9 @@ class RolePermissionController extends Controller
     ): array {
 
         return Permiso::whereIn(
-                'id',
-                $permisos
-            )
+            'id',
+            $permisos
+        )
             ->where(
                 'nombre',
                 'not like',

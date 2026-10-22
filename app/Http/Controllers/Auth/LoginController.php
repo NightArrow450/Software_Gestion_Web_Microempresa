@@ -88,6 +88,7 @@ class LoginController extends Controller
         );
 
         $request->session()->regenerate();
+        Log::channel('seguridad')->info('login_correcto', ['usuario_id' => $usuario->id, 'email' => $usuario->email, 'ip' => $request->ip()]);
 
         if ($usuario->debe_cambiar_password) {
             return redirect()->route('password.cambiar');
@@ -99,6 +100,7 @@ class LoginController extends Controller
 
     public function logout(Request $request)
     {
+        Log::channel('seguridad')->info('logout', ['usuario_id' => $request->user()?->id, 'ip' => $request->ip()]);
         Auth::logout();
 
         $request->session()->invalidate();

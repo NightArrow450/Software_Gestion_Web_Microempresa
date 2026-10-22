@@ -52,11 +52,24 @@ return [
 
     'channels' => [
         'seguridad' => [
+            'driver' => 'stack',
+            'channels' => ['seguridad_diario', 'seguridad_stderr'],
+            'ignore_exceptions' => true,
+        ],
+        'seguridad_diario' => [
             'driver' => 'daily',
             'path' => storage_path('logs/seguridad.log'),
             'level' => 'info',
             'days' => 30,
+            'max_files' => 30,
             'replace_placeholders' => true,
+        ],
+        'seguridad_stderr' => [
+            'driver' => 'monolog',
+            'level' => 'info',
+            'handler' => StreamHandler::class,
+            'handler_with' => ['stream' => 'php://stderr'],
+            'processors' => [PsrLogMessageProcessor::class],
         ],
 
         'stack' => [

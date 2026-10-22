@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Role;
 use App\Models\User;
+use App\Services\RegistroSeguridad;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rules\Password;
@@ -286,7 +287,15 @@ class UserController extends Controller
             $data['password'] = $validated['password'];
         }
 
+        $rolAnterior = $user->role_id;
+        $estadoAnterior = $user->status;
         $user->update($data);
+        if ((int) $rolAnterior !== (int) $user->role_id) {
+            RegistroSeguridad::registrar('usuario_rol_cambiado', $request, ['usuario_afectado_id' => $user->id, 'rol_anterior_id' => $rolAnterior, 'rol_id' => $user->role_id]);
+        }
+        if ($estadoAnterior !== $user->status) {
+            RegistroSeguridad::registrar('usuario_estado_cambiado', $request, ['usuario_afectado_id' => $user->id, 'estado' => $user->status]);
+        }
 
         return redirect()
             ->route('usuarios.show', $user)
@@ -333,7 +342,7 @@ class UserController extends Controller
         return $regla;
     }
 
-    public function toggleStatus(User $user)
+    public function toggleStatus(Request $request, User $user)
     {
         if (auth()->id() === $user->id) {
             return back()->with(
@@ -345,6 +354,7 @@ class UserController extends Controller
         $user->update([
             'status' => ! $user->status,
         ]);
+        RegistroSeguridad::registrar('usuario_estado_cambiado', $request, ['usuario_afectado_id' => $user->id, 'estado' => $user->status]);
 
         $message = $user->status
             ? 'Usuario activado correctamente.'

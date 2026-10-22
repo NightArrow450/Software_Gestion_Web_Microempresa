@@ -31,6 +31,7 @@ class LimitadorLoginTest extends TestCase
         $contexto = ['email' => 'ana@example.com', 'ip' => '127.0.0.1'];
         $logger->shouldReceive('warning')->with('login_fallido', $contexto)->times(5);
         $logger->shouldReceive('warning')->with('login_bloqueado', $contexto)->once();
+        $logger->shouldReceive('info')->with('login_correcto', ['usuario_id' => $usuario->id, 'email' => $usuario->email, 'ip' => '127.0.0.1'])->once();
         for ($intento = 0; $intento < 5; $intento++) {
             $this->post(route('login.authenticate'), ['email' => strtoupper($usuario->email), 'password' => 'Incorrecta123'])->assertSessionHasErrors('email');
         }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Services\RegistroSeguridad;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -31,6 +32,7 @@ class CambioPasswordController extends Controller
             'remember_token' => Str::random(60),
         ])->save();
         $request->session()->regenerate();
+        RegistroSeguridad::registrar('password_actualizada', $request);
 
         return redirect()->route('dashboard')->with('success', 'Contraseña actualizada correctamente.');
     }
