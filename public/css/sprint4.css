@@ -22,6 +22,9 @@
 .cumplimiento-filtros input[type="date"] { max-width:260px; }
 .cumplimiento-filtros button { align-self:end; }
 .cumplimiento-error { margin-top:8px; color:#b91c1c; }
+.cumplimiento-desglose { margin-top:8px; font-size:13px; overflow-wrap:anywhere; }
+.cumplimiento-desglose summary { cursor:pointer; color:#046944; font-weight:600; min-height:44px; display:list-item; align-content:center; }
+.cumplimiento-desglose ul { margin:0 0 8px; padding-left:20px; }
 @media(max-width:640px) {
     .cumplimiento-encabezado, .cumplimiento-enlaces { align-items:stretch; flex-direction:column; }
     .cumplimiento-enlaces .btn, .cumplimiento-filtros button { width:100%; }
@@ -42,4 +45,6 @@
     .cumplimiento-tabla tr { break-inside:avoid; page-break-inside:avoid; }
     .table-container { overflow:visible !important; }
     .cumplimiento-nota { background:#fff !important; color:#374151; border:1px solid #d1d5db; }
+    .cumplimiento-desglose summary { display:none; }
+    .cumplimiento-desglose { font-size:9pt; }
 }

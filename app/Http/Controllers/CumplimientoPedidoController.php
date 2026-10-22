@@ -39,7 +39,7 @@ class CumplimientoPedidoController extends Controller
         $fechaHasta = $filtros['fecha_hasta'] ?? null;
 
         $pedidos = Pedido::query()
-            ->with(['detalles.presentacion.producto'])
+            ->with(['detalles.presentacion.producto', 'detalles.presentacion.variante'])
             ->whereIn('estado', ['confirmado', 'en_preparacion'])
             ->whereDate('fecha_entrega', '>=', $fechaDesde)
             ->when($fechaHasta !== null, fn ($q) => $q->whereDate('fecha_entrega', '<=', $fechaHasta))
@@ -47,8 +47,6 @@ class CumplimientoPedidoController extends Controller
             ->orderBy('id')
             ->get();
 
-        // La identidad de una fila es el ID de presentación + modalidad + tamaño.
-        // Para detalles históricos sin ID, se usa su SKU registrado en el pedido.
         $agrupados = [];
         foreach ($pedidos as $pedido) {
             foreach ($pedido->detalles as $detalle) {
@@ -60,25 +58,41 @@ class CumplimientoPedidoController extends Controller
                     ? ($porEmpaque > 0 ? $cantidad * $porEmpaque : null)
                     : $cantidad;
 
-                $clave = ($detalle->presentacion_producto_id !== null
-                    ? 'id:'.$detalle->presentacion_producto_id
-                    : 'sku:'.$detalle->codigo_sku).'|'.$detalle->modalidad.'|'.$porEmpaque;
+                $clave = $presentacion
+                    ? json_encode([
+                        $presentacion->producto_id, $presentacion->variante_producto_id,
+                        $presentacion->tipo_envase, $presentacion->contenido, $presentacion->unidad_medida,
+                    ], JSON_THROW_ON_ERROR)
+                    : 'historico:'.$detalle->codigo_sku;
 
                 if (! isset($agrupados[$clave])) {
                     $agrupados[$clave] = [
                         'producto' => $presentacion?->producto?->nombre ?? $detalle->descripcion_producto,
-                        'sku' => $detalle->codigo_sku,
+                        'skus' => [],
+                        'variante' => $presentacion?->variante?->valor,
+                        'envase' => $presentacion?->tipo_envase,
                         'presentacion' => $presentacion
                             ? rtrim(rtrim(number_format((float) $presentacion->contenido, 2, '.', ''), '0'), '.').' '.$presentacion->unidad_medida
                             : 'Presentación histórica',
+                        'desglose' => [],
+                        'total_unidades' => 0,
+                    ];
+                }
+
+                $agrupados[$clave]['skus'][$detalle->codigo_sku] = $detalle->codigo_sku;
+                $claveDesglose = $detalle->modalidad.'|'.$porEmpaque;
+                if (! isset($agrupados[$clave]['desglose'][$claveDesglose])) {
+                    $agrupados[$clave]['desglose'][$claveDesglose] = [
                         'modalidad' => $detalle->modalidad,
                         'por_empaque' => $esEmpaque && $porEmpaque > 0 ? $porEmpaque : null,
                         'cantidad' => 0,
                         'total_unidades' => 0,
                     ];
                 }
-
-                $agrupados[$clave]['cantidad'] += $cantidad;
+                $agrupados[$clave]['desglose'][$claveDesglose]['cantidad'] += $cantidad;
+                $agrupados[$clave]['desglose'][$claveDesglose]['total_unidades'] = $totalUnidades === null
+                    ? null
+                    : $agrupados[$clave]['desglose'][$claveDesglose]['total_unidades'] + $totalUnidades;
                 // Si una cantidad no puede calcularse, nunca se presenta un total inventado.
                 $agrupados[$clave]['total_unidades'] =
                     $agrupados[$clave]['total_unidades'] === null || $totalUnidades === null
