@@ -1,11 +1,12 @@
 <?php
 
+use App\Http\Controllers\Auth\CambioPasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\ClienteController;
-use App\Http\Controllers\PedidoController;
-use App\Http\Controllers\ImpresionPedidosController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ImpresionPedidosController;
+use App\Http\Controllers\PedidoController;
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\UserController;
@@ -24,6 +25,8 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
+    Route::get('/cambiar-contrasena', [CambioPasswordController::class, 'edit'])->name('password.cambiar');
+    Route::put('/cambiar-contrasena', [CambioPasswordController::class, 'update'])->name('password.actualizar');
 
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->name('dashboard');
@@ -60,64 +63,64 @@ Route::middleware('auth')->group(function () {
 
         Route::patch('/usuarios/{user}/estado', [
             UserController::class,
-            'toggleStatus'
+            'toggleStatus',
         ])->name('usuarios.cambiar-estado');
 
         // Roles
         Route::get('/roles-permisos', [
             RolePermissionController::class,
-            'index'
+            'index',
         ])->name('roles.index');
 
         Route::get('/roles-permisos/nuevo', [
             RolePermissionController::class,
-            'create'
+            'create',
         ])->name('roles.create');
 
         Route::post('/roles-permisos', [
             RolePermissionController::class,
-            'store'
+            'store',
         ])->name('roles.store');
 
         Route::get('/roles-permisos/{role}/editar', [
             RolePermissionController::class,
-            'edit'
+            'edit',
         ])->name('roles.edit');
 
         Route::put('/roles-permisos/{role}', [
             RolePermissionController::class,
-            'update'
+            'update',
         ])->name('roles.update');
 
         Route::delete('/roles-permisos/{role}', [
             RolePermissionController::class,
-            'destroy'
+            'destroy',
         ])->name('roles.destroy');
 
         // Permisos
         Route::get('/permisos/nuevo', [
             RolePermissionController::class,
-            'createPermiso'
+            'createPermiso',
         ])->name('permisos.create');
 
         Route::post('/permisos', [
             RolePermissionController::class,
-            'storePermiso'
+            'storePermiso',
         ])->name('permisos.store');
 
         Route::get('/permisos/{permiso}/editar', [
             RolePermissionController::class,
-            'editPermiso'
+            'editPermiso',
         ])->name('permisos.edit');
 
         Route::put('/permisos/{permiso}', [
             RolePermissionController::class,
-            'updatePermiso'
+            'updatePermiso',
         ])->name('permisos.update');
 
         Route::delete('/permisos/{permiso}', [
             RolePermissionController::class,
-            'destroyPermiso'
+            'destroyPermiso',
         ])->name('permisos.destroy');
     });
 
@@ -134,12 +137,12 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/categorias-productos', [
             CategoriaController::class,
-            'index'
+            'index',
         ])->name('categorias.index');
 
         Route::get('/categorias-productos/{categoria}', [
             CategoriaController::class,
-            'show'
+            'show',
         ])
             ->whereNumber('categoria')
             ->name('categorias.show');
@@ -149,12 +152,12 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/productos/nuevo', [
             ProductoController::class,
-            'create'
+            'create',
         ])->name('productos.create');
 
         Route::post('/productos', [
             ProductoController::class,
-            'store'
+            'store',
         ])->name('productos.store');
     });
 
@@ -162,38 +165,38 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/productos/{producto}/editar', [
             ProductoController::class,
-            'edit'
+            'edit',
         ])->name('productos.edit');
 
         Route::put('/productos/{producto}', [
             ProductoController::class,
-            'update'
+            'update',
         ])->name('productos.update');
 
         Route::get('/categorias-productos/nueva', [
             CategoriaController::class,
-            'create'
+            'create',
         ])->name('categorias.create');
 
         Route::post('/categorias-productos', [
             CategoriaController::class,
-            'store'
+            'store',
         ])->name('categorias.store');
 
         Route::get('/categorias-productos/{categoria}/editar', [
             CategoriaController::class,
-            'edit'
+            'edit',
         ])->name('categorias.edit');
 
         Route::put('/categorias-productos/{categoria}', [
             CategoriaController::class,
-            'update'
+            'update',
         ])->name('categorias.update');
     });
 
     Route::get('/productos/{producto}', [
         ProductoController::class,
-        'show'
+        'show',
     ])
         ->middleware('permiso:productos.ver')
         ->name('productos.show');
@@ -202,12 +205,12 @@ Route::middleware('auth')->group(function () {
 
         Route::patch('/productos/{producto}/estado', [
             ProductoController::class,
-            'toggleStatus'
+            'toggleStatus',
         ])->name('productos.cambiar-estado');
 
         Route::patch('/categorias-productos/{categoria}/estado', [
             CategoriaController::class,
-            'toggleStatus'
+            'toggleStatus',
         ])->name('categorias.cambiar-estado');
     });
 
@@ -221,12 +224,12 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/clientes', [
             ClienteController::class,
-            'index'
+            'index',
         ])->name('clientes.index');
 
         Route::get('/clientes/{cliente}', [
             ClienteController::class,
-            'show'
+            'show',
         ])
             ->whereNumber('cliente')
             ->name('clientes.show');
@@ -236,12 +239,12 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/clientes/nuevo', [
             ClienteController::class,
-            'create'
+            'create',
         ])->name('clientes.create');
 
         Route::post('/clientes', [
             ClienteController::class,
-            'store'
+            'store',
         ])->name('clientes.store');
     });
 
@@ -249,14 +252,14 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/clientes/{cliente}/editar', [
             ClienteController::class,
-            'edit'
+            'edit',
         ])
             ->whereNumber('cliente')
             ->name('clientes.edit');
 
         Route::put('/clientes/{cliente}', [
             ClienteController::class,
-            'update'
+            'update',
         ])
             ->whereNumber('cliente')
             ->name('clientes.update');
@@ -264,7 +267,7 @@ Route::middleware('auth')->group(function () {
 
     Route::patch('/clientes/{cliente}/estado', [
         ClienteController::class,
-        'toggleStatus'
+        'toggleStatus',
     ])
         ->whereNumber('cliente')
         ->middleware('permiso:clientes.cambiar_estado')
@@ -280,25 +283,25 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/pedidos', [
             PedidoController::class,
-            'index'
+            'index',
         ])->name('pedidos.index');
 
         // Corrección posterior al Sprint 2: imprimir por fecha, dos notas por hoja.
         // Debe ir antes de /pedidos/{pedido}.
         Route::get('/pedidos/imprimir-por-fecha', [
             ImpresionPedidosController::class,
-            'porFecha'
+            'porFecha',
         ])->name('pedidos.imprimir-por-fecha');
 
         // URL anterior conservada para HU-01; ahora también bloquea cancelados.
         Route::get('/pedidos/imprimir-dos', [
             ImpresionPedidosController::class,
-            'imprimirDos'
+            'imprimirDos',
         ])->name('pedidos.imprimir-dos');
 
         Route::get('/pedidos/{pedido}', [
             PedidoController::class,
-            'show'
+            'show',
         ])
             ->whereNumber('pedido')
             ->name('pedidos.show');
@@ -308,12 +311,12 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/pedidos/nuevo', [
             PedidoController::class,
-            'create'
+            'create',
         ])->name('pedidos.create');
 
         Route::post('/pedidos', [
             PedidoController::class,
-            'store'
+            'store',
         ])->name('pedidos.store');
     });
 
