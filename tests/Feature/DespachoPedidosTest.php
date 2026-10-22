@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Categoria;
 use App\Models\Cliente;
+use App\Models\Insumo;
 use App\Models\Inventario;
 use App\Models\MovimientoInventario;
 use App\Models\Pedido;
@@ -288,5 +289,34 @@ class DespachoPedidosTest extends TestCase
             ]);
         }
         $this->assertDatabaseCount('movimientos_inventario', 2);
+    }
+
+    public function test_stock_exacto_y_dos_pedidos_compitiendo_no_generan_negativos(): void
+    {
+        $usuario = $this->usuario(['pedidos.ver', 'cumplimiento.despachar']);
+        $primero = $this->pedido($usuario, 'listo_despacho', 2);
+        $segundo = $this->pedido($usuario);
+        $detalle = $primero->detalles()->firstOrFail();
+        $segundo->detalles()->firstOrFail()->update($detalle->only(['presentacion_producto_id', 'codigo_sku']));
+        $insumo = Insumo::create(['codigo' => 'SIN-TOCAR', 'nombre' => 'Envase', 'categoria' => 'Envases', 'unidad_medida' => 'unidad', 'cantidad_actual' => 5]);
+        $this->actingAs($usuario)->post(route('cumplimiento.despachar', $primero))->assertRedirect();
+        $this->post(route('cumplimiento.despachar', $segundo))->assertSessionHasErrors('inventario');
+        $this->assertDatabaseHas('inventarios', ['presentacion_producto_id' => $detalle->presentacion_producto_id, 'cantidad_actual' => 0]);
+        $this->assertSame('listo_despacho', $segundo->fresh()->estado);
+        $this->assertSame('5.000', $insumo->fresh()->cantidad_actual);
+        $this->assertDatabaseCount('movimientos_inventario', 1);
+    }
+
+    public function test_cancelar_estados_logisticos_no_crea_movimientos(): void
+    {
+        $usuario = $this->usuario(['pedidos.ver', 'pedidos.cancelar']);
+        $usuario->role->update(['nombre' => 'Administrador']);
+        foreach (['en_preparacion', 'listo_despacho', 'despachado', 'entregado'] as $estado) {
+            $pedido = $this->pedido($usuario, $estado);
+            $this->actingAs($usuario)->post(route('pedidos.cancelar', $pedido), ['motivo' => 'Cancelación de prueba rechazada'])->assertSessionHasErrors('estado');
+            $this->assertSame($estado, $pedido->fresh()->estado);
+        }
+        $this->assertDatabaseCount('movimientos_inventario', 0);
+        $this->assertDatabaseCount('pedido_estados_historial', 0);
     }
 }
