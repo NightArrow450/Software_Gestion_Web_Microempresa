@@ -22,6 +22,12 @@ class ProxiesConfiables extends TrustProxies
         return $proxies;
     }
 
+    protected function setTrustedProxyIpAddresses(Request $request): void
+    {
+        $proxies = $this->proxies();
+        $request->setTrustedProxies($proxies === '*' ? ['0.0.0.0/0', '::/0'] : $proxies, $this->getTrustedHeaderNames());
+    }
+
     public function handle(Request $request, Closure $next): Response
     {
         return parent::handle($request, function (Request $request) use ($next): Response {

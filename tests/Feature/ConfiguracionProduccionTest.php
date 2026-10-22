@@ -41,6 +41,15 @@ class ConfiguracionProduccionTest extends TestCase
             ->get('/diagnostico-proxy')->assertOk()->assertJsonPath('ip', '192.0.2.1');
     }
 
+    public function test_host_no_puede_activar_confianza_automatica_en_proxies(): void
+    {
+        $this->ruta();
+        config(['seguridad.proxies_confiables' => '']);
+        $this->withServerVariables(['REMOTE_ADDR' => '192.0.2.1'])
+            ->withHeaders(['X-Forwarded-For' => '203.0.113.9', 'X-Forwarded-Proto' => 'https'])
+            ->get('http://suplantado.on-forge.com/diagnostico-proxy')->assertOk()->assertJsonPath('ip', '192.0.2.1')->assertJsonPath('https', false);
+    }
+
     public function test_proxy_cidr_confiable_reconoce_ip_https_y_urls(): void
     {
         $this->ruta();
