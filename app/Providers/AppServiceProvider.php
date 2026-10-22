@@ -30,7 +30,12 @@ class AppServiceProvider extends ServiceProvider
         foreach (['created' => 'usuario_creado', 'updated' => 'usuario_actualizado'] as $evento => $accion) {
             User::$evento(function (User $usuario) use ($accion): void {
                 $campos = array_intersect(array_keys($usuario->getChanges()), ['first_name', 'last_name', 'email', 'role_id', 'status', 'debe_cambiar_password']);
-                RegistroAuditoria::registrar($accion, 'usuario', $usuario->id, ['campos' => array_values($campos)]);
+                $etiquetas = ['first_name' => 'nombres', 'last_name' => 'apellidos', 'email' => 'correo', 'role_id' => 'rol', 'status' => 'estado', 'debe_cambiar_password' => 'cambio de contraseña obligatorio'];
+                $campos = array_map(fn (string $campo): string => $etiquetas[$campo], array_values($campos));
+                if ($usuario->wasChanged('password')) {
+                    $campos[] = 'contraseña';
+                }
+                RegistroAuditoria::registrar($accion, 'usuario', $usuario->id, ['campos' => $campos, 'rol_anterior_id' => $usuario->getOriginal('role_id'), 'rol_id' => $usuario->role_id, 'estado' => $usuario->status]);
             });
         }
         foreach ([Pedido::class, Cliente::class, Producto::class] as $modelo) {

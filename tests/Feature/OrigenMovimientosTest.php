@@ -56,4 +56,11 @@ class OrigenMovimientosTest extends TestCase
         $this->expectException(QueryException::class);
         DB::table('movimientos_inventario')->insert($datos);
     }
+
+    public function test_movimientos_nuevos_sin_origen_no_pueden_eludir_unicidad(): void
+    {
+        $datos = $this->datos();
+        $this->expectException(QueryException::class);
+        DB::table('movimientos_inventario')->insert($datos);
+    }
 }

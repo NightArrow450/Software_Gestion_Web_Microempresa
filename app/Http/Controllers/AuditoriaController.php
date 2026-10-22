@@ -11,7 +11,11 @@ class AuditoriaController extends Controller
 {
     public function index(Request $request): View
     {
-        $filtros = $request->validate(['usuario_id' => ['nullable', 'integer'], 'accion' => ['nullable', 'string', 'max:100'], 'entidad' => ['nullable', 'string', 'max:80'], 'desde' => ['nullable', 'date_format:Y-m-d'], 'hasta' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:desde']]);
+        $reglasHasta = ['nullable', 'date_format:Y-m-d'];
+        if ($request->filled('desde')) {
+            $reglasHasta[] = 'after_or_equal:desde';
+        }
+        $filtros = $request->validate(['usuario_id' => ['nullable', 'integer'], 'accion' => ['nullable', 'string', 'max:100'], 'entidad' => ['nullable', 'string', 'max:80'], 'desde' => ['nullable', 'date_format:Y-m-d'], 'hasta' => $reglasHasta]);
         $consulta = Auditoria::query();
         foreach (['usuario_id', 'accion', 'entidad'] as $campo) {
             if (! empty($filtros[$campo])) {

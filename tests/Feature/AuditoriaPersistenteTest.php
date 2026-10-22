@@ -39,6 +39,7 @@ class AuditoriaPersistenteTest extends TestCase
         $registro = Auditoria::firstOrFail();
         $this->assertSame('10.000', $registro->detalle['stock_anterior']);
         $this->get(route('auditoria.index', ['accion' => 'stock_ajuste']))->assertOk()->assertSee('stock_ajuste');
+        $this->get(route('auditoria.index', ['hasta' => now()->toDateString()]))->assertOk()->assertSee('stock_ajuste');
         $this->get(route('auditoria.index', ['accion' => 'inexistente']))->assertOk()->assertSee('No hay acciones');
         $this->expectException(\LogicException::class);
         $registro->delete();
@@ -70,6 +71,6 @@ class AuditoriaPersistenteTest extends TestCase
         $detalle = Auditoria::firstOrFail()->getRawOriginal('detalle');
         $this->assertStringNotContainsString('OtraClave', $detalle);
         $this->assertStringNotContainsString($usuario->password, $detalle);
-        $this->assertStringContainsString('first_name', $detalle);
+        $this->assertStringContainsString('nombres', $detalle);
     }
 }

@@ -41,22 +41,26 @@ class EvitarDobleEnvio
         $huella = hash('sha256', json_encode($datos, JSON_THROW_ON_ERROR));
         $operacion = $request->method().' '.$request->path();
 
-        return DB::transaction(function () use ($request, $next, $clave, $huella, $operacion): Response {
-            DB::table('solicitudes_idempotentes')->insertOrIgnore(['usuario_id' => $request->user()->id, 'token' => $clave, 'huella' => $huella, 'operacion' => $operacion, 'created_at' => now()]);
-            $registro = DB::table('solicitudes_idempotentes')->where('usuario_id', $request->user()->id)->where('token', $clave)->lockForUpdate()->first();
-            if ($registro->huella !== $huella || $registro->operacion !== $operacion) {
-                throw ValidationException::withMessages(['operacion' => 'Este formulario ya fue utilizado con otros datos. Recarga la página.']);
-            }
-            if ($registro->redireccion !== null) {
-                return redirect($registro->redireccion)->with('success', 'La solicitud ya fue procesada.');
-            }
-            $respuesta = $next($request);
-            if (($respuesta->exception ?? null) !== null || ! $respuesta->isRedirection() || ! $respuesta->headers->has('Location')) {
-                throw new HttpResponseException($respuesta);
-            }
-            DB::table('solicitudes_idempotentes')->where('id', $registro->id)->update(['redireccion' => $respuesta->headers->get('Location')]);
+        try {
+            return DB::transaction(function () use ($request, $next, $clave, $huella, $operacion): Response {
+                DB::table('solicitudes_idempotentes')->insertOrIgnore(['usuario_id' => $request->user()->id, 'token' => $clave, 'huella' => $huella, 'operacion' => $operacion, 'created_at' => now()]);
+                $registro = DB::table('solicitudes_idempotentes')->where('usuario_id', $request->user()->id)->where('token', $clave)->lockForUpdate()->first();
+                if ($registro->huella !== $huella || $registro->operacion !== $operacion) {
+                    throw ValidationException::withMessages(['operacion' => 'Este formulario ya fue utilizado con otros datos. Recarga la página.']);
+                }
+                if ($registro->redireccion !== null) {
+                    return redirect($registro->redireccion)->with('success', 'La solicitud ya fue procesada.');
+                }
+                $respuesta = $next($request);
+                if (($respuesta->exception ?? null) !== null || ! $respuesta->isRedirection() || ! $respuesta->headers->has('Location')) {
+                    throw new HttpResponseException($respuesta);
+                }
+                DB::table('solicitudes_idempotentes')->where('id', $registro->id)->update(['redireccion' => $respuesta->headers->get('Location')]);
 
-            return $respuesta;
-        }, 3);
+                return $respuesta;
+            }, 3);
+        } catch (HttpResponseException $exception) {
+            return $exception->getResponse();
+        }
     }
 }

@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Services\RegistroSeguridad;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
 class UserController extends Controller
@@ -116,7 +117,7 @@ class UserController extends Controller
 
             'role_id' => [
                 'required',
-                'exists:roles,id',
+                Rule::exists('roles', 'id')->whereNull('deleted_at'),
             ],
 
             'status' => [
@@ -243,7 +244,7 @@ class UserController extends Controller
 
             'role_id' => [
                 'required',
-                'exists:roles,id',
+                Rule::exists('roles', 'id')->whereNull('deleted_at'),
             ],
 
             'status' => [

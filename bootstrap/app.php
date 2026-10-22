@@ -11,6 +11,7 @@ use App\Http\Middleware\ProxiesConfiables;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\TransaccionAccionesSensibles;
 use App\Services\RegistroSeguridad;
+use Illuminate\Auth\Middleware\Authorize;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -39,6 +40,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->replace(TrustProxies::class, ProxiesConfiables::class);
         $middleware->append(ForzarHttps::class);
         $middleware->web(append: [ExigirCambioPassword::class, EvitarDobleEnvio::class, EvitarEdicionObsoleta::class, TransaccionAccionesSensibles::class]);
+
+        $middleware->appendToPriorityList(Authorize::class, RoleMiddleware::class);
+        $middleware->appendToPriorityList(RoleMiddleware::class, PermisoMiddleware::class);
+        $middleware->appendToPriorityList(PermisoMiddleware::class, EvitarDobleEnvio::class);
+        $middleware->appendToPriorityList(EvitarDobleEnvio::class, EvitarEdicionObsoleta::class);
+        $middleware->appendToPriorityList(EvitarEdicionObsoleta::class, TransaccionAccionesSensibles::class);
 
         $middleware->alias([
 

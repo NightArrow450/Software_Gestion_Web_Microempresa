@@ -16,13 +16,17 @@ class TransaccionAccionesSensibles
             return $next($request);
         }
 
-        return DB::transaction(function () use ($request, $next): Response {
-            $respuesta = $next($request);
-            if (($respuesta->exception ?? null) !== null || $respuesta->getStatusCode() >= 400) {
-                throw new HttpResponseException($respuesta);
-            }
+        try {
+            return DB::transaction(function () use ($request, $next): Response {
+                $respuesta = $next($request);
+                if (($respuesta->exception ?? null) !== null || $respuesta->getStatusCode() >= 400) {
+                    throw new HttpResponseException($respuesta);
+                }
 
-            return $respuesta;
-        }, 3);
+                return $respuesta;
+            }, 3);
+        } catch (HttpResponseException $exception) {
+            return $exception->getResponse();
+        }
     }
 }

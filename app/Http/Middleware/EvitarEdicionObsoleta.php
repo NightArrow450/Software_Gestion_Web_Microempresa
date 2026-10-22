@@ -23,21 +23,25 @@ class EvitarEdicionObsoleta
             return $next($request);
         }
 
-        return DB::transaction(function () use ($request, $next, $objetivo): Response {
-            [$parametro, $clase] = $objetivo;
-            $referencia = $request->route($parametro);
-            $modelo = $clase::whereKey($referencia instanceof Model ? $referencia->getKey() : $referencia)->lockForUpdate()->firstOrFail();
-            $datos = $request->validate(['_version' => ['required', 'integer', 'min:0'], '_updated_at' => ['required', 'string']]);
-            if ((int) $datos['_version'] !== (int) $modelo->version || $datos['_updated_at'] !== (string) $modelo->getRawOriginal('updated_at')) {
-                throw ValidationException::withMessages(['edicion' => 'Otro usuario modificó este registro. Recarga la página y revisa los cambios antes de guardar.']);
-            }
-            $request->route()->setParameter($parametro, $modelo);
-            $respuesta = $next($request);
-            if (($respuesta->exception ?? null) !== null || $respuesta->getStatusCode() >= 400) {
-                throw new HttpResponseException($respuesta);
-            }
+        try {
+            return DB::transaction(function () use ($request, $next, $objetivo): Response {
+                [$parametro, $clase] = $objetivo;
+                $referencia = $request->route($parametro);
+                $modelo = $clase::whereKey($referencia instanceof Model ? $referencia->getKey() : $referencia)->lockForUpdate()->firstOrFail();
+                $datos = $request->validate(['_version' => ['required', 'integer', 'min:0'], '_updated_at' => ['required', 'string']]);
+                if ((int) $datos['_version'] !== (int) $modelo->version || $datos['_updated_at'] !== (string) $modelo->getRawOriginal('updated_at')) {
+                    throw ValidationException::withMessages(['edicion' => 'Otro usuario modificó este registro. Recarga la página y revisa los cambios antes de guardar.']);
+                }
+                $request->route()->setParameter($parametro, $modelo);
+                $respuesta = $next($request);
+                if (($respuesta->exception ?? null) !== null || $respuesta->getStatusCode() >= 400) {
+                    throw new HttpResponseException($respuesta);
+                }
 
-            return $respuesta;
-        }, 3);
+                return $respuesta;
+            }, 3);
+        } catch (HttpResponseException $exception) {
+            return $exception->getResponse();
+        }
     }
 }

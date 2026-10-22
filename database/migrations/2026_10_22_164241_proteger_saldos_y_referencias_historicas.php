@@ -32,8 +32,13 @@ return new class extends Migration
         foreach (self::REFERENCIAS as $tabla => $columnas) {
             foreach ($columnas as $columna => $destino) {
                 if (DB::getDriverName() === 'mysql') {
-                    $nombre = $tabla.'_'.$columna.'_foreign';
-                    DB::statement("ALTER TABLE `$tabla` DROP FOREIGN KEY `$nombre`, ADD CONSTRAINT `$nombre` FOREIGN KEY (`$columna`) REFERENCES `$destino` (`id`) ON DELETE RESTRICT");
+                    $referencia = collect(Schema::getForeignKeys($tabla))->first(fn (array $clave): bool => $clave['columns'] === [$columna]);
+                    if (strtolower($referencia['on_delete']) === 'restrict') {
+                        continue;
+                    }
+                    $anterior = $referencia['name'];
+                    $nombre = $tabla.'_'.$columna.'_hist';
+                    DB::statement("ALTER TABLE `$tabla` DROP FOREIGN KEY `$anterior`, ADD CONSTRAINT `$nombre` FOREIGN KEY (`$columna`) REFERENCES `$destino` (`id`) ON DELETE RESTRICT");
                 } else {
                     Schema::table($tabla, function (Blueprint $table) use ($columna, $destino) {
                         $table->dropForeign([$columna]);
@@ -42,9 +47,16 @@ return new class extends Migration
                 }
             }
         }
+        foreach (['roles', 'permisos'] as $tabla) {
+            if (! Schema::hasColumn($tabla, 'deleted_at')) {
+                Schema::table($tabla, fn (Blueprint $table) => $table->softDeletes());
+            }
+        }
         if (DB::getDriverName() === 'mysql') {
             foreach (['inventarios', 'insumos'] as $tabla) {
-                DB::statement("ALTER TABLE $tabla ADD CONSTRAINT {$tabla}_saldo_no_negativo CHECK (cantidad_actual >= 0)");
+                if (! DB::table('information_schema.TABLE_CONSTRAINTS')->where('CONSTRAINT_SCHEMA', DB::connection()->getDatabaseName())->where('CONSTRAINT_NAME', $tabla.'_saldo_no_negativo')->exists()) {
+                    DB::statement("ALTER TABLE $tabla ADD CONSTRAINT {$tabla}_saldo_no_negativo CHECK (cantidad_actual >= 0)");
+                }
             }
         }
     }

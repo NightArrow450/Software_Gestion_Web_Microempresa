@@ -82,8 +82,8 @@ class AuditoriaSeguridadTest extends TestCase
         $this->assertSame(['rol_creado', 'rol_actualizado', 'rol_eliminado', 'permiso_creado', 'permiso_actualizado', 'permiso_eliminado'], array_column($eventos, 'evento'));
         $this->assertSame([$permiso->id], $eventos[1]['contexto']['permisos_anteriores']);
         $this->assertSame([], $eventos[1]['contexto']['permisos_nuevos']);
-        $this->assertDatabaseMissing('roles', ['id' => $rol->id]);
-        $this->assertDatabaseMissing('permisos', ['id' => $nuevo->id]);
+        $this->assertSoftDeleted('roles', ['id' => $rol->id]);
+        $this->assertSoftDeleted('permisos', ['id' => $nuevo->id]);
     }
 
     public function test_acceso_403_se_registra_sin_cuerpo_ni_cabeceras_sensibles(): void
