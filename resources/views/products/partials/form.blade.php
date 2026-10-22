@@ -96,6 +96,10 @@
 >
 
     @csrf
+@if(isset($producto))
+<input type="hidden" name="_version" value="{{ $producto->version }}">
+<input type="hidden" name="_updated_at" value="{{ $producto->getRawOriginal('updated_at') }}">
+@endif
 
     @if($editing)
         @method('PUT')
