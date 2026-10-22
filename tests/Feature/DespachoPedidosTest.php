@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Models\Categoria;
 use App\Models\Cliente;
 use App\Models\Inventario;
-use App\Models\MovimientoInventario;
 use App\Models\Pedido;
 use App\Models\Permiso;
 use App\Models\PresentacionProducto;
@@ -32,6 +31,7 @@ class DespachoPedidosTest extends TestCase
             );
             $rol->permisos()->attach($permiso->id);
         }
+
         return User::create([
             'first_name' => 'Operador', 'last_name' => 'Prueba',
             'email' => 'operador@local.test', 'password' => 'password123',
@@ -48,6 +48,7 @@ class DespachoPedidosTest extends TestCase
             'nombre' => 'Producto '.$sku,
             'estado' => true,
         ]);
+
         return PresentacionProducto::create([
             'producto_id' => $producto->id,
             'codigo_sku' => $sku,
@@ -90,6 +91,7 @@ class DespachoPedidosTest extends TestCase
             'presentacion_producto_id' => $presentacion->id,
             'cantidad_actual' => $existencias,
         ]);
+
         return $pedido;
     }
 
@@ -234,5 +236,28 @@ class DespachoPedidosTest extends TestCase
             ->assertSessionHasErrors('inventario');
         $this->assertSame('listo_despacho', $p->fresh()->estado);
         $this->assertDatabaseCount('movimientos_inventario', 0);
+    }
+
+    public function test_informa_todos_los_sku_faltantes_sin_modificar_datos(): void
+    {
+        $usuario = $this->usuario(['pedidos.ver', 'cumplimiento.despachar']);
+        $pedido = $this->pedido($usuario, 'listo_despacho', 1);
+        $primero = $pedido->detalles()->firstOrFail();
+        $otra = $this->presentacion('FALTANTE-2');
+        $pedido->detalles()->create(array_merge($primero->only([
+            'descripcion_producto', 'modalidad', 'cantidad', 'precio_unitario', 'importe',
+        ]), ['presentacion_producto_id' => $otra->id, 'codigo_sku' => $otra->codigo_sku]));
+
+        $this->actingAs($usuario)->post(route('cumplimiento.despachar', $pedido))
+            ->assertSessionHasErrors(['inventario']);
+        $mensajes = session('errors')->get('inventario');
+        $this->assertCount(2, $mensajes);
+        $this->assertStringContainsString($primero->codigo_sku, $mensajes[0]);
+        $this->assertStringContainsString('necesitas 2 unidad(es) y hay 1', $mensajes[0]);
+        $this->assertStringContainsString('FALTANTE-2', $mensajes[1]);
+        $this->assertSame(1, (int) Inventario::firstOrFail()->cantidad_actual);
+        $this->assertSame('listo_despacho', $pedido->fresh()->estado);
+        $this->assertDatabaseCount('movimientos_inventario', 0);
+        $this->assertDatabaseCount('pedido_estados_historial', 0);
     }
 }
