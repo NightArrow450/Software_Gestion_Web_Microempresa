@@ -55,6 +55,47 @@ class EntregasRetornosTest extends PruebaEntregaMySql
         return $this->post(route('cumplimiento.retornos', $e['pedido']), ['version' => $this->version($e), 'observaciones' => 'Conteo físico documentado en almacén.', 'detalles' => [['pedido_detalle_id' => $e['detalle']->id, 'aptas' => $aptas, 'danadas' => $danadas, 'en_revision' => $revision, 'no_recuperadas' => $perdidas]]]);
     }
 
+    public static function rolesEntrega(): array
+    {
+        return [
+            'producción' => ['Producción/Reparto', false, false],
+            'comercial' => ['Operaciones Comerciales', true, false],
+            'administrador' => ['Administrador', true, true],
+        ];
+    }
+
+    #[DataProvider('rolesEntrega')]
+    public function test_roles_reales_registran_resultados_y_retornos_con_aprobacion_y_rectificacion_separadas(string $nombre, bool $aprueba, bool $rectifica): void
+    {
+        $e = $this->escenarioEntrega();
+        foreach (['Administrador', 'Operaciones Comerciales', 'Producción/Reparto'] as $rol) {
+            Role::create(['nombre' => $rol, 'es_sistema' => true]);
+        }
+        $this->seed(EntregaRetornoPermisoSeeder::class);
+        $rol = Role::where('nombre', $nombre)->firstOrFail();
+        $rol->permisos()->syncWithoutDetaching(Permiso::whereIn('nombre', ['pedidos.ver', 'cumplimiento.entregar'])->pluck('id'));
+        $e['usuario']->update(['role_id' => $rol->id]);
+        $e['usuario']->unsetRelation('role');
+        $this->actingAs($e['usuario']);
+        $this->resultado($e, 3, 2)->assertRedirect();
+        $this->retorno($e, 2)->assertRedirect();
+        $pagina = $this->get(route('cumplimiento.show', $e['pedido']))->assertOk();
+        if ($aprueba) {
+            $pagina->assertSee('Aprobar reincorporación');
+        } else {
+            $pagina->assertDontSee('Aprobar reincorporación')->assertDontSee('Rectificación administrativa autorizada');
+        }
+        $revision = $this->post(route('cumplimiento.incidencia.revisar', $e['pedido']), ['version' => $this->version($e), 'motivo' => 'Comprobación comercial documentada.']);
+        $aprueba ? $revision->assertRedirect() : $revision->assertForbidden();
+        $aprobacion = $this->post(route('cumplimiento.aprobar-retorno', $e['pedido']), ['version' => $this->version($e), 'retorno_detalle_id' => DB::table('retorno_pedido_detalles')->value('id'), 'cantidad' => 1, 'motivo' => 'Producto recibido y apto verificado.']);
+        $aprueba ? $aprobacion->assertRedirect() : $aprobacion->assertForbidden();
+        $correccion = $this->resultado($e, -1, 0, 'cumplimiento.rectificar-entrega');
+        $rectifica ? $correccion->assertRedirect() : $correccion->assertForbidden();
+        $this->assertDatabaseHas('inventarios', ['presentacion_producto_id' => $e['presentacion']->id, 'cantidad_actual' => $aprueba ? 96 : 95]);
+        $this->assertSame($aprueba ? 1 : 0, DB::table('movimientos_inventario')->where('origen_tipo', 'retorno_pedido')->count());
+        $this->assertSame($rectifica ? 2 : 3, app(ControlEntregaPedido::class)->resumen($e['pedido'])['lineas'][$e['detalle']->id]['aceptadas']);
+    }
+
     public function test_resultados_sucesivos_no_alteran_pedido_precios_ni_existencias(): void
     {
         $e = $this->escenarioEntrega();
@@ -294,9 +335,18 @@ class EntregasRetornosTest extends PruebaEntregaMySql
     {
         $e = $this->escenarioEntrega(despachar: false);
         $e['pedido']->update(['estado' => 'entregado']);
+        $pedidoAnterior = $e['pedido']->fresh()->getAttributes();
+        $detalleAnterior = $e['detalle']->fresh()->getAttributes();
         $this->get(route('cumplimiento.show', $e['pedido']))->assertOk()->assertSee('Entrega histórica sin desglose')->assertDontSee('Registrar cantidades aceptadas');
         $this->resultado($e, 0, 1, 'cumplimiento.rectificar-entrega')->assertSessionHasErrors('detalles');
+        $this->retorno($e, 1)->assertSessionHasErrors('detalles');
+        $this->post(route('cumplimiento.aprobar-retorno', $e['pedido']), ['version' => $this->version($e), 'retorno_detalle_id' => 999999, 'cantidad' => 1, 'motivo' => 'Intento de reincorporación sin recepción.'])->assertSessionHasErrors('cantidad');
+        $this->assertSame($pedidoAnterior, $e['pedido']->fresh()->getAttributes());
+        $this->assertSame($detalleAnterior, $e['detalle']->fresh()->getAttributes());
+        $this->assertDatabaseHas('inventarios', ['cantidad_actual' => 100]);
         $this->assertDatabaseCount('entregas_pedido', 0);
+        $this->assertDatabaseCount('retornos_pedido', 0);
+        $this->assertDatabaseCount('movimientos_inventario', 0);
     }
 
     public function test_resultado_pendiente_sin_cantidades_y_doble_envio_del_resultado(): void
