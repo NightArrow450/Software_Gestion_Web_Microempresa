@@ -9,6 +9,10 @@
 @endpush
 
 @section('content')
+@if(auth()->user()->role?->tienePermiso('materiales.envasado.configurar'))
+<div class="product-actions">@foreach($producto->presentaciones as $presentacion)<a class="btn btn-secondary" href="{{ route('envasado.materiales',$presentacion) }}">Configurar materiales: {{ $presentacion->codigo_sku }}</a>@endforeach</div>
+@endif
+
 @php
     $permisosRol = auth()->user()->role?->permisos()->pluck('nombre')->all() ?? [];
     $puedeEditar = in_array('productos.editar', $permisosRol, true);

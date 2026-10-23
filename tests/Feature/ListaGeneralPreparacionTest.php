@@ -143,7 +143,7 @@ class ListaGeneralPreparacionTest extends TestCase
             ->assertSee('SKU-HISTORICO')
             ->assertSee('2 empaques')
             ->assertSee('No disponible')
-            ->assertSee('parcialmente preparadas')
+            ->assertSee('esta lista no representa producción ni stock disponible')
             ->assertSee('catálogo actual');
     }
 
