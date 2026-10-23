@@ -2,9 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Models\ConfiguracionEnvasado;
 use App\Models\Envasado;
 use App\Models\Inventario;
 use App\Models\MovimientoInventario;
+use App\Models\VarianteProducto;
 use App\Services\CorregirEnvasado;
 use App\Services\RegistrarEnvasado;
 use App\Services\VerificadorInventario;
@@ -144,5 +146,37 @@ class IntegracionEnvasadoTest extends TestCase
             ->assertDontSee('Total neto acumulado de envasados vinculados');
         $this->assertSame($antes, MovimientoInventario::orderBy('id')->get()->toJson());
         $this->assertSame('confirmado', $pedido->fresh()->estado);
+    }
+
+    public function test_formulario_excluye_variantes_inactivas_y_sus_configuraciones_sin_ocultar_presentaciones_validas(): void
+    {
+        $e = $this->escenarioEnvasado();
+        $variantes = [];
+        foreach ([true, false] as $activa) {
+            $variante = VarianteProducto::create([
+                'producto_id' => $e['presentacion']->producto_id, 'tipo' => 'Aroma',
+                'valor' => $activa ? 'Variante activa de prueba' : 'Variante inactiva de prueba', 'estado' => $activa,
+            ]);
+            $presentacion = $e['presentacion']->replicate();
+            $presentacion->fill(['codigo_sku' => $activa ? 'SKU-VARIANTE-ACTIVA' : 'SKU-VARIANTE-INACTIVA', 'variante_producto_id' => $variante->id])->save();
+            $configuracion = ConfiguracionEnvasado::factory()->create([
+                'presentacion_producto_id' => $presentacion->id,
+                'nombre' => $activa ? 'Alternativa de variante activa' : 'Alternativa de variante inactiva',
+            ]);
+            $variantes[$activa ? 'activa' : 'inactiva'] = compact('presentacion', 'configuracion');
+        }
+        $respuesta = $this->actingAs($e['usuario'])->get(route('envasado.create'))->assertOk()
+            ->assertSee($e['presentacion']->codigo_sku)->assertSee('SKU-VARIANTE-ACTIVA')
+            ->assertSee('Alternativa de variante activa')->assertDontSee('SKU-VARIANTE-INACTIVA')
+            ->assertDontSee('Alternativa de variante inactiva');
+        $this->assertEqualsCanonicalizing([$e['presentacion']->id, $variantes['activa']['presentacion']->id], $respuesta->viewData('presentaciones')->modelKeys());
+        $this->assertEqualsCanonicalizing([$e['configuracion']->id, $variantes['activa']['configuracion']->id], $respuesta->viewData('configuraciones')->modelKeys());
+        $this->post(route('envasado.previsualizar'), [
+            'presentacion_producto_id' => $variantes['inactiva']['presentacion']->id,
+            'configuracion_envasado_id' => $variantes['inactiva']['configuracion']->id,
+            'version_configuracion' => 0, 'cantidad' => 1,
+        ])->assertSessionHasErrors('presentacion_producto_id');
+        $this->assertDatabaseCount('envasados', 0);
+        $this->assertDatabaseCount('movimientos_inventario', 0);
     }
 }

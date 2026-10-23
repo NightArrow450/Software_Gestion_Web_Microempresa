@@ -9,6 +9,7 @@ use App\Models\Pedido;
 use App\Models\PresentacionProducto;
 use App\Services\RegistrarEnvasado;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -26,8 +27,13 @@ class EnvasadoController extends Controller
 
     public function create(): View
     {
-        $presentaciones = PresentacionProducto::with('producto')->where('estado', true)->whereHas('producto', fn ($q) => $q->where('estado', true))->orderBy('codigo_sku')->get();
-        $configuraciones = ConfiguracionEnvasado::with('presentacion')->where('estado', true)->orderBy('nombre')->get();
+        $presentaciones = PresentacionProducto::with('producto')->where('estado', true)
+            ->whereHas('producto', fn (Builder $consulta): Builder => $consulta->where('estado', true))
+            ->where(fn (Builder $consulta): Builder => $consulta->whereNull('variante_producto_id')
+                ->orWhereHas('variante', fn (Builder $variante): Builder => $variante->where('estado', true)))
+            ->orderBy('codigo_sku')->get();
+        $configuraciones = ConfiguracionEnvasado::with('presentacion')->where('estado', true)
+            ->whereIn('presentacion_producto_id', $presentaciones->modelKeys())->orderBy('nombre')->get();
         $pedidos = Pedido::whereIn('estado', ['confirmado', 'en_preparacion'])->orderByDesc('id')->get();
 
         return view('envasado.create', compact('presentaciones', 'configuraciones', 'pedidos'));
