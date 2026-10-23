@@ -23,7 +23,17 @@
 <template>@include('envasado.partials.material',['indice'=>'__INDICE__','material'=>null])</template>
 <button class="btn btn-secondary" type="button" data-agregar-material>Agregar material</button>
 <button class="btn btn-primary" type="submit">Guardar configuración</button>
-</form></section>
+</form>
+@if($configuracion)
+<p>Estado actual: {{ $configuracion->estado ? 'Activa' : 'Inactiva' }}. Cambiar el estado no altera materiales ni consumos históricos.</p>
+<form method="POST" action="{{ route('envasado.materiales.estado',[$presentacion,$configuracion]) }}">
+@csrf @method('PATCH') @include('components.token-operacion')
+<input type="hidden" name="version" value="{{ $configuracion->version }}">
+<input type="hidden" name="estado" value="{{ $configuracion->estado ? 0 : 1 }}">
+<button class="btn btn-secondary" type="submit">{{ $configuracion->estado ? 'Desactivar configuración' : 'Activar configuración' }}</button>
+</form>
+@endif
+</section>
 @endforeach
 @if($configuraciones->isEmpty())<p>Esta presentación todavía no tiene configuración de materiales.</p>@endif
 @endsection

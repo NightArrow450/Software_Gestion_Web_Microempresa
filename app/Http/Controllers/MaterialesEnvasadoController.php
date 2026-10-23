@@ -32,6 +32,13 @@ class MaterialesEnvasadoController extends Controller
     {
         $servicio->guardar($presentacion, $request->all(), $configuracion);
 
-        return redirect()->route('envasado.materiales', $presentacion)->with('success','Configuración actualizada. Los consumos históricos se conservan.');
+        return redirect()->route('envasado.materiales', $presentacion)->with('success', 'Configuración actualizada. Los consumos históricos se conservan.');
+    }
+
+    public function cambiarEstado(Request $request, PresentacionProducto $presentacion, ConfiguracionEnvasado $configuracion, ConfigurarMaterialesEnvasado $servicio): RedirectResponse
+    {
+        $servicio->cambiarEstado($presentacion, $configuracion, $request->all());
+
+        return redirect()->route('envasado.materiales', $presentacion)->with('success', 'Estado de la configuración actualizado con auditoría.');
     }
 }

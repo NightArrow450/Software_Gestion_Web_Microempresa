@@ -33,6 +33,7 @@ class ConfigurarMaterialesEnvasado
                     throw ValidationException::withMessages(['version' => 'La configuración cambió. Recarga antes de guardar.']);
                 }
             }
+            $anterior = $configuracion ? $this->capturar($configuracion) : null;
             if (ConfiguracionEnvasado::where('presentacion_producto_id', $presentacion->id)->where('nombre', $datos['nombre'])->when($configuracion, fn ($q) => $q->whereKeyNot($configuracion->id))->exists()) {
                 throw ValidationException::withMessages(['nombre' => 'Ya existe una alternativa con ese nombre.']);
             }
@@ -61,9 +62,56 @@ class ConfigurarMaterialesEnvasado
                     'unidades_por_empaque' => $m['base_consumo'] === 'empaque' ? $m['unidades_por_empaque'] : 0, 'tipo_empaque' => $m['base_consumo'] === 'empaque' ? $m['tipo_empaque'] : null,
                 ]);
             }
-            RegistroAuditoria::registrar('materiales_envasado_configurados', 'configuracion_envasado', $configuracion->id, ['nombre' => $configuracion->nombre]);
+            $this->registrarAuditoria($configuracion, $anterior);
 
             return $configuracion;
         }, 3);
+    }
+
+    public function cambiarEstado(PresentacionProducto $presentacion, ConfiguracionEnvasado $configuracion, array $entrada): ConfiguracionEnvasado
+    {
+        $datos = Validator::make($entrada, ['estado' => ['required', 'boolean'], 'version' => ['required', 'integer', 'min:0']])->validate();
+
+        return DB::transaction(function () use ($presentacion, $configuracion, $datos): ConfiguracionEnvasado {
+            PresentacionProducto::whereKey($presentacion->id)->lockForUpdate()->firstOrFail();
+            $actual = ConfiguracionEnvasado::whereKey($configuracion->id)->lockForUpdate()->firstOrFail();
+            abort_unless($actual->presentacion_producto_id === $presentacion->id, 404);
+            if ($actual->version !== (int) $datos['version']) {
+                throw ValidationException::withMessages(['version' => 'La configuración cambió. Recarga antes de cambiar su estado.']);
+            }
+            if ($actual->estado === (bool) $datos['estado']) {
+                throw ValidationException::withMessages(['estado' => 'La configuración ya tiene el estado solicitado.']);
+            }
+            $anterior = $this->capturar($actual);
+            $actual->update(['estado' => $datos['estado'], 'version' => $actual->version + 1]);
+            $this->registrarAuditoria($actual, $anterior);
+
+            return $actual;
+        }, 3);
+    }
+
+    /** @return array{nombre: string, estado: bool, version: int, materiales: array} */
+    private function capturar(ConfiguracionEnvasado $configuracion): array
+    {
+        return [
+            'nombre' => $configuracion->nombre,
+            'estado' => $configuracion->estado,
+            'version' => $configuracion->version,
+            'materiales' => $configuracion->materiales()->orderBy('insumo_id')->lockForUpdate()->get([
+                'insumo_id', 'funcion', 'base_consumo', 'unidades_por_empaque', 'tipo_empaque', 'cantidad_por_unidad', 'estado',
+            ])->map(fn (MaterialEnvasado $material): array => $material->only([
+                'insumo_id', 'funcion', 'base_consumo', 'unidades_por_empaque', 'tipo_empaque', 'cantidad_por_unidad', 'estado',
+            ]))->all(),
+        ];
+    }
+
+    private function registrarAuditoria(ConfiguracionEnvasado $configuracion, ?array $anterior): void
+    {
+        $detalle = ['nombre' => $configuracion->nombre, 'estado' => $configuracion->estado,
+            'campos' => ['antes' => $anterior, 'despues' => $this->capturar($configuracion)]];
+        RegistroAuditoria::registrar($anterior === null ? 'configuracion_envasado_creada' : 'configuracion_envasado_modificada', 'configuracion_envasado', $configuracion->id, $detalle);
+        if ($anterior !== null && $anterior['estado'] !== $configuracion->estado) {
+            RegistroAuditoria::registrar($configuracion->estado ? 'configuracion_envasado_activada' : 'configuracion_envasado_desactivada', 'configuracion_envasado', $configuracion->id, $detalle);
+        }
     }
 }

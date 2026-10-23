@@ -10,6 +10,7 @@ Route::middleware(['auth', 'permiso:materiales.envasado.configurar'])->group(fun
     Route::get('/presentaciones/{presentacion}/materiales-envasado', [MaterialesEnvasadoController::class, 'index'])->name('envasado.materiales');
     Route::post('/presentaciones/{presentacion}/materiales-envasado', [MaterialesEnvasadoController::class, 'store'])->defaults('idempotente', true)->name('envasado.materiales.store');
     Route::put('/presentaciones/{presentacion}/materiales-envasado/{configuracion}', [MaterialesEnvasadoController::class, 'update'])->defaults('idempotente', true)->name('envasado.materiales.update');
+    Route::patch('/presentaciones/{presentacion}/materiales-envasado/{configuracion}/estado', [MaterialesEnvasadoController::class, 'cambiarEstado'])->whereNumber(['presentacion', 'configuracion'])->defaults('idempotente', true)->name('envasado.materiales.estado');
 });
 
 Route::middleware(['auth', 'permiso:envasado.ver'])->group(function () {
