@@ -353,3 +353,4 @@ require __DIR__.'/seguimiento.php';
 Route::get('/auditoria', [AuditoriaController::class, 'index'])->middleware(['auth', 'role:Administrador', 'permiso:auditoria.ver'])->name('auditoria.index');
 
 require __DIR__.'/envasado.php';
+require __DIR__.'/entregas.php';
