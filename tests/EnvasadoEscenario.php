@@ -27,7 +27,7 @@ trait EnvasadoEscenario
         }
         $usuario = User::create(['first_name' => 'Ana', 'last_name' => 'Prueba', 'email' => $sufijo.'@envasado.test', 'password' => 'ClaveSegura123', 'role_id' => $rol->id, 'status' => true]);
         $categoria = Categoria::firstOrCreate(['nombre' => 'Limpieza'], ['estado' => true]);
-        $producto = Producto::create(['codigo' => 'P'.$sufijo, 'nombre' => 'Producto de prueba', 'categoria_id' => $categoria->id, 'estado' => true]);
+        $producto = Producto::create(['codigo' => 'P'.substr($sufijo, -16), 'nombre' => 'Producto de prueba', 'categoria_id' => $categoria->id, 'estado' => true]);
         $presentacion = PresentacionProducto::create(['producto_id' => $producto->id, 'codigo_sku' => 'S'.$sufijo, 'contenido' => 1, 'unidad_medida' => 'L', 'tipo_envase' => 'Botella', 'unidades_por_empaque' => 12, 'venta_por_unidad' => true, 'venta_por_empaque' => true, 'precio_unitario' => 2, 'estado' => true]);
         Inventario::create(['presentacion_producto_id' => $presentacion->id, 'cantidad_actual' => $stockProducto]);
         $insumo = Insumo::create(['codigo' => 'I'.$sufijo, 'nombre' => 'Envase de prueba', 'categoria' => 'Envases', 'unidad_medida' => 'unidad', 'cantidad_actual' => $stockMaterial, 'estado' => true]);
