@@ -12,7 +12,7 @@
 <label>Unidades realmente envasadas<input class="form-control" required type="number" min="1" max="1000000" step="1" name="cantidad" value="{{ old('cantidad') }}"></label>
 <label>Pedido opcional<select class="form-control" name="pedido_id"><option value="">Envasado anticipado (sin pedido)</option>@foreach($pedidos as $pedido)<option value="{{ $pedido->id }}" @selected((int)old('pedido_id')===$pedido->id)>Pedido {{ $pedido->numero }} · {{ str_replace('_',' ',$pedido->estado) }}</option>@endforeach</select></label>
 <label>Observaciones<textarea class="form-control" maxlength="1000" name="observaciones">{{ old('observaciones') }}</textarea></label></div>
-<p>Si falta una configuración válida, solicita su registro al Administrador. El pedido no cambiará de estado y las unidades no quedarán reservadas.</p>
+<p>Si falta una configuración válida, debe registrarla un usuario con permiso para configurar materiales desde el catálogo de productos. El pedido no cambiará de estado y las unidades no quedarán reservadas.</p>
 <button class="btn btn-primary">Consultar consumos antes de confirmar</button><a class="btn btn-secondary" href="{{ route('envasado.index') }}">Volver</a></form></section>
 @endsection
 @push('scripts')<script src="{{ asset('js/envasado.js') }}" defer></script>@endpush

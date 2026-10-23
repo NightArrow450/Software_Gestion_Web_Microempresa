@@ -11,7 +11,7 @@ require dirname(__DIR__, 2).'/vendor/autoload.php';
 $app = require dirname(__DIR__, 2).'/bootstrap/app.php';
 $kernel = $app->make(Kernel::class);
 $datos = json_decode(stream_get_contents(STDIN), true, 512, JSON_THROW_ON_ERROR);
-$request = Request::create($datos['ruta'], 'POST', $datos['datos']);
+$request = Request::create($datos['ruta'], $datos['metodo'] ?? 'POST', $datos['datos']);
 $app->instance('request', $request);
 $kernel->bootstrap();
 EntornoMySql::conectar();

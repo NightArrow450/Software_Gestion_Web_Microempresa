@@ -62,7 +62,7 @@ class RegistrarEnvasado
         if (! $configuracion->estado || $configuracion->presentacion_producto_id !== $presentacion->id || $configuracion->version !== (int) $datos['version_configuracion']) {
             throw ValidationException::withMessages(['configuracion_envasado_id' => 'La configuración no corresponde, está inactiva o cambió. Vuelve a consultar los consumos antes de confirmar.']);
         }
-        $materiales = $configuracion->materiales()->where('estado', true)->where('base_consumo', 'unidad')->orderBy('insumo_id')->get();
+        $materiales = $configuracion->materiales()->where('estado', true)->where('base_consumo', 'unidad')->orderBy('insumo_id')->lockForUpdate()->get();
         if ($materiales->isEmpty()) {
             throw ValidationException::withMessages(['configuracion_envasado_id' => 'Falta configurar materiales válidos por unidad para esta presentación.']);
         }
