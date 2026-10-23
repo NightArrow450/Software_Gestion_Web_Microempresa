@@ -7,3 +7,9 @@ document.querySelectorAll('[data-materiales]').forEach(form => {
   event.target.closest('[data-retirar-material]')?.closest('fieldset').remove();
  });
 });
+
+const alternativa = document.querySelector('#configuracion-envasado');
+if (alternativa) {
+ const actualizar = () => { document.querySelector('#version-configuracion').value = alternativa.selectedOptions[0]?.dataset.version ?? ''; };
+ alternativa.addEventListener('change', actualizar); actualizar();
+}

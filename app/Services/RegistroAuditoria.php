@@ -13,7 +13,7 @@ class RegistroAuditoria
             return;
         }
         Auditoria::create(['usuario_id' => auth()->id(), 'accion' => $accion, 'entidad' => $entidad, 'entidad_id' => $entidadId,
-            'detalle' => Arr::only($detalle, ['usuario_afectado_id', 'rol_id', 'permiso_id', 'estado', 'rol_anterior_id', 'permisos_anteriores', 'permisos_nuevos', 'campos', 'movimiento_id', 'stock_anterior', 'stock_nuevo', 'motivo', 'nombre']),
+            'detalle' => Arr::only($detalle, ['usuario_afectado_id', 'rol_id', 'permiso_id', 'estado', 'rol_anterior_id', 'permisos_anteriores', 'permisos_nuevos', 'campos', 'movimiento_id', 'stock_anterior', 'stock_nuevo', 'motivo', 'nombre', 'cantidad', 'pedido_id', 'clasificacion', 'materiales', 'envasado_id']),
             'ip' => request()->ip(), 'created_at' => now()]);
     }
 }

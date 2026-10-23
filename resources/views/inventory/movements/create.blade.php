@@ -8,6 +8,7 @@
     <p>Selecciona un producto terminado O un insumo. Se registrarán las cantidades anterior y nueva, el motivo y el responsable.</p></div>
     <a class="btn btn-secondary" href="{{ route('inventario.movimientos.index') }}">Volver</a></div>
 <section class="form-section">
+<p role="note">Si esta producción ya se registró como envasado, no ingreses otra entrada manual. Para presentaciones con materiales configurados, registra la producción desde Envasados. Las compras, devoluciones y ajustes legítimos siguen disponibles con su motivo.</p>
 <form method="POST" action="{{ route('inventario.movimientos.store') }}">
     @csrf @include('components.token-operacion')
     <div class="s3-formgrid">

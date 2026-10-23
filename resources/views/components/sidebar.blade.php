@@ -49,6 +49,9 @@
         </div>
 
         <nav class="menu">
+            @if(in_array('envasado.ver', $permisosSidebar, true))
+            <a href="{{ route('envasado.index') }}" class="menu-link {{ request()->routeIs('envasado.*') ? 'active' : '' }}"><span class="material-symbols-outlined">inventory</span>Envasados</a>
+            @endif
             <p class="menu-title">Sección principal</p>
 
             <a
