@@ -1,0 +1,103 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Inventario;
+use App\Models\MovimientoInventario;
+use App\Services\RegistrarEnvasado;
+use App\Services\VerificadorInventario;
+use Illuminate\Database\QueryException;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Tests\EnvasadoEscenario;
+use Tests\TestCase;
+
+class IntegracionEnvasadoTest extends TestCase
+{
+    use EnvasadoEscenario,RefreshDatabase;
+
+    public function test_tablas_nuevas_no_generan_envasados_retroactivos_y_protegen_referencias(): void
+    {
+        $e = $this->escenarioEnvasado(50, 75);
+        $this->assertDatabaseCount('envasados', 0);
+        $this->assertDatabaseCount('movimientos_inventario', 0);
+        $this->assertSame(75, (int) Inventario::where('presentacion_producto_id', $e['presentacion']->id)->value('cantidad_actual'));
+        $this->assertSame('50.000', $e['insumo']->fresh()->cantidad_actual);
+        foreach (['configuraciones_envasado', 'materiales_envasado', 'envasados', 'envasado_consumos', 'envasado_correcciones', 'envasado_correccion_materiales', 'envasado_reportes'] as $tabla) {
+            foreach (Schema::getForeignKeys($tabla) as $fk) {
+                $this->assertContains(strtolower($fk['on_delete']), ['restrict', 'no action']);
+            }
+        }
+        $this->assertTrue(app(VerificadorInventario::class)->revisar()['correcto']);
+    }
+
+    public function test_unicidad_de_origen_no_depende_del_pedido_y_exige_origen_completo(): void
+    {
+        $e = $this->escenarioEnvasado();
+        $this->actingAs($e['usuario']);
+        $registro = app(RegistrarEnvasado::class)->ejecutar(['presentacion_producto_id' => $e['presentacion']->id, 'configuracion_envasado_id' => $e['configuracion']->id, 'version_configuracion' => 0, 'cantidad' => 1], $e['usuario']);
+        $movimiento = MovimientoInventario::where('origen_tipo', 'envasado')->where('origen_id', $registro->id)->firstOrFail();
+        $datos = $movimiento->getAttributes();
+        unset($datos['id']);
+        try {
+            DB::table('movimientos_inventario')->insert($datos);
+            $this->fail('Debió rechazar duplicado');
+        } catch (QueryException) {
+            $this->assertSame(2, MovimientoInventario::count());
+        }
+        $datos['origen_tipo'] = null;
+        $datos['origen_id'] = null;
+        $this->expectException(QueryException::class);
+        DB::table('movimientos_inventario')->insert($datos);
+    }
+
+    public function test_listar_o_imprimir_demanda_con_produccion_existente_no_modifica_saldos_ni_historial(): void
+    {
+        $e = $this->escenarioEnvasado();
+        $pedido = $this->pedidoEnvasado($e);
+        $this->actingAs($e['usuario']);
+        $registro = app(RegistrarEnvasado::class)->ejecutar(['presentacion_producto_id' => $e['presentacion']->id, 'configuracion_envasado_id' => $e['configuracion']->id, 'version_configuracion' => 0, 'cantidad' => 2, 'pedido_id' => $pedido->id], $e['usuario']);
+        $antes = MovimientoInventario::orderBy('id')->get()->toJson();
+        $this->get(route('cumplimiento.lista-preparacion'))->assertOk()->assertSee('cantidades solicitadas')->assertSee('Imprimir');
+        $this->get(route('envasado.show', $registro))->assertOk()->assertSee('Unidades solicitadas del pedido para este SKU: 5')->assertSee('Stock disponible general: 2');
+        $this->assertSame($antes, MovimientoInventario::orderBy('id')->get()->toJson());
+        $this->assertDatabaseCount('envasados', 1);
+    }
+
+    public function test_alternativas_y_catalogo_ajenos_no_se_aceptan_ni_inventan_compatibilidades(): void
+    {
+        $e = $this->escenarioEnvasado();
+        $otro = $this->escenarioEnvasado();
+        $d = ['presentacion_producto_id' => $e['presentacion']->id, 'configuracion_envasado_id' => $otro['configuracion']->id, 'version_configuracion' => 0, 'cantidad' => 1];
+        $this->actingAs($e['usuario'])->post(route('envasado.store'), $d)->assertSessionHasErrors('configuracion_envasado_id');
+        $d['configuracion_envasado_id'] = $e['configuracion']->id;
+        $d['pedido_id'] = $this->pedidoEnvasado($otro)->id;
+        $this->post(route('envasado.store'), $d)->assertSessionHasErrors('pedido_id');
+        $this->assertDatabaseCount('envasados', 0);
+        $this->assertSame('100.000', $e['insumo']->fresh()->cantidad_actual);
+    }
+
+    public function test_no_se_alteran_categorias_existentes_ni_stock_por_configurar(): void
+    {
+        $e = $this->escenarioEnvasado();
+        $categorias = DB::table('categorias')->orderBy('id')->get()->toJson();
+        $this->actingAs($e['usuario'])->get(route('envasado.materiales', $e['presentacion']))->assertOk();
+        $this->assertSame($categorias, DB::table('categorias')->orderBy('id')->get()->toJson());
+        $this->assertSame('Envases', $e['insumo']->fresh()->categoria);
+    }
+
+    public function test_consumos_decimales_y_compensacion_conservan_milesimas_exactas(): void
+    {
+        $e = $this->escenarioEnvasado();
+        $e['insumo']->update(['unidad_medida' => 'metro', 'categoria' => 'Otros']);
+        $e['configuracion']->materiales()->update(['cantidad_por_unidad' => '0.125', 'funcion' => 'otro_fisico']);
+        $this->actingAs($e['usuario']);
+        $registro = app(RegistrarEnvasado::class)->ejecutar(['presentacion_producto_id' => $e['presentacion']->id, 'configuracion_envasado_id' => $e['configuracion']->id, 'version_configuracion' => 0, 'cantidad' => 12], $e['usuario']);
+        $this->assertSame('98.500', $e['insumo']->fresh()->cantidad_actual);
+        $datos = ['clasificacion' => 'error_administrativo', 'cantidad' => 1, 'revertidas_previas' => 0, 'motivo' => 'Material no utilizado según revisión física', 'devoluciones' => [$registro->consumos->first()->id => '0.125']];
+        $this->post(route('envasado.correcciones.store', $registro), $datos)->assertRedirect();
+        $this->assertSame('98.625', $e['insumo']->fresh()->cantidad_actual);
+        $this->assertTrue(app(VerificadorInventario::class)->revisar()['correcto']);
+    }
+}

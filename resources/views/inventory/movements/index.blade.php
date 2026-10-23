@@ -30,7 +30,7 @@
 <section class="table-card"><div class="table-header"><strong>Historial de movimientos</strong><span class="muted">{{ $movimientos->total() }} resultado(s)</span></div>
     <div class="table-container"><table class="mobile-cards app-table"><thead><tr>
         <th>Fecha y hora</th><th>Clase</th><th>Código</th><th>Producto / Insumo</th><th>Tipo</th><th>Cambio</th>
-        <th>Antes</th><th>Después</th><th>Pedido vinculado</th><th>Responsable</th><th>Motivo</th>
+        <th>Antes</th><th>Después</th><th>Operación de origen / pedido</th><th>Responsable</th><th>Motivo</th>
     </tr></thead><tbody>
     @forelse($movimientos as $m)
         <tr><td data-label="Fecha y hora">{{ $m->created_at?->timezone('America/Lima')->format('d/m/Y H:i') }}</td>
@@ -47,6 +47,10 @@
                 @else
                     N.º {{ str_pad((string) $m->pedido_id, 6, '0', STR_PAD_LEFT) }}
                 @endif
+            @elseif($m->origen_tipo === 'envasado')
+                @if(auth()->user()->role?->tienePermiso('envasado.ver'))<a href="{{ route('envasado.show', $m->origen_id) }}">Envasado #{{ $m->origen_id }}</a>@else Envasado #{{ $m->origen_id }} @endif
+            @elseif($m->origen_tipo === 'correccion_envasado')
+                Corrección de envasado #{{ $m->origen_id }}
             @else
                 Manual
             @endif

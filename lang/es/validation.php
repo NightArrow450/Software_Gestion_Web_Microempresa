@@ -157,6 +157,14 @@ return [
     'ulid' => 'El campo :attribute debe ser un identificador ULID válido.',
     'uuid' => 'El campo :attribute debe ser un identificador UUID válido.',
     'attributes' => [
+        'configuracion_envasado_id' => 'alternativa de envasado', 'version_configuracion' => 'versión de la configuración',
+        'version' => 'versión', 'materiales' => 'materiales físicos', 'materiales.*.insumo_id' => 'insumo',
+        'materiales.*.cantidad_por_unidad' => 'consumo por unidad o empaque', 'materiales.*.base_consumo' => 'base de consumo',
+        'materiales.*.funcion' => 'función del material', 'materiales.*.tipo_empaque' => 'tipo de empaque',
+        'materiales.*.unidades_por_empaque' => 'unidades por empaque', 'clasificacion' => 'clasificación',
+        'revertidas_previas' => 'unidades previamente revertidas', 'devoluciones' => 'devoluciones de materiales',
+        'devoluciones.*' => 'cantidad declarada a devolver', 'pedido_id' => 'pedido',
+
         'password_actual' => 'contraseña actual',
         'nombre' => 'nombre', 'first_name' => 'nombres', 'last_name' => 'apellidos',
         'email' => 'correo electrónico', 'correo' => 'correo electrónico', 'password' => 'contraseña',
