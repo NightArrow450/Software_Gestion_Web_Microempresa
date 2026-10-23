@@ -60,7 +60,7 @@ class ListaGeneralPreparacionTest extends TestCase
         return Pedido::create([
             'cliente_id' => $cliente->id, 'usuario_id' => $usuario->id,
             'fecha_pedido' => now('America/Lima')->toDateString(),
-            'fecha_entrega' => $fecha ?? now('America/Lima')->addDay()->toDateString(),
+            'fecha_entrega' => $fecha ?? now('America/Lima')->toDateString(),
             'condicion_pago' => 'contado', 'estado' => $estado,
             'total' => '0.00', 'cliente_nombre' => 'Cliente prueba',
         ]);
@@ -79,7 +79,7 @@ class ListaGeneralPreparacionTest extends TestCase
         ]);
     }
 
-    public function test_lista_muestra_tres_columnas_y_desglose_de_unidades_fisicas_por_empaque(): void
+    public function test_lista_muestra_demanda_stock_produccion_y_desglose_de_unidades_fisicas_por_empaque(): void
     {
         $usuario = $this->usuario();
         $presentacion = $this->presentacion('LEJ-5L', 4);
@@ -89,7 +89,9 @@ class ListaGeneralPreparacionTest extends TestCase
             ->assertOk()
             ->assertSee('Presentación')
             ->assertSee('Ver detalle de empaques y unidades')
-            ->assertSee('Total de unidades')
+            ->assertSee('Unidades solicitadas pendientes')
+            ->assertSee('Stock disponible')
+            ->assertSee('Envasado neto registrado')
             ->assertSee('3 empaques')
             ->assertSee('3 empaques de 4')
             ->assertSee('>12</strong>', false);
@@ -143,11 +145,11 @@ class ListaGeneralPreparacionTest extends TestCase
             ->assertSee('SKU-HISTORICO')
             ->assertSee('2 empaques')
             ->assertSee('No disponible')
-            ->assertSee('esta lista no representa producción ni stock disponible')
+            ->assertSee('disponer de stock no significa haber registrado un envasado')
             ->assertSee('catálogo actual');
     }
 
-    public function test_filtra_fecha_de_entrega_y_por_defecto_desde_hoy_lima(): void
+    public function test_vista_diaria_incluye_atrasados_y_hoy_y_permite_ampliar_a_futuros(): void
     {
         $usuario = $this->usuario();
         $presentacion = $this->presentacion('FECHA-1');
@@ -159,12 +161,21 @@ class ListaGeneralPreparacionTest extends TestCase
         $this->detalle($this->pedido($usuario, 'confirmado', $manana), $presentacion, 'unidad', 3);
 
         $this->actingAs($usuario)->get(route('cumplimiento.lista-preparacion'))
-            ->assertOk()->assertSee('5 unidades')->assertDontSee('95 unidades')
+            ->assertOk()->assertSee('92 unidades')->assertDontSee('95 unidades')
             ->assertSee('name="fecha_desde"', false)->assertSee('Imprimir');
 
         $this->actingAs($usuario)->get(route('cumplimiento.lista-preparacion', [
             'fecha_desde' => $ayer, 'fecha_hasta' => $hoy,
         ]))->assertOk()->assertSee('92 unidades');
+
+        $this->get(route('cumplimiento.lista-preparacion', ['fecha_hasta' => $manana]))
+            ->assertOk()->assertSee('95 unidades');
+
+        $this->get(route('cumplimiento.lista-preparacion', ['fecha_desde' => '', 'fecha_hasta' => '']))
+            ->assertOk()->assertSee('95 unidades');
+
+        $this->get(route('cumplimiento.lista-preparacion', ['fecha_desde' => $manana, 'fecha_hasta' => $manana]))
+            ->assertOk()->assertSee('3 unidades')->assertDontSee('92 unidades');
     }
 
     public function test_rechaza_rango_de_fechas_invertido(): void
