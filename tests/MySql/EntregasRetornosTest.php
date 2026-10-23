@@ -106,7 +106,7 @@ class EntregasRetornosTest extends PruebaEntregaMySql
         $this->assertDatabaseHas('inventarios', ['cantidad_actual' => 70]);
     }
 
-    public function test_no_supera_despachado_no_rectifica_sin_permiso_y_no_reduce_rechazo_retornado(): void
+    public function test_no_supera_despachado_ni_reduce_rechazo_ya_retornado(): void
     {
         $e = $this->escenarioEntrega();
         $this->resultado($e, 4, 2)->assertSessionHasErrors('detalles');
@@ -172,6 +172,9 @@ class EntregasRetornosTest extends PruebaEntregaMySql
         $this->actingAs($e['usuario']->fresh());
         $datos['version'] = $this->version($e);
         $this->post(route('cumplimiento.aprobar-retorno', $e['pedido']), $datos)->assertForbidden();
+        $e['usuario']->role->permisos()->detach(Permiso::where('nombre', 'cumplimiento.incidencias.corregir')->value('id'));
+        $this->actingAs($e['usuario']->fresh());
+        $this->resultado($e, 1, -1, 'cumplimiento.rectificar-entrega')->assertForbidden();
         $this->assertDatabaseHas('inventarios', ['cantidad_actual' => 95]);
         $this->assertDatabaseCount('movimientos_inventario', 1);
     }
