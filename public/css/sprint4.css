@@ -25,6 +25,8 @@
 .cumplimiento-desglose { margin-top:8px; font-size:13px; overflow-wrap:anywhere; }
 .cumplimiento-desglose summary { cursor:pointer; color:#046944; font-weight:600; min-height:44px; display:list-item; align-content:center; }
 .cumplimiento-desglose ul { margin:0 0 8px; padding-left:20px; }
+.cumplimiento-grupo-producto th { background:#e8f5ee; font-size:16px; }
+.cumplimiento-presentacion { margin-top:10px; display:grid; gap:6px; }
 @media(max-width:640px) {
     .cumplimiento-encabezado, .cumplimiento-enlaces { align-items:stretch; flex-direction:column; }
     .cumplimiento-enlaces .btn, .cumplimiento-filtros button { width:100%; }

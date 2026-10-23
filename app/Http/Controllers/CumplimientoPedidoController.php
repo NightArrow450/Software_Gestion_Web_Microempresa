@@ -2,10 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Envasado;
+use App\Models\Inventario;
 use App\Models\Pedido;
 use App\Services\TransicionesPedido;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class CumplimientoPedidoController extends Controller
@@ -34,9 +38,16 @@ class CumplimientoPedidoController extends Controller
         $filtros = $request->validate([
             'fecha_desde' => ['nullable', 'date_format:Y-m-d'],
             'fecha_hasta' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:fecha_desde'],
+            'produccion_desde' => ['nullable', 'date_format:Y-m-d'],
+            'produccion_hasta' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:produccion_desde'],
         ]);
         $fechaDesde = $filtros['fecha_desde'] ?? now('America/Lima')->toDateString();
         $fechaHasta = $filtros['fecha_hasta'] ?? null;
+        $produccionDesde = $filtros['produccion_desde'] ?? now('America/Lima')->toDateString();
+        $produccionHasta = $filtros['produccion_hasta'] ?? now('America/Lima')->toDateString();
+        if ($produccionHasta < $produccionDesde) {
+            throw ValidationException::withMessages(['produccion_hasta' => 'El fin del período de producción debe ser igual o posterior al inicio.']);
+        }
 
         $pedidos = Pedido::query()
             ->with(['detalles.presentacion.producto', 'detalles.presentacion.variante'])
@@ -68,6 +79,12 @@ class CumplimientoPedidoController extends Controller
                 if (! isset($agrupados[$clave])) {
                     $agrupados[$clave] = [
                         'producto' => $presentacion?->producto?->nombre ?? $detalle->descripcion_producto,
+                        'producto_clave' => $presentacion ? 'producto:'.$presentacion->producto_id : 'historico:'.$detalle->descripcion_producto,
+                        'dimension' => match ($presentacion?->unidad_medida) {
+                            'L', 'ml' => 0, 'kg', 'g' => 1, default => 2
+                        },
+                        'capacidad' => $presentacion ? (int) round((float) $presentacion->contenido * 100) * (in_array($presentacion->unidad_medida, ['L', 'kg'], true) ? 1000 : 1) : PHP_INT_MAX,
+                        'presentaciones' => [],
                         'skus' => [],
                         'variante' => $presentacion?->variante?->valor,
                         'envase' => $presentacion?->tipo_envase,
@@ -80,6 +97,14 @@ class CumplimientoPedidoController extends Controller
                 }
 
                 $agrupados[$clave]['skus'][$detalle->codigo_sku] = $detalle->codigo_sku;
+                if ($presentacion) {
+                    $id = $presentacion->id;
+                    if (! isset($agrupados[$clave]['presentaciones'][$id])) {
+                        $agrupados[$clave]['presentaciones'][$id] = ['id' => $id, 'sku' => $presentacion->codigo_sku, 'solicitadas' => 0, 'activa' => $presentacion->estado && $presentacion->producto->estado && ($presentacion->variante?->estado ?? true)];
+                    }
+                    $anterior = $agrupados[$clave]['presentaciones'][$id]['solicitadas'];
+                    $agrupados[$clave]['presentaciones'][$id]['solicitadas'] = $anterior === null || $totalUnidades === null ? null : $anterior + $totalUnidades;
+                }
                 $claveDesglose = $detalle->modalidad.'|'.$porEmpaque;
                 if (! isset($agrupados[$clave]['desglose'][$claveDesglose])) {
                     $agrupados[$clave]['desglose'][$claveDesglose] = [
@@ -101,9 +126,33 @@ class CumplimientoPedidoController extends Controller
             }
         }
 
-        $filas = collect(array_values($agrupados));
+        $ids = collect($agrupados)->flatMap(fn (array $fila): array => array_keys($fila['presentaciones']))->unique()->values();
+        $stock = Inventario::whereIn('presentacion_producto_id', $ids)->pluck('cantidad_actual', 'presentacion_producto_id');
+        $produccion = Envasado::whereIn('presentacion_producto_id', $ids)
+            ->where('created_at', '>=', $produccionDesde.' 00:00:00')
+            ->where('created_at', '<', CarbonImmutable::parse($produccionHasta, 'America/Lima')->addDay()->startOfDay())
+            ->get(['presentacion_producto_id', 'pedido_id', 'cantidad', 'unidades_revertidas']);
+        $porPresentacion = $produccion->groupBy('presentacion_producto_id');
+        $pedidosIds = $pedidos->modelKeys();
+        $filas = collect(array_values($agrupados))->map(function (array $fila) use ($stock, $porPresentacion, $pedidosIds): array {
+            foreach ($fila['presentaciones'] as &$presentacion) {
+                $registros = $porPresentacion->get($presentacion['id'], collect());
+                $presentacion['stock'] = (int) ($stock[$presentacion['id']] ?? 0);
+                $presentacion['envasadas'] = $registros->sum(fn (Envasado $registro): int => $registro->cantidad - $registro->unidades_revertidas);
+                $presentacion['vinculadas'] = $registros->whereIn('pedido_id', $pedidosIds)->sum(fn (Envasado $registro): int => $registro->cantidad - $registro->unidades_revertidas);
+                $presentacion['faltante'] = $presentacion['solicitadas'] === null ? null : max(0, $presentacion['solicitadas'] - $presentacion['stock']);
+            }
+            unset($presentacion);
+            $fila['stock_disponible'] = array_sum(array_column($fila['presentaciones'], 'stock'));
+            $fila['envasadas'] = array_sum(array_column($fila['presentaciones'], 'envasadas'));
+            $fila['vinculadas'] = array_sum(array_column($fila['presentaciones'], 'vinculadas'));
+            $fila['faltante'] = $fila['total_unidades'] === null || $fila['presentaciones'] === [] ? null : array_sum(array_column($fila['presentaciones'], 'faltante'));
+            $fila['cobertura'] = $fila['faltante'] === null ? 'No disponible' : ($fila['faltante'] === 0 ? 'Cubierta según stock' : ($fila['faltante'] < $fila['total_unidades'] ? 'Parcialmente cubierta' : 'Pendiente'));
 
-        return view('cumplimiento.lista-preparacion', compact('filas', 'fechaDesde', 'fechaHasta'));
+            return $fila;
+        })->groupBy('producto_clave')->flatMap(fn ($grupo) => $grupo->sortBy([['dimension', 'asc'], ['capacidad', 'asc']]))->values();
+
+        return view('cumplimiento.lista-preparacion', compact('filas', 'fechaDesde', 'fechaHasta', 'produccionDesde', 'produccionHasta'));
     }
 
     public function show(Pedido $pedido): View

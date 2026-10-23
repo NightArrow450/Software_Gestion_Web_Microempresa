@@ -79,7 +79,7 @@ class ListaGeneralPreparacionTest extends TestCase
         ]);
     }
 
-    public function test_lista_muestra_tres_columnas_y_desglose_de_unidades_fisicas_por_empaque(): void
+    public function test_lista_muestra_demanda_stock_produccion_y_desglose_de_unidades_fisicas_por_empaque(): void
     {
         $usuario = $this->usuario();
         $presentacion = $this->presentacion('LEJ-5L', 4);
@@ -89,7 +89,9 @@ class ListaGeneralPreparacionTest extends TestCase
             ->assertOk()
             ->assertSee('Presentación')
             ->assertSee('Ver detalle de empaques y unidades')
-            ->assertSee('Total de unidades')
+            ->assertSee('Unidades solicitadas pendientes')
+            ->assertSee('Stock disponible')
+            ->assertSee('Envasado neto registrado')
             ->assertSee('3 empaques')
             ->assertSee('3 empaques de 4')
             ->assertSee('>12</strong>', false);
@@ -143,7 +145,7 @@ class ListaGeneralPreparacionTest extends TestCase
             ->assertSee('SKU-HISTORICO')
             ->assertSee('2 empaques')
             ->assertSee('No disponible')
-            ->assertSee('esta lista no representa producción ni stock disponible')
+            ->assertSee('disponer de stock no significa haber registrado un envasado')
             ->assertSee('catálogo actual');
     }
 
