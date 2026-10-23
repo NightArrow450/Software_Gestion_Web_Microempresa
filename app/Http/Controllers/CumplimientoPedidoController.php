@@ -38,12 +38,12 @@ class CumplimientoPedidoController extends Controller
     {
         $filtros = $request->validate([
             'fecha_desde' => ['nullable', 'date_format:Y-m-d'],
-            'fecha_hasta' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:fecha_desde'],
+            'fecha_hasta' => ['nullable', 'date_format:Y-m-d', ...($request->filled('fecha_desde') ? ['after_or_equal:fecha_desde'] : [])],
             'produccion_desde' => ['nullable', 'date_format:Y-m-d'],
             'produccion_hasta' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:produccion_desde'],
         ]);
-        $fechaDesde = $filtros['fecha_desde'] ?? now('America/Lima')->toDateString();
-        $fechaHasta = $filtros['fecha_hasta'] ?? null;
+        $fechaDesde = $filtros['fecha_desde'] ?? null;
+        $fechaHasta = array_key_exists('fecha_hasta', $filtros) ? $filtros['fecha_hasta'] : now('America/Lima')->toDateString();
         $produccionDesde = $filtros['produccion_desde'] ?? now('America/Lima')->toDateString();
         $produccionHasta = $filtros['produccion_hasta'] ?? now('America/Lima')->toDateString();
         if ($produccionHasta < $produccionDesde) {
@@ -53,7 +53,7 @@ class CumplimientoPedidoController extends Controller
         $pedidos = Pedido::query()
             ->with(['detalles.presentacion.producto', 'detalles.presentacion.variante'])
             ->whereIn('estado', ['confirmado', 'en_preparacion'])
-            ->whereDate('fecha_entrega', '>=', $fechaDesde)
+            ->when($fechaDesde !== null, fn ($q) => $q->whereDate('fecha_entrega', '>=', $fechaDesde))
             ->when($fechaHasta !== null, fn ($q) => $q->whereDate('fecha_entrega', '<=', $fechaHasta))
             ->orderBy('fecha_entrega')
             ->orderBy('id')

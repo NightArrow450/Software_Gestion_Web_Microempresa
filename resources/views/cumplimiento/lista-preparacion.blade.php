@@ -17,9 +17,9 @@
     <section class="cumplimiento-tarjeta cumplimiento-no-imprimir" aria-label="Filtros de entrega">
         <form method="GET" action="{{ route('cumplimiento.lista-preparacion') }}" class="cumplimiento-filtros">
             <div>
-                <label for="fecha_desde"><strong>Entrega desde</strong></label>
+                <label for="fecha_desde"><strong>Entrega desde (opcional)</strong></label>
                 <input class="form-control" type="date" name="fecha_desde" id="fecha_desde"
-                       value="{{ $fechaDesde }}" required>
+                       value="{{ $fechaDesde }}">
             </div>
             <div>
                 <label for="fecha_hasta"><strong>Entrega hasta (opcional)</strong></label>
@@ -43,8 +43,9 @@
             </div>
         @endif
     </section>
-    <p class="cumplimiento-rango">Entrega desde <strong>{{ \Carbon\Carbon::parse($fechaDesde)->format('d/m/Y') }}</strong>
-        @if($fechaHasta) hasta <strong>{{ \Carbon\Carbon::parse($fechaHasta)->format('d/m/Y') }}</strong> @endif
+    <p class="cumplimiento-rango">Entrega: @if($fechaDesde) desde <strong>{{ \Carbon\Carbon::parse($fechaDesde)->format('d/m/Y') }}</strong> @else sin límite inicial (incluye atrasados) @endif
+        @if($fechaHasta) hasta <strong>{{ \Carbon\Carbon::parse($fechaHasta)->format('d/m/Y') }}</strong> @else sin límite final @endif.
+        Vista diaria predeterminada: atrasados y entregas de hoy. Amplía «Entrega hasta» para incluir futuros; borra ambos límites para consultar todos los pendientes.
     </p>
 
     <div class="cumplimiento-nota" role="note">

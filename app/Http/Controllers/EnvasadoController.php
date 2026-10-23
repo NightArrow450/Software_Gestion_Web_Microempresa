@@ -72,12 +72,14 @@ class EnvasadoController extends Controller
         }
         abort_unless($request->user()->loadMissing('role.permisos')->role?->permisos->contains('nombre', 'pedidos.ver'), 403);
 
-        return $request->validate([
-            'fecha_desde' => ['required', 'date_format:Y-m-d'],
-            'fecha_hasta' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:fecha_desde'],
+        $filtros = $request->validate([
+            'fecha_desde' => ['nullable', 'date_format:Y-m-d'],
+            'fecha_hasta' => ['nullable', 'date_format:Y-m-d', ...($request->filled('fecha_desde') ? ['after_or_equal:fecha_desde'] : [])],
             'produccion_desde' => ['required', 'date_format:Y-m-d'],
             'produccion_hasta' => ['required', 'date_format:Y-m-d', 'after_or_equal:produccion_desde'],
         ]);
+
+        return array_map(fn (?string $valor): string => $valor ?? '', $filtros);
     }
 
     public function show(Envasado $envasado): View

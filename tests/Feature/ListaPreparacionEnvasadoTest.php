@@ -219,4 +219,23 @@ class ListaPreparacionEnvasadoTest extends TestCase
         $this->assertDatabaseCount('envasados', 0);
         $this->assertDatabaseCount('movimientos_inventario', 0);
     }
+
+    public function test_registro_conserva_consulta_sin_limites_y_muestra_atrasados_en_preparacion(): void
+    {
+        $e = $this->escenarioEnvasado();
+        $atrasado = $this->pedidoEnvasado($e, 'en_preparacion');
+        $atrasado->update(['fecha_entrega' => today()->subDays(10)]);
+        $futuro = $this->pedidoEnvasado($e);
+        $futuro->update(['fecha_entrega' => today()->addDays(30)]);
+        $this->actingAs($e['usuario']);
+        $this->assertSame(5, $this->fila()['total_unidades']);
+        $datos = $this->datosIntegrados($e);
+        $datos['fecha_desde'] = '';
+        $datos['fecha_hasta'] = '';
+        $destino = route('cumplimiento.lista-preparacion', array_intersect_key($datos, array_flip(['fecha_desde', 'fecha_hasta', 'produccion_desde', 'produccion_hasta'])));
+        $this->post(route('envasado.store'), $datos)->assertRedirect($destino);
+        $respuesta = $this->get($destino)->assertOk();
+        $this->assertSame(10, $respuesta->viewData('filas')->first()['total_unidades']);
+        $this->assertSame('en_preparacion', $atrasado->fresh()->estado);
+    }
 }
