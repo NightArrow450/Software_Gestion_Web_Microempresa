@@ -10,4 +10,7 @@
 .entrega-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }.entrega-formulario .btn,.entrega-panel summary { min-height:44px; white-space:normal; }
 .entrega-panel summary { cursor:pointer; color:#046944; font-weight:600; padding:12px 0; }.entrega-historial { padding-left:20px; }.entrega-historial li { padding:12px 0; border-bottom:1px solid #dce5df; }
 .entrega-tabla { width:100%; border-collapse:collapse; }.entrega-tabla th,.entrega-tabla td { text-align:left; padding:10px; border-bottom:1px solid #dce5df; }
+.entrega-tabla th { overflow-wrap:normal; }
+@media screen and (min-width:651px) { .entrega-tabla { min-width:800px; }.entrega-tabla th:first-child { min-width:180px; }.entrega-tabla th:nth-child(2) { min-width:130px; } }
 @media(max-width:650px) { .entrega-panel { padding:14px; }.entrega-cifras { grid-template-columns:repeat(2,minmax(0,1fr)); }.entrega-grid { grid-template-columns:1fr; }.entrega-formulario .btn { width:100%; } }
+@media screen and (max-width:650px) { .entrega-tabla.mobile-cards td { grid-template-columns:minmax(0,3fr) minmax(0,2fr); }.entrega-tabla.mobile-cards td[data-label]::before { overflow-wrap:normal; } }

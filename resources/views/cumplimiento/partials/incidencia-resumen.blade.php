@@ -31,9 +31,17 @@
     @endif
     @if($resumenEntrega['retornos']->isNotEmpty())
         <h3>Recepciones físicas y aprobaciones</h3>
-        <div class="table-container"><table class="entrega-tabla"><thead><tr><th>Recepción / línea</th><th>Fecha del hecho</th><th>Aptas</th><th>Dañadas</th><th>En evaluación</th><th>No recuperadas</th><th>Reincorporadas</th></tr></thead><tbody>
+        <div class="table-container"><table class="entrega-tabla mobile-cards"><thead><tr><th>Recepción / línea</th><th>Fecha del hecho</th><th>Aptas</th><th>Dañadas</th><th>En evaluación</th><th>No recuperadas</th><th>Reincorporadas</th></tr></thead><tbody>
             @foreach($resumenEntrega['retornos'] as $retorno)
-                <tr><td>N.º {{ $retorno->retorno_id }} · {{ $resumenEntrega['lineas'][$retorno->pedido_detalle_id]['sku'] ?? 'Línea histórica' }}</td><td>{{ \Carbon\Carbon::parse($retorno->ocurrido_en)->timezone('America/Lima')->format('d/m/Y H:i') }}</td><td>{{ $retorno->aptas + $retorno->revisadas_aptas }}</td><td>{{ $retorno->danadas + $retorno->revisadas_danadas }}</td><td>{{ $retorno->en_revision - $retorno->revisadas_aptas - $retorno->revisadas_danadas }}</td><td>{{ $retorno->no_recuperadas }}</td><td>{{ $retorno->reincorporadas }}</td></tr>
+                <tr>
+                    <td data-label="Recepción / línea">N.º {{ $retorno->retorno_id }} · {{ $resumenEntrega['lineas'][$retorno->pedido_detalle_id]['sku'] ?? 'Línea histórica' }}</td>
+                    <td data-label="Fecha del hecho">{{ \Carbon\Carbon::parse($retorno->ocurrido_en)->timezone('America/Lima')->format('d/m/Y H:i') }}</td>
+                    <td data-label="Aptas">{{ $retorno->aptas + $retorno->revisadas_aptas }}</td>
+                    <td data-label="Dañadas">{{ $retorno->danadas + $retorno->revisadas_danadas }}</td>
+                    <td data-label="En evaluación">{{ $retorno->en_revision - $retorno->revisadas_aptas - $retorno->revisadas_danadas }}</td>
+                    <td data-label="No recuperadas">{{ $retorno->no_recuperadas }}</td>
+                    <td data-label="Reincorporadas">{{ $retorno->reincorporadas }}</td>
+                </tr>
             @endforeach
         </tbody></table></div>
     @endif
