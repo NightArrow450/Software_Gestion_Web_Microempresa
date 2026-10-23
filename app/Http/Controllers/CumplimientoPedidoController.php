@@ -6,6 +6,8 @@ use App\Models\ConfiguracionEnvasado;
 use App\Models\Envasado;
 use App\Models\Inventario;
 use App\Models\Pedido;
+use App\Services\ControlEntregaPedido;
+use App\Services\RegistrarResultadoEntrega;
 use App\Services\TransicionesPedido;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
@@ -17,7 +19,7 @@ class CumplimientoPedidoController extends Controller
 {
     public function index(Request $request): View
     {
-        $estados = ['confirmado', 'en_preparacion', 'listo_despacho', 'despachado', 'entregado'];
+        $estados = ['confirmado', 'en_preparacion', 'listo_despacho', ...ControlEntregaPedido::ESTADOS];
         $estado = (string) $request->query('estado', '');
         if (! in_array($estado, $estados, true)) {
             $estado = '';
@@ -167,7 +169,10 @@ class CumplimientoPedidoController extends Controller
             'historialEstados' => fn ($q) => $q->with('usuario')->orderBy('id'),
         ]);
 
-        return view('cumplimiento.show', compact('pedido'));
+        $controlEntrega = app(ControlEntregaPedido::class);
+        $resumenEntrega = $controlEntrega->disponible() ? $controlEntrega->resumen($pedido) : null;
+
+        return view('cumplimiento.show', compact('pedido', 'resumenEntrega'));
     }
 
     public function iniciarPreparacion(
@@ -227,20 +232,14 @@ class CumplimientoPedidoController extends Controller
     public function entregar(
         Request $request,
         Pedido $pedido,
-        TransicionesPedido $transiciones
+        RegistrarResultadoEntrega $resultado
     ): RedirectResponse {
         $datos = $request->validate([
             'observacion_entrega' => ['nullable', 'string', 'max:1000'],
         ]);
 
         $observacion = trim((string) ($datos['observacion_entrega'] ?? ''));
-        $transiciones->registrar(
-            $pedido, 'despachado', 'entregado', $request->user()->id,
-            ['entregado_por_id' => $request->user()->id,
-                'entregado_en' => now(),
-                'observacion_entrega' => $observacion !== '' ? $observacion : null],
-            $observacion !== '' ? $observacion : 'Entrega confirmada.'
-        );
+        $resultado->ejecutar($pedido, ['observaciones' => $observacion !== '' ? $observacion : null], $request->user(), completa: true);
 
         return redirect()->route('cumplimiento.show', $pedido)
             ->with('success', 'Entrega confirmada correctamente.');

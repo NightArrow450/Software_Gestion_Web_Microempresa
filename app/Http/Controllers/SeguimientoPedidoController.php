@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\EstadoPedido;
 use App\Models\Pedido;
+use App\Services\ControlEntregaPedido;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 /**
@@ -36,7 +39,10 @@ class SeguimientoPedidoController extends Controller
         // Datos en pedidos del Sprint 2 y fechas logísticas del Sprint 4.
         $pedido->load(['cliente', 'vendedor']);
 
-        return view('seguimiento.show', compact('pedido'));
+        $controlEntrega = app(ControlEntregaPedido::class);
+        $resumenEntrega = $controlEntrega->disponible() ? $controlEntrega->resumen($pedido) : null;
+
+        return view('seguimiento.show', compact('pedido', 'resumenEntrega'));
     }
 
     public function trazabilidad(Pedido $pedido): View
@@ -47,7 +53,10 @@ class SeguimientoPedidoController extends Controller
                 ->orderBy('created_at')->orderBy('id'),
         ]);
 
-        return view('seguimiento.trazabilidad', compact('pedido'));
+        $controlEntrega = app(ControlEntregaPedido::class);
+        $resumenEntrega = $controlEntrega->disponible() ? $controlEntrega->resumen($pedido) : null;
+
+        return view('seguimiento.trazabilidad', compact('pedido', 'resumenEntrega'));
     }
 
     public function historial(Request $request): View
@@ -56,7 +65,7 @@ class SeguimientoPedidoController extends Controller
             'fecha_desde' => ['nullable', 'date_format:Y-m-d'],
             'fecha_hasta' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:fecha_desde'],
             'cliente' => ['nullable', 'string', 'max:180'],
-            'estado' => ['nullable', 'in:registrado,observado,confirmado,cancelado,en_preparacion,listo_despacho,despachado,entregado'],
+            'estado' => ['nullable', Rule::in(array_keys(EstadoPedido::etiquetas()))],
         ]);
 
         $filtros = [
@@ -74,12 +83,7 @@ class SeguimientoPedidoController extends Controller
             ->orderByDesc('fecha_pedido')->orderByDesc('id')
             ->paginate(15)->withQueryString();
 
-        $estados = [
-            'registrado' => 'Registrado', 'observado' => 'Observado',
-            'confirmado' => 'Confirmado', 'cancelado' => 'Cancelado',
-            'en_preparacion' => 'En preparación', 'listo_despacho' => 'Listo para despacho',
-            'despachado' => 'Despachado', 'entregado' => 'Entregado',
-        ];
+        $estados = EstadoPedido::etiquetas();
 
         return view('seguimiento.historial', compact('pedidos', 'filtros', 'estados'));
     }

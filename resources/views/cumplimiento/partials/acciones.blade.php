@@ -31,6 +31,8 @@
             <textarea id="observacion_entrega" name="observacion_entrega" maxlength="1000" class="form-control" rows="3">{{ old('observacion_entrega') }}</textarea>
             <button type="submit" class="btn btn-primary" onclick="return confirm('¿Confirmar que el cliente recibió el pedido?')">Confirmar entrega</button>
         </form>
+    @elseif(in_array($pedido->estado, ['entrega_pendiente', 'entrega_parcial', 'rechazado'], true))
+        <p class="cumplimiento-nota">Consulta el resultado por línea y registra los retornos o revisiones en las secciones de este pedido.</p>
     @elseif($pedido->estado === 'entregado')
         <p class="cumplimiento-nota">Pedido entregado. No se puede registrar la entrega dos veces.</p>
     @else

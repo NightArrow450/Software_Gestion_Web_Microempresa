@@ -129,5 +129,6 @@ class DescontarInventarioPorDespacho
                 'motivo' => 'Salida automática por despacho del pedido N.º '.$pedido->numero.'.',
             ]);
         }
+        app(ControlEntregaPedido::class)->fotografiarDespacho($pedido, $usuarioId);
     }
 }
