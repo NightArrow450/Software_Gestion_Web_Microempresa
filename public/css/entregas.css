@@ -1,0 +1,13 @@
+.entrega-panel { background:#fff; border:1px solid #dce5df; border-radius:12px; padding:20px; margin:20px 0; overflow-wrap:anywhere; }
+.entrega-panel h2,.entrega-panel h3 { font-weight:700; margin:8px 0; }
+.entrega-panel p { margin:8px 0; }
+.entrega-linea { border-top:1px solid #dce5df; padding:14px 0; }
+.entrega-cifras { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin:12px 0; }
+.entrega-cifras dt { font-size:13px; color:#475569; }.entrega-cifras dd { font-size:19px; font-weight:700; }
+.entrega-aviso { padding:12px; background:#fff7e6; border-left:3px solid #b7791f; }
+.entrega-formulario { display:grid; gap:12px; margin:14px 0; }.entrega-formulario fieldset { padding:12px; border:1px solid #dce5df; min-width:0; }
+.entrega-formulario label { display:grid; gap:6px; }.entrega-formulario input,.entrega-formulario textarea { font-size:16px; min-height:44px; max-width:100%; min-width:0; border:1px solid #cbd5e1; border-radius:6px; padding:8px; }
+.entrega-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }.entrega-formulario .btn,.entrega-panel summary { min-height:44px; white-space:normal; }
+.entrega-panel summary { cursor:pointer; color:#046944; font-weight:600; padding:12px 0; }.entrega-historial { padding-left:20px; }.entrega-historial li { padding:12px 0; border-bottom:1px solid #dce5df; }
+.entrega-tabla { width:100%; border-collapse:collapse; }.entrega-tabla th,.entrega-tabla td { text-align:left; padding:10px; border-bottom:1px solid #dce5df; }
+@media(max-width:650px) { .entrega-panel { padding:14px; }.entrega-cifras { grid-template-columns:repeat(2,minmax(0,1fr)); }.entrega-grid { grid-template-columns:1fr; }.entrega-formulario .btn { width:100%; } }

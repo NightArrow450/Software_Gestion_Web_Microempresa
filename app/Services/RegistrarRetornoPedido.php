@@ -41,12 +41,13 @@ class RegistrarRetornoPedido
             if ($filas === []) {
                 throw ValidationException::withMessages(['detalles' => 'Indica al menos una unidad recibida o declarada no recuperada.']);
             }
-            $id = DB::table('retornos_pedido')->insertGetId(['incidencia_id' => $incidencia->id, 'usuario_id' => $usuario->id, 'ocurrido_en' => $datos['ocurrido_en'] ?? now(), 'observaciones' => $datos['observaciones'], 'created_at' => now()]);
+            $ocurridoEn = $this->control->fechaDelHecho($datos['ocurrido_en'] ?? null);
+            $id = DB::table('retornos_pedido')->insertGetId(['incidencia_id' => $incidencia->id, 'usuario_id' => $usuario->id, 'ocurrido_en' => $ocurridoEn, 'observaciones' => $datos['observaciones'], 'created_at' => now()]);
             foreach ($filas as $fila) {
                 DB::table('retorno_pedido_detalles')->insert(array_intersect_key($fila, array_flip(['pedido_detalle_id', 'aptas', 'danadas', 'en_revision', 'no_recuperadas'])) + ['retorno_id' => $id]);
             }
-            $this->control->evento($incidencia->id, $usuario->id, 'retorno_registrado', $datos['observaciones'], ['retorno_id' => $id, 'detalles' => $filas, 'ocurrido_en' => $datos['ocurrido_en'] ?? now()->toDateTimeString()]);
-            $this->control->avanzar($incidencia->id, 'retorno_registrado');
+            $this->control->evento($incidencia->id, $usuario->id, 'retorno_registrado', $datos['observaciones'], ['retorno_id' => $id, 'detalles' => $filas, 'ocurrido_en' => $ocurridoEn]);
+            $this->control->avanzar($incidencia->id, 'retorno_registrado', ['pedido_id' => $actual->id, 'motivo' => $datos['observaciones']]);
         }, 3);
     }
 }

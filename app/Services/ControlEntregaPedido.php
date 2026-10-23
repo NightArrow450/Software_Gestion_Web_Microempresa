@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Pedido;
 use App\Models\PresentacionProducto;
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use stdClass;
@@ -93,7 +94,7 @@ class ControlEntregaPedido
         unset($linea);
         $eventos = $incidencia && ! $actual ? DB::table('incidencia_entrega_eventos as e')->join('users as u', 'u.id', '=', 'e.usuario_id')->where('e.incidencia_id', $incidencia->id)->orderBy('e.id')->get(['e.*', 'u.first_name', 'u.last_name']) : collect();
 
-        return ['incidencia' => $incidencia, 'version' => (int) ($incidencia?->version ?? 0), 'lineas' => $lineas, 'retornos' => $retornos, 'eventos' => $eventos];
+        return ['historico_sin_desglose' => $pedido->estado === 'entregado' && $resultados->isEmpty(), 'incidencia' => $incidencia, 'version' => (int) ($incidencia?->version ?? 0), 'lineas' => $lineas, 'retornos' => $retornos, 'eventos' => $eventos];
     }
 
     public function evento(int $incidenciaId, int $usuarioId, string $tipo, string $motivo, array $datos): int
@@ -101,9 +102,14 @@ class ControlEntregaPedido
         return DB::table('incidencia_entrega_eventos')->insertGetId(['incidencia_id' => $incidenciaId, 'usuario_id' => $usuarioId, 'tipo' => $tipo, 'motivo' => $motivo, 'datos' => json_encode($datos, JSON_THROW_ON_ERROR), 'created_at' => now()]);
     }
 
-    public function avanzar(int $incidenciaId, string $accion): void
+    public function fechaDelHecho(?string $fecha): string
+    {
+        return ($fecha === null ? CarbonImmutable::now('America/Lima') : CarbonImmutable::parse($fecha, 'America/Lima')->setTimezone('America/Lima'))->toDateTimeString();
+    }
+
+    public function avanzar(int $incidenciaId, string $accion, array $detalle = []): void
     {
         DB::table('incidencias_entrega')->where('id', $incidenciaId)->update(['version' => DB::raw('version + 1'), 'updated_at' => now()]);
-        RegistroAuditoria::registrar($accion, 'incidencia_entrega', $incidenciaId, ['campos' => ['expediente', 'cantidades', 'historial']]);
+        RegistroAuditoria::registrar($accion, 'incidencia_entrega', $incidenciaId, $detalle + ['campos' => ['expediente', 'cantidades', 'historial']]);
     }
 }

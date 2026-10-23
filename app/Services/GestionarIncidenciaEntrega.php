@@ -54,7 +54,7 @@ class GestionarIncidenciaEntrega
                 DB::table('incidencias_entrega')->where('id', $incidencia->id)->update(['estado_revision' => 'revisada']);
             }
             $this->control->evento($incidencia->id, $usuario->id, 'incidencia_'.$accion, $datos['motivo'], $datos);
-            $this->control->avanzar($incidencia->id, 'incidencia_'.$accion);
+            $this->control->avanzar($incidencia->id, 'incidencia_'.$accion, ['pedido_id' => $actual->id, 'motivo' => $datos['motivo']]);
         }, 3);
     }
 }

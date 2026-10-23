@@ -3,17 +3,18 @@
 namespace App\Console\Commands;
 
 use App\Models\Pedido;
+use App\Services\ControlEntregaPedido;
 use Illuminate\Console\Command;
 
 class RevisarDespachosPrevios extends Command
 {
     protected $signature = 'inventario:revisar-despachos-previos';
 
-    protected $description = 'Lista pedidos despachados o entregados sin movimientos de salida vinculados, sin modificar datos';
+    protected $description = 'Lista pedidos con despacho, incluidos resultados parciales y rechazos sin movimientos de salida vinculados, sin modificar datos';
 
     public function handle(): int
     {
-        $pedidos = Pedido::query()->whereIn('estado', ['despachado', 'entregado'])
+        $pedidos = Pedido::query()->whereIn('estado', ControlEntregaPedido::ESTADOS)
             ->whereNotExists(function ($query) {
                 $query->selectRaw('1')->from('movimientos_inventario')->whereColumn('pedido_id', 'pedidos.id')->where('tipo', 'salida');
             })->orderBy('id')->get(['id', 'estado']);

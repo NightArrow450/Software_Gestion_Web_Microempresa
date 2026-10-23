@@ -157,6 +157,12 @@ return [
     'ulid' => 'El campo :attribute debe ser un identificador ULID válido.',
     'uuid' => 'El campo :attribute debe ser un identificador UUID válido.',
     'attributes' => [
+        'ocurrido_en' => 'fecha y hora del hecho', 'retorno_detalle_id' => 'línea del retorno',
+        'aptas' => 'unidades aptas', 'danadas' => 'unidades dañadas',
+        'detalles.*.pedido_detalle_id' => 'línea del pedido', 'detalles.*.aceptadas' => 'unidades aceptadas',
+        'detalles.*.rechazadas' => 'unidades rechazadas', 'detalles.*.motivo' => 'motivo del rechazo',
+        'detalles.*.aptas' => 'unidades aptas recibidas', 'detalles.*.danadas' => 'unidades dañadas recibidas',
+        'detalles.*.en_revision' => 'unidades recibidas en evaluación', 'detalles.*.no_recuperadas' => 'unidades no recuperadas',
         'configuracion_envasado_id' => 'alternativa de envasado', 'version_configuracion' => 'versión de la configuración',
         'version' => 'versión', 'materiales' => 'materiales físicos', 'materiales.*.insumo_id' => 'insumo',
         'materiales.*.cantidad_por_unidad' => 'consumo por unidad o empaque', 'materiales.*.base_consumo' => 'base de consumo',

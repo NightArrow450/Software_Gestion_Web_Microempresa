@@ -35,6 +35,9 @@ class RegistrarResultadoEntrega
                 throw ValidationException::withMessages(['estado' => 'Ya hay resultados por línea. Registra únicamente las unidades pendientes.']);
             }
             $resumen = $this->control->resumen($actual, true);
+            if ($resumen['historico_sin_desglose'] || in_array(null, array_column($resumen['lineas'], 'despachadas'), true)) {
+                throw ValidationException::withMessages(['detalles' => 'No se puede reconstruir el desglose histórico con certeza. Documenta la incidencia para revisión sin inventar cantidades.']);
+            }
             $lineas = $completa ? array_map(fn (array $linea): array => ['pedido_detalle_id' => $linea['id'], 'aceptadas' => $linea['despachadas'], 'rechazadas' => 0], $resumen['lineas']) : $datos['detalles'];
             $cambios = [];
             foreach ($lineas as $linea) {
@@ -55,7 +58,8 @@ class RegistrarResultadoEntrega
             if ($cambios === [] || (array_sum(array_column($cambios, 'aceptadas')) === 0 && array_sum(array_column($cambios, 'rechazadas')) === 0 && mb_strlen(trim($datos['observaciones'] ?? '')) < 10)) {
                 throw ValidationException::withMessages(['detalles' => 'Registra cantidades o explica por qué la entrega sigue pendiente (mínimo 10 caracteres).']);
             }
-            $id = DB::table('entregas_pedido')->insertGetId(['incidencia_id' => $incidencia->id, 'usuario_id' => $usuario->id, 'tipo' => $rectificar ? 'rectificacion' : 'resultado', 'ocurrido_en' => $datos['ocurrido_en'] ?? now(), 'observaciones' => $datos['observaciones'] ?? null, 'created_at' => now()]);
+            $ocurridoEn = $this->control->fechaDelHecho($datos['ocurrido_en'] ?? null);
+            $id = DB::table('entregas_pedido')->insertGetId(['incidencia_id' => $incidencia->id, 'usuario_id' => $usuario->id, 'tipo' => $rectificar ? 'rectificacion' : 'resultado', 'ocurrido_en' => $ocurridoEn, 'observaciones' => $datos['observaciones'] ?? null, 'created_at' => now()]);
             foreach ($cambios as $cambio) {
                 DB::table('entrega_pedido_detalles')->insert($cambio + ['entrega_id' => $id]);
             }
@@ -66,8 +70,8 @@ class RegistrarResultadoEntrega
             $estado = $pendientes > 0 ? 'entrega_pendiente' : ($rechazadas === 0 ? 'entregado' : ($aceptadas === 0 ? 'rechazado' : 'entrega_parcial'));
             $adicionales = $estado === 'entregado' ? ['entregado_por_id' => $actual->entregado_por_id ?? $usuario->id, 'entregado_en' => $actual->entregado_en ?? now(), 'observacion_entrega' => $datos['observaciones'] ?? null] : [];
             $this->transiciones->registrar($actual, $actual->estado, $estado, $usuario->id, $adicionales, $datos['observaciones'] ?? ($rectificar ? 'Rectificación autorizada de entrega.' : 'Resultado de entrega por líneas.'));
-            $this->control->evento($incidencia->id, $usuario->id, $rectificar ? 'rectificacion_entrega' : 'resultado_entrega', $datos['observaciones'] ?? 'Registro del resultado; no modifica existencias.', ['entrega_id' => $id, 'detalles' => $cambios]);
-            $this->control->avanzar($incidencia->id, $rectificar ? 'entrega_rectificada' : 'entrega_registrada');
+            $this->control->evento($incidencia->id, $usuario->id, $rectificar ? 'rectificacion_entrega' : 'resultado_entrega', $datos['observaciones'] ?? 'Registro del resultado; no modifica existencias.', ['entrega_id' => $id, 'detalles' => $cambios, 'ocurrido_en' => $ocurridoEn]);
+            $this->control->avanzar($incidencia->id, $rectificar ? 'entrega_rectificada' : 'entrega_registrada', ['pedido_id' => $actual->id, 'motivo' => $datos['observaciones'] ?? null]);
         }, 3);
     }
 }

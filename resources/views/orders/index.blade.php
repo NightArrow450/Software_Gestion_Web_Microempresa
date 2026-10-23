@@ -16,7 +16,7 @@
     <div class="filters-grid">
         <div class="form-group"><label class="form-label" for="search">Cliente o número de pedido</label><input class="form-control" id="search" name="search" value="{{ request('search') }}" placeholder="Nombre, teléfono, 000001..."></div>
         <div class="form-group"><label class="form-label" for="estado">Estado</label><select class="form-control" id="estado" name="estado">
-            <option value="">Todos</option>@foreach(['registrado'=>'Registrado','observado'=>'Observado','confirmado'=>'Confirmado','cancelado'=>'Cancelado'] as $clave=>$etiqueta)
+            <option value="">Todos</option>@foreach(\App\EstadoPedido::etiquetas() as $clave=>$etiqueta)
                 <option value="{{ $clave }}" @selected(request('estado') === $clave)>{{ $etiqueta }}</option>@endforeach</select></div>
         <div class="form-group"><label class="form-label" for="fecha_entrega">Fecha de entrega</label><input class="form-control" type="date" id="fecha_entrega" name="fecha_entrega" value="{{ request('fecha_entrega') }}"></div>
     </div><div class="s2-actions"><button class="btn btn-primary" type="submit"><span class="material-symbols-outlined">filter_alt</span> Aplicar filtros</button><a class="btn btn-secondary" href="{{ route('pedidos.index') }}">Limpiar</a></div>

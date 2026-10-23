@@ -21,6 +21,9 @@ class AprobarRetornoPedido
         $datos = Validator::make($entrada, ['version' => ['required', 'integer', 'min:0'], 'retorno_detalle_id' => ['required', 'integer'], 'cantidad' => ['required', 'integer', 'min:1', 'max:10000000'], 'motivo' => ['required', 'string', 'min:10', 'max:1000']])->validate();
         DB::transaction(function () use ($pedido, $datos, $usuario): void {
             $actual = Pedido::whereKey($pedido->id)->lockForUpdate()->firstOrFail();
+            if (! in_array($actual->estado, ControlEntregaPedido::ESTADOS, true)) {
+                throw ValidationException::withMessages(['estado' => 'El pedido todavía no ha sido despachado.']);
+            }
             $incidencia = $this->control->bloquear($actual, (int) $datos['version']);
             $resumen = $this->control->resumen($actual, true);
             $retorno = $resumen['retornos']->firstWhere('id', (int) $datos['retorno_detalle_id']);
@@ -39,7 +42,7 @@ class AprobarRetornoPedido
             $inventario->update(['cantidad_actual' => $anterior + $cantidad]);
             MovimientoInventario::create(['presentacion_producto_id' => $presentacion->id, 'usuario_id' => $usuario->id, 'pedido_id' => null, 'origen_tipo' => 'retorno_pedido', 'origen_id' => (string) $eventoId, 'tipo' => 'entrada', 'cantidad' => $cantidad, 'stock_anterior' => $anterior, 'stock_nuevo' => $anterior + $cantidad, 'motivo' => 'Retorno físico aprobado del pedido '.$actual->numero.': '.$datos['motivo']]);
             DB::table('retorno_pedido_detalles')->where('id', $retorno->id)->increment('reincorporadas', $cantidad);
-            $this->control->avanzar($incidencia->id, 'retorno_aprobado');
+            $this->control->avanzar($incidencia->id, 'retorno_aprobado', ['pedido_id' => $actual->id, 'cantidad' => $cantidad, 'stock_anterior' => $anterior, 'stock_nuevo' => $anterior + $cantidad, 'motivo' => $datos['motivo']]);
         }, 3);
     }
 }

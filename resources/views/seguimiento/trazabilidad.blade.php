@@ -31,4 +31,10 @@
         @endforelse
     </ol>
 </section>
+
+@if(in_array($pedido->estado, \App\Services\ControlEntregaPedido::ESTADOS, true))
+    @include('cumplimiento.partials.incidencia-resumen')
+@endif
 @endsection
+
+@push('styles')<link rel="stylesheet" href="{{ asset('css/entregas.css') }}">@endpush

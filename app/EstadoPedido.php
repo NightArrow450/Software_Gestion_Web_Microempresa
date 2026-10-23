@@ -16,6 +16,20 @@ enum EstadoPedido: string
     case Entregado = 'entregado';
     case Cancelado = 'cancelado';
 
+    /** @return array<string, string> */
+    public static function etiquetas(): array
+    {
+        $etiquetas = [];
+        foreach (self::cases() as $estado) {
+            $etiquetas[$estado->value] = match ($estado) {
+                self::EnPreparacion => 'En preparación', self::ListoDespacho => 'Listo para despacho',
+                default => ucfirst(str_replace('_', ' ', $estado->value)),
+            };
+        }
+
+        return $etiquetas;
+    }
+
     public function permite(self $destino): bool
     {
         if ($this === self::Entregado && $destino === self::Entregado) {

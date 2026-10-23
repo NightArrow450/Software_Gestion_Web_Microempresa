@@ -6,6 +6,7 @@ use App\Models\ConfiguracionEnvasado;
 use App\Models\Envasado;
 use App\Models\Inventario;
 use App\Models\Pedido;
+use App\Services\ControlEntregaPedido;
 use App\Services\RegistrarResultadoEntrega;
 use App\Services\TransicionesPedido;
 use Carbon\CarbonImmutable;
@@ -18,7 +19,7 @@ class CumplimientoPedidoController extends Controller
 {
     public function index(Request $request): View
     {
-        $estados = ['confirmado', 'en_preparacion', 'listo_despacho', 'despachado', 'entregado'];
+        $estados = ['confirmado', 'en_preparacion', 'listo_despacho', ...ControlEntregaPedido::ESTADOS];
         $estado = (string) $request->query('estado', '');
         if (! in_array($estado, $estados, true)) {
             $estado = '';
@@ -168,7 +169,9 @@ class CumplimientoPedidoController extends Controller
             'historialEstados' => fn ($q) => $q->with('usuario')->orderBy('id'),
         ]);
 
-        return view('cumplimiento.show', compact('pedido'));
+        $resumenEntrega = app(ControlEntregaPedido::class)->resumen($pedido);
+
+        return view('cumplimiento.show', compact('pedido', 'resumenEntrega'));
     }
 
     public function iniciarPreparacion(
