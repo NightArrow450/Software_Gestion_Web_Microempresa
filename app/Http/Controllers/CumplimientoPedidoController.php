@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ConfiguracionEnvasado;
 use App\Models\Envasado;
 use App\Models\Inventario;
 use App\Models\Pedido;
@@ -152,7 +153,11 @@ class CumplimientoPedidoController extends Controller
             return $fila;
         })->groupBy('producto_clave')->flatMap(fn ($grupo) => $grupo->sortBy([['dimension', 'asc'], ['capacidad', 'asc']]))->values();
 
-        return view('cumplimiento.lista-preparacion', compact('filas', 'fechaDesde', 'fechaHasta', 'produccionDesde', 'produccionHasta'));
+        $permisos = $request->user()->loadMissing('role.permisos')->role?->permisos;
+        $puedeRegistrar = $permisos?->contains('nombre', 'envasado.ver') && $permisos?->contains('nombre', 'envasado.registrar');
+        $configuraciones = $puedeRegistrar ? ConfiguracionEnvasado::whereIn('presentacion_producto_id', $ids)->where('estado', true)->orderBy('nombre')->get() : collect();
+
+        return view('cumplimiento.lista-preparacion', compact('filas', 'fechaDesde', 'fechaHasta', 'produccionDesde', 'produccionHasta', 'puedeRegistrar', 'configuraciones', 'pedidos'));
     }
 
     public function show(Pedido $pedido): View

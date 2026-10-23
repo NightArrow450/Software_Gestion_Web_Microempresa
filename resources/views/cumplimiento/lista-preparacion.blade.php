@@ -64,7 +64,7 @@
 
     <section class="cumplimiento-tarjeta">
         <div class="table-container">
-            <table class="cumplimiento-tabla">
+            <table class="cumplimiento-tabla cumplimiento-lista">
                 <thead>
                     <tr>
                         <th scope="col">Producto</th>
@@ -81,7 +81,7 @@
                         <tr class="cumplimiento-grupo-producto"><th colspan="6" scope="rowgroup">{{ $fila['producto'] }}</th></tr>
                     @endif
                     <tr>
-                        <td>
+                        <td data-label="Producto">
                             <strong>{{ $fila['producto'] }}</strong>
                             @if($fila['variante'])<small class="cumplimiento-sku">Variante: {{ $fila['variante'] }}</small>@endif
                             <small class="cumplimiento-sku">SKU: {{ implode(', ', $fila['skus']) }}</small>
@@ -97,22 +97,27 @@
                                 </ul>
                             </details>
                         </td>
-                        <td>{{ $fila['presentacion'] }}@if($fila['envase'])<small class="cumplimiento-sku">{{ $fila['envase'] }}</small>@endif</td>
-                        <td>
+                        <td data-label="Presentación">{{ $fila['presentacion'] }}@if($fila['envase'])<small class="cumplimiento-sku">{{ $fila['envase'] }}</small>@endif</td>
+                        <td data-label="Unidades solicitadas pendientes">
                             @if($fila['total_unidades'] === null)
                                 <span class="cumplimiento-sin-dato">No disponible</span>
                             @else
                                 <strong>{{ $fila['total_unidades'] }}</strong>
                             @endif
                         </td>
-                        <td>{{ $fila['presentaciones'] === [] ? 'No disponible' : $fila['stock_disponible'] }}</td>
-                        <td>{{ $fila['envasadas'] }}<small class="cumplimiento-sku">{{ $fila['vinculadas'] }} vinculadas a pedidos de esta consulta. Incluidas en el total.</small></td>
-                        <td>
+                        <td data-label="Stock disponible">{{ $fila['presentaciones'] === [] ? 'No disponible' : $fila['stock_disponible'] }}</td>
+                        <td data-label="Envasado neto registrado">{{ $fila['envasadas'] }}<small class="cumplimiento-sku">{{ $fila['vinculadas'] }} vinculadas a pedidos de esta consulta. Incluidas en el total.</small></td>
+                        <td data-label="Falta cubrir / cobertura">
                             <strong>{{ $fila['faltante'] ?? 'No disponible' }}</strong>
                             <small class="cumplimiento-sku">{{ $fila['cobertura'] }}</small>
                             @foreach($fila['presentaciones'] as $presentacion)
                                 <div class="cumplimiento-presentacion">
                                     <small>{{ $presentacion['sku'] }}: solicitadas {{ $presentacion['solicitadas'] ?? 'No disponible' }}, stock {{ $presentacion['stock'] }}, envasadas {{ $presentacion['envasadas'] }}, faltan {{ $presentacion['faltante'] ?? 'No disponible' }}.</small>
+                                    @if($puedeRegistrar && $presentacion['activa'])
+                                        <button type="button" class="btn btn-primary cumplimiento-no-imprimir" data-registrar-envasado="{{ $presentacion['id'] }}" data-sku="{{ $presentacion['sku'] }}" aria-haspopup="dialog" aria-controls="envasado-integrado">Registrar envasado</button>
+                                    @elseif($puedeRegistrar)
+                                        <small>Presentación inactiva: no admite nuevos envasados.</small>
+                                    @endif
                                 </div>
                             @endforeach
                         </td>
@@ -124,9 +129,13 @@
             </table>
         </div>
     </section>
+    @if($puedeRegistrar)
+        @include('cumplimiento.partials.envasado-integrado')
+    @endif
 @endsection
 
 @push('scripts')
+@if($puedeRegistrar)<script src="{{ asset('js/lista-preparacion-envasado.js') }}" defer></script>@endif
 <script>
 (() => {
     const detalles = Array.from(document.querySelectorAll('.cumplimiento-desglose'));

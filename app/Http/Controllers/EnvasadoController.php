@@ -41,16 +41,43 @@ class EnvasadoController extends Controller
 
     public function previsualizar(Request $request, RegistrarEnvasado $servicio): View
     {
+        $filtrosLista = $this->filtrosLista($request);
         $plan = $servicio->previsualizar($request->all());
+
+        if ($filtrosLista !== null) {
+            return view('envasado.partials.confirmacion', ['plan' => $plan, 'integrado' => true, 'filtrosLista' => $filtrosLista]);
+        }
 
         return view('envasado.confirmar', compact('plan'));
     }
 
     public function store(Request $request, RegistrarEnvasado $servicio): RedirectResponse
     {
+        $filtrosLista = $this->filtrosLista($request);
         $envasado = $servicio->ejecutar($request->all(), $request->user());
 
+        if ($filtrosLista !== null) {
+            return redirect()->route('cumplimiento.lista-preparacion', $filtrosLista)->with('success', 'Envasado registrado. Materiales descontados y stock actualizado; no registres otra entrada por esta producción.');
+        }
+
         return redirect()->route('envasado.show', $envasado)->with('success', 'Envasado registrado: materiales descontados y producto terminado ingresado. No registres otra entrada por esta producción.');
+    }
+
+    /** @return array<string, string|null>|null */
+    private function filtrosLista(Request $request): ?array
+    {
+        $request->validate(['desde_lista' => ['sometimes', 'boolean']]);
+        if (! $request->boolean('desde_lista')) {
+            return null;
+        }
+        abort_unless($request->user()->loadMissing('role.permisos')->role?->permisos->contains('nombre', 'pedidos.ver'), 403);
+
+        return $request->validate([
+            'fecha_desde' => ['required', 'date_format:Y-m-d'],
+            'fecha_hasta' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:fecha_desde'],
+            'produccion_desde' => ['required', 'date_format:Y-m-d'],
+            'produccion_hasta' => ['required', 'date_format:Y-m-d', 'after_or_equal:produccion_desde'],
+        ]);
     }
 
     public function show(Envasado $envasado): View
