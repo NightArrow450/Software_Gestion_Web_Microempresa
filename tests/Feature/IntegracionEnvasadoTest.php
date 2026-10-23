@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Models\Envasado;
 use App\Models\Inventario;
 use App\Models\MovimientoInventario;
+use App\Services\CorregirEnvasado;
 use App\Services\RegistrarEnvasado;
 use App\Services\VerificadorInventario;
 use Illuminate\Database\QueryException;
@@ -99,5 +101,48 @@ class IntegracionEnvasadoTest extends TestCase
         $this->post(route('envasado.correcciones.store', $registro), $datos)->assertRedirect();
         $this->assertSame('98.625', $e['insumo']->fresh()->cantidad_actual);
         $this->assertTrue(app(VerificadorInventario::class)->revisar()['correcto']);
+    }
+
+    public function test_acumulado_neto_por_pedido_y_presentacion_descuenta_correcciones_y_excluye_otros_origenes(): void
+    {
+        $e = $this->escenarioEnvasado();
+        $otro = $this->escenarioEnvasado();
+        $pedido = $this->pedidoEnvasado($e);
+        $otroPedido = $this->pedidoEnvasado($e);
+        $this->actingAs($e['usuario']);
+        $registrar = function (array $escenario, int $cantidad, ?int $pedidoId) use ($e): Envasado {
+            return app(RegistrarEnvasado::class)->ejecutar([
+                'presentacion_producto_id' => $escenario['presentacion']->id,
+                'configuracion_envasado_id' => $escenario['configuracion']->id,
+                'version_configuracion' => 0, 'cantidad' => $cantidad, 'pedido_id' => $pedidoId,
+            ], $e['usuario']);
+        };
+        $primero = $registrar($e, 2, $pedido->id);
+        $segundo = $registrar($e, 3, $pedido->id);
+        $registrar($e, 4, $pedido->id);
+        $anticipado = $registrar($e, 5, null);
+        $registrar($e, 7, $otroPedido->id);
+        $pedido->detalles()->create([
+            'presentacion_producto_id' => $otro['presentacion']->id, 'codigo_sku' => $otro['presentacion']->codigo_sku,
+            'descripcion_producto' => 'Otra presentación de prueba', 'modalidad' => 'unidad', 'cantidad' => 6,
+            'precio_unitario' => 2, 'importe' => 12,
+        ]);
+        $registrar($otro, 6, $pedido->id);
+        foreach ([[$primero, 1], [$segundo, 3]] as [$registro, $cantidad]) {
+            app(CorregirEnvasado::class)->ejecutar($registro, [
+                'clasificacion' => 'error_administrativo', 'cantidad' => $cantidad, 'revertidas_previas' => 0,
+                'motivo' => 'Corrección de cantidades digitadas en la prueba',
+                'devoluciones' => [$registro->consumos()->firstOrFail()->id => $cantidad],
+            ], $e['usuario']);
+        }
+        $antes = MovimientoInventario::orderBy('id')->get()->toJson();
+        $this->get(route('envasado.show', $primero))->assertOk()
+            ->assertViewHas('netoAcumulado', 5)->assertViewHas('stock', 17)
+            ->assertSee('Total neto acumulado de envasados vinculados a este pedido y presentación: 5 unidades.');
+        $this->get(route('envasado.show', $anticipado))->assertOk()
+            ->assertViewHas('netoAcumulado', null)
+            ->assertDontSee('Total neto acumulado de envasados vinculados');
+        $this->assertSame($antes, MovimientoInventario::orderBy('id')->get()->toJson());
+        $this->assertSame('confirmado', $pedido->fresh()->estado);
     }
 }

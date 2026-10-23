@@ -11,6 +11,7 @@ use App\Services\RegistrarEnvasado;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class EnvasadoController extends Controller
@@ -52,6 +53,11 @@ class EnvasadoController extends Controller
         $stock = Inventario::where('presentacion_producto_id', $envasado->presentacion_producto_id)->value('cantidad_actual') ?? 0;
         $solicitadas = $envasado->pedido ? $envasado->pedido->detalles()->with('presentacion')->where('presentacion_producto_id', $envasado->presentacion_producto_id)->get()->sum(fn ($d) => $d->cantidad * ($d->modalidad === 'empaque' ? $d->unidadesPorEmpaqueEfectivas($d->presentacion) : 1)) : null;
 
-        return view('envasado.show', compact('envasado', 'stock', 'solicitadas'));
+        $netoAcumulado = $envasado->pedido_id === null ? null : (int) Envasado::query()
+            ->where('pedido_id', $envasado->pedido_id)
+            ->where('presentacion_producto_id', $envasado->presentacion_producto_id)
+            ->sum(DB::raw('cantidad - unidades_revertidas'));
+
+        return view('envasado.show', compact('envasado', 'stock', 'solicitadas', 'netoAcumulado'));
     }
 }
