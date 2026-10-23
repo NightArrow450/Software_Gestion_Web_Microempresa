@@ -32,7 +32,7 @@
     </ol>
 </section>
 
-@if(in_array($pedido->estado, \App\Services\ControlEntregaPedido::ESTADOS, true))
+@if($resumenEntrega !== null && in_array($pedido->estado, \App\Services\ControlEntregaPedido::ESTADOS, true))
     @include('cumplimiento.partials.incidencia-resumen')
 @endif
 @endsection

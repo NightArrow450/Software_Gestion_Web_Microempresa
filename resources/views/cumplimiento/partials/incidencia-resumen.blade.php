@@ -1,6 +1,9 @@
 <section class="entrega-panel" aria-label="Resultado de entrega y retornos">
     <h2>Entrega, rechazos y retorno de productos</h2>
     <p>El rechazo no devuelve existencias. Solo una recepción física apta y su aprobación generan una entrada. No se devuelven materiales de envasado.</p>
+    @if($pedido->estado !== 'entregado' && $pedido->entregado_en)
+        <p class="entrega-aviso">La fecha de entrega completa previa se conserva como antecedente histórico. El resultado vigente es {{ ucfirst(str_replace('_', ' ', $pedido->estado)) }}.</p>
+    @endif
     @if($resumenEntrega['historico_sin_desglose'])
         <p class="entrega-aviso">Entrega histórica sin desglose por línea. Se conserva el registro original; no se inventan cantidades aceptadas ni retornos.</p>
     @else

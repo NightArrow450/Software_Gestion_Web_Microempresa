@@ -7,12 +7,24 @@ use App\Models\PresentacionProducto;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 use stdClass;
 
 class ControlEntregaPedido
 {
     public const ESTADOS = ['despachado', 'entrega_pendiente', 'entrega_parcial', 'rechazado', 'entregado'];
+
+    public function disponible(): bool
+    {
+        foreach (['incidencias_entrega', 'entregas_pedido', 'entrega_pedido_detalles', 'retornos_pedido', 'retorno_pedido_detalles', 'incidencia_entrega_eventos'] as $tabla) {
+            if (! Schema::hasTable($tabla)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 
     public function autorizar(User $usuario, string $permiso): void
     {
@@ -35,6 +47,9 @@ class ControlEntregaPedido
 
     public function fotografiarDespacho(Pedido $pedido, int $usuarioId): void
     {
+        if (! $this->disponible()) {
+            return;
+        }
         $this->bloquear($pedido, usuarioBase: $usuarioId);
     }
 

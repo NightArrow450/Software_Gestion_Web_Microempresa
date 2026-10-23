@@ -343,4 +343,18 @@ class EntregasRetornosTest extends PruebaEntregaMySql
         $this->post(route('cumplimiento.resultado-entrega', $e['pedido']), ['version' => 0, 'ocurrido_en' => '2026-10-24T10:30:00-03:00', 'detalles' => [['pedido_detalle_id' => $e['detalle']->id, 'aceptadas' => 5, 'rechazadas' => 0]]])->assertRedirect();
         $this->assertDatabaseHas('entregas_pedido', ['usuario_id' => $e['usuario']->id, 'ocurrido_en' => '2026-10-24 08:30:00', 'created_at' => '2026-10-24 12:00:00']);
     }
+
+    public function test_rectificar_entrega_completa_conserva_fecha_y_resultado_original_sin_devolver_stock(): void
+    {
+        $e = $this->escenarioEntrega();
+        $this->resultado($e, 5, 0)->assertRedirect();
+        $fechaOriginal = $e['pedido']->fresh()->entregado_en;
+        $this->resultado($e, -1, 1, 'cumplimiento.rectificar-entrega')->assertRedirect();
+        $this->assertSame('entrega_parcial', $e['pedido']->fresh()->estado);
+        $this->assertSame($fechaOriginal, $e['pedido']->fresh()->entregado_en);
+        $this->assertSame(5, (int) DB::table('entrega_pedido_detalles')->orderBy('id')->value('aceptadas'));
+        $this->assertSame(2, DB::table('entrega_pedido_detalles')->count());
+        $this->assertDatabaseHas('inventarios', ['cantidad_actual' => 95]);
+        $this->get(route('cumplimiento.show', $e['pedido']))->assertOk()->assertSee('antecedente histórico')->assertSee('El resultado vigente es Entrega parcial');
+    }
 }

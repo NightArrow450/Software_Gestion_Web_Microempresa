@@ -169,7 +169,8 @@ class CumplimientoPedidoController extends Controller
             'historialEstados' => fn ($q) => $q->with('usuario')->orderBy('id'),
         ]);
 
-        $resumenEntrega = app(ControlEntregaPedido::class)->resumen($pedido);
+        $controlEntrega = app(ControlEntregaPedido::class);
+        $resumenEntrega = $controlEntrega->disponible() ? $controlEntrega->resumen($pedido) : null;
 
         return view('cumplimiento.show', compact('pedido', 'resumenEntrega'));
     }

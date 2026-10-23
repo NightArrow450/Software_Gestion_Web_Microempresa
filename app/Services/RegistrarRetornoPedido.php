@@ -15,6 +15,7 @@ class RegistrarRetornoPedido
     public function ejecutar(Pedido $pedido, array $entrada, User $usuario): void
     {
         $this->control->autorizar($usuario, 'cumplimiento.retornos.registrar');
+        abort_unless($this->control->disponible(), 503, 'Los retornos requieren las migraciones autorizadas.');
         $reglas = ['version' => ['required', 'integer', 'min:0'], 'ocurrido_en' => ['nullable', 'date', 'before_or_equal:now'], 'observaciones' => ['required', 'string', 'min:10', 'max:1000'], 'detalles' => ['required', 'array', 'min:1', 'max:18'], 'detalles.*.pedido_detalle_id' => ['required', 'integer', 'distinct']];
         foreach (['aptas', 'danadas', 'en_revision', 'no_recuperadas'] as $campo) {
             $reglas['detalles.*.'.$campo] = ['required', 'integer', 'min:0', 'max:10000000'];

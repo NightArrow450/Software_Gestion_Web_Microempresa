@@ -18,6 +18,7 @@ class AprobarRetornoPedido
     public function ejecutar(Pedido $pedido, array $entrada, User $usuario): void
     {
         $this->control->autorizar($usuario, 'cumplimiento.retornos.aprobar');
+        abort_unless($this->control->disponible(), 503, 'Los retornos requieren las migraciones autorizadas.');
         $datos = Validator::make($entrada, ['version' => ['required', 'integer', 'min:0'], 'retorno_detalle_id' => ['required', 'integer'], 'cantidad' => ['required', 'integer', 'min:1', 'max:10000000'], 'motivo' => ['required', 'string', 'min:10', 'max:1000']])->validate();
         DB::transaction(function () use ($pedido, $datos, $usuario): void {
             $actual = Pedido::whereKey($pedido->id)->lockForUpdate()->firstOrFail();

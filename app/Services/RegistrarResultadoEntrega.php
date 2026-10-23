@@ -25,6 +25,13 @@ class RegistrarResultadoEntrega
             'detalles.*.rechazadas' => ['required', 'integer', 'min:'.($rectificar ? '-10000000' : '0'), 'max:10000000'],
             'detalles.*.motivo' => ['nullable', 'string', 'min:10', 'max:1000'],
         ])->validate();
+        if (! $this->control->disponible()) {
+            abort_unless($completa, 503, 'Las entregas parciales requieren aplicar primero las migraciones autorizadas.');
+            $observacion = $datos['observaciones'] ?? null;
+            $this->transiciones->registrar($pedido, 'despachado', 'entregado', $usuario->id, ['entregado_por_id' => $usuario->id, 'entregado_en' => now(), 'observacion_entrega' => $observacion], $observacion ?? 'Entrega confirmada.');
+
+            return;
+        }
         DB::transaction(function () use ($pedido, $datos, $usuario, $completa, $rectificar): void {
             $actual = Pedido::whereKey($pedido->id)->lockForUpdate()->firstOrFail();
             if (! in_array($actual->estado, $rectificar ? ControlEntregaPedido::ESTADOS : ['despachado', 'entrega_pendiente'], true) || ($completa && $actual->estado !== 'despachado')) {

@@ -39,7 +39,8 @@ class SeguimientoPedidoController extends Controller
         // Datos en pedidos del Sprint 2 y fechas logísticas del Sprint 4.
         $pedido->load(['cliente', 'vendedor']);
 
-        $resumenEntrega = app(ControlEntregaPedido::class)->resumen($pedido);
+        $controlEntrega = app(ControlEntregaPedido::class);
+        $resumenEntrega = $controlEntrega->disponible() ? $controlEntrega->resumen($pedido) : null;
 
         return view('seguimiento.show', compact('pedido', 'resumenEntrega'));
     }
@@ -52,7 +53,8 @@ class SeguimientoPedidoController extends Controller
                 ->orderBy('created_at')->orderBy('id'),
         ]);
 
-        $resumenEntrega = app(ControlEntregaPedido::class)->resumen($pedido);
+        $controlEntrega = app(ControlEntregaPedido::class);
+        $resumenEntrega = $controlEntrega->disponible() ? $controlEntrega->resumen($pedido) : null;
 
         return view('seguimiento.trazabilidad', compact('pedido', 'resumenEntrega'));
     }

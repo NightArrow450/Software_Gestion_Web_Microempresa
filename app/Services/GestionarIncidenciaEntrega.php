@@ -19,6 +19,7 @@ class GestionarIncidenciaEntrega
             'resolver' => 'cumplimiento.incidencias.resolver', 'reabrir' => 'cumplimiento.incidencias.corregir', default => 'cumplimiento.incidencias.revisar'
         };
         $this->control->autorizar($usuario, $permiso);
+        abort_unless($this->control->disponible(), 503, 'Las incidencias requieren las migraciones autorizadas.');
         $datos = Validator::make($entrada, ['version' => ['required', 'integer', 'min:0'], 'motivo' => ['required', 'string', 'min:10', 'max:1000'], 'retorno_detalle_id' => [Rule::requiredIf($accion === 'clasificar'), 'nullable', 'integer'], 'aptas' => [Rule::requiredIf($accion === 'clasificar'), 'nullable', 'integer', 'min:0', 'max:10000000'], 'danadas' => [Rule::requiredIf($accion === 'clasificar'), 'nullable', 'integer', 'min:0', 'max:10000000']])->validate();
         DB::transaction(function () use ($pedido, $datos, $usuario, $accion): void {
             $actual = Pedido::whereKey($pedido->id)->lockForUpdate()->firstOrFail();
