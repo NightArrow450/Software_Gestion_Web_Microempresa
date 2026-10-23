@@ -28,4 +28,3 @@
 <section class="envasado-seccion"><h2>Reportes de errores</h2>@forelse($envasado->reportes as $reporte)<p>{{ $reporte->created_at->timezone('America/Lima')->format('d/m/Y H:i') }} · {{ $reporte->usuario->first_name }} {{ $reporte->usuario->last_name }}: {{ $reporte->motivo }}</p>@empty<p>No hay reportes.</p>@endforelse
 @if(auth()->user()->role?->tienePermiso('envasado.reportar'))<form method="POST" action="{{ route('envasado.reportar',$envasado) }}">@csrf @include('components.token-operacion')<label>Comunicar error (no modifica inventario)<textarea class="form-control" required name="motivo" minlength="10" maxlength="1000"></textarea></label><button class="btn btn-secondary">Comunicar error</button></form>@endif</section>
 @endsection
-
