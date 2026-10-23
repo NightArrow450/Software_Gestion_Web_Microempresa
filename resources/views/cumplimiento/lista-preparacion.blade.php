@@ -41,7 +41,7 @@
 
     <div class="cumplimiento-nota" role="note">
         Esta lista usa las <strong>cantidades solicitadas</strong> de los pedidos pendientes.
-        El sistema todavía no registra unidades parcialmente preparadas por producto.
+        Los envasados reales se consultan en su sección propia; esta lista no representa producción ni stock disponible.
         Se suman las unidades físicas del mismo producto, variante y presentación.
         Para empaques se usa el tamaño histórico de cada línea; solo las líneas antiguas sin ese dato
         usan el catálogo actual como respaldo. Si no puede calcularse el total, se indica «No disponible».
