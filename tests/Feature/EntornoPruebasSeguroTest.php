@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use Illuminate\Support\Facades\DB;
 use LogicException;
+use Symfony\Component\Process\Process;
 use Tests\TestCase;
 
 class EntornoPruebasSeguroTest extends TestCase
@@ -31,5 +32,31 @@ class EntornoPruebasSeguroTest extends TestCase
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('Conexión SQLite bloqueada');
         DB::connection('prohibida');
+    }
+
+    public function test_arranques_concurrentes_no_comparten_cache_con_la_aplicacion_ni_entre_procesos(): void
+    {
+        $codigo = <<<'PHP'
+require "tests/bootstrap.php";
+$app = require "bootstrap/app.php";
+$app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+echo json_encode([
+    $app->getCachedConfigPath(), $app->getCachedPackagesPath(), $app->getCachedServicesPath(),
+    $app->getCachedRoutesPath(), $app->getCachedEventsPath(),
+], JSON_THROW_ON_ERROR);
+PHP;
+        $primero = new Process([PHP_BINARY, '-r', $codigo], base_path());
+        $segundo = new Process([PHP_BINARY, '-r', $codigo], base_path());
+        $primero->start();
+        $segundo->start();
+        $this->assertSame(0, $primero->wait(), $primero->getErrorOutput());
+        $this->assertSame(0, $segundo->wait(), $segundo->getErrorOutput());
+        $rutasPrimero = json_decode($primero->getOutput(), true, 512, JSON_THROW_ON_ERROR);
+        $rutasSegundo = json_decode($segundo->getOutput(), true, 512, JSON_THROW_ON_ERROR);
+        foreach ($rutasPrimero as $indice => $ruta) {
+            $this->assertNotSame($ruta, $rutasSegundo[$indice]);
+            $this->assertStringStartsWith(str_replace('\\', '/', storage_path('framework/cache')), str_replace('\\', '/', $ruta));
+            $this->assertStringStartsWith(str_replace('\\', '/', storage_path('framework/cache')), str_replace('\\', '/', $rutasSegundo[$indice]));
+        }
     }
 }

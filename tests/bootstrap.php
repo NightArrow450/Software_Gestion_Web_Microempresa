@@ -6,10 +6,15 @@ use Illuminate\Database\SQLiteConnection;
 
 require_once dirname(__DIR__).'/vendor/autoload.php';
 
+$cache = 'storage/framework/cache/dhacer_pruebas_'.getmypid();
 $variables = [
     'APP_ENV' => 'testing',
     'APP_KEY' => 'base64:'.base64_encode(str_repeat('t', 32)),
-    'APP_CONFIG_CACHE' => sys_get_temp_dir().'/dhacer_config_pruebas_'.getmypid().'.php',
+    'APP_CONFIG_CACHE' => $cache.'_config.php',
+    'APP_PACKAGES_CACHE' => $cache.'_packages.php',
+    'APP_SERVICES_CACHE' => $cache.'_services.php',
+    'APP_ROUTES_CACHE' => $cache.'_routes.php',
+    'APP_EVENTS_CACHE' => $cache.'_events.php',
     'DB_CONNECTION' => 'sqlite',
     'DB_DATABASE' => ':memory:',
     'DB_URL' => '',
