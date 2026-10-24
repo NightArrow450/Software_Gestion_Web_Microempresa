@@ -5,12 +5,14 @@ namespace Tests\MySql;
 use App\Models\Inventario;
 use App\Models\Permiso;
 use App\Models\User;
+use App\Services\ControlEntregaPedido;
 use App\Services\RegistrarEnvasado;
 use App\Services\RegistrarResultadoEntrega;
 use App\Services\RegistrarRetornoPedido;
 use App\Services\TransicionesPedido;
 use App\Services\VerificadorInventario;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -73,6 +75,9 @@ class RendimientoConsultasTest extends PruebaEntregaMySql
                 $this->tiempoSql += $consulta->time;
             }
         });
+        $cargaDiferidaAnterior = Model::preventsLazyLoading();
+        Model::preventLazyLoading();
+        $this->beforeApplicationDestroyed(fn () => Model::preventLazyLoading($cargaDiferidaAnterior));
         $operaciones = [
             'preparacion' => function () use ($demanda, $cantidad): array {
                 $r = $this->get(route('cumplimiento.lista-preparacion'))->assertOk();
@@ -127,6 +132,26 @@ class RendimientoConsultasTest extends PruebaEntregaMySql
         }, true);
     }
 
+    public function test_disponibilidad_no_confunde_tablas_de_otra_base_mysql(): void
+    {
+        $configuracion = EntornoMySql::proteger();
+        $nombre = 'dhacer_eco_limp_test_tablas_'.bin2hex(random_bytes(6));
+        $servidor = new \PDO('mysql:host='.$configuracion['host'].';port='.$configuracion['port'].';charset=utf8mb4', $configuracion['username'], $configuracion['password'], [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]);
+        $servidor->exec("CREATE DATABASE `$nombre` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+        $configuracion['database'] = $nombre;
+        config(['database.connections.mysql_sin_tablas' => $configuracion]);
+        $anterior = DB::getDefaultConnection();
+        $this->assertTrue(app(ControlEntregaPedido::class)->disponible());
+        try {
+            DB::setDefaultConnection('mysql_sin_tablas');
+            $this->assertFalse(app(ControlEntregaPedido::class)->disponible());
+        } finally {
+            DB::setDefaultConnection($anterior);
+            DB::purge('mysql_sin_tablas');
+        }
+        $this->assertTrue(app(ControlEntregaPedido::class)->disponible());
+    }
+
     private function medir(string $nombre, int $tamano, User $usuario, callable $operacion, bool $escritura = false): void
     {
         $muestras = [];
@@ -152,6 +177,9 @@ class RendimientoConsultasTest extends PruebaEntregaMySql
                 if ($escritura) {
                     DB::rollBack();
                 }
+            }
+            if ($nombre === 'entrega_retornos') {
+                $this->assertLessThanOrEqual(20, $this->consultas, 'Las consultas de retornos no deben crecer por recepción.');
             }
             $actual = hash('sha256', json_encode($resultado, JSON_THROW_ON_ERROR));
             $huella ??= $actual;
