@@ -71,6 +71,24 @@ class IndicadoresTest extends TestCase
         $this->assertDatabaseCount('movimientos_inventario', 0);
     }
 
+    public function test_un_cambio_de_codigo_no_permite_usar_dos_veces_el_stock_de_la_misma_presentacion(): void
+    {
+        $e = $this->escenario();
+        $primero = $this->pedidoEnvasado($e);
+        $primero->detalles()->update(['codigo_sku' => 'CODIGO-ANTERIOR']);
+        $this->pedidoEnvasado($e);
+        DB::table('inventarios')->where('presentacion_producto_id', $e['presentacion']->id)->update(['cantidad_actual' => 6]);
+
+        $preparacion = $this->filas('preparacion');
+
+        $this->assertCount(1, $preparacion);
+        $this->assertSame(10, $preparacion[0]['solicitadas']);
+        $this->assertSame(6, $preparacion[0]['stock_actual']);
+        $this->assertSame(4, $preparacion[0]['faltante_conocido']);
+        $this->assertSame($e['presentacion']->codigo_sku, $preparacion[0]['sku']);
+        $this->assertCount(2, $this->filas('fisicas'));
+    }
+
     public function test_pendientes_no_generan_demanda_ficticia_ni_suman_indicadores_superpuestos(): void
     {
         $e = $this->escenario();
@@ -283,6 +301,6 @@ class IndicadoresTest extends TestCase
         $p->update(['fecha_entrega' => '2026-09-15']);
 
         $this->getJson(route('indicadores.index', ['reporte' => 'inventario', 'pedido_id' => $p->id]))->assertUnprocessable();
-        $this->get(route('indicadores.index', ['reporte' => 'preparacion']))->assertOk()->assertViewHas('resultado',fn ($r): bool => $r['cantidad'] === 1);
+        $this->get(route('indicadores.index', ['reporte' => 'preparacion']))->assertOk()->assertViewHas('resultado', fn ($r): bool => $r['cantidad'] === 1);
     }
 }

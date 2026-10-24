@@ -105,7 +105,10 @@ class PedidosIndicadores
 
     public function preparacion(array $f): \Generator
     {
-        $demanda = $this->consultaFisica($f)->groupBy('presentacion_id', 'sku')->select(['presentacion_id', 'sku'])->selectRaw('SUM(unidades) solicitadas, SUM(CASE WHEN unidades IS NULL THEN 1 ELSE 0 END) incompletas');
+        $codigo = 'COALESCE(actual.codigo_sku,f.sku)';
+        $demanda = $this->consultaFisica($f)->leftJoin('presentaciones_producto as actual', 'actual.id', '=', 'f.presentacion_id')
+            ->groupBy('f.presentacion_id', DB::raw($codigo))->select('f.presentacion_id')
+            ->selectRaw($codigo.' sku, SUM(f.unidades) solicitadas, SUM(CASE WHEN f.unidades IS NULL THEN 1 ELSE 0 END) incompletas');
         $q = DB::query()->fromSub($demanda, 'f')->leftJoin('inventarios as i', 'i.presentacion_producto_id', '=', 'f.presentacion_id')->select(['f.*', 'i.cantidad_actual']);
         $pendientes = false;
         foreach ($this->pendientes(array_diff_key($f, array_flip(['sku', 'presentacion_id']))) as $ignorado) {

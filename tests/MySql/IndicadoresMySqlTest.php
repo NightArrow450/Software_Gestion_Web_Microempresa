@@ -130,6 +130,21 @@ class IndicadoresMySqlTest extends PruebaEntregaMySql
         $this->assertSame(['Concordante', 'Concordante'], array_column($saldos, 'conciliacion'));
     }
 
+    public function test_preparacion_conserva_identidad_del_inventario_ante_codigos_historicos_distintos(): void
+    {
+        $e = $this->escenarioEnvasado(100, 6);
+        $p = $this->pedidoEnvasado($e);
+        $p->detalles()->update(['codigo_sku' => 'ANTERIOR-MYSQL']);
+        $this->pedidoEnvasado($e);
+
+        $filas = iterator_to_array(app(FilasIndicadores::class)->filas(FiltrosIndicadores::validar(['reporte' => 'preparacion'])));
+
+        $this->assertCount(1, $filas);
+        $this->assertSame(10, $filas[0]['solicitadas']);
+        $this->assertSame(4, $filas[0]['faltante_conocido']);
+        $this->assertSame($e['presentacion']->codigo_sku, $filas[0]['sku']);
+    }
+
     public function test_exportacion_por_lotes_mantiene_una_fotografia_ante_una_escritura_concurrente(): void
     {
         $anterior = DB::getDefaultConnection();
