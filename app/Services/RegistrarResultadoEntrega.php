@@ -15,11 +15,12 @@ class RegistrarResultadoEntrega
     public function ejecutar(Pedido $pedido, array $entrada, User $usuario, bool $completa = false, bool $rectificar = false): void
     {
         $this->control->autorizar($usuario, $rectificar ? 'cumplimiento.incidencias.corregir' : 'cumplimiento.entregar');
+        $limiteLineas = collect($entrada['detalles'] ?? [])->contains(fn ($linea): bool => is_array($linea) && ! empty($linea['despacho_componente_id'])) ? 10000 : 18;
         $datos = Validator::make($entrada, [
             'version' => [$completa ? 'nullable' : 'required', 'integer', 'min:0'],
             'ocurrido_en' => ['nullable', 'date', 'before_or_equal:now'],
             'observaciones' => [$rectificar ? 'required' : 'nullable', 'string', ...($rectificar ? ['min:10'] : []), 'max:1000'],
-            'detalles' => [$completa ? 'nullable' : 'required', 'array', 'min:1', 'max:18'],
+            'detalles' => [$completa ? 'nullable' : 'required', 'array', 'min:1', 'max:'.$limiteLineas],
             'detalles.*.pedido_detalle_id' => ['required', 'integer'],
             'detalles.*.despacho_componente_id' => ['nullable', 'integer', 'min:1'],
             'detalles.*.aceptadas' => ['required', 'integer', 'min:'.($rectificar ? '-10000000' : '0'), 'max:10000000'],
@@ -49,13 +50,16 @@ class RegistrarResultadoEntrega
             $lineas = $completa ? array_map(fn (array $linea): array => ['pedido_detalle_id' => $linea['id']] + (isset($linea['componente_id']) ? ['despacho_componente_id' => $linea['componente_id']] : []) + ['aceptadas' => $linea['despachadas'], 'rechazadas' => 0], $resumen['lineas']) : $datos['detalles'];
             $cambios = [];
             $vistos = [];
-            foreach ($lineas as $linea) {
+            foreach ($lineas as $indice => $linea) {
                 $clave = ControlEntregaPedido::claveFisica((int) $linea['pedido_detalle_id'], isset($linea['despacho_componente_id']) ? (int) $linea['despacho_componente_id'] : null);
                 $base = $resumen['lineas'][$clave] ?? null;
-                if (isset($vistos[$clave]) || ($base && $base['id'] !== (int) $linea['pedido_detalle_id'])) {
-                    throw ValidationException::withMessages(['detalles' => 'La referencia física está repetida o no pertenece a la línea.']);
+                if (isset($vistos[$clave])) {
+                    throw ValidationException::withMessages(['detalles' => 'La referencia física está repetida.', 'detalles.'.$vistos[$clave].'.pedido_detalle_id' => 'Esta referencia física está repetida.', 'detalles.'.$indice.'.pedido_detalle_id' => 'Esta referencia física está repetida.']);
                 }
-                $vistos[$clave] = true;
+                if ($base && $base['id'] !== (int) $linea['pedido_detalle_id']) {
+                    throw ValidationException::withMessages(['detalles' => 'La referencia física no pertenece a la línea.']);
+                }
+                $vistos[$clave] = $indice;
                 if (! $base || $base['despachadas'] === null) {
                     throw ValidationException::withMessages(['detalles' => 'La línea no pertenece al pedido o su tamaño histórico no puede comprobarse. Solicita revisión.']);
                 }

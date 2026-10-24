@@ -194,9 +194,11 @@ class GestionarSurtidos
             if ($d->tipo_linea !== 'surtido') {
                 continue;
             }
-            $definidos = count(array_filter($this->paquetes($d), fn (array $p): bool => $p['estado'] === 'definida'));
+            $paquetes = $this->paquetes($d);
+            $definidos = count(array_filter($paquetes, fn (array $p): bool => $p['estado'] === 'definida'));
+            $porDistribuir = (int) $d->cantidad * (int) $d->unidades_por_empaque - array_sum(array_map(fn (array $p): int => array_sum(array_column($p['componentes'], 'cantidad')), $paquetes));
             if ($definidos < $d->cantidad) {
-                $resultado[] = ['pedido' => $pedido->numero, 'detalle_id' => $d->id, 'formato_surtido_id' => $d->formato_surtido_id, 'descripcion' => $d->descripcion_producto, 'paquetes' => $d->cantidad - $definidos, 'unidades' => ($d->cantidad - $definidos) * $d->unidades_por_empaque];
+                $resultado[] = ['pedido' => $pedido->numero, 'detalle_id' => $d->id, 'formato_surtido_id' => $d->formato_surtido_id, 'descripcion' => $d->descripcion_producto, 'paquetes' => $d->cantidad - $definidos, 'unidades' => ($d->cantidad - $definidos) * $d->unidades_por_empaque, 'por_distribuir' => $porDistribuir];
             }
         }
 

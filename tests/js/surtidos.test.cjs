@@ -28,3 +28,42 @@ test('rechaza SKU ajenos, repetidos y cantidades no enteras sin repartir unidade
         assert.notEqual(surtidos.validar({ estado: 'definida', componentes }, 12, [10, 20]), '');
     }
 });
+
+function prepararEditor(paquetes) {
+    function elemento() {
+        return {
+            children: [], eventos: {}, dataset: {}, value: '',
+            append(...hijos) { this.children.push(...hijos); },
+            replaceChildren() { this.children = []; },
+            add(opcion) { this.children.push(opcion); },
+            addEventListener(nombre, accion) { this.eventos[nombre] = accion; },
+            setAttribute() {}, setCustomValidity(mensaje) { this.error = mensaje; },
+        };
+    }
+    const raiz = elemento(), oculto = { value: JSON.stringify(paquetes) };
+    const document = { createElement: elemento, querySelectorAll: () => [], dispatchEvent() {} };
+    const window = { SurtidosUtilidades: surtidos };
+    const ctx = { window, document, Option: function (texto, valor) { this.text = texto; this.value = valor; }, CustomEvent: class {} };
+    vm.runInNewContext(fs.readFileSync('public/js/surtidos.js', 'utf8'), ctx);
+    let cantidad = paquetes.length;
+    const editor = window.EditorSurtidos(raiz, oculto, [{ id: 10, nombre: 'Lavanda', sku: 'LAV' }, { id: 20, nombre: 'Limón', sku: 'LIM' }], 12, () => cantidad);
+    return { raiz, oculto, editor, aumentar() { cantidad++; editor.actualizar(); } };
+}
+
+test('el editor copia al paquete elegido y una edición posterior no cambia el paquete original', () => {
+    const e = prepararEditor([{ estado: 'definida', componentes: [{ presentacion_producto_id: 10, cantidad: 12 }] }, { estado: 'pendiente', componentes: [] }]);
+    const controles = e.raiz.children[1], numero = controles.children[1], copiar = controles.children[4];
+    numero.value = '2'; numero.eventos.change(); copiar.eventos.click();
+    const filas = e.raiz.children[3], cantidad = filas.children[0].children[1];
+    cantidad.value = '11'; cantidad.eventos.input();
+    const paquetes = JSON.parse(e.oculto.value);
+    assert.equal(paquetes[0].componentes[0].cantidad, 12);
+    assert.equal(paquetes[1].componentes[0].cantidad, 11);
+    assert.notEqual(numero.error, '');
+});
+
+test('aumentar paquetes conserva lo definido y agrega únicamente una composición pendiente vacía', () => {
+    const e = prepararEditor([{ estado: 'definida', componentes: [{ presentacion_producto_id: 10, cantidad: 12 }] }]);
+    e.aumentar();
+    assert.deepEqual(JSON.parse(e.oculto.value), [{ estado: 'definida', componentes: [{ presentacion_producto_id: 10, cantidad: 12 }] }, { estado: 'pendiente', componentes: [] }]);
+});

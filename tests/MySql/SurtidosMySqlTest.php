@@ -80,8 +80,38 @@ class SurtidosMySqlTest extends PruebaInventarioMySql
         $this->assertSame(94, (int) Inventario::where('presentacion_producto_id', $e['skus'][0]->id)->value('cantidad_actual'));
         $this->post($ruta, array_replace($datos, ['version' => 3, 'cantidad' => 2]))->assertSessionHasNoErrors();
         $this->assertSame(96, (int) Inventario::where('presentacion_producto_id', $e['skus'][0]->id)->value('cantidad_actual'));
-        $this->assertSame(2, MovimientoInventario::where('pedido_id', $pedido->id)->where('origen_tipo', 'retorno_pedido')->where('presentacion_producto_id', $e['skus'][0]->id)->count());
+        $this->assertSame(2, MovimientoInventario::where('origen_tipo', 'retorno_pedido')->where('presentacion_producto_id', $e['skus'][0]->id)->count());
         $this->assertSame(89, (int) Inventario::where('presentacion_producto_id', $e['skus'][1]->id)->value('cantidad_actual'));
+    }
+
+    public function test_indices_mysql_protegen_referencias_normales_nulas_y_componentes_sin_impedir_aromas_distintos(): void
+    {
+        $e = $this->escenarioSurtido();
+        $pedido = $this->surtido($e);
+        $this->post(route('cumplimiento.despachar', $pedido))->assertSessionHasNoErrors();
+        $d = $pedido->detalles->sole();
+        $componentes = DB::table('pedido_despacho_componentes')->where('pedido_detalle_id', $d->id)->orderBy('id')->limit(2)->get();
+        $this->post(route('cumplimiento.resultado-entrega', $pedido), ['version' => 0, 'detalles' => $componentes->map(fn ($c): array => ['pedido_detalle_id' => $d->id, 'despacho_componente_id' => $c->id, 'aceptadas' => 1, 'rechazadas' => 0])->all()])->assertSessionHasNoErrors();
+        $filas = DB::table('entrega_pedido_detalles')->where('pedido_detalle_id', $d->id)->get();
+        $this->assertCount(2, $filas);
+        $normal = $this->pedidoEnvasado($e, 'listo_despacho');
+        $this->post(route('cumplimiento.despachar', $normal))->assertSessionHasNoErrors();
+        $nd = $normal->detalles->sole();
+        $this->post(route('cumplimiento.resultado-entrega', $normal), ['version' => 0, 'detalles' => [['pedido_detalle_id' => $nd->id, 'aceptadas' => 1, 'rechazadas' => 0]]])->assertSessionHasNoErrors();
+        $filaNormal = DB::table('entrega_pedido_detalles')->where('pedido_detalle_id', $nd->id)->first();
+        $this->assertNull($filaNormal->despacho_componente_id);
+        foreach ([$filas->first(), $filaNormal] as $fila) {
+            $datos = (array) $fila;
+            unset($datos['id'], $datos['referencia_fisica']);
+            try {
+                DB::table('entrega_pedido_detalles')->insert($datos);
+                $this->fail('El índice debe impedir una referencia física repetida, también con componente NULL.');
+            } catch (QueryException $exception) {
+                $this->assertSame('23000', (string) $exception->getCode());
+            }
+        }
+        $this->assertSame(2, DB::table('entrega_pedido_detalles')->where('pedido_detalle_id', $d->id)->count());
+        $this->assertSame(1, DB::table('entrega_pedido_detalles')->where('pedido_detalle_id', $nd->id)->count());
     }
 
     public function test_historial_inmutable_tambien_se_protege_en_mysql(): void

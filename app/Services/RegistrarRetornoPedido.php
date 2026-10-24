@@ -16,7 +16,8 @@ class RegistrarRetornoPedido
     {
         $this->control->autorizar($usuario, 'cumplimiento.retornos.registrar');
         abort_unless($this->control->disponible(), 503, 'Los retornos requieren las migraciones autorizadas.');
-        $reglas = ['version' => ['required', 'integer', 'min:0'], 'ocurrido_en' => ['nullable', 'date', 'before_or_equal:now'], 'observaciones' => ['required', 'string', 'min:10', 'max:1000'], 'detalles' => ['required', 'array', 'min:1', 'max:18'], 'detalles.*.pedido_detalle_id' => ['required', 'integer']];
+        $limiteLineas = collect($entrada['detalles'] ?? [])->contains(fn ($linea): bool => is_array($linea) && ! empty($linea['despacho_componente_id'])) ? 10000 : 18;
+        $reglas = ['version' => ['required', 'integer', 'min:0'], 'ocurrido_en' => ['nullable', 'date', 'before_or_equal:now'], 'observaciones' => ['required', 'string', 'min:10', 'max:1000'], 'detalles' => ['required', 'array', 'min:1', 'max:'.$limiteLineas], 'detalles.*.pedido_detalle_id' => ['required', 'integer']];
         $reglas['detalles.*.despacho_componente_id'] = ['nullable', 'integer', 'min:1'];
         foreach (['aptas', 'danadas', 'en_revision', 'no_recuperadas'] as $campo) {
             $reglas['detalles.*.'.$campo] = ['required', 'integer', 'min:0', 'max:10000000'];
