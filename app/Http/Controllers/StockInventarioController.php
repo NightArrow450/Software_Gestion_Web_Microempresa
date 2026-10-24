@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Inventario;
 use App\Models\Insumo;
+use App\Models\Inventario;
 use App\Models\PresentacionProducto;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -22,7 +22,7 @@ class StockInventarioController extends Controller
             ->where('productos.estado', true)
             ->where(function ($q) {
                 $q->whereNull('presentaciones_producto.variante_producto_id')
-                  ->orWhereHas('variante', fn ($v) => $v->where('estado', true));
+                    ->orWhereHas('variante', fn ($v) => $v->where('estado', true));
             });
     }
 
@@ -37,18 +37,12 @@ class StockInventarioController extends Controller
         $stock = 'COALESCE(inventarios.cantidad_actual, 0)';
         $minimo = 'COALESCE(inventarios.stock_minimo, 10)';
 
-        $base = $this->consultaProductos();
-        $baseInsumos = Insumo::where('estado', true);
-        $resumen = [
-            'agotado' => (clone $base)->whereRaw("{$stock} = 0")->count()
-                + (clone $baseInsumos)->where('cantidad_actual', 0)->count(),
-            'bajo' => (clone $base)->whereRaw("{$stock} > 0 AND {$stock} <= {$minimo}")->count()
-                + (clone $baseInsumos)->where('cantidad_actual', '>', 0)
-                    ->whereColumn('cantidad_actual', '<=', 'stock_minimo')->count(),
-            'normal' => (clone $base)->whereRaw("{$stock} > 0 AND {$stock} > {$minimo}")->count()
-                + (clone $baseInsumos)->where('cantidad_actual', '>', 0)
-                    ->whereColumn('cantidad_actual', '>', 'stock_minimo')->count(),
-        ];
+        $productos = $this->consultaProductos()->selectRaw("SUM(CASE WHEN {$stock} = 0 THEN 1 ELSE 0 END) AS agotado, SUM(CASE WHEN {$stock} > 0 AND {$stock} <= {$minimo} THEN 1 ELSE 0 END) AS bajo, SUM(CASE WHEN {$stock} > 0 AND {$stock} > {$minimo} THEN 1 ELSE 0 END) AS normal")->toBase()->first();
+        $materiales = Insumo::where('estado', true)->selectRaw('SUM(CASE WHEN cantidad_actual = 0 THEN 1 ELSE 0 END) AS agotado, SUM(CASE WHEN cantidad_actual > 0 AND cantidad_actual <= stock_minimo THEN 1 ELSE 0 END) AS bajo, SUM(CASE WHEN cantidad_actual > 0 AND cantidad_actual > stock_minimo THEN 1 ELSE 0 END) AS normal')->toBase()->first();
+        $resumen = [];
+        foreach (['agotado', 'bajo', 'normal'] as $estado) {
+            $resumen[$estado] = (int) $productos->{$estado} + (int) $materiales->{$estado};
+        }
 
         $consultaProductos = $this->consultaProductos()
             ->with(['producto', 'variante'])

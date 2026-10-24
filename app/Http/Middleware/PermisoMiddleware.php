@@ -16,11 +16,11 @@ class PermisoMiddleware
     ): Response {
         $user = $request->user();
 
-        if (!$user) {
+        if (! $user) {
             return redirect()->route('login');
         }
 
-        if (!$user->status) {
+        if (! $user->status) {
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
@@ -32,9 +32,9 @@ class PermisoMiddleware
                 ]);
         }
 
-        $user->loadMissing('role.permisos');
+        $user->load('role.permisos');
 
-        if (!$user->role) {
+        if (! $user->role) {
             abort(403);
         }
 
@@ -42,7 +42,7 @@ class PermisoMiddleware
             $tienePermiso = $user->role->permisos
                 ->contains('nombre', $permiso);
 
-            if (!$tienePermiso) {
+            if (! $tienePermiso) {
                 abort(403);
             }
         }

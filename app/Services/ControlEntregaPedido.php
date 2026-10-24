@@ -17,13 +17,11 @@ class ControlEntregaPedido
 
     public function disponible(): bool
     {
-        foreach (['incidencias_entrega', 'entregas_pedido', 'entrega_pedido_detalles', 'retornos_pedido', 'retorno_pedido_detalles', 'incidencia_entrega_eventos'] as $tabla) {
-            if (! Schema::hasTable($tabla)) {
-                return false;
-            }
-        }
+        $tablas = ['incidencias_entrega', 'entregas_pedido', 'entrega_pedido_detalles', 'retornos_pedido', 'retorno_pedido_detalles', 'incidencia_entrega_eventos'];
 
-        return true;
+        $esquema = DB::getDriverName() === 'sqlite' ? null : DB::getDatabaseName();
+
+        return array_diff($tablas, Schema::getTableListing($esquema, false)) === [];
     }
 
     public function autorizar(User $usuario, string $permiso): void

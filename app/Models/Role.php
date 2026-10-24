@@ -42,6 +42,10 @@ class Role extends Model
 
     public function tienePermiso(string $permiso): bool
     {
+        if ($this->relationLoaded('permisos')) {
+            return $this->permisos->contains('nombre', $permiso);
+        }
+
         return $this->permisos()
             ->where('permisos.nombre', $permiso)
             ->exists();

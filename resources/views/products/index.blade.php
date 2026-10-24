@@ -10,7 +10,7 @@
 
 @section('content')
 @php
-    $permisosRol = auth()->user()->role?->permisos()->pluck('nombre')->all() ?? [];
+    $permisosRol = auth()->user()->role?->permisos->pluck('nombre')->all() ?? [];
     $puedeCrear = in_array('productos.crear', $permisosRol, true);
     $puedeEditar = in_array('productos.editar', $permisosRol, true);
     $puedeCambiarEstado = in_array('productos.cambiar_estado', $permisosRol, true);
