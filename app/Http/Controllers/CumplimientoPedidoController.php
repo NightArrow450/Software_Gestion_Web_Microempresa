@@ -134,15 +134,18 @@ class CumplimientoPedidoController extends Controller
         $produccion = Envasado::whereIn('presentacion_producto_id', $ids)
             ->where('created_at', '>=', $produccionDesde.' 00:00:00')
             ->where('created_at', '<', CarbonImmutable::parse($produccionHasta, 'America/Lima')->addDay()->startOfDay())
-            ->get(['presentacion_producto_id', 'pedido_id', 'cantidad', 'unidades_revertidas']);
+            ->select(['presentacion_producto_id', 'pedido_id'])
+            ->selectRaw('SUM(cantidad - unidades_revertidas) AS neto')
+            ->groupBy('presentacion_producto_id', 'pedido_id')
+            ->toBase()->get();
         $porPresentacion = $produccion->groupBy('presentacion_producto_id');
-        $pedidosIds = $pedidos->modelKeys();
+        $pedidosIds = array_fill_keys($pedidos->modelKeys(), true);
         $filas = collect(array_values($agrupados))->map(function (array $fila) use ($stock, $porPresentacion, $pedidosIds): array {
             foreach ($fila['presentaciones'] as &$presentacion) {
                 $registros = $porPresentacion->get($presentacion['id'], collect());
                 $presentacion['stock'] = (int) ($stock[$presentacion['id']] ?? 0);
-                $presentacion['envasadas'] = $registros->sum(fn (Envasado $registro): int => $registro->cantidad - $registro->unidades_revertidas);
-                $presentacion['vinculadas'] = $registros->whereIn('pedido_id', $pedidosIds)->sum(fn (Envasado $registro): int => $registro->cantidad - $registro->unidades_revertidas);
+                $presentacion['envasadas'] = $registros->sum(fn (object $registro): int => (int) $registro->neto);
+                $presentacion['vinculadas'] = $registros->filter(fn (object $registro): bool => isset($pedidosIds[$registro->pedido_id]))->sum(fn (object $registro): int => (int) $registro->neto);
                 $presentacion['faltante'] = $presentacion['solicitadas'] === null ? null : max(0, $presentacion['solicitadas'] - $presentacion['stock']);
             }
             unset($presentacion);

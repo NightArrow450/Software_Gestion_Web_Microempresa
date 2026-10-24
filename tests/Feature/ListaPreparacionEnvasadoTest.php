@@ -69,6 +69,27 @@ class ListaPreparacionEnvasadoTest extends TestCase
         $this->assertDatabaseCount('envasados', 4);
     }
 
+    public function test_agregacion_conserva_parciales_y_correcciones_por_sku_y_pedido(): void
+    {
+        $e = $this->escenarioEnvasado(100, 0);
+        $pendiente = $this->pedidoEnvasado($e);
+        $entregado = $this->pedidoEnvasado($e, 'entregado');
+        $otro = $this->escenarioEnvasado();
+        $this->pedidoEnvasado($otro);
+        $base = ['presentacion_producto_id' => $e['presentacion']->id, 'configuracion_envasado_id' => $e['configuracion']->id, 'usuario_id' => $e['usuario']->id];
+        foreach ([null, $pendiente->id, $entregado->id] as $pedidoId) {
+            Envasado::factory()->count(10)->create($base + ['pedido_id' => $pedidoId, 'cantidad' => 5, 'unidades_revertidas' => 2]);
+        }
+        $filas = $this->actingAs($e['usuario'])->get(route('cumplimiento.lista-preparacion'))->assertOk()->viewData('filas');
+        $fila = $filas->firstWhere('producto_clave', 'producto:'.$e['presentacion']->producto_id);
+        $this->assertSame(90, $fila['envasadas']);
+        $this->assertSame(30, $fila['vinculadas']);
+        $this->assertSame(5, $fila['total_unidades']);
+        $this->assertSame(5, $fila['faltante']);
+        $this->assertSame(0, $filas->firstWhere('producto_clave', 'producto:'.$otro['presentacion']->producto_id)['envasadas']);
+        $this->assertDatabaseCount('envasados', 30);
+    }
+
     public function test_stock_suficiente_no_inventa_produccion_y_nuevo_pedido_reabre_faltante(): void
     {
         $e = $this->escenarioEnvasado(100, 5);
