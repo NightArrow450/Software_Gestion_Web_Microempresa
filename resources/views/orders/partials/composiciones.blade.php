@@ -3,8 +3,10 @@
 <h3>{{ $lineaSurtida->descripcion_producto }}</h3>
 @php($paquetesSurtidos = app(\App\Services\GestionarSurtidos::class)->paquetes($lineaSurtida))
 @foreach($paquetesSurtidos as $paqueteSurtido)
+<div class="surtido-paquete">
 <p><strong>Paquete {{ $paqueteSurtido['numero'] }} · {{ $paqueteSurtido['estado'] === 'definida' ? 'Composición definida' : 'Pendiente de composición' }}</strong> · versión {{ $paqueteSurtido['version'] }}</p>
 <ul>@foreach($paqueteSurtido['componentes'] as $componenteSurtido)<li>{{ $componenteSurtido['cantidad'] }} unidades · {{ $componenteSurtido['descripcion'] }} · {{ $componenteSurtido['sku'] }}</li>@endforeach</ul>
+</div>
 @endforeach
 @if(!($soloLectura ?? false))
 <details><summary>Historial de composiciones</summary>

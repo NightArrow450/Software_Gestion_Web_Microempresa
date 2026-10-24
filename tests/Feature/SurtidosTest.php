@@ -363,6 +363,6 @@ class SurtidosTest extends TestCase
         $this->get(route('pedidos.edit', $pedido))->assertOk()->assertSee('24.00');
         $this->assertSame('48.00', $pedido->fresh()->total);
         $respuesta = $this->get(route('pedidos.imprimir-por-fecha', ['fecha_pedido' => today()->toDateString()]));
-        $respuesta->assertOk()->assertSee('Anexo de composición')->assertSee('Paquete 2')->assertSee('Lavanda');
+        $respuesta->assertOk()->assertSee('Anexo de composición')->assertSee('Paquete 2')->assertSee('Lavanda')->assertSee('1 anexo(s) de composición surtida en hojas adicionales')->assertSee('El total anterior cuenta solo las hojas de notas', false);
     }
 }

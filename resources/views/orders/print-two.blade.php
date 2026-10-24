@@ -6,8 +6,10 @@
 <link rel="stylesheet" href="{{ asset('css/nota-pedido.css') }}">
 </head>
 <body>
+@php($cantidadAnexos = $pedidos->filter(fn($pedido) => $pedido->detalles->contains('tipo_linea', 'surtido'))->count())
 <div class="print-controls"><button onclick="window.print()">Imprimir {{ $pedidos->count() }} nota(s) en A4 horizontal</button>
-    <p>Selecciona A4 · Horizontal · Escala 100 % · Desactivar encabezados y pies del navegador. Dos notas diferentes por hoja. Total: {{ $pedidos->count() }} nota(s) / {{ $pedidos->chunk(2)->count() }} hoja(s). No se incluyen pedidos cancelados.</p>
+    <p>Selecciona A4 · Horizontal · Escala 100 % · Desactivar encabezados y pies del navegador. Dos notas diferentes por hoja. Total: {{ $pedidos->count() }} nota(s) / {{ $pedidos->chunk(2)->count() }} hoja(s). No se incluyen pedidos cancelados.
+    @if($cantidadAnexos > 0)<strong>Además: {{ $cantidadAnexos }} anexo(s) de composición surtida en hojas adicionales. El total anterior cuenta solo las hojas de notas; los anexos pueden ocupar varias páginas según su extensión. Comprueba el total final en la vista previa de impresión.</strong>@endif</p>
 </div>
 @foreach($pedidos->chunk(2) as $par)
 <div class="print-preview" tabindex="0" role="region" aria-label="Vista previa de notas de pedido"><main class="a4-hoja">
@@ -57,7 +59,7 @@
 @endforeach
 @foreach($pedidos as $pedido)
 @if($pedido->detalles->contains('tipo_linea', 'surtido'))
-<section style="break-before:page;padding:15mm" aria-label="Anexo de composición surtida"><h2>Anexo de composición · pedido N.º {{ $pedido->numero }}</h2><p>Desglose físico informativo. Los importes ya están incluidos en la nota comercial.</p>@include('orders.partials.composiciones', ['soloLectura' => true])</section>
+<section class="anexo-surtido" aria-label="Anexo de composición surtida"><h2>Anexo de composición · pedido N.º {{ $pedido->numero }}</h2><p>Desglose físico informativo. Los importes ya están incluidos en la nota comercial.</p>@include('orders.partials.composiciones', ['soloLectura' => true])</section>
 @endif
 @endforeach
 </body>

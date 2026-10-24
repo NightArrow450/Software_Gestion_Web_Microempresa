@@ -52,3 +52,13 @@ body{background:#f3f4f6;color:#111;margin:0;font-family:Arial,Helvetica,sans-ser
 @media print {
     .print-preview, .nota > .table-container { display: contents; }
 }
+
+/* El desglose se imprime aparte de las notas comerciales y conserva unido cada paquete. */
+.anexo-surtido{background:#fff;max-width:297mm;margin:12px auto;padding:15mm;font-size:10pt;line-height:1.4;overflow-wrap:anywhere}
+.anexo-surtido h2{font-size:16pt;margin:0 0 5mm}
+.anexo-surtido h3{font-size:12pt;margin:5mm 0 3mm;break-after:avoid}
+.anexo-surtido .surtido-paquete{margin:0 0 5mm;break-inside:avoid;page-break-inside:avoid}
+.anexo-surtido .surtido-paquete p{margin:0 0 2mm;break-after:avoid}
+.anexo-surtido ul{margin:0;padding-left:6mm}
+@media print{.anexo-surtido{break-before:page;page-break-before:always;margin:0;padding:12mm 15mm}}
+@media screen and (max-width:650px){.anexo-surtido{padding:20px;margin:12px 0}}
