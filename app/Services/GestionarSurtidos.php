@@ -40,7 +40,7 @@ class GestionarSurtidos
         return $formatos->map(function ($f) use ($enlaces, $skus): array {
             $opciones = $enlaces->get($f->id, collect())->map(fn ($e) => $skus->get($e->presentacion_producto_id))
                 ->filter(fn ($p): bool => $p && $p->estado && (! $p->variante || $p->variante->estado))
-                ->map(fn (PresentacionProducto $p): array => ['id' => $p->id, 'nombre' => $this->nombre($p), 'sku' => $p->codigo_sku])->values()->all();
+                ->map(fn (PresentacionProducto $p): array => ['id' => $p->id, 'nombre' => $this->nombre($p), 'aroma' => $p->variante?->valor, 'sku' => $p->codigo_sku])->values()->all();
 
             return (array) $f + ['skus' => $opciones];
         })->all();

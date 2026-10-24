@@ -77,3 +77,12 @@ test('navegar a un número de paquete inválido no pierde ni crea composiciones'
         assert.deepEqual(JSON.parse(e.oculto.value), [{ estado: 'pendiente', componentes: [] }]);
     }
 });
+
+test('la identificación visible conserva aroma y SKU completos al cambiar cantidad o selección', () => {
+    const e = prepararEditor([{ estado: 'definida', componentes: [{ presentacion_producto_id: 10, cantidad: 12 }] }]);
+    const fila = e.raiz.children[3].children[0], selector = fila.children[0], cantidad = fila.children[1], descripcion = fila.children[3];
+    assert.equal(descripcion.textContent, '12 unidades · Lavanda · LAV');
+    selector.value = '20'; selector.eventos.change();
+    cantidad.value = '5'; cantidad.eventos.input();
+    assert.equal(descripcion.textContent, '5 unidades · Limón · LIM');
+});

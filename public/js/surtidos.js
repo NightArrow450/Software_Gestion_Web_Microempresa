@@ -43,11 +43,14 @@
             (paquetes[actual]?.componentes || []).forEach((c, indice) => {
                 const fila = elemento('div', undefined, 'surtido-componente');
                 const selector = elemento('select', undefined, 'form-control'); selector.add(new Option('Selecciona un aroma / SKU', ''));
-                skus.forEach(s => selector.add(new Option(`${s.nombre} · ${s.sku}`, String(s.id)))); selector.value = String(c.presentacion_producto_id || ''); selector.setAttribute('aria-label', 'Aroma y SKU del componente');
+                skus.forEach(s => selector.add(new Option(`${s.aroma || s.nombre} · ${s.sku}`, String(s.id)))); selector.value = String(c.presentacion_producto_id || ''); selector.setAttribute('aria-label', 'Aroma y SKU del componente');
                 const unidades = elemento('input'); unidades.type = 'number'; unidades.min = '1'; unidades.max = String(tamano); unidades.step = '1'; unidades.value = c.cantidad || ''; unidades.className = 'form-control'; unidades.setAttribute('aria-label', 'Unidades de este aroma');
-                selector.addEventListener('change', () => { c.presentacion_producto_id = Number(selector.value); guardar(); });
-                unidades.addEventListener('input', () => { c.cantidad = Number(unidades.value); guardar(); });
-                fila.append(selector, unidades, boton('Quitar aroma', () => { paquetes[actual].componentes.splice(indice, 1); pintar(); })); filas.append(fila);
+                const descripcion = elemento('p', undefined, 'surtido-seleccion');
+                const describir = () => { const elegido = skus.find(s => Number(s.id) === Number(c.presentacion_producto_id)); descripcion.textContent = elegido ? `${c.cantidad || 0} unidades · ${elegido.nombre} · ${elegido.sku}` : 'Selecciona un aroma y sus unidades.'; };
+                selector.addEventListener('change', () => { c.presentacion_producto_id = Number(selector.value); describir(); guardar(); });
+                unidades.addEventListener('input', () => { c.cantidad = Number(unidades.value); describir(); guardar(); });
+                describir();
+                fila.append(selector, unidades, boton('Quitar aroma', () => { paquetes[actual].componentes.splice(indice, 1); pintar(); }), descripcion); filas.append(fila);
             }); guardar();
         }
         numero.addEventListener('change', () => {
