@@ -73,14 +73,22 @@
     let indice = 100000;
     function agregar(datos) {
         const f = (config.formatosSurtidos || []).find(f => Number(f.id) === Number(datos.formato_surtido_id));
-        if (!f || contenedor.children.length >= 18) return;
+        if (!f) return;
+        const repetida = !datos.id && Array.from(contenedor.querySelectorAll('.s2-surtido-row')).find(fila => Number(fila.dataset.formatoId) === Number(f.id) && Number(fila.dataset.tamano) === Number(f.unidades_por_empaque));
+        if (repetida) {
+            const campo = repetida.querySelector('[data-cantidad-surtida]');
+            if (Number(campo.value) < 10000) { campo.value = Number(campo.value) + 1; campo.dispatchEvent(new Event('input')); }
+            return;
+        }
+        if (contenedor.children.length >= 18) return;
         const prefijo = `detalles[${indice++}]`, fila = elemento('div', undefined, 'form-section s2-surtido-row');
+        fila.dataset.formatoId = String(f.id); fila.dataset.tamano = String(datos.unidades_por_empaque || f.unidades_por_empaque);
         function ocultar(campo, valor) { const e = elemento('input'); e.type = 'hidden'; e.name = `${prefijo}[${campo}]`; e.value = valor; fila.append(e); return e; }
         ocultar('tipo_linea', 'surtido'); ocultar('formato_surtido_id', f.id); ocultar('modalidad', 'empaque'); if (datos.id) ocultar('id', datos.id);
         const tamano = Number(datos.unidades_por_empaque || f.unidades_por_empaque), precio = Number(datos.precio_unitario ?? f.precio_empaque);
         ocultar('unidades_por_empaque', tamano);
         fila.append(elemento('h3', `${f.nombre} · Surtido de ${tamano}`));
-        const cantidad = elemento('input'); cantidad.type = 'number'; cantidad.name = `${prefijo}[cantidad]`; cantidad.min = '1'; cantidad.max = '10000'; cantidad.step = '1'; cantidad.value = datos.cantidad || 1; cantidad.className = 'form-control'; cantidad.setAttribute('aria-label', 'Cantidad de paquetes surtidos');
+        const cantidad = elemento('input'); cantidad.type = 'number'; cantidad.name = `${prefijo}[cantidad]`; cantidad.min = '1'; cantidad.max = '10000'; cantidad.step = '1'; cantidad.value = datos.cantidad || 1; cantidad.className = 'form-control'; cantidad.setAttribute('aria-label', 'Cantidad de paquetes surtidos'); cantidad.dataset.cantidadSurtida = '1';
         const label = elemento('label', 'Cantidad de paquetes'); label.append(cantidad); fila.append(label);
         const importe = elemento('p', undefined, 's2-note'); fila.append(importe);
         const oculto = ocultar('paquetes_json', datos.paquetes_json || '[]'), raiz = elemento('div'); fila.append(raiz);

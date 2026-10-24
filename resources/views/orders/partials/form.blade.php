@@ -38,7 +38,7 @@
     <div class="page-heading" style="margin-bottom:14px"><div><h2 class="form-section-title" style="margin-bottom:4px">Productos solicitados</h2>
         <div class="s2-note">El precio se obtiene del catálogo. Admite unidad o empaque si está habilitado. Máximo 18 líneas por nota física.</div></div>
         <button type="button" class="btn btn-secondary" id="agregar-fila"><span class="material-symbols-outlined">search</span> Buscar producto</button></div>
-    @if(count($presentaciones) === 0)<div class="s2-error">No existen presentaciones activas. Crea presentaciones y registra precios en Catálogo de Productos antes de agregar un pedido.</div>@endif
+    @if(count($presentaciones) === 0 && count($formatosSurtidos ?? []) === 0)<div class="s2-error">No existen presentaciones activas. Crea presentaciones y registra precios en Catálogo de Productos antes de agregar un pedido.</div>@endif
     <div class="form-group s2-busqueda" id="busqueda-productos">
         <label class="form-label" for="buscar-presentacion">Buscar producto por nombre o SKU</label>
         <input class="form-control" type="search" id="buscar-presentacion" placeholder="Ej.: Quita, lejía o código SKU" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="resultados-presentaciones">
@@ -69,7 +69,7 @@
     <div class="s2-resumen">Total del pedido: <span id="s2-total">S/ 0.00</span></div>
     <p class="s2-note">El servidor recalcula todos los importes al guardar; no depende de los valores mostrados en el navegador.</p>
 </section>
-<div class="form-actions"><a class="btn btn-secondary" href="{{ route('pedidos.index') }}">Cancelar</a><button class="btn btn-primary" type="submit" @disabled(count($presentaciones)===0)><span class="material-symbols-outlined">save</span> {{ $editando ? 'Guardar cambios' : 'Registrar pedido' }}</button></div>
+<div class="form-actions"><a class="btn btn-secondary" href="{{ route('pedidos.index') }}">Cancelar</a><button class="btn btn-primary" type="submit" @disabled(count($presentaciones)===0 && count($formatosSurtidos ?? [])===0)><span class="material-symbols-outlined">save</span> {{ $editando ? 'Guardar cambios' : 'Registrar pedido' }}</button></div>
 </form>
 @push('scripts')
 <script>

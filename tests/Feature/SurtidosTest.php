@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Pedido;
+use App\Models\Permiso;
 use App\Services\ConfigurarFormatoSurtido;
 use App\Services\ControlEntregaPedido;
 use App\Services\GestionarSurtidos;
@@ -28,12 +29,51 @@ class SurtidosTest extends TestCase
         $this->assertSame('24.00', number_format((float) DB::table('formatos_surtidos')->value('precio_empaque'), 2, '.', ''));
     }
 
-    public function test_configuracion_rechaza_capacidades_incompatibles_y_no_sobrescribe_una_version_obsoleta(): void
+    public function test_configuracion_rechaza_capacidades_incompatibles(): void
     {
         $e = $this->escenarioSurtido();
         $e['skus'][1]->update(['contenido' => 2]);
         $this->expectException(ValidationException::class);
         app(ConfigurarFormatoSurtido::class)->guardar(['producto_id' => $e['presentacion']->producto_id, 'nombre' => 'No permitido', 'unidades_por_empaque' => 12, 'precio_empaque' => 24, 'estado' => true, 'version' => 0, 'skus' => [$e['skus'][0]->id, $e['skus'][1]->id]], $e['usuario'], $e['formato']);
+    }
+
+    public function test_configuracion_actualiza_sin_recetas_y_rechaza_version_obsoleta(): void
+    {
+        $e = $this->escenarioSurtido();
+        $datos = ['producto_id' => $e['presentacion']->producto_id, 'nombre' => 'Surtido revisado', 'unidades_por_empaque' => 15, 'precio_empaque' => 30, 'estado' => true, 'version' => 0, 'skus' => array_column($e['skus'], 'id')];
+        app(ConfigurarFormatoSurtido::class)->guardar($datos, $e['usuario'], $e['formato']);
+        $this->assertDatabaseHas('formatos_surtidos', ['id' => $e['formato'], 'version' => 1, 'unidades_por_empaque' => 15]);
+        try {
+            app(ConfigurarFormatoSurtido::class)->guardar(array_replace($datos, ['precio_empaque' => 1]), $e['usuario'], $e['formato']);
+            $this->fail('No debe sobrescribir una versión más reciente.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('version', $exception->errors());
+        }
+        $this->assertSame(30.0, (float) DB::table('formatos_surtidos')->value('precio_empaque'));
+        $this->assertDatabaseCount('movimientos_inventario', 0);
+    }
+
+    public function test_sin_permiso_no_se_puede_configurar_ni_componer_aunque_se_pueda_leer_el_pedido(): void
+    {
+        $e = $this->escenarioSurtido();
+        $pedido = $this->registrar($e);
+        $e['usuario']->role->permisos()->detach(Permiso::whereIn('nombre', ['surtidos.configurar', 'pedidos.surtidos.componer'])->pluck('id'));
+        $e['usuario']->unsetRelation('role');
+        $this->get(route('surtidos.index'))->assertForbidden();
+        $this->post(route('surtidos.componer', [$pedido, $pedido->detalles->sole()]), ['version' => 0, 'motivo' => 'No autorizado para modificar paquetes.', 'paquetes_json' => json_encode($this->paquetesSurtidos($e))])->assertForbidden();
+        $this->get(route('pedidos.show', $pedido))->assertOk()->assertSee('Lavanda');
+        $this->assertDatabaseCount('paquete_surtido_composiciones', 2);
+    }
+
+    public function test_no_permite_cambiar_composiciones_despues_del_cierre(): void
+    {
+        $e = $this->escenarioSurtido();
+        $pedido = $this->registrar($e);
+        DB::table('pedidos')->where('id', $pedido->id)->update(['estado' => 'listo_despacho']);
+        $datos = $this->paquetesSurtidos($e);
+        $datos[0] = $datos[1];
+        $this->post(route('surtidos.componer', [$pedido, $pedido->detalles->sole()]), ['version' => 0, 'motivo' => 'Intento posterior al cierre de preparación.', 'paquetes_json' => json_encode($datos)])->assertSessionHasErrors();
+        $this->assertDatabaseCount('paquete_surtido_composiciones', 2);
     }
 
     private function registrar(array $e, ?array $paquetes = null, array $otros = []): Pedido
