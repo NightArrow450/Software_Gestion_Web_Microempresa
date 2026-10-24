@@ -10,7 +10,7 @@ El workflow `.github/workflows/calidad.yml` ejecuta cinco trabajos independiente
 | JavaScript y Vite | Node 22, instalación desde `package-lock.json`, compilación real y las diez pruebas JavaScript actuales. |
 | Auditorías Composer y npm | Dependencias de producción y desarrollo de ambos lockfiles, sin correcciones automáticas ni avisos ignorados. |
 
-Los mínimos de pruebas detectan omisiones accidentales y permiten agregar escenarios nuevos. Las pruebas SQLite y MySQL siguen separadas. Un fallo de instalación, auditoría, compilación o pruebas hace fallar el trabajo; no se utiliza `continue-on-error`.
+Los mínimos de pruebas detectan omisiones accidentales y permiten agregar escenarios nuevos. Las pruebas SQLite y MySQL siguen separadas. Se ejecuta PHPUnit con las configuraciones existentes, mostrando las advertencias y fallando ante advertencias o pruebas riesgosas. Un fallo de instalación, auditoría, compilación o pruebas hace fallar el trabajo; no se utiliza `continue-on-error`.
 
 ## Eventos y ejecución manual
 

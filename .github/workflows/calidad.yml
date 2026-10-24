@@ -44,7 +44,7 @@ jobs:
       - uses: ./.github/actions/preparar-php
       - uses: ./.github/actions/preparar-vite
       - name: Ejecutar Laravel, incluida seguridad una sola vez
-        run: composer test -- --compact --log-junit "$RUNNER_TEMP/laravel.xml"
+        run: php vendor/bin/phpunit --display-warnings --fail-on-warning --fail-on-risky --log-junit "$RUNNER_TEMP/laravel.xml"
       - name: Comprobar resultados y los once escenarios de seguridad
         run: |
           python3 <<'PY'
@@ -137,7 +137,7 @@ jobs:
           echo "MySQL 8.4.3 temporal comprobado; base de pruebas vacía y sin conexión a Laragon.\n";
           PHP
       - name: Ejecutar integración y concurrencia MySQL
-        run: php vendor/bin/phpunit --configuration phpunit.mysql.xml --log-junit "$RUNNER_TEMP/mysql.xml"
+        run: php vendor/bin/phpunit --configuration phpunit.mysql.xml --display-warnings --fail-on-warning --fail-on-risky --log-junit "$RUNNER_TEMP/mysql.xml"
       - name: Impedir que MySQL se omita silenciosamente
         run: |
           python3 <<'PY'
