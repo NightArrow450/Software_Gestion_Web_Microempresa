@@ -26,21 +26,24 @@ class GestionarSurtidos
         abort_unless($usuario->status && $usuario->role?->tienePermiso('pedidos.surtidos.componer'), 403);
     }
 
-    public function formatos(): array
+    public function formatos(array $incluir = []): array
     {
         if (! $this->disponible()) {
             return [];
         }
+        $formatos = DB::table('formatos_surtidos as f')->join('productos as p', 'p.id', '=', 'f.producto_id')
+            ->where(fn ($q) => $q->where(fn ($activos) => $activos->where('f.estado', true)->where('p.estado', true))->orWhereIn('f.id', $incluir))
+            ->orderBy('f.nombre')->select('f.*')->get();
+        $enlaces = DB::table('formato_surtido_skus')->whereIn('formato_surtido_id', $formatos->pluck('id'))->get()->groupBy('formato_surtido_id');
+        $skus = PresentacionProducto::with(['producto', 'variante'])->whereIn('id', $enlaces->flatten()->pluck('presentacion_producto_id'))->get()->keyBy('id');
 
-        return DB::table('formatos_surtidos as f')->join('productos as p', 'p.id', '=', 'f.producto_id')
-            ->where('f.estado', true)->where('p.estado', true)->orderBy('f.nombre')->select('f.*')->get()->map(function ($f): array {
-                $ids = DB::table('formato_surtido_skus')->where('formato_surtido_id', $f->id)->pluck('presentacion_producto_id');
-                $skus = PresentacionProducto::with(['producto', 'variante'])->whereIn('id', $ids)->where('estado', true)->get()
-                    ->filter(fn (PresentacionProducto $p): bool => ! $p->variante || $p->variante->estado)
-                    ->map(fn (PresentacionProducto $p): array => ['id' => $p->id, 'nombre' => $this->nombre($p), 'sku' => $p->codigo_sku])->values()->all();
+        return $formatos->map(function ($f) use ($enlaces, $skus): array {
+            $opciones = $enlaces->get($f->id, collect())->map(fn ($e) => $skus->get($e->presentacion_producto_id))
+                ->filter(fn ($p): bool => $p && $p->estado && (! $p->variante || $p->variante->estado))
+                ->map(fn (PresentacionProducto $p): array => ['id' => $p->id, 'nombre' => $this->nombre($p), 'sku' => $p->codigo_sku])->values()->all();
 
-                return (array) $f + ['skus' => $skus];
-            })->all();
+            return (array) $f + ['skus' => $opciones];
+        })->all();
     }
 
     public function nombre(PresentacionProducto $p): string
@@ -138,7 +141,7 @@ class GestionarSurtidos
                 $paquete = DB::table('pedido_paquetes_surtidos')->where('pedido_detalle_id', $detalle->id)->where('numero', $numero)->lockForUpdate()->first();
                 if (! $paquete) {
                     $id = DB::table('pedido_paquetes_surtidos')->insertGetId(['pedido_detalle_id' => $detalle->id, 'numero' => $numero, 'version' => 0, 'activo' => true]);
-                    $paquete = DB::table('pedido_paquetes_surtidos')->find($id);
+                    $paquete = DB::table('pedido_paquetes_surtidos')->where('id', $id)->firstOrFail();
                 }
                 $anterior = DB::table('paquete_surtido_composiciones')->where('paquete_surtido_id', $paquete->id)->where('version', $paquete->version)->first();
                 $previos = $anterior ? DB::table('paquete_surtido_componentes')->where('composicion_id', $anterior->id)->orderBy('presentacion_producto_id')->get(['presentacion_producto_id', 'cantidad'])->map(fn ($r): array => ['presentacion_producto_id' => (int) $r->presentacion_producto_id, 'cantidad' => (int) $r->cantidad])->all() : null;
@@ -175,6 +178,15 @@ class GestionarSurtidos
         return $paquetes->map(fn ($p): array => (array) $p + ['componentes' => $componentes->get($p->composicion_id, collect())->map(fn ($c): array => (array) $c)->all()])->all();
     }
 
+    public function historial(PedidoDetalle $detalle): array
+    {
+        $versiones = DB::table('paquete_surtido_composiciones as c')->join('pedido_paquetes_surtidos as p', 'p.id', '=', 'c.paquete_surtido_id')->join('users as u', 'u.id', '=', 'c.usuario_id')
+            ->where('p.pedido_detalle_id', $detalle->id)->orderBy('c.id')->get(['c.*', 'p.numero', 'u.first_name', 'u.last_name']);
+        $componentes = DB::table('paquete_surtido_componentes')->whereIn('composicion_id', $versiones->pluck('id'))->orderBy('id')->get()->groupBy('composicion_id');
+
+        return $versiones->map(fn ($v): array => (array) $v + ['componentes' => $componentes->get($v->id, collect())->all()])->all();
+    }
+
     public function pendientes(Pedido $pedido): array
     {
         $resultado = [];
@@ -184,7 +196,7 @@ class GestionarSurtidos
             }
             $definidos = count(array_filter($this->paquetes($d), fn (array $p): bool => $p['estado'] === 'definida'));
             if ($definidos < $d->cantidad) {
-                $resultado[] = ['pedido' => $pedido->numero, 'detalle_id' => $d->id, 'descripcion' => $d->descripcion_producto, 'paquetes' => $d->cantidad - $definidos, 'unidades' => ($d->cantidad - $definidos) * $d->unidades_por_empaque];
+                $resultado[] = ['pedido' => $pedido->numero, 'detalle_id' => $d->id, 'formato_surtido_id' => $d->formato_surtido_id, 'descripcion' => $d->descripcion_producto, 'paquetes' => $d->cantidad - $definidos, 'unidades' => ($d->cantidad - $definidos) * $d->unidades_por_empaque];
             }
         }
 

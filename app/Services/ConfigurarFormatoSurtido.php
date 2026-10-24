@@ -40,7 +40,7 @@ class ConfigurarFormatoSurtido
                     throw ValidationException::withMessages(['skus' => 'Los SKU deben estar activos y corresponder al mismo producto, capacidad, unidad y tipo de envase.']);
                 }
             }
-            if ($actual && ($actual->contenido !== $base->contenido || $actual->unidad_medida !== $base->unidad_medida || $actual->tipo_envase !== ($base->tipo_envase ?? ''))) {
+            if ($actual && ((float) $actual->contenido !== (float) $base->contenido || $actual->unidad_medida !== $base->unidad_medida || $actual->tipo_envase !== ($base->tipo_envase ?? ''))) {
                 throw ValidationException::withMessages(['skus' => 'La presentación física del formato no puede cambiar. Crea otra habilitación comercial.']);
             }
             $fila = ['producto_id' => $producto->id, 'nombre' => trim($datos['nombre']), 'contenido' => $base->contenido,

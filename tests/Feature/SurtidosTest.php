@@ -179,4 +179,33 @@ class SurtidosTest extends TestCase
         $this->assertSame('48.00', $pedido->fresh()->total);
         $this->get(route('cumplimiento.show', $pedido))->assertOk()->assertSee('Lavanda');
     }
+
+    public function test_lista_consolida_aromas_y_senala_pendientes_sin_ocultar_filtros(): void
+    {
+        $e = $this->escenarioSurtido();
+        $paquetes = $this->paquetesSurtidos($e);
+        $paquetes[1] = ['estado' => 'pendiente', 'componentes' => []];
+        $pedido = $this->registrar($e, $paquetes);
+        DB::table('pedidos')->where('id', $pedido->id)->update(['estado' => 'confirmado']);
+        $r = $this->get(route('cumplimiento.lista-preparacion'));
+        $r->assertOk()->assertSee('12 unidades pendientes de distribuir')->assertSee('Pendiente de composición surtida');
+        $this->assertSame(12, $r->viewData('filas')->sum('total_unidades'));
+        $this->assertCount(3, $r->viewData('filas'));
+        $this->get(route('inventario.index', ['pedido_id' => $pedido->id]))->assertOk()->assertViewHas('puedeAtender', false);
+        DB::table('pedidos')->where('id', $pedido->id)->update(['estado' => 'despachado']);
+        $this->get(route('cumplimiento.lista-preparacion'))->assertViewHas('filas', fn ($filas): bool => $filas->isEmpty());
+    }
+
+    public function test_impresion_incluye_anexo_y_cambio_catalogo_no_reescribe_composicion_ni_precio(): void
+    {
+        $e = $this->escenarioSurtido();
+        $pedido = $this->registrar($e);
+        DB::table('formatos_surtidos')->where('id', $e['formato'])->update(['precio_empaque' => 99, 'unidades_por_empaque' => 15]);
+        $e['skus'][0]->variante->update(['valor' => 'Nombre nuevo']);
+        $this->get(route('pedidos.show', $pedido))->assertOk()->assertSee('Lavanda')->assertSee('Historial de composiciones');
+        $this->get(route('pedidos.edit', $pedido))->assertOk()->assertSee('24.00');
+        $this->assertSame('48.00', $pedido->fresh()->total);
+        $respuesta = $this->get(route('pedidos.imprimir-por-fecha', ['fecha_pedido' => today()->toDateString()]));
+        $respuesta->assertOk()->assertSee('Anexo de composición')->assertSee('Paquete 2')->assertSee('Lavanda');
+    }
 }

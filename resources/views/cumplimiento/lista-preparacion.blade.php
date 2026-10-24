@@ -48,6 +48,10 @@
         Vista diaria predeterminada: atrasados y entregas de hoy. Amplía «Entrega hasta» para incluir futuros; borra ambos límites para consultar todos los pendientes.
     </p>
 
+    @if($surtidosPendientes->isNotEmpty())
+    <section class="cumplimiento-nota" role="alert"><h2>Preparación pendiente de composición surtida</h2><p>No se puede declarar cobertura completa: hay unidades comerciales sin distribuir por aroma. Las filas por SKU incluyen únicamente composiciones definidas.</p>
+    <ul>@foreach($surtidosPendientes as $pendiente)<li>Pedido {{ $pendiente['pedido'] }} · {{ $pendiente['descripcion'] }} · {{ $pendiente['paquetes'] }} paquete(s), {{ $pendiente['unidades'] }} unidades pendientes de distribuir.</li>@endforeach</ul></section>
+    @endif
     <div class="cumplimiento-nota" role="note">
         Esta lista usa las <strong>cantidades solicitadas</strong> de los pedidos pendientes.
         El stock es general y no está reservado. Los envasados registrados ya están incluidos en el stock: no se suman otra vez.

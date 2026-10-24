@@ -710,7 +710,7 @@ class PedidoController extends Controller
             ->values()
             ->all();
 
-        $formatosSurtidos = request()->user()?->role?->tienePermiso('pedidos.surtidos.componer') ? app(GestionarSurtidos::class)->formatos() : [];
+        $formatosSurtidos = request()->user()?->role?->tienePermiso('pedidos.surtidos.componer') ? app(GestionarSurtidos::class)->formatos(request()->route('pedido') instanceof Pedido ? request()->route('pedido')->detalles->pluck('formato_surtido_id')->filter()->all() : []) : [];
 
         return compact('clientes', 'presentaciones', 'formatosSurtidos');
     }

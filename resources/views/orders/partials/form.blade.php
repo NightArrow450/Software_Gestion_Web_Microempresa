@@ -46,7 +46,7 @@
         <p class="s2-note" id="aviso-buscador" aria-live="polite">Escribe para buscar. Selecciona la presentación y modalidad de venta.</p>
     </div>
     @if(count($formatosSurtidos ?? []) > 0)
-    <div class="form-group"><label for="formato-surtido">Añadir paquete surtido habilitado</label><select class="form-control" id="formato-surtido">@foreach($formatosSurtidos as $formato)<option value="{{ $formato['id'] }}">{{ $formato['nombre'] }} · {{ $formato['unidades_por_empaque'] }} unidades · S/ {{ $formato['precio_empaque'] }}</option>@endforeach</select>
+    <div class="form-group"><label for="formato-surtido">Añadir paquete surtido habilitado</label><select class="form-control" id="formato-surtido">@foreach($formatosSurtidos as $formato)<option value="{{ $formato['id'] }}" @disabled(!$formato['estado'])>{{ $formato['nombre'] }} · {{ $formato['unidades_por_empaque'] }} unidades · S/ {{ $formato['precio_empaque'] }}</option>@endforeach</select>
     <button type="button" class="btn btn-secondary" id="agregar-surtido">Añadir línea surtida</button><p class="s2-note">Cada paquete tiene composición propia. Puede quedar pendiente, pero no podrá finalizar preparación ni despacharse sin definirla.</p></div>
     @endif
     <div id="filas-pedido"></div>
