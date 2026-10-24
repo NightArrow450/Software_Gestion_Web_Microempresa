@@ -1,0 +1,17 @@
+.indicadores { min-width: 0; }
+.indicadores h1 { font-size: 24px; font-weight: 700; line-height: 1.3; margin-bottom: 8px; }
+.indicadores h2 { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+.indicadores .card { margin-bottom: 20px; }
+.indicadores .form-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+.indicadores select, .indicadores input:not([type=checkbox]) { width: 100%; min-height: 44px; font-size: 16px; }
+.indicadores [hidden] { display: none !important; }
+.indicadores summary { cursor: pointer; padding: 12px 0; font-weight: 600; }
+.indicadores .btn { min-height: 44px; display: inline-flex; align-items: center; padding: 10px 16px; }
+.indicadores-acciones { display:flex; flex-wrap:wrap; gap:12px; margin:16px 0; }
+.indicadores-totales { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:12px; }
+.indicadores-totales p { background:var(--surface-low); border:1px solid var(--outline-variant); border-radius:12px; padding:16px; margin:0; overflow-wrap:anywhere; }
+.indicadores-totales strong { display:block; margin-bottom:8px; }
+.indicadores .table-container { overflow-x:auto; margin-bottom:16px; }
+.indicadores th, .indicadores td { max-width:340px; overflow-wrap:anywhere; }
+.indicadores nav { display:flex; flex-wrap:wrap; align-items:center; gap:16px; }
+@media(max-width:650px) { .indicadores .form-grid { grid-template-columns:minmax(0,1fr); } .indicadores-totales { grid-template-columns:minmax(0,1fr); } }

@@ -49,6 +49,9 @@
         </div>
 
         <nav class="menu">
+            @if(in_array('indicadores.ver', $permisosSidebar, true))
+                <a href="{{ route('indicadores.index') }}" class="menu-link {{ request()->routeIs('indicadores.*') ? 'active' : '' }}"><span class="material-symbols-outlined">monitoring</span>Indicadores y CSV</a>
+            @endif
             @if(in_array('envasado.ver', $permisosSidebar, true))
             <a href="{{ route('envasado.index') }}" class="menu-link {{ request()->routeIs('envasado.*') ? 'active' : '' }}"><span class="material-symbols-outlined">inventory</span>Envasados</a>
             @endif

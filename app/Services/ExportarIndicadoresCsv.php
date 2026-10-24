@@ -35,7 +35,7 @@ class ExportarIndicadoresCsv
         if ($valor === null) {
             return 'No disponible';
         }
-        $numerico = str_ends_with($campo, '_id') || str_ends_with($campo, '_centimos') || in_array($campo, ['version', 'numero_paquete', 'tamano', 'cantidad_comercial', 'paquetes_definidos', 'paquetes_pendientes', 'unidades_fisicas', 'unidades_sin_composicion', 'unidades_sin_distribuir', 'solicitadas', 'stock_actual', 'faltante_conocido', 'aceptadas', 'rechazadas', 'recibidas', 'aptas', 'danadas', 'en_revision', 'no_recuperadas', 'reincorporadas', 'envasadas_brutas', 'correcciones_administrativas', 'perdidas_fisicas', 'efecto_neto', 'consumo_bruto', 'devuelto', 'perdido', 'salida_neta', 'cantidad', 'stock_anterior', 'stock_nuevo', 'variacion'], true);
+        $numerico = str_ends_with($campo, '_id') || str_ends_with($campo, '_centimos') || in_array($campo, ['version', 'numero_paquete', 'tamano', 'cantidad_comercial', 'paquetes_definidos', 'paquetes_pendientes', 'unidades_fisicas', 'unidades_sin_composicion', 'unidades_sin_distribuir', 'solicitadas', 'stock_actual', 'faltante_conocido', 'despachadas', 'aceptadas', 'rechazadas', 'pendientes', 'recibidas', 'aptas', 'danadas', 'en_revision', 'por_revisar', 'no_recuperadas', 'reincorporadas', 'por_retornar', 'por_aprobar', 'envasadas_brutas', 'correcciones_administrativas', 'perdidas_fisicas', 'efecto_neto', 'neto_actual_envasado', 'consumo_bruto', 'devuelto', 'perdido', 'salida_neta', 'cantidad', 'stock_anterior', 'stock_nuevo', 'saldo_inicial', 'saldo_final', 'variacion'], true);
         if ($numerico && preg_match('/\A-?\d+(?:\.\d+)?\z/', (string) $valor)) {
             return (string) $valor;
         }

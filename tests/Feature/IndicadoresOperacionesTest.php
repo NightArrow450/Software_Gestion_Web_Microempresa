@@ -9,6 +9,7 @@ use App\Services\FilasIndicadores;
 use App\Services\FiltrosIndicadores;
 use App\Services\GestionarSurtidos;
 use App\Services\RegistrarEnvasado;
+use App\Services\ResumenIndicadores;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -203,5 +204,37 @@ class IndicadoresOperacionesTest extends TestCase
 
         $this->assertCount(1, $f);
         $this->assertSame($p->id, $f[0]['pedido_id']);
+    }
+
+    public function test_reincorporacion_acumulada_sin_movimiento_se_muestra_no_disponible(): void
+    {
+        $e = $this->escenario();
+        $this->resultado($e, 3, 2);
+        $inc = DB::table('incidencias_entrega')->first()->id;
+        $r = DB::table('retornos_pedido')->insertGetId(['incidencia_id' => $inc, 'usuario_id' => $e['usuario']->id, 'ocurrido_en' => now(), 'observaciones' => 'Histórico incompleto simulado exclusivamente en pruebas.', 'created_at' => now()]);
+        DB::table('retorno_pedido_detalles')->insert(['retorno_id' => $r, 'pedido_detalle_id' => $e['detalle']->id, 'aptas' => 1, 'reincorporadas' => 1]);
+
+        $situacion = $this->filas('situacion_entregas');
+
+        $this->assertNull($situacion[0]['reincorporadas']);
+        $this->assertNull($situacion[0]['por_aprobar']);
+        $this->assertStringContainsString('sin movimiento', $situacion[0]['verificable']);
+        $resumen = app(ResumenIndicadores::class)->pagina(FiltrosIndicadores::validar(['reporte' => 'situacion_entregas']));
+        $this->assertNull($resumen['totales']['reincorporadas']);
+        $this->assertSame(1, $resumen['noDisponibles']['reincorporadas']);
+    }
+
+    public function test_sku_historico_sigue_filtrando_entregas_si_cambia_el_codigo_del_catalogo(): void
+    {
+        $e = $this->escenario(true);
+        $this->resultado($e, 3, 2);
+        $codigo = $e['skus'][0]->codigo_sku;
+        $e['skus'][0]->update(['codigo_sku' => 'CODIGO-CAMBIADO']);
+
+        $entregas = $this->filas('entregas', ['sku' => $codigo]);
+
+        $this->assertCount(1, $entregas);
+        $this->assertSame($codigo, $entregas[0]['sku']);
+        $this->assertSame(600, $entregas[0]['aceptado_centimos']);
     }
 }

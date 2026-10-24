@@ -36,14 +36,16 @@ class SituacionEntregaIndicadores
                 }
                 $entregas = $inc ? $resultados->get($inc->id, collect()) : collect();
                 $recepciones = $inc ? $retornos->get($inc->id, collect()) : collect();
+                $claveRegistro = fn ($r): string => ControlEntregaPedido::claveFisica((int) $r->pedido_detalle_id, $r->despacho_componente_id === null ? null : (int) $r->despacho_componente_id);
+                $entregasPorReferencia = $entregas->groupBy($claveRegistro);
+                $retornosPorReferencia = $recepciones->groupBy($claveRegistro);
                 foreach ($lineas as $linea) {
                     if ((! empty($f['sku']) && $linea['sku'] !== $f['sku']) || (! empty($f['presentacion_id']) && (int) $linea['presentacion_id'] !== (int) $f['presentacion_id'])) {
                         continue;
                     }
                     $clave = ControlEntregaPedido::claveFisica((int) $linea['id'], $linea['componente_id'] ?? null);
-                    $filtrar = fn ($r): bool => ControlEntregaPedido::claveFisica((int) $r->pedido_detalle_id, $r->despacho_componente_id === null ? null : (int) $r->despacho_componente_id) === $clave;
-                    $e = $entregas->filter($filtrar);
-                    $r = $recepciones->filter($filtrar);
+                    $e = $entregasPorReferencia->get($clave, collect());
+                    $r = $retornosPorReferencia->get($clave, collect());
                     $verificable = ($linea['verificada'] ?? false) && ! ($pedido->estado === 'entregado' && $entregas->isEmpty());
                     $a = $verificable ? (int) $e->sum('aceptadas') : null;
                     $rechazadas = $verificable ? (int) $e->sum('rechazadas') : null;
