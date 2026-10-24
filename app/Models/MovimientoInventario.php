@@ -6,6 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
 
+/**
+ * @property string|null $origen_tipo
+ * @property string|null $origen_id
+ */
 class MovimientoInventario extends Model
 {
     protected $table = 'movimientos_inventario';
@@ -34,21 +38,25 @@ class MovimientoInventario extends Model
         });
     }
 
+    /** @return BelongsTo<PresentacionProducto, $this> */
     public function presentacion(): BelongsTo
     {
         return $this->belongsTo(PresentacionProducto::class, 'presentacion_producto_id');
     }
 
+    /** @return BelongsTo<Insumo, $this> */
     public function insumo(): BelongsTo
     {
         return $this->belongsTo(Insumo::class, 'insumo_id');
     }
 
+    /** @return BelongsTo<User, $this> */
     public function usuario(): BelongsTo
     {
         return $this->belongsTo(User::class, 'usuario_id');
     }
 
+    /** @return BelongsTo<Pedido, $this> */
     public function pedido(): BelongsTo
     {
         return $this->belongsTo(Pedido::class, 'pedido_id');

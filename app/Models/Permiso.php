@@ -22,6 +22,7 @@ class Permiso extends Model
         'es_sistema' => 'boolean',
     ];
 
+    /** @return BelongsToMany<Role, $this> */
     public function roles(): BelongsToMany
     {
         return $this->belongsToMany(

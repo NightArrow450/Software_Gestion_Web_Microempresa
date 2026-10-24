@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/** @property int $version */
 class Cliente extends Model
 {
     protected $table = 'clientes';
@@ -25,6 +26,7 @@ class Cliente extends Model
         'estado' => 'boolean',
     ];
 
+    /** @return HasMany<Pedido, $this> */
     public function pedidos(): HasMany
     {
         return $this->hasMany(Pedido::class, 'cliente_id');

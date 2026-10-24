@@ -70,11 +70,13 @@ class PresentacionProducto extends Model
         return $valor === null ? null : number_format((float) $valor, 2, '.', '');
     }
 
+    /** @return BelongsTo<Producto, $this> */
     public function producto(): BelongsTo
     {
         return $this->belongsTo(Producto::class, 'producto_id');
     }
 
+    /** @return BelongsTo<VarianteProducto, $this> */
     public function variante(): BelongsTo
     {
         return $this->belongsTo(VarianteProducto::class, 'variante_producto_id');

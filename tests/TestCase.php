@@ -15,7 +15,7 @@ abstract class TestCase extends BaseTestCase
             if (in_array(strtoupper($method), ['PUT', 'PATCH'], true)) {
                 $ruta = parse_url($uri, PHP_URL_PATH);
                 if (preg_match('~/(pedidos|clientes|productos)/(\\d+)$~', $ruta, $coincidencia)) {
-                    $registro = DB::table($coincidencia[1])->find($coincidencia[2]);
+                    $registro = DB::table($coincidencia[1])->where('id', $coincidencia[2])->first();
                     if ($registro && ! array_key_exists('_version', $parameters)) {
                         $parameters['_version'] = $registro->version;
                         $parameters['_updated_at'] = $registro->updated_at;

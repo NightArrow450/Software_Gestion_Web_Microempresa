@@ -21,11 +21,13 @@ class VarianteProducto extends Model
         'estado' => 'boolean',
     ];
 
+    /** @return BelongsTo<Producto, $this> */
     public function producto(): BelongsTo
     {
         return $this->belongsTo(Producto::class, 'producto_id');
     }
 
+    /** @return HasMany<PresentacionProducto, $this> */
     public function presentaciones(): HasMany
     {
         return $this->hasMany(PresentacionProducto::class, 'variante_producto_id');

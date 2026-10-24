@@ -81,7 +81,7 @@ class CumplimientoPedidoController extends Controller
 
                 if (! isset($agrupados[$clave])) {
                     $agrupados[$clave] = [
-                        'producto' => $presentacion?->producto?->nombre ?? $detalle->descripcion_producto,
+                        'producto' => $presentacion?->producto->nombre ?? $detalle->descripcion_producto,
                         'producto_clave' => $presentacion ? 'producto:'.$presentacion->producto_id : 'historico:'.$detalle->descripcion_producto,
                         'dimension' => match ($presentacion?->unidad_medida) {
                             'L', 'ml' => 0, 'kg', 'g' => 1, default => 2
@@ -103,7 +103,7 @@ class CumplimientoPedidoController extends Controller
                 if ($presentacion) {
                     $id = $presentacion->id;
                     if (! isset($agrupados[$clave]['presentaciones'][$id])) {
-                        $agrupados[$clave]['presentaciones'][$id] = ['id' => $id, 'sku' => $presentacion->codigo_sku, 'solicitadas' => 0, 'activa' => $presentacion->estado && $presentacion->producto->estado && ($presentacion->variante?->estado ?? true)];
+                        $agrupados[$clave]['presentaciones'][$id] = ['id' => $id, 'sku' => $presentacion->codigo_sku, 'solicitadas' => 0, 'activa' => $presentacion->estado && $presentacion->producto->estado && ($presentacion->variante->estado ?? true)];
                     }
                     $anterior = $agrupados[$clave]['presentaciones'][$id]['solicitadas'];
                     $agrupados[$clave]['presentaciones'][$id]['solicitadas'] = $anterior === null || $totalUnidades === null ? null : $anterior + $totalUnidades;
@@ -159,7 +159,7 @@ class CumplimientoPedidoController extends Controller
         })->groupBy('producto_clave')->flatMap(fn ($grupo) => $grupo->sortBy([['dimension', 'asc'], ['capacidad', 'asc']]))->values();
 
         $permisos = $request->user()->loadMissing('role.permisos')->role?->permisos;
-        $puedeRegistrar = $permisos?->contains('nombre', 'envasado.ver') && $permisos?->contains('nombre', 'envasado.registrar');
+        $puedeRegistrar = $permisos?->contains('nombre', 'envasado.ver') && $permisos->contains('nombre', 'envasado.registrar');
         $configuraciones = $puedeRegistrar ? ConfiguracionEnvasado::whereIn('presentacion_producto_id', $ids)->where('estado', true)->orderBy('nombre')->get() : collect();
 
         return view('cumplimiento.lista-preparacion', compact('filas', 'fechaDesde', 'fechaHasta', 'produccionDesde', 'produccionHasta', 'puedeRegistrar', 'configuraciones', 'pedidos'));

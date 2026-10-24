@@ -22,11 +22,13 @@ class PedidoEstadoHistorial extends Model
         'created_at' => 'datetime',
     ];
 
+    /** @return BelongsTo<Pedido, $this> */
     public function pedido(): BelongsTo
     {
         return $this->belongsTo(Pedido::class, 'pedido_id');
     }
 
+    /** @return BelongsTo<User, $this> */
     public function usuario(): BelongsTo
     {
         return $this->belongsTo(User::class, 'usuario_id');

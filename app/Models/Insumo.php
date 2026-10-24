@@ -20,6 +20,7 @@ class Insumo extends Model
         'estado' => 'boolean',
     ];
 
+    /** @return HasMany<MovimientoInventario, $this> */
     public function movimientos(): HasMany
     {
         return $this->hasMany(MovimientoInventario::class, 'insumo_id');

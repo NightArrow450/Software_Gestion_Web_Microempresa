@@ -26,6 +26,7 @@ class PedidoDetalle extends Model
         'importe' => 'decimal:2',
     ];
 
+    /** @return BelongsTo<Pedido, $this> */
     public function pedido(): BelongsTo
     {
         return $this->belongsTo(Pedido::class, 'pedido_id');
@@ -53,6 +54,7 @@ class PedidoDetalle extends Model
         return $unidades > 0 ? 'Empaque de '.$unidades : 'Empaque (tamaño no disponible)';
     }
 
+    /** @return BelongsTo<PresentacionProducto, $this> */
     public function presentacion(): BelongsTo
     {
         return $this->belongsTo(

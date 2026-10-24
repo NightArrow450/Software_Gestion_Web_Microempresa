@@ -20,6 +20,7 @@ class Categoria extends Model
         'estado' => 'boolean',
     ];
 
+    /** @return HasMany<Producto, $this> */
     public function productos(): HasMany
     {
         return $this->hasMany(Producto::class, 'categoria_id');

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Role;
 use App\Models\User;
 use DOMDocument;
+use DOMElement;
 use DOMXPath;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -37,11 +38,14 @@ class LayoutResponsiveTest extends TestCase
         $buttons = $xpath->query('//header//button[@aria-controls]');
         $this->assertSame(1, $buttons->length);
         $button = $buttons->item(0);
+        $this->assertInstanceOf(DOMElement::class, $button);
         $this->assertSame('false', $button->getAttribute('aria-expanded'));
         $this->assertSame('Abrir menú de navegación', $button->getAttribute('aria-label'));
         $sidebar = $xpath->query('//aside[@id]');
         $this->assertSame(1, $sidebar->length);
-        $this->assertSame($sidebar->item(0)->getAttribute('id'), $button->getAttribute('aria-controls'));
+        $elementoSidebar = $sidebar->item(0);
+        $this->assertInstanceOf(DOMElement::class, $elementoSidebar);
+        $this->assertSame($elementoSidebar->getAttribute('id'), $button->getAttribute('aria-controls'));
         $this->assertSame(1, $xpath->query('//script[contains(@src, "/js/layout.js") and @defer]')->length);
     }
 }

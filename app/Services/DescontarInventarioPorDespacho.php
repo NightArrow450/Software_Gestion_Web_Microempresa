@@ -97,7 +97,7 @@ class DescontarInventarioPorDespacho
         // Validación de TODOS los SKU antes de descontar uno solo.
         $faltantes = [];
         foreach ($cantidades as $id => $requerido) {
-            $disponible = (int) ($inventarios->get($id)?->cantidad_actual ?? 0);
+            $disponible = (int) ($inventarios->get($id)->cantidad_actual ?? 0);
             if ($disponible < $requerido) {
                 $sku = $presentaciones->get($id)->codigo_sku;
                 $faltantes[] = 'Stock insuficiente para '.$sku
