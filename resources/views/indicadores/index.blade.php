@@ -42,7 +42,7 @@
     <p>Los paquetes, las unidades físicas, los importes y las unidades de medida diferentes no se suman entre sí. El historial de composiciones no tiene total acumulable.</p>
 </section>
 <div class="table-container"><table><thead><tr>@foreach($campos as $campo)<th>{{ \App\Services\FilasIndicadores::titulo($campo) }}</th>@endforeach</tr></thead><tbody>
-@forelse($resultado['filas'] as $fila)<tr>@foreach($campos as $campo)<td>{{ $fila[$campo] ?? 'No disponible' }}</td>@endforeach</tr>@empty<tr><td colspan="{{ count($campos) }}">No hay registros para los filtros seleccionados.</td></tr>@endforelse
+@forelse($resultado['filas'] as $fila)<tr>@foreach($campos as $campo)<td data-campo="{{ $campo }}">{{ $fila[$campo] ?? 'No disponible' }}</td>@endforeach</tr>@empty<tr><td colspan="{{ count($campos) }}">No hay registros para los filtros seleccionados.</td></tr>@endforelse
 </tbody></table></div>
 <nav aria-label="Páginas del reporte">
     @if($filtros['pagina']>1)<a class="btn" href="{{ route('indicadores.index', array_replace($filtros,['pagina'=>$filtros['pagina']-1])) }}">Anterior</a>@endif

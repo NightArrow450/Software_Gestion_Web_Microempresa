@@ -12,6 +12,8 @@
 .indicadores-totales p { background:var(--surface-low); border:1px solid var(--outline-variant); border-radius:12px; padding:16px; margin:0; overflow-wrap:anywhere; }
 .indicadores-totales strong { display:block; margin-bottom:8px; }
 .indicadores .table-container { overflow-x:auto; margin-bottom:16px; }
-.indicadores th, .indicadores td { max-width:340px; overflow-wrap:anywhere; }
+.indicadores table { width: max-content; min-width: 100%; border-collapse: collapse; }
+.indicadores th, .indicadores td { padding: 12px 16px; white-space: nowrap; text-align: left; border-bottom: 1px solid var(--outline-variant); }
+.indicadores td[data-campo=descripcion] { min-width: 240px; max-width: 340px; white-space: normal; overflow-wrap: break-word; }
 .indicadores nav { display:flex; flex-wrap:wrap; align-items:center; gap:16px; }
 @media(max-width:650px) { .indicadores .form-grid { grid-template-columns:minmax(0,1fr); } .indicadores-totales { grid-template-columns:minmax(0,1fr); } }
