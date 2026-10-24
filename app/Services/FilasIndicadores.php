@@ -28,7 +28,7 @@ class FilasIndicadores
         'situacion_entregas' => 'pedido_id,estado_actual,linea_id,despacho_componente_id,presentacion_id,sku,despachadas,aceptadas,rechazadas,pendientes,recibidas,aptas,danadas,por_revisar,no_recuperadas,reincorporadas,por_retornar,por_aprobar,aceptado_centimos,rechazado_centimos,pendiente_centimos,verificable',
         'comercial' => 'pedido_id,linea_id,fecha_pedido,fecha_entrega,estado_actual,tipo_linea,modalidad,descripcion,sku,cantidad_comercial,tamano,paquetes_definidos,paquetes_pendientes,importe_centimos',
         'preparacion' => 'presentacion_id,sku,solicitadas,stock_actual,faltante_conocido,cobertura',
-        'fisicas' => 'pedido_id,linea_id,presentacion_id,sku,descripcion,unidades_fisicas,fuente',
+        'fisicas' => 'pedido_id,linea_id,paquete_id,composicion_id,componente_id,presentacion_id,sku,descripcion,unidades_fisicas,fuente',
         'pendientes' => 'pedido_id,linea_id,descripcion,paquetes_pendientes,unidades_sin_composicion,unidades_sin_distribuir',
         'composiciones' => 'pedido_id,linea_id,paquete_id,numero_paquete,composicion_id,version,version_vigente,estado_composicion,fecha_registro,componente_id,presentacion_id,sku,descripcion,unidades_fisicas,demanda_definitiva',
         'entregas' => 'entrega_detalle_id,pedido_id,linea_id,despacho_componente_id,presentacion_id,sku,tipo,fecha_hecho,fecha_registro,aceptadas,rechazadas,aceptado_centimos,rechazado_centimos,fuente',

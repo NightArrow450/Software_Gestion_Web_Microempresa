@@ -145,6 +145,25 @@ class IndicadoresMySqlTest extends PruebaEntregaMySql
         $this->assertSame($e['presentacion']->codigo_sku, $filas[0]['sku']);
     }
 
+    public function test_desglose_de_muchos_paquetes_tiene_orden_unico_y_trazabilidad_entre_lotes(): void
+    {
+        $e = $this->escenarioSurtido();
+        $p = $this->pedidoEnvasado($e);
+        $d = $p->detalles->sole();
+        $d->update(['tipo_linea' => 'surtido', 'formato_surtido_id' => $e['formato'], 'modalidad' => 'empaque', 'cantidad' => 52, 'unidades_por_empaque' => 12, 'precio_unitario' => 24, 'importe' => 1248]);
+        app(GestionarSurtidos::class)->guardar($d, array_fill(0, 52, $this->paquetesSurtidos($e)[0]), $e['usuario'], 'Paquetes ficticios para comprobar orden y trazabilidad por lotes.');
+
+        $f = FiltrosIndicadores::validar(['reporte' => 'fisicas']);
+        $filas = iterator_to_array(app(FilasIndicadores::class)->filas($f));
+        $ids = array_column($filas, 'componente_id');
+        $esperados = DB::table('paquete_surtido_componentes')->orderBy('id')->pluck('id')->all();
+
+        $this->assertSame($esperados, $ids);
+        $this->assertCount(156, $filas);
+        $this->assertCount(52, array_unique(array_column($filas, 'paquete_id')));
+        $this->assertSame(624, array_sum(array_column($filas, 'unidades_fisicas')));
+    }
+
     public function test_exportacion_por_lotes_mantiene_una_fotografia_ante_una_escritura_concurrente(): void
     {
         $anterior = DB::getDefaultConnection();

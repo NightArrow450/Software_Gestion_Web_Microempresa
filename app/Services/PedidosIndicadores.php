@@ -81,11 +81,11 @@ class PedidosIndicadores
     {
         $q = $this->lineas(array_diff_key($f, array_flip(['presentacion_id'])), false)->whereIn('pe.estado', ['confirmado', 'en_preparacion']);
         FiltrosIndicadores::periodo($q, 'pe.fecha_entrega', $f);
-        $normales = (clone $q)->where('d.tipo_linea', 'normal')->selectRaw("d.pedido_id,d.id linea_id,d.presentacion_producto_id presentacion_id,d.codigo_sku sku,d.descripcion_producto descripcion,CASE WHEN d.modalidad='unidad' THEN d.cantidad WHEN COALESCE(d.unidades_por_empaque,p.unidades_por_empaque)>0 THEN d.cantidad * COALESCE(d.unidades_por_empaque,p.unidades_por_empaque) ELSE NULL END unidades,CASE WHEN d.modalidad='empaque' AND d.unidades_por_empaque IS NULL THEN 'Respaldo del catálogo' ELSE 'Tamaño de la línea' END fuente");
+        $normales = (clone $q)->where('d.tipo_linea', 'normal')->selectRaw("d.pedido_id,d.id linea_id,NULL paquete_id,NULL composicion_id,NULL componente_id,d.presentacion_producto_id presentacion_id,d.codigo_sku sku,d.descripcion_producto descripcion,CASE WHEN d.modalidad='unidad' THEN d.cantidad WHEN COALESCE(d.unidades_por_empaque,p.unidades_por_empaque)>0 THEN d.cantidad * COALESCE(d.unidades_por_empaque,p.unidades_por_empaque) ELSE NULL END unidades,CASE WHEN d.modalidad='empaque' AND d.unidades_por_empaque IS NULL THEN 'Respaldo del catálogo' ELSE 'Tamaño de la línea' END fuente");
         $surtidos = (clone $q)->join('pedido_paquetes_surtidos as ps', 'ps.pedido_detalle_id', '=', 'd.id')->join('paquete_surtido_composiciones as c', function ($j): void {
             $j->on('c.paquete_surtido_id', '=', 'ps.id')->on('c.version', '=', 'ps.version');
         })->join('paquete_surtido_componentes as co', 'co.composicion_id', '=', 'c.id')->where('ps.activo', true)->where('c.estado', 'definida')
-            ->selectRaw("d.pedido_id,d.id linea_id,co.presentacion_producto_id presentacion_id,co.sku,co.descripcion,co.cantidad unidades,'Composición vigente definida' fuente");
+            ->selectRaw("d.pedido_id,d.id linea_id,ps.id paquete_id,c.id composicion_id,co.id componente_id,co.presentacion_producto_id presentacion_id,co.sku,co.descripcion,co.cantidad unidades,'Composición vigente definida' fuente");
         $fisicas = DB::query()->fromSub($normales->unionAll($surtidos), 'f');
         foreach (['presentacion_id', 'sku'] as $col) {
             if (! empty($f[$col])) {
@@ -98,8 +98,8 @@ class PedidosIndicadores
 
     public function fisicas(array $f): \Generator
     {
-        foreach ($this->consultaFisica($f)->orderBy('pedido_id')->orderBy('linea_id')->orderBy('presentacion_id')->lazy(100) as $r) {
-            yield ['pedido_id' => $r->pedido_id, 'linea_id' => $r->linea_id, 'presentacion_id' => $r->presentacion_id, 'sku' => $r->sku, 'descripcion' => $r->descripcion, 'unidades_fisicas' => $r->unidades === null ? null : (int) $r->unidades, 'fuente' => $r->fuente];
+        foreach ($this->consultaFisica($f)->orderBy('pedido_id')->orderBy('linea_id')->orderBy('componente_id')->lazy(100) as $r) {
+            yield ['pedido_id' => $r->pedido_id, 'linea_id' => $r->linea_id, 'paquete_id' => $r->paquete_id, 'composicion_id' => $r->composicion_id, 'componente_id' => $r->componente_id, 'presentacion_id' => $r->presentacion_id, 'sku' => $r->sku, 'descripcion' => $r->descripcion, 'unidades_fisicas' => $r->unidades === null ? null : (int) $r->unidades, 'fuente' => $r->fuente];
         }
     }
 
