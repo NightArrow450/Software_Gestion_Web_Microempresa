@@ -13,28 +13,34 @@ class VerificadorInventario
             foreach (['producto', 'insumo'] as $tipo) {
                 $columna = $tipo === 'producto' ? 'presentacion_producto_id' : 'insumo_id';
                 $items = $tipo === 'producto' ? DB::table('inventarios')->get()->keyBy('presentacion_producto_id') : DB::table('insumos')->get()->keyBy('id');
-                $movimientos = DB::table('movimientos_inventario')->whereNotNull($columna)->orderBy('id')->get()->groupBy($columna);
-                foreach ($items->keys()->merge($movimientos->keys())->unique() as $id) {
+                $cadenas = [];
+                $movimientos = DB::table('movimientos_inventario')->whereNotNull($columna)
+                    ->select(['id', $columna, 'stock_anterior', 'stock_nuevo'])->lazyById(500);
+                foreach ($movimientos as $movimiento) {
+                    $id = $movimiento->{$columna};
+                    if (! isset($cadenas[$id])) {
+                        $base = $this->milesimas($movimiento->stock_anterior);
+                        $cadenas[$id] = ['base' => $base, 'esperado' => $base, 'errores' => []];
+                    }
+                    if ($this->milesimas($movimiento->stock_anterior) !== $cadenas[$id]['esperado']) {
+                        $cadenas[$id]['errores'][] = ['movimiento_id' => $movimiento->id, 'problema' => 'Cadena de saldos rota'];
+                    }
+                    if ($this->milesimas($movimiento->stock_nuevo) < 0) {
+                        $cadenas[$id]['errores'][] = ['movimiento_id' => $movimiento->id, 'problema' => 'Saldo histórico negativo'];
+                    }
+                    $cadenas[$id]['esperado'] = $this->milesimas($movimiento->stock_nuevo);
+                }
+                foreach ($items->keys()->merge(array_keys($cadenas))->unique() as $id) {
                     $item = $items->get($id);
-                    $cadena = $movimientos->get($id, collect());
                     $dato = ['tipo' => $tipo, 'id' => (int) $id, 'cantidad_actual' => $item?->cantidad_actual];
-                    if ($cadena->isEmpty()) {
+                    if (! isset($cadenas[$id])) {
                         $reporte['sin_historial'][] = $dato + ['clasificacion' => 'Sin historial / saldo inicial'];
 
                         continue;
                     }
-                    $base = $this->milesimas($cadena->first()->stock_anterior);
-                    $esperado = $base;
-                    $errores = [];
-                    foreach ($cadena as $movimiento) {
-                        if ($this->milesimas($movimiento->stock_anterior) !== $esperado) {
-                            $errores[] = ['movimiento_id' => $movimiento->id, 'problema' => 'Cadena de saldos rota'];
-                        }
-                        if ($this->milesimas($movimiento->stock_nuevo) < 0) {
-                            $errores[] = ['movimiento_id' => $movimiento->id, 'problema' => 'Saldo histórico negativo'];
-                        }
-                        $esperado = $this->milesimas($movimiento->stock_nuevo);
-                    }
+                    $base = $cadenas[$id]['base'];
+                    $esperado = $cadenas[$id]['esperado'];
+                    $errores = $cadenas[$id]['errores'];
                     if (! $item || $this->milesimas($item->cantidad_actual) !== $esperado) {
                         $errores[] = ['problema' => 'El saldo actual no coincide con el último movimiento'];
                     }
