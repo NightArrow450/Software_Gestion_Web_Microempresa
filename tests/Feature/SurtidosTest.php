@@ -4,7 +4,9 @@ namespace Tests\Feature;
 
 use App\Models\Pedido;
 use App\Services\ConfigurarFormatoSurtido;
+use App\Services\ControlEntregaPedido;
 use App\Services\GestionarSurtidos;
+use App\Services\TokenOperacion;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -34,13 +36,13 @@ class SurtidosTest extends TestCase
         app(ConfigurarFormatoSurtido::class)->guardar(['producto_id' => $e['presentacion']->producto_id, 'nombre' => 'No permitido', 'unidades_por_empaque' => 12, 'precio_empaque' => 24, 'estado' => true, 'version' => 0, 'skus' => [$e['skus'][0]->id, $e['skus'][1]->id]], $e['usuario'], $e['formato']);
     }
 
-    private function registrar(array $e, ?array $paquetes = null): Pedido
+    private function registrar(array $e, ?array $paquetes = null, array $otros = []): Pedido
     {
         $pedidoBase = $this->pedidoEnvasado($e, 'registrado');
         $cliente = $pedidoBase->cliente_id;
         $pedidoBase->detalles()->delete();
         $pedidoBase->delete();
-        $this->post(route('pedidos.store'), ['cliente_id' => $cliente, 'fecha_pedido' => today()->toDateString(), 'fecha_entrega' => today()->toDateString(), 'condicion_pago' => 'contado', 'detalles' => [['tipo_linea' => 'surtido', 'formato_surtido_id' => $e['formato'], 'modalidad' => 'empaque', 'cantidad' => 2, 'unidades_por_empaque' => 12, 'precio_unitario' => '0.01', 'paquetes_json' => json_encode($paquetes ?? $this->paquetesSurtidos($e))]]])->assertRedirect()->assertSessionHasNoErrors();
+        $this->post(route('pedidos.store'), ['cliente_id' => $cliente, 'fecha_pedido' => today()->toDateString(), 'fecha_entrega' => today()->toDateString(), 'condicion_pago' => 'contado', 'detalles' => array_merge([['tipo_linea' => 'surtido', 'formato_surtido_id' => $e['formato'], 'modalidad' => 'empaque', 'cantidad' => 2, 'unidades_por_empaque' => 12, 'precio_unitario' => '0.01', 'paquetes_json' => json_encode($paquetes ?? $this->paquetesSurtidos($e))]], $otros)])->assertRedirect()->assertSessionHasNoErrors();
 
         return Pedido::latest('id')->firstOrFail();
     }
@@ -111,5 +113,70 @@ class SurtidosTest extends TestCase
         $datos[0]['componentes'][0]['presentacion_producto_id'] = 999999;
         $this->post(route('surtidos.componer', [$pedido, $d]), ['version' => $pedido->version, 'motivo' => 'Intento con un SKU no autorizado.', 'paquetes_json' => json_encode($datos)])->assertSessionHasErrors('paquetes');
         $this->assertDatabaseCount('paquete_surtido_composiciones', 2);
+    }
+
+    public function test_finalizar_y_despachar_bloquean_composiciones_pendientes(): void
+    {
+        $e = $this->escenarioSurtido();
+        $pedido = $this->registrar($e, []);
+        DB::table('pedidos')->where('id', $pedido->id)->update(['estado' => 'en_preparacion']);
+        $this->post(route('cumplimiento.finalizar-preparacion', $pedido))->assertSessionHasErrors('composicion');
+        DB::table('pedidos')->where('id', $pedido->id)->update(['estado' => 'listo_despacho']);
+        $this->post(route('cumplimiento.despachar', $pedido))->assertSessionHasErrors('composicion');
+        $this->assertDatabaseCount('movimientos_inventario', 0);
+        $this->assertDatabaseCount('pedido_despacho_componentes', 0);
+    }
+
+    public function test_despacho_agrega_sku_normal_y_surtido_sin_descuentos_duplicados(): void
+    {
+        $e = $this->escenarioSurtido();
+        $pedido = $this->registrar($e, null, [['presentacion_producto_id' => $e['skus'][0]->id, 'modalidad' => 'empaque', 'unidades_por_empaque' => 12, 'cantidad' => 2]]);
+        DB::table('pedidos')->where('id', $pedido->id)->update(['estado' => 'listo_despacho']);
+        $this->post(route('cumplimiento.despachar', $pedido))->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('inventarios', ['presentacion_producto_id' => $e['skus'][0]->id, 'cantidad_actual' => 69]);
+        $this->assertDatabaseHas('inventarios', ['presentacion_producto_id' => $e['skus'][1]->id, 'cantidad_actual' => 89]);
+        $this->assertDatabaseHas('inventarios', ['presentacion_producto_id' => $e['skus'][2]->id, 'cantidad_actual' => 94]);
+        $this->assertDatabaseCount('movimientos_inventario', 3);
+        $this->assertDatabaseCount('pedido_despacho_componentes', 6);
+        $this->assertSame(4800, (int) DB::table('pedido_despacho_componentes')->sum('importe_centimos'));
+        $r = app(ControlEntregaPedido::class)->resumen($pedido->fresh());
+        $this->assertCount(7, $r['lineas']);
+        $this->assertNotContains(false, array_column($r['lineas'], 'verificada'));
+        $this->post(route('cumplimiento.despachar', $pedido))->assertSessionHasErrors('estado');
+        $this->assertDatabaseCount('movimientos_inventario', 3);
+    }
+
+    public function test_stock_insuficiente_revierte_todos_los_sku_y_la_fotografia(): void
+    {
+        $e = $this->escenarioSurtido(5);
+        $pedido = $this->registrar($e);
+        DB::table('pedidos')->where('id', $pedido->id)->update(['estado' => 'listo_despacho']);
+        $this->post(route('cumplimiento.despachar', $pedido))->assertSessionHasErrors('inventario');
+        $this->assertDatabaseCount('movimientos_inventario', 0);
+        $this->assertDatabaseCount('pedido_despacho_componentes', 0);
+        $this->assertSame(15, (int) DB::table('inventarios')->sum('cantidad_actual'));
+        $this->assertSame('listo_despacho', $pedido->fresh()->estado);
+    }
+
+    public function test_rechazo_y_retorno_identifican_el_aroma_y_reincorporan_solo_una_vez(): void
+    {
+        $e = $this->escenarioSurtido();
+        $pedido = $this->registrar($e);
+        $d = $pedido->detalles->sole();
+        DB::table('pedidos')->where('id', $pedido->id)->update(['estado' => 'listo_despacho']);
+        $this->post(route('cumplimiento.despachar', $pedido))->assertSessionHasNoErrors();
+        $fisica = DB::table('pedido_despacho_componentes')->where('presentacion_producto_id', $e['skus'][0]->id)->orderBy('id')->first();
+        $this->post(route('cumplimiento.resultado-entrega', $pedido), ['version' => 0, 'detalles' => [['pedido_detalle_id' => $d->id, 'despacho_componente_id' => $fisica->id, 'aceptadas' => 3, 'rechazadas' => 2, 'motivo' => 'El cliente rechaza estas dos unidades del aroma indicado.']]])->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('inventarios', ['presentacion_producto_id' => $e['skus'][0]->id, 'cantidad_actual' => 93]);
+        $this->post(route('cumplimiento.retornos', $pedido), ['version' => 1, 'observaciones' => 'Conteo físico con una unidad apta y una dañada.', 'detalles' => [['pedido_detalle_id' => $d->id, 'despacho_componente_id' => $fisica->id, 'aptas' => 1, 'danadas' => 1, 'en_revision' => 0, 'no_recuperadas' => 0]]])->assertSessionHasNoErrors();
+        $retorno = DB::table('retorno_pedido_detalles')->first();
+        $datos = ['version' => 2, 'retorno_detalle_id' => $retorno->id, 'cantidad' => 1, 'motivo' => 'Se confirma que la unidad de Lavanda está apta.', '_token_operacion' => TokenOperacion::emitir($e['usuario']->id)];
+        $this->post(route('cumplimiento.aprobar-retorno', $pedido), $datos)->assertSessionHasNoErrors();
+        $this->post(route('cumplimiento.aprobar-retorno', $pedido), $datos)->assertRedirect();
+        $this->assertDatabaseHas('inventarios', ['presentacion_producto_id' => $e['skus'][0]->id, 'cantidad_actual' => 94]);
+        $this->assertDatabaseHas('inventarios', ['presentacion_producto_id' => $e['skus'][1]->id, 'cantidad_actual' => 89]);
+        $this->assertSame(1, DB::table('movimientos_inventario')->where('origen_tipo', 'retorno_pedido')->count());
+        $this->assertSame('48.00', $pedido->fresh()->total);
+        $this->get(route('cumplimiento.show', $pedido))->assertOk()->assertSee('Lavanda');
     }
 }

@@ -29,7 +29,7 @@ class AprobarRetornoPedido
             $resumen = $this->control->resumen($actual, true);
             $retorno = $resumen['retornos']->firstWhere('id', (int) $datos['retorno_detalle_id']);
             $cantidad = (int) $datos['cantidad'];
-            $base = $retorno ? ($resumen['lineas'][$retorno->pedido_detalle_id] ?? null) : null;
+            $base = $retorno ? ($resumen['lineas'][ControlEntregaPedido::claveFisica($retorno->pedido_detalle_id, $retorno->despacho_componente_id ?? null)] ?? null) : null;
             if (! $retorno || ! $base || ! $base['verificada'] || $cantidad > $retorno->aptas + $retorno->revisadas_aptas - $retorno->reincorporadas) {
                 throw ValidationException::withMessages(['cantidad' => 'No hay suficientes unidades aptas pendientes o el despacho histórico no está verificado.']);
             }

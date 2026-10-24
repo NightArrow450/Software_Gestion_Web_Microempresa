@@ -20,7 +20,8 @@ class RegistrarResultadoEntrega
             'ocurrido_en' => ['nullable', 'date', 'before_or_equal:now'],
             'observaciones' => [$rectificar ? 'required' : 'nullable', 'string', ...($rectificar ? ['min:10'] : []), 'max:1000'],
             'detalles' => [$completa ? 'nullable' : 'required', 'array', 'min:1', 'max:18'],
-            'detalles.*.pedido_detalle_id' => ['required', 'integer', 'distinct'],
+            'detalles.*.pedido_detalle_id' => ['required', 'integer'],
+            'detalles.*.despacho_componente_id' => ['nullable', 'integer', 'min:1'],
             'detalles.*.aceptadas' => ['required', 'integer', 'min:'.($rectificar ? '-10000000' : '0'), 'max:10000000'],
             'detalles.*.rechazadas' => ['required', 'integer', 'min:'.($rectificar ? '-10000000' : '0'), 'max:10000000'],
             'detalles.*.motivo' => ['nullable', 'string', 'min:10', 'max:1000'],
@@ -45,10 +46,16 @@ class RegistrarResultadoEntrega
             if ($resumen['historico_sin_desglose'] || in_array(null, array_column($resumen['lineas'], 'despachadas'), true)) {
                 throw ValidationException::withMessages(['detalles' => 'No se puede reconstruir el desglose histórico con certeza. Documenta la incidencia para revisión sin inventar cantidades.']);
             }
-            $lineas = $completa ? array_map(fn (array $linea): array => ['pedido_detalle_id' => $linea['id'], 'aceptadas' => $linea['despachadas'], 'rechazadas' => 0], $resumen['lineas']) : $datos['detalles'];
+            $lineas = $completa ? array_map(fn (array $linea): array => ['pedido_detalle_id' => $linea['id']] + (isset($linea['componente_id']) ? ['despacho_componente_id' => $linea['componente_id']] : []) + ['aceptadas' => $linea['despachadas'], 'rechazadas' => 0], $resumen['lineas']) : $datos['detalles'];
             $cambios = [];
+            $vistos = [];
             foreach ($lineas as $linea) {
-                $base = $resumen['lineas'][$linea['pedido_detalle_id']] ?? null;
+                $clave = ControlEntregaPedido::claveFisica((int) $linea['pedido_detalle_id'], isset($linea['despacho_componente_id']) ? (int) $linea['despacho_componente_id'] : null);
+                $base = $resumen['lineas'][$clave] ?? null;
+                if (isset($vistos[$clave]) || ($base && $base['id'] !== (int) $linea['pedido_detalle_id'])) {
+                    throw ValidationException::withMessages(['detalles' => 'La referencia física está repetida o no pertenece a la línea.']);
+                }
+                $vistos[$clave] = true;
                 if (! $base || $base['despachadas'] === null) {
                     throw ValidationException::withMessages(['detalles' => 'La línea no pertenece al pedido o su tamaño histórico no puede comprobarse. Solicita revisión.']);
                 }
@@ -60,7 +67,7 @@ class RegistrarResultadoEntrega
                 if ((int) $linea['rechazadas'] > 0 && mb_strlen(trim($linea['motivo'] ?? $datos['observaciones'] ?? '')) < 10) {
                     throw ValidationException::withMessages(['motivo' => 'Describe el rechazo con al menos 10 caracteres, sin atribuir responsabilidades no comprobadas.']);
                 }
-                $cambios[] = ['pedido_detalle_id' => $base['id'], 'aceptadas' => (int) $linea['aceptadas'], 'rechazadas' => (int) $linea['rechazadas'], 'motivo' => $linea['motivo'] ?? $datos['observaciones'] ?? null];
+                $cambios[] = (isset($base['componente_id']) ? ['despacho_componente_id' => $base['componente_id']] : []) + ['pedido_detalle_id' => $base['id'], 'aceptadas' => (int) $linea['aceptadas'], 'rechazadas' => (int) $linea['rechazadas'], 'motivo' => $linea['motivo'] ?? $datos['observaciones'] ?? null];
             }
             if ($cambios === [] || (array_sum(array_column($cambios, 'aceptadas')) === 0 && array_sum(array_column($cambios, 'rechazadas')) === 0 && mb_strlen(trim($datos['observaciones'] ?? '')) < 10)) {
                 throw ValidationException::withMessages(['detalles' => 'Registra cantidades o explica por qué la entrega sigue pendiente (mínimo 10 caracteres).']);

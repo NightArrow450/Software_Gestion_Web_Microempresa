@@ -34,7 +34,7 @@
         <div class="table-container"><table class="entrega-tabla mobile-cards"><thead><tr><th>Recepción / línea</th><th>Fecha del hecho</th><th>Aptas</th><th>Dañadas</th><th>En evaluación</th><th>No recuperadas</th><th>Reincorporadas</th></tr></thead><tbody>
             @foreach($resumenEntrega['retornos'] as $retorno)
                 <tr>
-                    <td data-label="Recepción / línea">N.º {{ $retorno->retorno_id }} · {{ $resumenEntrega['lineas'][$retorno->pedido_detalle_id]['sku'] ?? 'Línea histórica' }}</td>
+                    <td data-label="Recepción / línea">N.º {{ $retorno->retorno_id }} · {{ $resumenEntrega['lineas'][\App\Services\ControlEntregaPedido::claveFisica($retorno->pedido_detalle_id, $retorno->despacho_componente_id ?? null)]['sku'] ?? 'Línea histórica' }}</td>
                     <td data-label="Fecha del hecho">{{ \Carbon\Carbon::parse($retorno->ocurrido_en)->timezone('America/Lima')->format('d/m/Y H:i') }}</td>
                     <td data-label="Aptas">{{ $retorno->aptas + $retorno->revisadas_aptas }}</td>
                     <td data-label="Dañadas">{{ $retorno->danadas + $retorno->revisadas_danadas }}</td>
@@ -55,7 +55,7 @@
                 @php($datosEvento = json_decode($evento->datos, true))
                 @if(!empty($datosEvento['ocurrido_en']))<p>Fecha informada del hecho: {{ $datosEvento['ocurrido_en'] }}</p>@endif
                 @foreach($datosEvento['detalles'] ?? [] as $detalleEvento)
-                    <p>{{ $resumenEntrega['lineas'][$detalleEvento['pedido_detalle_id']]['sku'] ?? 'Línea histórica' }}:
+                    <p>{{ $resumenEntrega['lineas'][\App\Services\ControlEntregaPedido::claveFisica($detalleEvento['pedido_detalle_id'], $detalleEvento['despacho_componente_id'] ?? null)]['sku'] ?? 'Línea histórica' }}:
                         @foreach(['aceptadas' => 'aceptadas', 'rechazadas' => 'rechazadas', 'aptas' => 'aptas', 'danadas' => 'dañadas', 'en_revision' => 'en evaluación', 'no_recuperadas' => 'no recuperadas'] as $campo => $etiqueta)
                             @if(isset($detalleEvento[$campo])) {{ $etiqueta }} {{ $detalleEvento[$campo] }}; @endif
                         @endforeach

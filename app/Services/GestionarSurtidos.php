@@ -196,9 +196,31 @@ class GestionarSurtidos
         if ($this->pendientes($pedido) !== []) {
             throw ValidationException::withMessages(['composicion' => 'Completa la composición de cada paquete surtido antes de finalizar preparación o despachar.']);
         }
-        foreach ($this->lineasFisicas($pedido) as $d) {
-            if ($d->getAttribute('componente_surtido') && (! $d->presentacion || ! $d->presentacion->estado || ! $d->presentacion->producto->estado || ($d->presentacion->variante && ! $d->presentacion->variante->estado))) {
-                throw ValidationException::withMessages(['composicion' => 'Hay un SKU surtido inactivo. Solicita revisión de la composición.']);
+        $lineas = $pedido->detalles->where('tipo_linea', 'surtido');
+        if ($lineas->isEmpty()) {
+            return;
+        }
+        $formatos = DB::table('formatos_surtidos')->whereIn('id', $lineas->pluck('formato_surtido_id'))->orderBy('id')->lockForUpdate()->get()->keyBy('id');
+        $permitidos = DB::table('formato_surtido_skus')->whereIn('formato_surtido_id', $formatos->keys())->get()->groupBy('formato_surtido_id');
+        $skus = PresentacionProducto::with(['producto', 'variante'])->whereIn('id', $permitidos->flatten()->pluck('presentacion_producto_id'))->orderBy('id')->lockForUpdate()->get()->keyBy('id');
+        foreach ($lineas as $d) {
+            $f = $formatos->get($d->formato_surtido_id);
+            if (! $f || ! $f->estado) {
+                throw ValidationException::withMessages(['composicion' => 'La habilitación surtida está inactiva; solicita revisión comercial.']);
+            }
+            foreach ($this->paquetes($d) as $paquete) {
+                if ($paquete['estado'] !== 'definida' || array_sum(array_column($paquete['componentes'], 'cantidad')) !== $d->unidades_por_empaque) {
+                    throw ValidationException::withMessages(['composicion' => 'La composición de un paquete está incompleta.']);
+                }
+                foreach ($paquete['componentes'] as $c) {
+                    $sku = $skus->get($c['presentacion_producto_id']);
+                    if (! $sku || ! $sku->estado || ! $sku->producto->estado || ($sku->variante && ! $sku->variante->estado)
+                        || $sku->producto_id !== $f->producto_id || (float) $sku->contenido !== (float) $f->contenido
+                        || $sku->unidad_medida !== $f->unidad_medida || ($sku->tipo_envase ?? '') !== $f->tipo_envase
+                        || ! $permitidos->get($f->id, collect())->contains('presentacion_producto_id', $sku->id)) {
+                        throw ValidationException::withMessages(['composicion' => 'Un SKU surtido está inactivo o dejó de ser compatible. Solicita revisión de la composición.']);
+                    }
+                }
             }
         }
     }
@@ -206,6 +228,10 @@ class GestionarSurtidos
     /** Proyecciones solo de lectura: no se persisten como líneas comerciales ni se suman sus precios. @return Collection<int, PedidoDetalle> */
     public function lineasFisicas(Pedido $pedido): Collection
     {
+        $pedido->loadMissing('detalles');
+        if (! $pedido->detalles->contains('tipo_linea', 'surtido')) {
+            return $pedido->detalles;
+        }
         $pedido->loadMissing('detalles.presentacion.producto', 'detalles.presentacion.variante');
         $salida = collect();
         $componentes = [];

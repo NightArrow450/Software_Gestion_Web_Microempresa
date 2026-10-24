@@ -17,7 +17,9 @@ class DescontarInventarioPorDespacho
 {
     public function ejecutar(Pedido $pedido, int $usuarioId): void
     {
-        $detalles = $pedido->detalles()->get();
+        $surtidos = app(GestionarSurtidos::class);
+        $surtidos->validarCierre($pedido);
+        $detalles = $surtidos->lineasFisicas($pedido);
 
         if ($detalles->isEmpty()) {
             throw ValidationException::withMessages([
