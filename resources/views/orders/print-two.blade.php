@@ -55,5 +55,10 @@
 @endforeach
 </main></div>
 @endforeach
+@foreach($pedidos as $pedido)
+@if($pedido->detalles->contains('tipo_linea', 'surtido'))
+<section style="break-before:page;padding:15mm" aria-label="Anexo de composición surtida"><h2>Anexo de composición · pedido N.º {{ $pedido->numero }}</h2><p>Desglose físico informativo. Los importes ya están incluidos en la nota comercial.</p>@include('orders.partials.composiciones', ['soloLectura' => true])</section>
+@endif
+@endforeach
 </body>
 </html>

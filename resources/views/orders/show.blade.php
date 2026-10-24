@@ -311,6 +311,7 @@
     </section>
 @endif
 
+@include('orders.partials.composiciones')
 <section class="form-section">
     <h2 class="form-section-title">Historial de estados</h2>
 

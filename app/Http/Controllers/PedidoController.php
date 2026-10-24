@@ -6,6 +6,8 @@ use App\Models\Cliente;
 use App\Models\Pedido;
 use App\Models\PresentacionProducto;
 use App\Services\CalculadoraPedido;
+use App\Services\GestionarSurtidos;
+use App\Services\RegistroAuditoria;
 use App\Services\TransicionesPedido;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
@@ -113,7 +115,7 @@ class PedidoController extends Controller
                 ]
             ));
 
-            $pedido->detalles()->createMany($detalles);
+            $this->persistirDetalles($pedido, $detalles, $data['detalles']);
 
             $pedido->historialEstados()->create([
                 'usuario_id' => $request->user()->id,
@@ -209,7 +211,8 @@ class PedidoController extends Controller
 
             [$detalles, $total] = $this->prepararDetalles(
                 $data['detalles'],
-                $calculadora
+                $calculadora,
+                $pedido
             );
 
             $pedido->update(array_merge(
@@ -217,8 +220,7 @@ class PedidoController extends Controller
                 ['total' => $total]
             ));
 
-            $pedido->detalles()->delete();
-            $pedido->detalles()->createMany($detalles);
+            $this->persistirDetalles($pedido, $detalles, $data['detalles'], true);
         });
 
         return redirect()
@@ -385,8 +387,13 @@ class PedidoController extends Controller
                 'min:1',
                 'max:18',
             ],
+            'detalles.*.tipo_linea' => ['sometimes', 'in:normal,surtido'],
+            'detalles.*.formato_surtido_id' => ['nullable', 'integer'],
+            'detalles.*.id' => ['nullable', 'integer'],
+            'detalles.*.paquetes_json' => ['nullable', 'string', 'max:3000000'],
             'detalles.*.presentacion_producto_id' => [
-                'required',
+                'required_unless:detalles.*.tipo_linea,surtido',
+                'nullable',
                 'integer',
                 'exists:presentaciones_producto,id',
             ],
@@ -412,6 +419,7 @@ class PedidoController extends Controller
             'fecha_entrega.after_or_equal' => 'La fecha de entrega no puede ser anterior a la fecha del pedido.',
         ]);
 
+        $datos['detalles'] = array_values($datos['detalles']);
         $limiteEntrega = CarbonImmutable::parse($datos['fecha_pedido'], 'America/Lima')->addDays(90);
         if (CarbonImmutable::parse($datos['fecha_entrega'], 'America/Lima')->greaterThan($limiteEntrega)) {
             throw ValidationException::withMessages([
@@ -424,7 +432,8 @@ class PedidoController extends Controller
 
     private function prepararDetalles(
         array $filas,
-        CalculadoraPedido $calculadora
+        CalculadoraPedido $calculadora,
+        ?Pedido $pedido = null
     ): array {
         $presentaciones = PresentacionProducto::with([
             'producto',
@@ -442,6 +451,19 @@ class PedidoController extends Controller
         $totalCentimos = 0;
 
         foreach ($filas as $i => $fila) {
+            if (($fila['tipo_linea'] ?? 'normal') === 'surtido') {
+                $actual = $pedido?->detalles->firstWhere('id', (int) ($fila['id'] ?? 0));
+                $linea = app(GestionarSurtidos::class)->prepararLinea($fila, request()->user(), $actual);
+                $clave = 'surtido|'.$linea['formato_surtido_id'].'|'.$linea['unidades_por_empaque'];
+                if (isset($combinaciones[$clave])) {
+                    throw ValidationException::withMessages(['detalles' => 'Agrupa los paquetes del mismo formato y tamaño en una línea, conservando sus composiciones individuales.']);
+                }
+                $combinaciones[$clave] = true;
+                $detalles[] = $linea;
+                $totalCentimos += (int) round((float) $linea['importe'] * 100);
+
+                continue;
+            }
             $presentacion = $presentaciones->get(
                 (int) $fila['presentacion_producto_id']
             );
@@ -588,6 +610,52 @@ class PedidoController extends Controller
         ];
     }
 
+    private function persistirDetalles(Pedido $pedido, array $detalles, array $filas, bool $editar = false): void
+    {
+        $anteriores = $editar ? $pedido->detalles->keyBy('id') : collect();
+        $haySurtidos = $anteriores->contains(fn ($d): bool => $d->tipo_linea === 'surtido') || collect($detalles)->contains(fn (array $d): bool => ($d['tipo_linea'] ?? 'normal') === 'surtido');
+        if (! $haySurtidos) {
+            if ($editar) {
+                $pedido->detalles()->delete();
+            }
+            $pedido->detalles()->createMany($detalles);
+
+            return;
+        }
+        $servicio = app(GestionarSurtidos::class);
+        $servicio->autorizar(request()->user());
+        $vistos = [];
+        foreach ($detalles as $i => $datos) {
+            $id = (int) ($filas[$i]['id'] ?? 0);
+            $actual = $id > 0 ? $anteriores->get($id) : null;
+            if ($id > 0 && (! $actual || isset($vistos[$id]))) {
+                throw ValidationException::withMessages(['detalles' => 'Una línea está repetida o no pertenece a este pedido.']);
+            }
+            $mismoTipo = $actual && ($actual->tipo_linea ?? 'normal') === ($datos['tipo_linea'] ?? 'normal') && $actual->formato_surtido_id === ($datos['formato_surtido_id'] ?? null);
+            if ($mismoTipo) {
+                $actual->update($datos);
+                $detalle = $actual;
+                $vistos[$id] = true;
+            } else {
+                $detalle = $pedido->detalles()->create($datos);
+            }
+            if ($detalle->tipo_linea === 'surtido') {
+                $servicio->guardar($detalle, $servicio->leerPaquetes($filas[$i]['paquetes_json'] ?? null), request()->user(), $editar ? 'Composición actualizada en la edición comercial del pedido.' : 'Composición seleccionada durante el registro del pedido.');
+            }
+        }
+        foreach ($anteriores as $id => $anterior) {
+            if (! isset($vistos[$id])) {
+                if ($anterior->tipo_linea === 'surtido') {
+                    $anterior->update(['retirado_en' => now()]);
+                    DB::table('pedido_paquetes_surtidos')->where('pedido_detalle_id', $id)->update(['activo' => false]);
+                    RegistroAuditoria::registrar('linea_surtida_retirada', 'pedido_detalle', $id, ['pedido_id' => $pedido->id, 'motivo' => 'Retirada durante edición comercial; se conserva el historial.']);
+                } else {
+                    $anterior->delete();
+                }
+            }
+        }
+    }
+
     private function opcionesFormulario(): array
     {
         $clientes = Cliente::where('estado', true)
@@ -642,6 +710,8 @@ class PedidoController extends Controller
             ->values()
             ->all();
 
-        return compact('clientes', 'presentaciones');
+        $formatosSurtidos = request()->user()?->role?->tienePermiso('pedidos.surtidos.componer') ? app(GestionarSurtidos::class)->formatos() : [];
+
+        return compact('clientes', 'presentaciones', 'formatosSurtidos');
     }
 }

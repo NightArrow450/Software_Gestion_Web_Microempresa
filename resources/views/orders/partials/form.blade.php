@@ -1,7 +1,7 @@
 @php
     $editando = isset($pedido);
     $filasPrevias = old('detalles', $editando
-        ? $pedido->detalles->map(fn($d) => ['presentacion_producto_id' => $d->presentacion_producto_id, 'modalidad' => $d->modalidad, 'cantidad' => $d->cantidad, 'unidades_por_empaque' => $d->unidades_por_empaque ?? $d->presentacion?->unidades_por_empaque])->all()
+        ? $pedido->detalles->map(fn($d) => ['id' => $d->id, 'tipo_linea' => $d->tipo_linea ?? 'normal', 'formato_surtido_id' => $d->formato_surtido_id, 'paquetes_json' => json_encode(app(\App\Services\GestionarSurtidos::class)->paquetes($d)), 'precio_unitario' => $d->precio_unitario, 'presentacion_producto_id' => $d->presentacion_producto_id, 'modalidad' => $d->modalidad, 'cantidad' => $d->cantidad, 'unidades_por_empaque' => $d->unidades_por_empaque ?? $d->presentacion?->unidades_por_empaque])->all()
         : [['presentacion_producto_id'=>'', 'modalidad'=>'unidad','cantidad'=>1]]);
 @endphp
 <form method="POST" id="form-pedido" action="{{ $editando ? route('pedidos.update', $pedido) : route('pedidos.store') }}">
@@ -45,10 +45,14 @@
         <div class="s2-sugerencias" id="resultados-presentaciones" role="listbox" hidden></div>
         <p class="s2-note" id="aviso-buscador" aria-live="polite">Escribe para buscar. Selecciona la presentación y modalidad de venta.</p>
     </div>
+    @if(count($formatosSurtidos ?? []) > 0)
+    <div class="form-group"><label for="formato-surtido">Añadir paquete surtido habilitado</label><select class="form-control" id="formato-surtido">@foreach($formatosSurtidos as $formato)<option value="{{ $formato['id'] }}">{{ $formato['nombre'] }} · {{ $formato['unidades_por_empaque'] }} unidades · S/ {{ $formato['precio_empaque'] }}</option>@endforeach</select>
+    <button type="button" class="btn btn-secondary" id="agregar-surtido">Añadir línea surtida</button><p class="s2-note">Cada paquete tiene composición propia. Puede quedar pendiente, pero no podrá finalizar preparación ni despacharse sin definirla.</p></div>
+    @endif
     <div id="filas-pedido"></div>
     <template id="plantilla-fila">
         <div class="s2-product-row">
-            <div><label>Producto / SKU *</label><input type="hidden" class="js-presentacion" name="detalles[__INDEX__][presentacion_producto_id]"><div class="form-control s2-nombre-producto js-nombre-producto"></div></div>
+            <div><input type="hidden" class="js-detalle-id" name="detalles[__INDEX__][id]"><label>Producto / SKU *</label><input type="hidden" class="js-presentacion" name="detalles[__INDEX__][presentacion_producto_id]"><div class="form-control s2-nombre-producto js-nombre-producto"></div></div>
             <div><label>Venta por *</label><select class="form-control js-modalidad" name="detalles[__INDEX__][modalidad]" required></select>
                 <div class="s2-tamano-empaque js-campo-empaque" hidden>
                     <label class="js-label-empaque">Unidades por empaque *</label>
@@ -70,6 +74,7 @@
 @push('scripts')
 <script>
 window.configuracionSprint2 = {
+    formatosSurtidos: {{ Illuminate\Support\Js::from($formatosSurtidos ?? []) }},
     presentaciones: {{ Illuminate\Support\Js::from($presentaciones) }},
     clientes: {{ Illuminate\Support\Js::from($clientes->map(fn($cliente) => [
         'id' => $cliente->id,
@@ -81,5 +86,9 @@ window.configuracionSprint2 = {
 };
 </script>
 <script src="{{ asset('js/pedidos-busqueda-utils.js') }}"></script>
+<script src="{{ asset('js/surtidos-utils.js') }}"></script>
+<script src="{{ asset('js/surtidos.js') }}"></script>
 <script src="{{ asset('js/sprint2-orders.js') }}"></script>
 @endpush
+
+@push('styles')<link rel="stylesheet" href="{{ asset('css/surtidos.css') }}">@endpush
