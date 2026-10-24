@@ -68,6 +68,7 @@ jobs:
         image: mysql:8.4.3
         env:
           MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+          MYSQL_ROOT_HOST: localhost
         ports:
           - 3306/tcp
         options: >-
@@ -97,6 +98,7 @@ jobs:
           test ! -e .env
           test "$(docker inspect --format '{{.Config.Image}}' "$MYSQL_SERVICE_ID")" = mysql:8.4.3
           docker port "$MYSQL_SERVICE_ID" 3306/tcp | grep -Eq ":${MYSQL_TEST_PORT}$"
+          test "$(docker exec "$MYSQL_SERVICE_ID" mysql --user=root --batch --skip-column-names --execute="SELECT COUNT(*) FROM mysql.user WHERE User='root' AND Host <> 'localhost'")" = 0
           printf 'MYSQL_TEST_PORT=%s\n' "$MYSQL_TEST_PORT" >> "$GITHUB_ENV"
           password=$(openssl rand -hex 24)
           echo "::add-mask::$password"
@@ -169,9 +171,11 @@ jobs:
           if [[ ! "$base" =~ ^[0-9a-f]{40}$ || "$base" = 0000000000000000000000000000000000000000 ]]; then
             base=$(git merge-base HEAD origin/develop)
           fi
-          mapfile -d '' -t archivos < <(git diff --name-only --diff-filter=ACMR -z "$base" HEAD -- '*.php')
+          git cat-file -e "$base^{commit}"
+          git diff --name-only --diff-filter=ACMR -z "$base" HEAD -- '*.php' > "$RUNNER_TEMP/php-modificados"
+          mapfile -d '' -t archivos < "$RUNNER_TEMP/php-modificados"
           # Siempre verifica también el arranque aislado, las fábricas y los modelos tipados.
-          php vendor/bin/pint --test app/Models database/factories tests/bootstrap.php phpstan-bootstrap.php "${archivos[@]}"
+          php vendor/bin/pint --test -- app/Models database/factories tests/bootstrap.php phpstan-bootstrap.php "${archivos[@]}"
           git diff --exit-code
 
   frontend:
