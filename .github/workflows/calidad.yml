@@ -1,0 +1,212 @@
+name: Calidad e integridad
+
+on:
+  pull_request:
+    branches: [develop]
+  push:
+    branches: [develop]
+  # GitHub solo habilita este evento si el archivo también existe en la rama predeterminada (main).
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: calidad-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  APP_ENV: testing
+  DB_CONNECTION: sqlite
+  DB_DATABASE: ':memory:'
+  DB_URL: ''
+  CACHE_STORE: array
+  SESSION_DRIVER: array
+  QUEUE_CONNECTION: sync
+  MAIL_MAILER: array
+  MYSQL_TEST_ENABLE: '0'
+  COMPOSER_NO_INTERACTION: '1'
+
+jobs:
+  laravel:
+    name: Laravel y seguridad
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Obtener código sin conservar credenciales
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/preparar-php
+      - uses: ./.github/actions/preparar-vite
+      - name: Ejecutar Laravel, incluida seguridad una sola vez
+        run: php vendor/bin/phpunit --display-warnings --fail-on-warning --fail-on-risky --log-junit "$RUNNER_TEMP/laravel.xml"
+      - name: Comprobar resultados y los once escenarios de seguridad
+        run: |
+          python3 <<'PY'
+          import os, xml.etree.ElementTree as ET
+          root = ET.parse(os.path.join(os.environ['RUNNER_TEMP'], 'laravel.xml')).getroot()
+          cases = root.findall('.//testcase')
+          security = [c for c in cases if c.attrib.get('classname', '').startswith('Tests.Security.')]
+          assert len(cases) >= 438, 'Faltan pruebas Laravel existentes'
+          assert len(security) >= 11, 'Faltan escenarios de seguridad'
+          assert len({(c.attrib['classname'], c.attrib['name']) for c in security}) == len(security), 'Seguridad duplicada'
+          assert not root.findall('.//failure') and not root.findall('.//error') and not root.findall('.//skipped')
+          print(f'Laravel: {len(cases)} pruebas; seguridad: {len(security)}, sin duplicados ni omisiones.')
+          PY
+
+  mysql:
+    name: MySQL 8.4.3 y concurrencia
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      mysql:
+        image: mysql:8.4.3
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+          MYSQL_ROOT_HOST: localhost
+        ports:
+          - 3306/tcp
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+    env:
+      MYSQL_TEST_ENABLE: '1'
+      MYSQL_TEST_HOST: 127.0.0.1
+      MYSQL_TEST_DATABASE: dhacer_eco_limp_test_ci_${{ github.run_id }}_${{ github.run_attempt }}
+      MYSQL_TEST_USERNAME: ci_pruebas
+    steps:
+      - name: Obtener código sin conservar credenciales
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/preparar-php
+      - uses: ./.github/actions/preparar-vite
+      - name: Preparar usuario desechable en el contenedor de pruebas
+        env:
+          MYSQL_SERVICE_ID: ${{ job.services.mysql.id }}
+          MYSQL_TEST_PORT: ${{ job.services.mysql.ports['3306'] }}
+        run: |
+          test "$GITHUB_ACTIONS" = true
+          test "$RUNNER_ENVIRONMENT" = github-hosted
+          test ! -e .env
+          test "$(docker inspect --format '{{.Config.Image}}' "$MYSQL_SERVICE_ID")" = mysql:8.4.3
+          docker port "$MYSQL_SERVICE_ID" 3306/tcp | grep -Eq ":${MYSQL_TEST_PORT}$"
+          test "$(docker exec "$MYSQL_SERVICE_ID" mysql --user=root --batch --skip-column-names --execute="SELECT COUNT(*) FROM mysql.user WHERE User='root' AND Host <> 'localhost'")" = 0
+          printf 'MYSQL_TEST_PORT=%s\n' "$MYSQL_TEST_PORT" >> "$GITHUB_ENV"
+          password=$(openssl rand -hex 24)
+          echo "::add-mask::$password"
+          printf 'MYSQL_TEST_PASSWORD=%s\n' "$password" >> "$GITHUB_ENV"
+          {
+            printf "CREATE USER 'ci_pruebas'@'%%' IDENTIFIED BY '%s';\n" "$password"
+            cat <<'SQL'
+          SET GLOBAL log_bin_trust_function_creators = 1;
+          GRANT ALL PRIVILEGES ON `dhacer\_eco\_limp\_test\_%`.* TO 'ci_pruebas'@'%';
+          GRANT SELECT ON performance_schema.data_lock_waits TO 'ci_pruebas'@'%';
+          GRANT SELECT ON performance_schema.threads TO 'ci_pruebas'@'%';
+          GRANT PROCESS ON *.* TO 'ci_pruebas'@'%';
+          SQL
+          } | docker exec -i "$MYSQL_SERVICE_ID" mysql --user=root
+      - name: Verificar servidor y configuración antes de cualquier migración MySQL
+        run: |
+          php <<'PHP'
+          <?php
+          require 'tests/bootstrap.php';
+          $app = require 'bootstrap/app.php';
+          $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+          $config = Tests\MySql\EntornoMySql::proteger();
+          if (getenv('GITHUB_ACTIONS') !== 'true' || getenv('RUNNER_ENVIRONMENT') !== 'github-hosted'
+              || is_file('.env') || $config['host'] !== '127.0.0.1' || $config['username'] !== 'ci_pruebas'
+              || ! preg_match('/\Adhacer_eco_limp_test_ci_\d+_\d+\z/', $config['database'])
+              || ! ctype_digit((string) $config['port']) || (int) $config['port'] <= 0) {
+              throw new RuntimeException('Conexión MySQL bloqueada: el entorno no es el servicio temporal esperado.');
+          }
+          $pdo = new PDO('mysql:host=127.0.0.1;port='.$config['port'].';charset=utf8mb4', $config['username'], $config['password'], [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+          $version = $pdo->query('SELECT VERSION()')->fetchColumn();
+          if ($version !== '8.4.3' || $pdo->query('SELECT DATABASE()')->fetchColumn() !== null
+              || (int) $pdo->query('SELECT @@GLOBAL.log_bin_trust_function_creators')->fetchColumn() !== 1
+              || $pdo->query('SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '.$pdo->quote($config['database']))->fetchColumn() != 0) {
+              throw new RuntimeException('El servicio no es MySQL 8.4.3 vacío y aislado.');
+          }
+          echo "MySQL 8.4.3 temporal comprobado; base de pruebas vacía y sin conexión a Laragon.\n";
+          PHP
+      - name: Ejecutar integración y concurrencia MySQL
+        run: php vendor/bin/phpunit --configuration phpunit.mysql.xml --display-warnings --fail-on-warning --fail-on-risky --log-junit "$RUNNER_TEMP/mysql.xml"
+      - name: Impedir que MySQL se omita silenciosamente
+        run: |
+          python3 <<'PY'
+          import os, xml.etree.ElementTree as ET
+          root = ET.parse(os.path.join(os.environ['RUNNER_TEMP'], 'mysql.xml')).getroot()
+          cases = root.findall('.//testcase')
+          assert len(cases) >= 48, 'Faltan pruebas MySQL existentes'
+          assert not root.findall('.//skipped'), 'MySQL contiene pruebas omitidas'
+          assert not root.findall('.//failure') and not root.findall('.//error')
+          print(f'MySQL temporal: {len(cases)} pruebas, sin omisiones.')
+          PY
+
+  calidad:
+    name: Larastan y Pint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Obtener historial para verificar los PHP del cambio
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: ./.github/actions/preparar-php
+      - name: Larastan nivel 5
+        run: composer analyse -- --no-progress
+      - name: Pint en modo verificación, sin modificar archivos
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          base="$BASE_SHA"
+          if [[ ! "$base" =~ ^[0-9a-f]{40}$ || "$base" = 0000000000000000000000000000000000000000 ]]; then
+            base=$(git merge-base HEAD origin/develop)
+          fi
+          git cat-file -e "$base^{commit}"
+          git diff --name-only --diff-filter=ACMR -z "$base" HEAD -- '*.php' > "$RUNNER_TEMP/php-modificados"
+          mapfile -d '' -t archivos < "$RUNNER_TEMP/php-modificados"
+          # Siempre verifica también el arranque aislado, las fábricas y los modelos tipados.
+          php vendor/bin/pint --test -- app/Models database/factories tests/bootstrap.php phpstan-bootstrap.php "${archivos[@]}"
+          git diff --exit-code
+
+  frontend:
+    name: JavaScript y Vite
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Obtener código sin conservar credenciales
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/preparar-vite
+      - name: Ejecutar las pruebas JavaScript
+        run: node --test tests/js/*.test.cjs
+
+  auditorias:
+    name: Auditorías Composer y npm
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Obtener código sin conservar credenciales
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/preparar-php
+      - name: Auditar todas las dependencias Composer del lockfile
+        run: composer audit --locked
+      - name: Preparar Node 22 sin caché
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - name: Auditar todas las dependencias npm del lockfile
+        run: npm audit --package-lock-only --audit-level=low
