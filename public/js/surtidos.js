@@ -50,7 +50,11 @@
                 fila.append(selector, unidades, boton('Quitar aroma', () => { paquetes[actual].componentes.splice(indice, 1); pintar(); })); filas.append(fila);
             }); guardar();
         }
-        numero.addEventListener('change', () => { actual = Number(numero.value) - 1; pintar(); });
+        numero.addEventListener('change', () => {
+            const elegido = Number(numero.value);
+            if (!Number.isInteger(elegido) || elegido < 1 || elegido > paquetes.length) { numero.value = String(actual + 1); return; }
+            actual = elegido - 1; pintar();
+        });
         estado.addEventListener('change', () => { paquetes[actual].estado = estado.value; guardar(); });
         controles.append(elemento('span', 'Editar paquete'), numero, elemento('span', 'Copiar desde'), copia,
             boton('Copiar composición', () => {

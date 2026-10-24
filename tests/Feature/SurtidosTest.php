@@ -183,6 +183,16 @@ class SurtidosTest extends TestCase
         $this->assertSame(3, DB::table('movimientos_inventario')->count());
     }
 
+    public function test_error_de_validacion_conserva_composiciones_y_lineas_con_indices_discontinuos_del_formulario(): void
+    {
+        $e = $this->escenarioSurtido();
+        $pedido = $this->registrar($e);
+        $fila = ['tipo_linea' => 'surtido', 'formato_surtido_id' => $e['formato'], 'modalidad' => 'empaque', 'cantidad' => 2, 'paquetes_json' => json_encode($this->paquetesSurtidos($e))];
+        $respuesta = $this->withSession(['_old_input' => ['cliente_id' => $pedido->cliente_id, 'detalles' => [100000 => $fila]]])->get(route('pedidos.create'));
+        $respuesta->assertOk()->assertSee('paquetes_json')->assertSee('componentes');
+        $this->assertStringContainsString("filas: JSON.parse('[", $respuesta->getContent());
+    }
+
     private function registrar(array $e, ?array $paquetes = null, array $otros = []): Pedido
     {
         $pedidoBase = $this->pedidoEnvasado($e, 'registrado');

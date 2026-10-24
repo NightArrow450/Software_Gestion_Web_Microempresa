@@ -67,3 +67,13 @@ test('aumentar paquetes conserva lo definido y agrega únicamente una composici�
     e.aumentar();
     assert.deepEqual(JSON.parse(e.oculto.value), [{ estado: 'definida', componentes: [{ presentacion_producto_id: 10, cantidad: 12 }] }, { estado: 'pendiente', componentes: [] }]);
 });
+
+test('navegar a un número de paquete inválido no pierde ni crea composiciones', () => {
+    const e = prepararEditor([{ estado: 'pendiente', componentes: [] }]);
+    const numero = e.raiz.children[1].children[1];
+    for (const valor of ['', '0', '1.5', '2', 'texto']) {
+        numero.value = valor; numero.eventos.change();
+        assert.equal(numero.value, '1');
+        assert.deepEqual(JSON.parse(e.oculto.value), [{ estado: 'pendiente', componentes: [] }]);
+    }
+});

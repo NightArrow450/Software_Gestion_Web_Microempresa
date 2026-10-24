@@ -3,6 +3,7 @@
     $filasPrevias = old('detalles', $editando
         ? $pedido->detalles->map(fn($d) => ['id' => $d->id, 'tipo_linea' => $d->tipo_linea ?? 'normal', 'formato_surtido_id' => $d->formato_surtido_id, 'paquetes_json' => json_encode(app(\App\Services\GestionarSurtidos::class)->paquetes($d)), 'precio_unitario' => $d->precio_unitario, 'presentacion_producto_id' => $d->presentacion_producto_id, 'modalidad' => $d->modalidad, 'cantidad' => $d->cantidad, 'unidades_por_empaque' => $d->unidades_por_empaque ?? $d->presentacion?->unidades_por_empaque])->all()
         : [['presentacion_producto_id'=>'', 'modalidad'=>'unidad','cantidad'=>1]]);
+    $filasPrevias = array_values($filasPrevias);
 @endphp
 <form method="POST" id="form-pedido" action="{{ $editando ? route('pedidos.update', $pedido) : route('pedidos.store') }}">
 @csrf @include('components.token-operacion')
