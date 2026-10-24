@@ -1,0 +1,16 @@
+name: Preparar recursos Vite
+description: Instala desde el lockfile sin scripts y compila los recursos reales, sin cachés persistentes.
+runs:
+  using: composite
+  steps:
+    - name: Preparar Node 22
+      uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6, verificado el 24-10-2026
+      with:
+        node-version: '22'
+        package-manager-cache: false
+    - name: Instalar dependencias JavaScript
+      shell: bash
+      run: npm ci --ignore-scripts --no-audit --no-fund
+    - name: Compilar Vite
+      shell: bash
+      run: npm run build
