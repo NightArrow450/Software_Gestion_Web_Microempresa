@@ -17,11 +17,13 @@ class EnvasadoCorreccion extends Model
 
     protected $casts = [];
 
+    /** @return HasMany<EnvasadoCorreccionMaterial, $this> */
     public function materiales(): HasMany
     {
         return $this->hasMany(EnvasadoCorreccionMaterial::class, 'envasado_correccion_id');
     }
 
+    /** @return BelongsTo<User, $this> */
     public function usuario(): BelongsTo
     {
         return $this->belongsTo(User::class, 'usuario_id');

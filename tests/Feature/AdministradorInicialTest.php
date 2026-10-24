@@ -95,6 +95,14 @@ class AdministradorInicialTest extends TestCase
         $this->assertDatabaseCount('clientes', 1);
     }
 
+    public function test_invocacion_directa_sin_comando_ni_credenciales_no_crea_administrador(): void
+    {
+        config(['administrador.email' => null, 'administrador.password' => null]);
+        app(AdminUserSeeder::class)->run();
+        $this->assertDatabaseCount('users', 0);
+        $this->assertDatabaseCount('roles', 0);
+    }
+
     public function test_seeder_normal_no_crea_datos_demo(): void
     {
         $this->configurar();

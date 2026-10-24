@@ -67,19 +67,19 @@ class ConcurrenciaInventarioTest extends PruebaInventarioMySql
         $datos = ['usuario_id' => $usuario->id, 'presentacion_producto_id' => $presentacion->id, 'tipo' => 'entrada', 'cantidad' => 1, 'stock_anterior' => 5, 'stock_nuevo' => 6, 'motivo' => 'Integridad MySQL', 'origen_tipo' => 'simulado', 'origen_id' => 'O'.Str::ulid()];
         MovimientoInventario::create($datos);
         MovimientoInventario::create(array_replace($datos, ['origen_id' => 'O'.Str::ulid()]));
-        foreach ([$datos, array_replace($datos, ['origen_id' => null]), array_replace($datos, ['origen_tipo' => null, 'origen_id' => null])] as $invalido) {
+        foreach ([[$datos, 1062], [array_replace($datos, ['origen_id' => null]), 1644], [array_replace($datos, ['origen_tipo' => null, 'origen_id' => null]), 1644]] as [$invalido, $codigoEsperado]) {
             try {
                 DB::table('movimientos_inventario')->insert($invalido);
                 $this->fail('La base debió rechazar el movimiento.');
-            } catch (QueryException) {
-                $this->assertTrue(true);
+            } catch (QueryException $excepcion) {
+                $this->assertSame($codigoEsperado, $excepcion->errorInfo[1]);
             }
         }
         try {
             DB::table('inventarios')->where('presentacion_producto_id', $presentacion->id)->update(['cantidad_actual' => -1]);
             $this->fail('La base debió rechazar el saldo negativo.');
-        } catch (QueryException) {
-            $this->assertTrue(true);
+        } catch (QueryException $excepcion) {
+            $this->assertContains($excepcion->errorInfo[1], [1264, 3819]);
         }
         $this->assertSame(5, (int) Inventario::where('presentacion_producto_id', $presentacion->id)->value('cantidad_actual'));
     }

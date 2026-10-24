@@ -1,0 +1,15 @@
+<?php
+
+namespace Illuminate\Database;
+
+use Illuminate\Console\Command;
+
+abstract class Seeder
+{
+    /**
+     * El comando solo se asigna mediante setCommand; una invocación directa puede no tenerlo.
+     *
+     * @var Command|null
+     */
+    protected $command;
+}

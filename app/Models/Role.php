@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -9,7 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Role extends Model
 {
-    use SoftDeletes;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'roles';
 
@@ -22,6 +23,7 @@ class Role extends Model
         'es_sistema' => 'boolean',
     ];
 
+    /** @return HasMany<User, $this> */
     public function users(): HasMany
     {
         return $this->hasMany(
@@ -30,6 +32,7 @@ class Role extends Model
         );
     }
 
+    /** @return BelongsToMany<Permiso, $this> */
     public function permisos(): BelongsToMany
     {
         return $this->belongsToMany(

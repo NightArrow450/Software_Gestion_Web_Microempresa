@@ -167,6 +167,8 @@ class RendimientoConsultasTest extends PruebaEntregaMySql
             $this->consultas = 0;
             $this->tiempoSql = 0;
             $inicio = hrtime(true);
+            $ms = 0.0;
+            $pico = 0;
             $this->midiendo = true;
             try {
                 $resultado = $operacion();

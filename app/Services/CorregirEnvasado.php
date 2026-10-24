@@ -66,7 +66,7 @@ class CorregirEnvasado
         PresentacionProducto::whereKey($envasado->presentacion_producto_id)->lockForUpdate()->firstOrFail();
         $inventario = Inventario::where('presentacion_producto_id', $envasado->presentacion_producto_id)->lockForUpdate()->first();
         if (! $inventario || $inventario->cantidad_actual < $cantidad) {
-            throw ValidationException::withMessages(['cantidad' => 'El stock disponible actual es '.($inventario?->cantidad_actual ?? 0).' y se necesita revertir '.$cantidad.'. No se identifica a qué envasado pertenecen los productos despachados.']);
+            throw ValidationException::withMessages(['cantidad' => 'El stock disponible actual es '.($inventario->cantidad_actual ?? 0).' y se necesita revertir '.$cantidad.'. No se identifica a qué envasado pertenecen los productos despachados.']);
         }
         $consumos = $envasado->consumos()->orderBy('insumo_id')->get();
         $claves = array_map('strval', array_keys($datos['devoluciones']));
@@ -94,6 +94,6 @@ class CorregirEnvasado
             $materiales[] = ['insumo' => $insumo, 'consumo' => $consumo, 'afectada' => $afectada, 'devuelta' => $devuelta];
         }
 
-        return compact('datos','envasado','cantidad','inventario','materiales');
+        return compact('datos', 'envasado', 'cantidad', 'inventario', 'materiales');
     }
 }

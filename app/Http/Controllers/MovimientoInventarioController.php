@@ -137,6 +137,7 @@ class MovimientoInventarioController extends Controller
                 'entrada' => $anteriorMil + $cantidadMil,
                 'salida' => $anteriorMil - $cantidadMil,
                 'ajuste' => $cantidadMil, // Conteo físico final.
+                default => throw new \LogicException('Tipo de movimiento no válido tras la validación.'),
             };
             if ($nuevoMil < 0) {
                 throw ValidationException::withMessages([

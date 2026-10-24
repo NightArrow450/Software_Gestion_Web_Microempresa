@@ -70,8 +70,8 @@ class ListaGeneralPreparacionTest extends TestCase
     {
         $pedido->detalles()->create([
             'presentacion_producto_id' => $presentacion?->id,
-            'codigo_sku' => $sku ?? $presentacion?->codigo_sku ?? 'HIST-SKU',
-            'descripcion_producto' => $presentacion?->producto?->nombre ?? 'Producto histórico',
+            'codigo_sku' => $sku ?? $presentacion->codigo_sku ?? 'HIST-SKU',
+            'descripcion_producto' => $presentacion?->producto->nombre ?? 'Producto histórico',
             'modalidad' => $modalidad,
             'unidades_por_empaque' => $porEmpaque,
             'cantidad' => $cantidad,

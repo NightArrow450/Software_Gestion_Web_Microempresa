@@ -16,6 +16,7 @@ class EnvasadoConsumo extends Model
 
     protected $casts = ['cantidad_por_unidad' => 'decimal:3', 'cantidad' => 'decimal:3'];
 
+    /** @return BelongsTo<Insumo, $this> */
     public function insumo(): BelongsTo
     {
         return $this->belongsTo(Insumo::class, 'insumo_id');

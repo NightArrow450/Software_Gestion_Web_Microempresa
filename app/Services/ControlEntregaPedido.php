@@ -107,7 +107,7 @@ class ControlEntregaPedido
         unset($linea);
         $eventos = $incidencia && ! $actual ? DB::table('incidencia_entrega_eventos as e')->join('users as u', 'u.id', '=', 'e.usuario_id')->where('e.incidencia_id', $incidencia->id)->orderBy('e.id')->get(['e.*', 'u.first_name', 'u.last_name']) : collect();
 
-        return ['historico_sin_desglose' => $pedido->estado === 'entregado' && $resultados->isEmpty(), 'incidencia' => $incidencia, 'version' => (int) ($incidencia?->version ?? 0), 'lineas' => $lineas, 'retornos' => $retornos, 'eventos' => $eventos];
+        return ['historico_sin_desglose' => $pedido->estado === 'entregado' && $resultados->isEmpty(), 'incidencia' => $incidencia, 'version' => (int) ($incidencia->version ?? 0), 'lineas' => $lineas, 'retornos' => $retornos, 'eventos' => $eventos];
     }
 
     public function evento(int $incidenciaId, int $usuarioId, string $tipo, string $motivo, array $datos): int
