@@ -1,8 +1,9 @@
 @php
     $editando = isset($pedido);
     $filasPrevias = old('detalles', $editando
-        ? $pedido->detalles->map(fn($d) => ['presentacion_producto_id' => $d->presentacion_producto_id, 'modalidad' => $d->modalidad, 'cantidad' => $d->cantidad, 'unidades_por_empaque' => $d->unidades_por_empaque ?? $d->presentacion?->unidades_por_empaque])->all()
+        ? $pedido->detalles->map(fn($d) => ['id' => $d->id, 'tipo_linea' => $d->tipo_linea ?? 'normal', 'formato_surtido_id' => $d->formato_surtido_id, 'paquetes_json' => json_encode(app(\App\Services\GestionarSurtidos::class)->paquetes($d)), 'precio_unitario' => $d->precio_unitario, 'presentacion_producto_id' => $d->presentacion_producto_id, 'modalidad' => $d->modalidad, 'cantidad' => $d->cantidad, 'unidades_por_empaque' => $d->unidades_por_empaque ?? $d->presentacion?->unidades_por_empaque])->all()
         : [['presentacion_producto_id'=>'', 'modalidad'=>'unidad','cantidad'=>1]]);
+    $filasPrevias = array_values($filasPrevias);
 @endphp
 <form method="POST" id="form-pedido" action="{{ $editando ? route('pedidos.update', $pedido) : route('pedidos.store') }}">
 @csrf @include('components.token-operacion')
@@ -38,17 +39,21 @@
     <div class="page-heading" style="margin-bottom:14px"><div><h2 class="form-section-title" style="margin-bottom:4px">Productos solicitados</h2>
         <div class="s2-note">El precio se obtiene del catálogo. Admite unidad o empaque si está habilitado. Máximo 18 líneas por nota física.</div></div>
         <button type="button" class="btn btn-secondary" id="agregar-fila"><span class="material-symbols-outlined">search</span> Buscar producto</button></div>
-    @if(count($presentaciones) === 0)<div class="s2-error">No existen presentaciones activas. Crea presentaciones y registra precios en Catálogo de Productos antes de agregar un pedido.</div>@endif
+    @if(count($presentaciones) === 0 && count($formatosSurtidos ?? []) === 0)<div class="s2-error">No existen presentaciones activas. Crea presentaciones y registra precios en Catálogo de Productos antes de agregar un pedido.</div>@endif
     <div class="form-group s2-busqueda" id="busqueda-productos">
         <label class="form-label" for="buscar-presentacion">Buscar producto por nombre o SKU</label>
         <input class="form-control" type="search" id="buscar-presentacion" placeholder="Ej.: Quita, lejía o código SKU" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="resultados-presentaciones">
         <div class="s2-sugerencias" id="resultados-presentaciones" role="listbox" hidden></div>
         <p class="s2-note" id="aviso-buscador" aria-live="polite">Escribe para buscar. Selecciona la presentación y modalidad de venta.</p>
     </div>
+    @if(count($formatosSurtidos ?? []) > 0)
+    <div class="form-group"><label for="formato-surtido">Añadir paquete surtido habilitado</label><select class="form-control" id="formato-surtido">@foreach($formatosSurtidos as $formato)<option value="{{ $formato['id'] }}" @disabled(!$formato['estado'])>{{ $formato['nombre'] }} · {{ $formato['unidades_por_empaque'] }} unidades · S/ {{ $formato['precio_empaque'] }}</option>@endforeach</select>
+    <button type="button" class="btn btn-secondary" id="agregar-surtido">Añadir línea surtida</button><p class="s2-note">Cada paquete tiene composición propia. Puede quedar pendiente, pero no podrá finalizar preparación ni despacharse sin definirla.</p></div>
+    @endif
     <div id="filas-pedido"></div>
     <template id="plantilla-fila">
         <div class="s2-product-row">
-            <div><label>Producto / SKU *</label><input type="hidden" class="js-presentacion" name="detalles[__INDEX__][presentacion_producto_id]"><div class="form-control s2-nombre-producto js-nombre-producto"></div></div>
+            <div><input type="hidden" class="js-detalle-id" name="detalles[__INDEX__][id]"><label>Producto / SKU *</label><input type="hidden" class="js-presentacion" name="detalles[__INDEX__][presentacion_producto_id]"><div class="form-control s2-nombre-producto js-nombre-producto"></div></div>
             <div><label>Venta por *</label><select class="form-control js-modalidad" name="detalles[__INDEX__][modalidad]" required></select>
                 <div class="s2-tamano-empaque js-campo-empaque" hidden>
                     <label class="js-label-empaque">Unidades por empaque *</label>
@@ -65,11 +70,12 @@
     <div class="s2-resumen">Total del pedido: <span id="s2-total">S/ 0.00</span></div>
     <p class="s2-note">El servidor recalcula todos los importes al guardar; no depende de los valores mostrados en el navegador.</p>
 </section>
-<div class="form-actions"><a class="btn btn-secondary" href="{{ route('pedidos.index') }}">Cancelar</a><button class="btn btn-primary" type="submit" @disabled(count($presentaciones)===0)><span class="material-symbols-outlined">save</span> {{ $editando ? 'Guardar cambios' : 'Registrar pedido' }}</button></div>
+<div class="form-actions"><a class="btn btn-secondary" href="{{ route('pedidos.index') }}">Cancelar</a><button class="btn btn-primary" type="submit" @disabled(count($presentaciones)===0 && count($formatosSurtidos ?? [])===0)><span class="material-symbols-outlined">save</span> {{ $editando ? 'Guardar cambios' : 'Registrar pedido' }}</button></div>
 </form>
 @push('scripts')
 <script>
 window.configuracionSprint2 = {
+    formatosSurtidos: {{ Illuminate\Support\Js::from($formatosSurtidos ?? []) }},
     presentaciones: {{ Illuminate\Support\Js::from($presentaciones) }},
     clientes: {{ Illuminate\Support\Js::from($clientes->map(fn($cliente) => [
         'id' => $cliente->id,
@@ -81,5 +87,9 @@ window.configuracionSprint2 = {
 };
 </script>
 <script src="{{ asset('js/pedidos-busqueda-utils.js') }}"></script>
+<script src="{{ asset('js/surtidos-utils.js') }}"></script>
+<script src="{{ asset('js/surtidos.js') }}"></script>
 <script src="{{ asset('js/sprint2-orders.js') }}"></script>
 @endpush
+
+@push('styles')<link rel="stylesheet" href="{{ asset('css/surtidos.css') }}">@endpush

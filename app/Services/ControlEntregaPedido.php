@@ -58,6 +58,19 @@ class ControlEntregaPedido
         $salidas = DB::table('movimientos_inventario')->where('pedido_id', $pedido->id)->where('tipo', 'salida')->when($actual, fn ($q) => $q->lockForUpdate())->get()->keyBy('presentacion_producto_id');
         $lineas = [];
         foreach ($detalles as $detalle) {
+            if ($detalle->tipo_linea === 'surtido') {
+                $componentes = $actual && $pedido->estado === 'listo_despacho'
+                    ? app(GestionarSurtidos::class)->fotografiar($detalle)
+                    : DB::table('pedido_despacho_componentes')->where('pedido_detalle_id', $detalle->id)->orderBy('id')->get()->all();
+                if ($componentes === []) {
+                    $lineas[$detalle->id] = ['id' => $detalle->id, 'presentacion_id' => null, 'sku' => '', 'descripcion' => $detalle->descripcion_producto, 'modalidad' => 'empaque', 'cantidad_original' => (int) $detalle->cantidad, 'factor' => $detalle->unidades_por_empaque, 'despachadas' => null, 'importe_centimos' => (int) round((float) $detalle->importe * 100), 'verificada' => false];
+                }
+                foreach ($componentes as $c) {
+                    $lineas[self::claveFisica($detalle->id, $c->id)] = ['id' => $detalle->id, 'componente_id' => $c->id, 'presentacion_id' => $c->presentacion_producto_id, 'sku' => $c->sku, 'descripcion' => $c->descripcion.' · Paquete '.$c->numero_paquete, 'modalidad' => 'unidad', 'cantidad_original' => (int) $c->cantidad, 'factor' => 1, 'despachadas' => (int) $c->cantidad, 'importe_centimos' => (int) $c->importe_centimos, 'verificada' => false];
+                }
+
+                continue;
+            }
             $factor = $detalle->modalidad === 'unidad' ? 1 : $detalle->unidades_por_empaque;
             // Solo un despacho nuevo puede fijar el respaldo del catálogo en ese mismo instante.
             if ($factor === null && $pedido->estado === 'listo_despacho') {
@@ -83,11 +96,11 @@ class ControlEntregaPedido
         $incidencia = DB::table('incidencias_entrega')->where('pedido_id', $pedido->id)->when($actual, fn ($q) => $q->lockForUpdate())->first();
         $base = $incidencia ? DB::table('incidencia_entrega_eventos')->where('incidencia_id', $incidencia->id)->where('tipo', 'despacho_base')->when($actual, fn ($q) => $q->lockForUpdate())->first() : null;
         $lineas = $base ? json_decode($base->datos, true, 512, JSON_THROW_ON_ERROR)['lineas'] : $this->fotografia($pedido);
-        $resultados = $incidencia ? DB::table('entrega_pedido_detalles as d')->join('entregas_pedido as e', 'e.id', '=', 'd.entrega_id')->where('e.incidencia_id', $incidencia->id)->select('d.*')->when($actual, fn ($q) => $q->lockForUpdate())->get()->groupBy('pedido_detalle_id') : collect();
+        $resultados = $incidencia ? DB::table('entrega_pedido_detalles as d')->join('entregas_pedido as e', 'e.id', '=', 'd.entrega_id')->where('e.incidencia_id', $incidencia->id)->select('d.*')->when($actual, fn ($q) => $q->lockForUpdate())->get()->groupBy(fn ($r): int|string => self::claveFisica($r->pedido_detalle_id, $r->despacho_componente_id ?? null)) : collect();
         $retornos = $incidencia ? DB::table('retorno_pedido_detalles as d')->join('retornos_pedido as r', 'r.id', '=', 'd.retorno_id')->where('r.incidencia_id', $incidencia->id)->select('d.*', 'r.ocurrido_en')->when($actual, fn ($q) => $q->lockForUpdate())->get() : collect();
         foreach ($lineas as &$linea) {
-            $datos = $resultados->get($linea['id'], collect());
-            $recibidas = $retornos->where('pedido_detalle_id', $linea['id']);
+            $datos = $resultados->get(self::claveFisica($linea['id'], $linea['componente_id'] ?? null), collect());
+            $recibidas = $retornos->filter(fn ($r): bool => self::claveFisica($r->pedido_detalle_id, $r->despacho_componente_id ?? null) === self::claveFisica($linea['id'], $linea['componente_id'] ?? null));
             $linea['aceptadas'] = (int) $datos->sum('aceptadas');
             $linea['rechazadas'] = (int) $datos->sum('rechazadas');
             $linea['pendientes'] = $linea['despachadas'] === null ? null : $linea['despachadas'] - $linea['aceptadas'] - $linea['rechazadas'];
@@ -108,6 +121,11 @@ class ControlEntregaPedido
         $eventos = $incidencia && ! $actual ? DB::table('incidencia_entrega_eventos as e')->join('users as u', 'u.id', '=', 'e.usuario_id')->where('e.incidencia_id', $incidencia->id)->orderBy('e.id')->get(['e.*', 'u.first_name', 'u.last_name']) : collect();
 
         return ['historico_sin_desglose' => $pedido->estado === 'entregado' && $resultados->isEmpty(), 'incidencia' => $incidencia, 'version' => (int) ($incidencia->version ?? 0), 'lineas' => $lineas, 'retornos' => $retornos, 'eventos' => $eventos];
+    }
+
+    public static function claveFisica(int $detalleId, ?int $componenteId = null): int|string
+    {
+        return $componenteId === null ? $detalleId : 'surtido:'.$componenteId;
     }
 
     public function evento(int $incidenciaId, int $usuarioId, string $tipo, string $motivo, array $datos): int

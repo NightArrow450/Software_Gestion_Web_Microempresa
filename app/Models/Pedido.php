@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\GestionarSurtidos;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -50,7 +51,12 @@ class Pedido extends Model
     /** @return HasMany<PedidoDetalle, $this> */
     public function detalles(): HasMany
     {
-        return $this->hasMany(PedidoDetalle::class, 'pedido_id');
+        $relacion = $this->hasMany(PedidoDetalle::class, 'pedido_id');
+        if (app(GestionarSurtidos::class)->disponible()) {
+            $relacion->whereNull('retirado_en');
+        }
+
+        return $relacion;
     }
 
     /** @return HasMany<PedidoEstadoHistorial, $this> */

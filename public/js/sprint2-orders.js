@@ -115,6 +115,7 @@
             fila.querySelector('.js-cantidad').setCustomValidity(importe > 99999999 ? 'El importe de una línea no puede superar S/ 999 999,99.' : '');
             totalCentimos += importe;
         });
+        contenedor.querySelectorAll('.s2-surtido-row').forEach(fila => { totalCentimos += Number(fila.dataset.importeCentimos) || 0; });
         totalElemento.textContent = 'S/ ' + (totalCentimos / 100).toFixed(2);
         const cantidadLineas = contenedor.children.length;
         if (cantidadLineas > 0 && cantidadLineas < 18) {
@@ -163,6 +164,7 @@
         const fila = fragmento.querySelector('.s2-product-row');
         fila.querySelectorAll('[name]').forEach(elemento => elemento.name = elemento.name.replaceAll('__INDEX__', String(indice)));
         indice++;
+        fila.querySelector('.js-detalle-id').value = datos.id || '';
         fila.querySelector('.js-presentacion').value = producto.id;
         fila.querySelector('.js-nombre-producto').textContent = `${producto.nombre} | ${producto.sku}`;
         fila.querySelector('.js-cantidad').value = datos.cantidad || 1;
@@ -296,7 +298,9 @@
         if (!document.getElementById('busqueda-productos').contains(event.target)) cerrarResultados();
     });
     document.getElementById('agregar-fila').addEventListener('click', () => buscar.focus());
-    (Array.isArray(config.filas) ? config.filas : []).forEach(agregarFila);
+    document.addEventListener('pedido:surtido-cambio', recalcular);
+    (Array.isArray(config.filas) ? config.filas : []).forEach(datos => datos.tipo_linea === 'surtido' ? window.PedidosSurtidos.agregar(datos) : agregarFila(datos));
+    recalcular();
     document.getElementById('form-pedido').addEventListener('submit', event => {
         if (contenedor.children.length) return;
         event.preventDefault();

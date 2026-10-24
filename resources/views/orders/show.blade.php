@@ -311,6 +311,7 @@
     </section>
 @endif
 
+@include('orders.partials.composiciones')
 <section class="form-section">
     <h2 class="form-section-title">Historial de estados</h2>
 
@@ -396,6 +397,7 @@
         'total' => number_format((float) $pedido->total, 2, '.', ''),
         'productos' => $pedido->detalles->map(fn($detalle) => [
             'descripcion' => $detalle->descripcion_producto,
+            'paquetes' => $detalle->tipo_linea === 'surtido' ? app(\App\Services\GestionarSurtidos::class)->paquetes($detalle) : [],
             'modalidad' => $detalle->modalidad,
             'empaque' => $detalle->descripcionModalidad(),
             'cantidad' => $detalle->cantidad,
@@ -409,7 +411,7 @@
             `Entrega prevista: ${resumen.fecha}`,
             `Condición de pago: ${resumen.condicion}`,
             '', 'Productos:',
-            ...resumen.productos.map((p, i) => `${i + 1}. ${p.descripcion} | ${p.cantidad} ${p.modalidad}(s)${p.modalidad === 'empaque' ? ' · ' + p.empaque : ''} | S/ ${p.importe}`),
+            ...resumen.productos.flatMap((p, i) => [`${i + 1}. ${p.descripcion} | ${p.cantidad} ${p.modalidad}(s)${p.modalidad === 'empaque' ? ' · ' + p.empaque : ''} | S/ ${p.importe}`, ...(p.paquetes || []).map(paquete => `  Paquete ${paquete.numero}: ${paquete.estado === 'definida' ? paquete.componentes.map(c => `${c.cantidad} de ${c.descripcion} (${c.sku})`).join('; ') : 'Composición pendiente'}`)]),
             '', `TOTAL: S/ ${resumen.total}`,
         ];
         const texto = lineas.join('\n');

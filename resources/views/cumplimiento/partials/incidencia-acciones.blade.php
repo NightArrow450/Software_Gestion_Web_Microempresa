@@ -12,8 +12,8 @@
                 <p>Indica únicamente las cantidades nuevas de esta visita, en unidades físicas. Lo que no se resuelva seguirá pendiente.</p>
                 <label>Fecha y hora del hecho<input type="datetime-local" name="ocurrido_en" value="{{ now('America/Lima')->format('Y-m-d\TH:i') }}" required></label>
                 @foreach($resumenEntrega['lineas'] as $linea)
-                    <fieldset><legend>{{ $linea['sku'] }} · pendientes {{ $linea['pendientes'] ?? 'No comprobado' }}</legend>
-                        <input type="hidden" name="detalles[{{ $loop->index }}][pedido_detalle_id]" value="{{ $linea['id'] }}">
+                    <fieldset><legend>{{ $linea['sku'] }} · {{ $linea['descripcion'] }} · pendientes {{ $linea['pendientes'] ?? 'No comprobado' }}</legend>
+                        <input type="hidden" name="detalles[{{ $loop->index }}][pedido_detalle_id]" value="{{ $linea['id'] }}">@if(isset($linea['componente_id']))<input type="hidden" name="detalles[{{ $loop->index }}][despacho_componente_id]" value="{{ $linea['componente_id'] }}">@endif
                         <div class="entrega-grid"><label>Nuevas unidades aceptadas<input type="number" name="detalles[{{ $loop->index }}][aceptadas]" min="0" max="{{ $linea['pendientes'] ?? 0 }}" step="1" value="0" required></label>
                         <label>Nuevas unidades rechazadas<input type="number" name="detalles[{{ $loop->index }}][rechazadas]" min="0" max="{{ $linea['pendientes'] ?? 0 }}" step="1" value="0" required></label></div>
                         <label>Motivo informado del rechazo (obligatorio si hay rechazo)<textarea name="detalles[{{ $loop->index }}][motivo]" minlength="10" maxlength="1000"></textarea></label>
@@ -32,8 +32,8 @@
                 <p>Las unidades aptas quedarán pendientes de aprobación. Las dañadas, en evaluación y no recuperadas no aumentan el stock.</p>
                 <label>Fecha y hora de recepción o constatación<input type="datetime-local" name="ocurrido_en" value="{{ now('America/Lima')->format('Y-m-d\TH:i') }}" required></label>
                 @foreach($resumenEntrega['lineas'] as $linea)
-                    <fieldset><legend>{{ $linea['sku'] }} · rechazadas pendientes de retorno {{ $linea['por_retornar'] }}</legend>
-                        <input type="hidden" name="detalles[{{ $loop->index }}][pedido_detalle_id]" value="{{ $linea['id'] }}">
+                    <fieldset><legend>{{ $linea['sku'] }} · {{ $linea['descripcion'] }} · rechazadas pendientes de retorno {{ $linea['por_retornar'] }}</legend>
+                        <input type="hidden" name="detalles[{{ $loop->index }}][pedido_detalle_id]" value="{{ $linea['id'] }}">@if(isset($linea['componente_id']))<input type="hidden" name="detalles[{{ $loop->index }}][despacho_componente_id]" value="{{ $linea['componente_id'] }}">@endif
                         <div class="entrega-grid">
                             @foreach(['aptas' => 'Recibidas aptas', 'danadas' => 'Recibidas dañadas', 'en_revision' => 'Recibidas en evaluación', 'no_recuperadas' => 'Perdidas o no recuperadas (sin recepción física)'] as $campo => $etiqueta)
                                 <label>{{ $etiqueta }}<input type="number" name="detalles[{{ $loop->parent->index }}][{{ $campo }}]" min="0" max="{{ $linea['por_retornar'] }}" step="1" value="0" required></label>
@@ -50,7 +50,7 @@
         @foreach($resumenEntrega['retornos'] as $retorno)
             @php($aptasPendientes = $retorno->aptas + $retorno->revisadas_aptas - $retorno->reincorporadas)
             @if($aptasPendientes > 0 && $rolEntrega?->tienePermiso('cumplimiento.retornos.aprobar'))
-                <details><summary>Aprobar reincorporación · recepción {{ $retorno->retorno_id }} · {{ $resumenEntrega['lineas'][$retorno->pedido_detalle_id]['sku'] }} · aptas pendientes {{ $aptasPendientes }}</summary>
+                <details><summary>Aprobar reincorporación · recepción {{ $retorno->retorno_id }} · {{ $resumenEntrega['lineas'][\App\Services\ControlEntregaPedido::claveFisica($retorno->pedido_detalle_id, $retorno->despacho_componente_id ?? null)]['sku'] }} · aptas pendientes {{ $aptasPendientes }}</summary>
                     <form method="POST" action="{{ route('cumplimiento.aprobar-retorno', $pedido) }}" class="entrega-formulario">
                         @csrf @include('components.token-operacion')
                         <input type="hidden" name="version" value="{{ $resumenEntrega['version'] }}"><input type="hidden" name="retorno_detalle_id" value="{{ $retorno->id }}">
@@ -62,7 +62,7 @@
             @endif
             @php($porClasificar = $retorno->en_revision - $retorno->revisadas_aptas - $retorno->revisadas_danadas)
             @if($porClasificar > 0 && $rolEntrega?->tienePermiso('cumplimiento.incidencias.revisar'))
-                <details><summary>Evaluar recepción {{ $retorno->retorno_id }} · {{ $resumenEntrega['lineas'][$retorno->pedido_detalle_id]['sku'] }} · por clasificar {{ $porClasificar }}</summary>
+                <details><summary>Evaluar recepción {{ $retorno->retorno_id }} · {{ $resumenEntrega['lineas'][\App\Services\ControlEntregaPedido::claveFisica($retorno->pedido_detalle_id, $retorno->despacho_componente_id ?? null)]['sku'] }} · por clasificar {{ $porClasificar }}</summary>
                     <form method="POST" action="{{ route('cumplimiento.incidencia.clasificar', $pedido) }}" class="entrega-formulario">
                         @csrf @include('components.token-operacion')
                         <input type="hidden" name="version" value="{{ $resumenEntrega['version'] }}"><input type="hidden" name="retorno_detalle_id" value="{{ $retorno->id }}">
@@ -89,7 +89,7 @@
                 @csrf @include('components.token-operacion')<input type="hidden" name="version" value="{{ $resumenEntrega['version'] }}">
                 <p>Indica diferencias, no totales: un valor negativo resta y uno positivo suma. El historial original se conserva. No se permiten rechazos menores que los retornos ya registrados.</p>
                 @foreach($resumenEntrega['lineas'] as $linea)
-                    <fieldset><legend>{{ $linea['sku'] }}</legend><input type="hidden" name="detalles[{{ $loop->index }}][pedido_detalle_id]" value="{{ $linea['id'] }}"><div class="entrega-grid">
+                    <fieldset><legend>{{ $linea['sku'] }} · {{ $linea['descripcion'] }}</legend><input type="hidden" name="detalles[{{ $loop->index }}][pedido_detalle_id]" value="{{ $linea['id'] }}">@if(isset($linea['componente_id']))<input type="hidden" name="detalles[{{ $loop->index }}][despacho_componente_id]" value="{{ $linea['componente_id'] }}">@endif<div class="entrega-grid">
                         <label>Diferencia de aceptadas<input type="number" name="detalles[{{ $loop->index }}][aceptadas]" value="0" step="1" min="-10000000" max="10000000" required></label><label>Diferencia de rechazadas<input type="number" name="detalles[{{ $loop->index }}][rechazadas]" value="0" step="1" min="-10000000" max="10000000" required></label>
                     </div></fieldset>
                 @endforeach

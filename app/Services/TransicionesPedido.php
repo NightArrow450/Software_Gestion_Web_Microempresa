@@ -48,6 +48,9 @@ class TransicionesPedido
             }
             // Solo DESPACHO genera salida automática. Si falta cualquier
             // producto, se abortan el stock, el historial y el cambio de estado.
+            if ($estadoNuevo === 'listo_despacho') {
+                app(GestionarSurtidos::class)->validarCierre($actual);
+            }
             if ($estadoNuevo === 'despachado') {
                 $this->inventarioDespacho->ejecutar($actual, $usuarioId);
             }
