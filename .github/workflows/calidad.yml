@@ -38,7 +38,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Obtener código sin conservar credenciales
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           persist-credentials: false
       - uses: ./.github/actions/preparar-php
@@ -82,7 +82,7 @@ jobs:
       MYSQL_TEST_USERNAME: ci_pruebas
     steps:
       - name: Obtener código sin conservar credenciales
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           persist-credentials: false
       - uses: ./.github/actions/preparar-php
@@ -104,6 +104,7 @@ jobs:
           {
             printf "CREATE USER 'ci_pruebas'@'%%' IDENTIFIED BY '%s';\n" "$password"
             cat <<'SQL'
+          SET GLOBAL log_bin_trust_function_creators = 1;
           GRANT ALL PRIVILEGES ON `dhacer\_eco\_limp\_test\_%`.* TO 'ci_pruebas'@'%';
           GRANT SELECT ON performance_schema.data_lock_waits TO 'ci_pruebas'@'%';
           GRANT SELECT ON performance_schema.threads TO 'ci_pruebas'@'%';
@@ -127,6 +128,7 @@ jobs:
           $pdo = new PDO('mysql:host=127.0.0.1;port='.$config['port'].';charset=utf8mb4', $config['username'], $config['password'], [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
           $version = $pdo->query('SELECT VERSION()')->fetchColumn();
           if ($version !== '8.4.3' || $pdo->query('SELECT DATABASE()')->fetchColumn() !== null
+              || (int) $pdo->query('SELECT @@GLOBAL.log_bin_trust_function_creators')->fetchColumn() !== 1
               || $pdo->query('SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '.$pdo->quote($config['database']))->fetchColumn() != 0) {
               throw new RuntimeException('El servicio no es MySQL 8.4.3 vacío y aislado.');
           }
@@ -152,7 +154,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Obtener historial para verificar los PHP del cambio
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           persist-credentials: false
           fetch-depth: 0
@@ -178,7 +180,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Obtener código sin conservar credenciales
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           persist-credentials: false
       - uses: ./.github/actions/preparar-vite
@@ -191,15 +193,16 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Obtener código sin conservar credenciales
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           persist-credentials: false
       - uses: ./.github/actions/preparar-php
       - name: Auditar todas las dependencias Composer del lockfile
         run: composer audit --locked
       - name: Preparar Node 22 sin caché
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: '22'
+          package-manager-cache: false
       - name: Auditar todas las dependencias npm del lockfile
         run: npm audit --package-lock-only --audit-level=low

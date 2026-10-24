@@ -28,6 +28,7 @@ Referencia: [ejecución manual de workflows](https://docs.github.com/en/actions/
 - MySQL es un contenedor nuevo por trabajo, con puerto asignado por GitHub. Antes de conectarse se verifica el identificador, la imagen y el puerto del servicio. Antes de migrar se comprueba la versión exacta 8.4.3 y una base de pruebas todavía vacía.
 - El usuario `ci_pruebas` recibe una contraseña aleatoria, enmascarada antes de añadirla al entorno. Solo tiene acceso de escritura a bases con el prefijo `dhacer_eco_limp_test_`; los permisos de lectura de bloqueos y `PROCESS` sirven para comprobar la concurrencia. El administrador sin contraseña existe exclusivamente dentro del contenedor temporal y solo se usa mediante `docker exec` para crear ese usuario.
 - Las bases llevan el identificador y el intento de ejecución. Los helpers existentes comprueban prefijo, conexión y marcadores de propiedad antes de preparar esquemas; no se ejecutan migraciones de la aplicación fuera de esos helpers.
+- MySQL 8.4.3 activa el registro binario por defecto. Solo dentro del contenedor se establece `log_bin_trust_function_creators=1` para que el usuario limitado pueda crear los triggers históricos sin recibir `SUPER`. La comprobación previa exige ese valor. No se omiten ni modifican triggers, restricciones o pruebas; esta configuración no se aplica a Laragon ni se prescribe para producción. [Referencia MySQL](https://dev.mysql.com/doc/refman/8.4/en/stored-programs-logging.html).
 - Las bases, datos y credenciales del contenedor se descartan con el runner. No se publican volcados ni reportes JUnit: estos últimos permanecen en el directorio temporal de cada trabajo.
 - No hay conexión a Laragon, ejecutores locales, despliegues, túneles, artefactos ni cachés persistentes.
 
@@ -35,8 +36,8 @@ El token del workflow tiene únicamente `contents: read`, y checkout no conserva
 
 | Acción | Referencia verificada | SHA |
 | --- | --- | --- |
-| `actions/checkout` | `v4` | `11d5960a326750d5838078e36cf38b85af677262` |
-| `actions/setup-node` | `v4` | `49933ea5288caeca8642d1e84afbd3f7d6820020` |
+| `actions/checkout` | `v6` | `d23441a48e516b6c34aea4fa41551a30e30af803` |
+| `actions/setup-node` | `v6` | `249970729cb0ef3589644e2896645e5dc5ba9c38` |
 | `shivammathur/setup-php` | `v2` | `eb7c497e18156a6bbabfef1d3a82760b9eda3962` |
 
 Al actualizar una acción se debe verificar nuevamente el SHA y revisar sus cambios. No se insertan títulos, nombres de rama ni otros textos de un PR directamente en comandos de shell.
