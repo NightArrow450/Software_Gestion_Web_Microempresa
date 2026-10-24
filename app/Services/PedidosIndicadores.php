@@ -69,11 +69,11 @@ class PedidosIndicadores
                 $q->where($col, $f[$campo]);
             }
         }
-        foreach ($q->orderBy('c.id')->orderBy('co.id')->select(['d.pedido_id', 'd.id as linea_id', 'ps.id as paquete_id', 'ps.numero', 'ps.activo', 'ps.version as vigente', 'c.id as composicion_id', 'c.version', 'c.estado', 'c.created_at', 'co.id as componente_id', 'co.presentacion_producto_id', 'co.sku', 'co.descripcion', 'co.cantidad'])->lazy(100) as $r) {
+        foreach ($q->orderBy('c.id')->orderBy('co.id')->select(['d.pedido_id', 'pe.estado as estado_pedido', 'd.id as linea_id', 'ps.id as paquete_id', 'ps.numero', 'ps.activo', 'ps.version as vigente', 'c.id as composicion_id', 'c.version', 'c.estado', 'c.created_at', 'co.id as componente_id', 'co.presentacion_producto_id', 'co.sku', 'co.descripcion', 'co.cantidad'])->lazy(100) as $r) {
             yield ['pedido_id' => $r->pedido_id, 'linea_id' => $r->linea_id, 'paquete_id' => $r->paquete_id, 'numero_paquete' => $r->numero, 'composicion_id' => $r->composicion_id,
                 'version' => $r->version, 'version_vigente' => (int) $r->vigente === (int) $r->version && $r->activo ? 'Sí' : 'No', 'estado_composicion' => $r->estado,
                 'fecha_registro' => $r->created_at, 'componente_id' => $r->componente_id, 'presentacion_id' => $r->presentacion_producto_id, 'sku' => $r->sku, 'descripcion' => $r->descripcion, 'unidades_fisicas' => $r->cantidad,
-                'demanda_definitiva' => (int) $r->vigente === (int) $r->version && $r->activo && $r->estado === 'definida' ? 'Sí' : 'No'];
+                'demanda_definitiva' => (int) $r->vigente === (int) $r->version && $r->activo && $r->estado === 'definida' && in_array($r->estado_pedido, ['confirmado', 'en_preparacion'], true) ? 'Sí' : 'No'];
         }
     }
 

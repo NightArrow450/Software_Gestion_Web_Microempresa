@@ -137,6 +137,7 @@ class IndicadoresTest extends TestCase
         $this->assertSame(0, $c['importe_activo_centimos']);
         $this->assertSame(7200, $c['importe_cancelado_centimos']);
         $this->assertSame([], $this->filas('preparacion'));
+        $this->assertSame(['No'], array_values(array_unique(array_column($this->filas('composiciones'), 'demanda_definitiva'))));
     }
 
     public function test_exportacion_completa_coincide_con_filas_y_no_con_la_pagina_visible(): void
