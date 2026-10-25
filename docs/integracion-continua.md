@@ -5,9 +5,9 @@ El workflow `.github/workflows/calidad.yml` ejecuta cinco trabajos independiente
 | Trabajo | Comprobaciones |
 | --- | --- |
 | Laravel y seguridad | PHP 8.3, SQLite en memoria, suite habitual y comprobación de que los once escenarios de seguridad aparecen una sola vez. |
-| MySQL 8.4.3 y concurrencia | Servicio `mysql:8.4.3` desechable, comprobación previa de conexión y las 48 pruebas actuales, sin omisiones. |
+| MySQL 8.4.3 y concurrencia | Servicio `mysql:8.4.3` desechable, comprobación previa de conexión y la suite MySQL independiente, sin omisiones. |
 | Larastan y Pint | Nivel 5 sin exclusiones generales; Pint en modo verificación sobre los PHP del cambio y, siempre, modelos, fábricas y archivos de arranque aislado. |
-| JavaScript y Vite | Node 22, instalación desde `package-lock.json`, compilación real y las diez pruebas JavaScript actuales. |
+| JavaScript y Vite | Node 22, instalación desde `package-lock.json`, compilación real y la suite JavaScript actual. |
 | Auditorías Composer y npm | Dependencias de producción y desarrollo de ambos lockfiles, sin correcciones automáticas ni avisos ignorados. |
 
 Los mínimos de pruebas detectan omisiones accidentales y permiten agregar escenarios nuevos. Las pruebas SQLite y MySQL siguen separadas. Se ejecuta PHPUnit con las configuraciones existentes, mostrando las advertencias y fallando ante advertencias o pruebas riesgosas. Un fallo de instalación, auditoría, compilación o pruebas hace fallar el trabajo; no se utiliza `continue-on-error`.

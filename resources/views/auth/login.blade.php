@@ -31,6 +31,7 @@
 </head>
 
 <body class="bg-surface text-on-surface antialiased">
+@include('components.demostracion')
 
 <main
     class="

@@ -3,100 +3,29 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use Illuminate\Database\Query\JoinClause;
+use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request): View
     {
-        /*
-        |--------------------------------------------------------------------------
-        | Total de usuarios activos
-        |--------------------------------------------------------------------------
-        */
+        $usuario = $request->user();
+        $usuario->loadMissing('role.permisos');
+        $resumenUsuarios = null;
+        if ($usuario->role?->nombre === 'Administrador') {
+            $porRol = User::query()->leftJoin('roles', fn (JoinClause $join): JoinClause => $join->on('roles.id', '=', 'users.role_id')->whereNull('roles.deleted_at'))
+                ->where('users.status', true)->selectRaw('roles.nombre as rol, COUNT(*) as total')
+                ->groupBy('roles.nombre')->pluck('total', 'rol');
+            $resumenUsuarios = [
+                'total' => (int) $porRol->sum(),
+                'administradores' => (int) ($porRol['Administrador'] ?? 0),
+                'comerciales' => (int) ($porRol['Operaciones Comerciales'] ?? 0),
+                'produccion' => (int) ($porRol['Producción/Reparto'] ?? 0),
+            ];
+        }
 
-        $usuariosActivos = User::where(
-            'status',
-            true
-        )->count();
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Administradores activos
-        |--------------------------------------------------------------------------
-        */
-
-        $administradores = User::where(
-            'status',
-            true
-        )
-        ->whereHas('role', function ($query) {
-
-            $query->where(
-                'nombre',
-                'Administrador'
-            );
-
-        })
-        ->count();
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Operaciones Comerciales activos
-        |--------------------------------------------------------------------------
-        */
-
-        $operacionesComerciales = User::where(
-            'status',
-            true
-        )
-        ->whereHas('role', function ($query) {
-
-            $query->where(
-                'nombre',
-                'Operaciones Comerciales'
-            );
-
-        })
-        ->count();
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Producción / Reparto activos
-        |--------------------------------------------------------------------------
-        */
-
-        $produccionReparto = User::where(
-            'status',
-            true
-        )
-        ->whereHas('role', function ($query) {
-
-            $query->where(
-                'nombre',
-                'Producción/Reparto'
-            );
-
-        })
-        ->count();
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Vista
-        |--------------------------------------------------------------------------
-        */
-
-        return view(
-            'dashboard.index',
-            compact(
-                'usuariosActivos',
-                'administradores',
-                'operacionesComerciales',
-                'produccionReparto'
-            )
-        );
+        return view('dashboard.index', compact('usuario', 'resumenUsuarios'));
     }
 }
