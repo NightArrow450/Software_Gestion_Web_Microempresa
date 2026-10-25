@@ -1,0 +1,18 @@
+{
+  "fecha": "2026-10-25T13:39:13.9629817-05:00",
+  "variante": "Perfil B: OPcache privado",
+  "ruta_ini": "C:\\Users\\Stalin\\AppData\\Local\\DhacerRendimiento\\f9b_001/php/php.ini",
+  "sha256_ini": "eedfc5b7f1cf7ebba3242e56d0de7bc40916f796922b06501458d07d412e222d",
+  "opcache": true,
+  "cache_id": "dhacer_f9b_001_20261025",
+  "memoria_opcache_mib": 64,
+  "memory_limit": "128M",
+  "enable_cli": false,
+  "validate_timestamps": true,
+  "revalidate_freq": 0,
+  "php_ini_operativo_modificado": false,
+  "apache_operativo_modificado": false,
+  "mysql_operativo_modificado": false,
+  "fuente": "https://www.php.net/manual/en/opcache.configuration.php",
+  "perfil_anterior": "Preservado en php/php-sin-opcache-20261025.ini fuera del repositorio"
+}

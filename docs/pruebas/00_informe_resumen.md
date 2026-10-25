@@ -1,8 +1,8 @@
-# Fase 9A: informe técnico parcial
+# Fase 9: informe técnico consolidado parcial
 
 Fecha: 25/10/2026, America/Lima. Base: develop, integración fa437077fb7cdb7d8a1c9437353d1fa394ad6b42. Rama: feature/fase9a-pruebas-funcionales-unitarias.
 
-**La Fase 9 NO está aprobada en conjunto.** D9A-01 fue corregido con autorización específica y su reproducción ahora es una regresión permanente aprobada. En 9B se inicializó MySQL independiente y se creó únicamente la base ficticia vacía con sus cuentas limitadas. El control de rutas Windows bloqueó el avance antes de migraciones y CargaSeeder; los servidores ficticios quedaron detenidos. No se ejecutaron cargas ni escaneos. Ver el [registro de ejecución y bloqueo](03_no_funcionales.md#ejecución-integral-autorizada-y-bloqueo-previo-al-esquema). 9C no se ha iniciado. Las cifras de este informe corresponden al cierre de 9A; no se reutilizan como carga/estrés.
+**La Fase 9 NO está aprobada en conjunto.** D9A-01 está corregido. La ejecución posterior de 9B corrigió el bloqueo de rutas, cargó datos ficticios, ejecutó k6, seguridad HTTP y ZAP pasivo. Hay observaciones de latencia, interrupciones del control de identidad y revisión visual pendiente. El entorno ficticio está disponible, sin tocar las bases protegidas. Ver [resultados de ejecución 9B](03_no_funcionales.md#resultados-reales-de-ejecución-9b). 9C mantiene la aceptación con trabajadores pendiente; su PR documental separado requiere primero el merge manual de 9B. Las cifras históricas de 9A siguientes no se reutilizan como resultados de carga/estrés.
 
 ## Fuente y alcance
 
@@ -71,3 +71,21 @@ R4 tiene la regresión de sesión inactiva corregida y sus matrices existentes a
 9B deberá ejecutar k6, ZAP, compatibilidad y tiempos con autorización previa del entorno. 9C deberá incorporar los documentos académicos y resultados reales de trabajadores. Se mantienen [las limitaciones de calidad previas](../calidad-y-pendientes.md), incluidas memoria del verificador y mediciones de volumen que no certifican carga HTTP.
 
 **Conclusión:** ampliación técnica de 9A preparada para revisión, con D9A-01 corregido. No constituye aceptación de empresa ni cierre de Fase 9.
+
+## Ejecución posterior de Fase 9B (25/10/2026)
+
+- Laravel local final: **618/618**, **3799 aserciones**, cero omitidas: **33 unitarias puras, 574 Feature y 11 Security** (estas once están incluidas, no se suman por segunda vez).
+- JavaScript **28/28**; Larastan nivel 5 **0 errores**; Pint aprobado; Vite aprobado (3,85 s, avisos de fontaine opcional y tiempos de plugins); auditorías Composer/npm sin vulnerabilidades.
+- Dataset MySQL separado: 45 migraciones, 44 tablas y 12 triggers; 300 clientes, 150 productos y 3000 pedidos de carga. La medición posterior creó el pedido 3001 y un envasado de dos unidades. Inventario final correcto y cero despachos sin salida vinculada.
+- HTTP: **54/54**, incluidas 15 exportaciones CSV. No sustituye validación visual ni apertura manual en Excel.
+- Carga final de 20 VU con OPcache: **946 solicitudes**, **7,110 solicitudes/s**, **0 % de errores HTTP**, **775 checks correctos**, p95 listados **3,384 s**; dos minutos activos y 151 iteraciones completas, ninguna interrumpida. La meta de un segundo no se alcanzó. Se conservan los intentos anteriores.
+- Estrés final con OPcache: **31/50 VU**, 431 solicitudes, interrumpido a 83,3 s por el inspector; recuperación integrada no ejecutada. Recuperación separada final de 1 VU: seis checks correctos, errores HTTP 0 %, p95 1,291 s.
+- ZAP pasivo: código **2 por advertencias**, dos tipos de alerta media, tres bajos y cinco informativos, sin altos. No se corrigió producción para silenciarlos.
+- Compatibilidad: **180 combinaciones PENDIENTES**, control GUI detenido por URL de Chrome no acreditada. No se inventaron capturas ni pruebas en Firefox/Edge.
+- Usabilidad técnica: pedido de cinco líneas 1,125 s, envasado 2,425 s mediante HTTP automatizado. **No certifica tiempos humanos ni la meta UAT de 90 s.**
+
+Fuentes nuevas: [resultados](evidencias/resultados_9b.json), [ZAP sanitizado](evidencias/zap_resumen_9b.json), [informe HTML](evidencias/informe_9b.html), [snapshot de la base ficticia](evidencias/estado_ficticio_final.json) y [validaciones de desarrollo](evidencias/validaciones_desarrollo_9b.json). Los resultados de la CI MySQL del último commit se incorporan al PR; no se reutiliza una ejecución anterior para aprobarlo.
+
+**No se declara 9B completamente aprobada:** latencia fuera de meta, estrés/recuperación incompletos, N+1 confirmado en preparación de surtidos (1270 consultas para 180 pedidos) y revisión visual pendiente. Las bases protegidas no se utilizaron. No hubo merge automático. La preparación documental de 9C corresponde a otro PR después del merge manual; la participación empresarial sigue PENDIENTE DE EJECUCIÓN — VALIDACIÓN CON LA EMPRESA.
+
+Se consolidaron [exactamente dos guiones](../guiones-demostracion.md): funcionamiento de la web y pruebas del software. La demostración puede reiniciarse con el lanzador de identidad del checkout privado, sin migraciones ni seeders.

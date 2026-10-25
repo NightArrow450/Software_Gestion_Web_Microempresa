@@ -1,0 +1,52 @@
+{
+  "fecha": "2026-10-25T13:13:42.9694517-05:00",
+  "laravel": {
+    "comando": "php -d auto_prepend_file=tests/bootstrap.php artisan test --compact --log-junit=<archivo-privado>",
+    "security": 11,
+    "duracion_ms": 80358,
+    "aserciones": 3799,
+    "pruebas": 618,
+    "entorno": "SQLite :memory:, tests/bootstrap.php",
+    "unitarias_puras": 33,
+    "omisiones": 0,
+    "feature": 574,
+    "junit_sha256": "b3a8948e5cf1fa0eb93e9fb7d4c599641c8652fc5b694289f058449371d52365"
+  },
+  "javascript": {
+    "pruebas": 28,
+    "fallos": 0,
+    "comando": "node --test tests/js/*.test.cjs"
+  },
+  "larastan": {
+    "comando": "composer analyse -- --no-progress",
+    "errores": 0,
+    "nivel": 5
+  },
+  "pint": {
+    "comando": "php vendor/bin/pint --dirty --format agent",
+    "estado": "APROBADO"
+  },
+  "vite": {
+    "segundos": 3.85,
+    "advertencias": [
+      "fontaine opcional",
+      "PLUGIN_TIMINGS"
+    ],
+    "estado": "APROBADO"
+  },
+  "auditorias": {
+    "composer": 0,
+    "npm": 0
+  },
+  "inventario_ficticio": {
+    "pedidos_sin_salida_vinculada": 0,
+    "correcto": true,
+    "inconsistencias": 0,
+    "huerfanos": 0
+  },
+  "mysql_ci": {
+    "entorno": "MySQL 8.4.3 temporal de GitHub, diferente del dataset de rendimiento",
+    "url": "https://github.com/NightArrow450/Software_Gestion_Web_Microempresa/pull/43/checks",
+    "evidencia": "Resultado real del último commit enlazado en descripción y checks del PR #43"
+  }
+}

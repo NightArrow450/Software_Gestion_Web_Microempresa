@@ -2,16 +2,16 @@
 
 Fecha: 25/10/2026. Base develop/50ac59e. Rama feature/fase9b-pruebas-no-funcionales.
 
-**Estado: EJECUCIÓN PARCIAL BLOQUEADA, NO COMPLETADO.** La autorización integral posterior permitió inicializar la instancia ficticia y preparar sus cuentas. Un control de rutas Windows bloqueó el avance antes de migraciones y CargaSeeder; no se ejecutaron k6 ni ZAP. Ver el registro final de esta página. Las secciones anteriores de preparación conservan sus restricciones y resultados históricos; no describen una ejecución aprobada. La CI efímera habitual sigue autorizada separadamente. 9C sigue pendiente.
+**Estado: EJECUTADO CON OBSERVACIONES Y PENDIENTES; NO APROBACIÓN INTEGRAL.** La autorización integral y la corrección posterior de rutas permitieron migrar y cargar la base ficticia, ejecutar k6, seguridad HTTP y ZAP. El estrés no alcanzó 50 VU, la meta de latencia no se cumplió y la revisión visual quedó pendiente por bloqueo del control de interfaz. Ver los resultados reales al final. Las secciones históricas de preparación y bloqueo no describen el estado actual. No se tocaron las bases protegidas. 9C sigue pendiente de su etapa documental posterior al merge y de participación empresarial.
 
 ## Requisitos y estados
 
 | Requisito original | Preparación | Estado de ejecución real |
 | --- | --- | --- |
-| 8, k6/carga/estrés/datos coherentes | Seeder protegido, manifiesto, recorrido, lanzador y monitor | PENDIENTE DE EJECUCIÓN Y AUTORIZACIÓN |
-| 9, seguridad | Plan ZAP nativo pasivo y protocolo HTTP efectivo | PENDIENTE DE EJECUCIÓN Y AUTORIZACIÓN |
-| 10, compatibilidad/usabilidad | Matriz 12 áreas × 3 navegadores × 5 anchos y procedimientos | PENDIENTE DE EJECUCIÓN |
-| 11, informe/evidencias | Este documento y formatos sin métricas inventadas | PREPARADO; informe final pendiente |
+| 8, k6/carga/estrés/datos coherentes | Dataset verificado y ensayos ejecutados | OBSERVADO: latencia e interrupciones; pico final de estrés 31/50 VU |
+| 9, seguridad | HTTP real y ZAP nativo pasivo | 54/54 HTTP; ZAP con advertencias, sin altos; auditorías sin vulnerabilidades |
+| 10, compatibilidad/usabilidad | Matriz 180 combinaciones y medición HTTP | Visual PENDIENTE por control GUI; tiempos HTTP ejecutados, no UAT |
+| 11, informe/evidencias | Reportes sanitizados, JSON/CSV y guiones | PUBLICADO CON OBSERVACIONES Y PENDIENTES |
 
 No confundir PREPARADO con EJECUTADO Y APROBADO. Cuando se ejecute se registrará EJECUTADO Y APROBADO o EJECUTADO CON OBSERVACIONES, con datos y evidencia; una interrupción también se conserva. Las suites de desarrollo no son resultados de estrés, ZAP ni aceptación humana.
 
@@ -264,3 +264,144 @@ La RAM libre antes de inicializar era aproximadamente 5273 MiB; una lectura post
 **PENDIENTE DE EJECUCIÓN:** migraciones ficticias, CargaSeeder, inventario del dataset, HTTP funcional, humo/carga/estrés/recuperación, escritura de envasado, seguridad HTTP, ZAP, matriz de navegadores y usabilidad. No hay métricas de estos ensayos. Los dos guiones definitivos y la preparación utilizable para grabar siguen pendientes de contar con datos y recorridos comprobados; no se presentan como vídeos listos ni aceptación humana. No se ejecutaron suites locales nuevas en este intento. La CI efímera, si se ejecuta para este commit documental, es validación de desarrollo y no sustituye estas pruebas.
 
 Las bases protegidas no se consultaron ni modificaron durante estas operaciones. No se tocaron el .env, los servicios operativos ni el código productivo. Evidencia sanitizada: [ejecucion_9b_bloqueo_rutas.json](evidencias/ejecucion_9b_bloqueo_rutas.json). Fase 9B incompleta; 9C no iniciada.
+
+### Resultados reales de ejecución 9B
+
+25/10/2026, America/Lima. Autorización integral del propietario, seguida de autorización expresa para corregir rutas. Se conserva el historial de intentos anteriores; no se sustituyen sus fallos por salidas exitosas.
+
+**Entorno:** checkout privado f9b_001, MySQL 8.4.3 en 127.0.0.1:3313 con UUID 772cebd8-d097-11f1-89cd-086266ba1fba, Apache 2.4.68 en 127.0.0.1:8089, PHP 8.3.36 ZTS con configuración privada, k6 2.3.0, Java 21 y ZAP 2.17.0. Los binarios se comparten con instalaciones existentes, pero configuraciones, datadir, logs, sesiones, claves y datos de la aplicación son independientes. El aislamiento protege contra errores operativos; no es una sandbox frente al mismo administrador Windows.
+
+#### Correcciones de herramientas y protección
+
+| ID | Causa y efecto | Solución / estado |
+| --- | --- | --- |
+| D9B-01 | Comparación literal de separadores `/` y `\` bloqueaba rutas Windows equivalentes. | CORREGIDO: normalización consistente, rutas canónicas exactas existentes y rechazo de enlaces/junctions en toda la cadena de directorios. Regresiones con una junction real Windows y symlink en Linux. No se omiten procesos, puertos, datadir, UUID ni privilegios. |
+| D9B-02 | La migración histórica 2026_10_12_200002 crea un permiso técnico; el seeder confundía el esquema nuevo con una base comercial previamente cargada. | CORREGIDO en CargaSeeder de desarrollo: admite exclusivamente la fila pedidos.cancelar con descripción y es_sistema exactos; rechaza cualquier permiso adicional y sigue exigiendo el resto vacío. No se borraron filas ni se editaron migraciones. El intento fallido precedió a la marca de carga. |
+| D9B-03 | Dotenv unsafe usaba putenv durante peticiones Apache con hilos; una petición podía perder variables privadas mientras otra finalizaba. El control se cerró de forma segura. | CORREGIDO solo en herramientas: Apache usa configuración local de petición; CLI conserva la carga de variables de su proceso. El verificador prioriza $_ENV. Regresión local y repetición real de humo/carga. No se cambiaron autenticación, permisos ni servicios empresariales. |
+| D9B-04 | Bajo carga, las inspecciones PowerShell/CIM por iteración alcanzaron su timeout de 15 s, con CPU del equipo al 100 %. | OBSERVADO, severidad media para la validez del ensayo. No se relajó el control ni se certifica capacidad de producción. Registrar menos frecuencia o una arquitectura de observación diferente necesitaría un diseño que conserve el aislamiento; no se implementó para obtener verde. |
+| D9B-05 | El primer plan rampaba hasta 50 sin sostener 50 un minuto. | CORREGIDO: etapa explícita adicional de un minuto a 50 y etiquetas de descenso/recuperación coherentes. La ejecución corregida se interrumpió antes de llegar a esa etapa. |
+
+Pruebas focalizadas finales del aislamiento: **30/30, 31 aserciones**. Los metadatos simulados no se presentan como verificación de un servidor real. La comprobación real posterior sí aprobó antes de migraciones, carga, HTTP y ensayos.
+
+#### Datos y escritura real sobre la base ficticia
+
+Se aplicaron las 45 migraciones existentes únicamente en la base ficticia. CargaSeeder completó su ejecución en **242,498 s**: 300 clientes, 150 productos, 450 SKU y 3000 pedidos con empaques normales, surtidos, composiciones pendientes, envasados anticipados/vinculados, entregas y retornos. El seeder usa servicios existentes y una marca externa impide repetir una carga iniciada. No se ejecutaron DatabaseSeeder, DemoSeeder ni seeders operativos sobre Laragon.
+
+El ensayo de escritura HTTP creó después **un pedido de cinco líneas (3001)** y **un envasado de dos unidades**. Para ese SKU: stock 10010 → 10012; cada uno de los tres materiales bajó en 2; se generaron cuatro movimientos. Repetir exactamente el POST con el mismo token de operación no creó otro envasado ni otros movimientos. No se descontaron mangas ni se registró una entrada manual adicional.
+
+Ver [snapshot final de conteos](evidencias/estado_ficticio_final.json), [resultados sanitizados](evidencias/resultados_9b.json) e informe HTML. La verificación final de inventario aprobó sin inconsistencias ni huérfanos; el comando de despachos previos encontró **0 pedidos sin salida vinculada**. Los saldos iniciales sintéticos se conservan como tales, no se consideran automáticamente errores.
+
+#### k6: resultados y límites
+
+| Ejecución | VU pico muestreado | Solicitudes | p95 listados | Errores HTTP | Resultado |
+| --- | ---: | ---: | ---: | ---: | --- |
+| Humo inicial | 1 | 8 | 1,821 s | 0 % | 6/6 checks; meta de latencia no alcanzada |
+| Carga inicial | 20 | 93 | 1,741 s | 1,075 % | Interrumpida a 19,9 s por control de identidad |
+| Estrés inicial | 2 (3 observados en consola) | 9 | Sin muestras suficientes | 11,111 % | Interrumpido; variables del control no disponibles |
+| Humo tras corregir configuración | 1 | 8 | 1,459 s | 0 % | 6/6 checks; meta de latencia no alcanzada |
+| Carga repetida, 20 VU durante 120 s | 20 | 524 | 4,599 s | 0,191 % | 420/420 checks devueltos; terminó a 121,5 s con 20 iteraciones interrumpidas por timeout del control |
+| Estrés con sostenimiento corregido | 23 | 232 | 2,906 s | 0,431 % | Interrumpido a 67,9 s; no llegó a 50 ni a recuperación programada |
+| Recuperación separada, humo de 1 VU | 1 | 8 | 1,833 s | 0 % | Login y cinco consultas correctos; no sustituye el minuto de recuperación del estrés completo |
+
+La carga repetida registró **4,317 solicitudes/s**, incluyendo autenticación y control de identidad; los errores de las consultas empresariales observadas fueron 0 %. Las verificaciones HMAC abortan fuera del contador checks; por ello 100 % de checks devueltos no equivale a escenario completo aprobado. Las 81 iteraciones de la métrica k6 y las 80 completas de la consola tienen semánticas distintas al abortar; se conservan ambas fuentes.
+
+Los percentiles de listados se calculan sobre las muestras etiquetadas fase=consulta y listado=si, separadas del control. En estrés se derivaron de las series porque el resumen sin umbral no incluye automáticamente esa submétrica. Método: ordenar valores, posición (n−1)×p e interpolación lineal. En los JSON se conservan cantidad de muestras, medias, p50/p90/p95, máximos, throughput y hashes de los resúmenes originales.
+
+**Recursos:** RAM mínima 3580 MiB durante la carga repetida y 4182 MiB en el estrés repetido; CPU muestreada máxima 100 %. El laboratorio tiene 12 GB instalados y comparte servidor, generador e inspector. No fue un agotamiento de memoria ni prueba de capacidad Linux. El límite inicial de estrés se ajustó a 3072 MiB tras observar el consumo de 20 VU; permanecieron el corte bajo 1024 MiB durante cinco muestras, el máximo de diez minutos y el timeout de identidad de 15 s. No se cerraron aplicaciones personales, no se redujeron los 20/50 VU y no se forzó la continuación tras fallos de identidad. Las series por proceso no incluyen todo el coste de los inspectores PowerShell; la CPU/RAM del equipo sí lo refleja.
+
+**Metas:** p95 <1 s NO ALCANZADA; error HTTP <1 % en carga repetida ALCANZADO NUMÉRICAMENTE, con interrupción final que impide aprobar íntegramente el ensayo; 50 VU y recuperación integrada NO COMPLETADOS. La recuperación separada verifica disponibilidad, no estabilidad prolongada.
+
+#### Seguridad HTTP y ZAP
+
+**54/54 comprobaciones HTTP aprobaron**, incluidas 19 lecturas de páginas/formularios/impresión y 15 exportaciones CSV con HTTP 200, UTF-8 válido, BOM y punto y coma. No es una apertura manual en Excel ni revisión visual. Las comprobaciones restantes cubren invitado, roles, cabeceras, cookies, CSRF 419 sin envasado nuevo, entradas especiales, HTML almacenado escapado, D9A-01 con dos sesiones (302/401), otro módulo, cuenta inactiva, logout y sexto intento limitado. El limitador real responde 302 con Retry-After; no se inventa un 429.
+
+Los cambios de observación y estado para reproducir XSS/D9A-01 se hicieron solo en filas ficticias y se restituyeron en finally. No se crearon movimientos o pedidos sobre las bases protegidas.
+
+ZAP nativo se ejecutó con **-cmd -silent**, heap máximo 512 MiB, proxy solo en 127.0.0.1:8090 y Automation Framework. No hubo spider, activeScan ni navegación a enlaces externos. El recorrido hizo login y seis GET fijos a través del proxy. La opción -silent evita peticiones no solicitadas, según la [documentación oficial](https://www.zaproxy.org/docs/desktop/cmdline/). Se produjeron HTML y JSON privados no vacíos. La primera ejecución no conservó correctamente el código del proceso; la segunda lo capturó: **2, advertencias**, sin ocultarlas. Las reglas instaladas advirtieron que su catálogo podía estar desactualizado; no se descargaron reglas silenciosamente para cambiar el resultado.
+
+| ID de revisión | Hallazgo | Gravedad / interpretación |
+| --- | --- | --- |
+| D9B-S01 | CSP aplicada solo en Report-Only; ZAP 10038 | Media reportada; limitación ya conocida. No hay política CSP obligatoria. Requiere revisión específica antes de producción, sin afirmar XSS explotable por esta alerta sola. |
+| D9B-S02 | Recursos sin SRI, ZAP 90003 | Media reportada; revisar las inclusiones correspondientes y si deben servirse localmente. No se cambiaron recursos productivos sin autorización. |
+| D9B-S03 | Redirección grande, ZAP 10044 | Baja; revisión manual pendiente de posible información en cuerpo de redirección. No se declara fuga confirmada ni falso positivo sin análisis. |
+| D9B-S04 | Server expone versión de Apache, ZAP 10036 | Baja, configuración del laboratorio; no se cambió Apache operativo. |
+| D9B-S05 | Cookie sin HttpOnly, ZAP 10010 | Baja reportada; las cinco instancias corresponden a XSRF-TOKEN. La cookie de sesión sí aprobó HttpOnly/SameSite. No atribuir esta alerta a la cookie de sesión ni desactivar CSRF. |
+
+Resultado: **2 tipos de alerta media, 3 bajos y 5 informativos; 0 altos**. Ver [resumen sanitizado](evidencias/zap_resumen_9b.json). No prueba ausencia de vulnerabilidades. HTTP local no acredita TLS, Secure cookies ni HSTS; CSP Report-Only no bloquea XSS. No se modificó código productivo sensible para suprimir alertas.
+
+#### Compatibilidad y usabilidad
+
+La herramienta de control visual se detuvo porque no pudo determinar con suficiente confianza la URL de Chrome. Se respetó el bloqueo, sin continuar por otro mecanismo de interfaz. No se tomaron capturas de aprobación ni se usaron capturas antiguas. Permanecen **180 combinaciones pendientes**: 12 áreas × Chrome/Firefox/Edge × 360/390/768/1024/1366 px. Las versiones instaladas no se presentan como pruebas realizadas. Ver la matriz CSV con la causa por fila. La lectura HTTP de páginas y notas no verifica JavaScript, modal, menús, scroll, PDF ni número de páginas.
+
+Mediciones técnicas con hrtime, desde formulario listo hasta confirmación HTTP y lectura válida: pedido de cinco líneas **1,1247512 s**, envasado **2,4248575 s**. Datos y selección preparados por script; no incluyen tecleo, comprensión ni tiempo de trabajadores. La meta humana de 90 s no se considera validada. No se registraron marcas ISO individuales de inicio/fin; se conserva duración monotónica y fecha del ensayo. Las filas UAT siguen **PENDIENTE DE EJECUCIÓN — VALIDACIÓN CON LA EMPRESA**.
+
+#### Reproducción y archivos privados
+
+Para volver a abrir la demostración, usar el lanzador verificado del checkout privado:
+
+```powershell
+& 'C:/Users/Stalin/AppData/Local/DhacerRendimiento/f9b_001/checkout/tests/Performance/iniciar-demostracion.ps1' -RaizPrivada 'C:/Users/Stalin/AppData/Local/DhacerRendimiento/f9b_001'
+```
+
+No repetir migraciones ni CargaSeeder. El lanzador no los ejecuta; solo inicia los servicios independientes si faltan, verifica configuración/identidad y renueva la vigencia de su manifiesto. No usar Laragon Stop All ni reiniciar el servidor operativo. No hay servicio Windows instalado para Apache de pruebas.
+
+Comandos reales utilizados desde ese checkout, con RENDIMIENTO_CONFIG apuntando al archivo privado externo y las variables de control/cuentas cargadas únicamente en el proceso:
+
+```powershell
+php -d auto_prepend_file=tests/Performance/configuracion/privada-bootstrap.php tests/Performance/verificar-entorno.php verificar
+php -d auto_prepend_file=tests/Performance/configuracion/privada-bootstrap.php artisan inventario:verificar --json --no-interaction
+php -d auto_prepend_file=tests/Performance/configuracion/privada-bootstrap.php artisan inventario:revisar-despachos-previos --no-interaction
+./tests/Performance/ejecutar-k6.ps1 -Escenario humo -SalidaPrivadaNueva '<raiz-privada>/evidencias-privadas/humo-002'
+./tests/Performance/ejecutar-k6.ps1 -Escenario carga -SalidaPrivadaNueva '<raiz-privada>/evidencias-privadas/carga20-002'
+./tests/Performance/ejecutar-k6.ps1 -Escenario estres -SalidaPrivadaNueva '<raiz-privada>/evidencias-privadas/estres50-002'
+php -d auto_prepend_file=tests/Performance/configuracion/privada-bootstrap.php tests/Performance/seguridad/http-verificaciones.php
+php -d auto_prepend_file=tests/Performance/configuracion/privada-bootstrap.php tests/Performance/usabilidad-tecnica.php
+```
+
+Los prefijos anteriores ya existen: para un ensayo adicional autorizado elegir otros, sin sobrescribir. Los dos últimos scripts reproducen verificaciones con efectos ficticios; el de usabilidad crea un pedido y un envasado nuevos. No ejecutarlos para grabar el video de resultados ni dirigirlos a otro entorno.
+
+ZAP se invocó con Java del directorio herramientas/java, `-Xmx512m -Djava.awt.headless=true -jar <jar-ZAP-2.17.0> -cmd -silent -host 127.0.0.1 -port 8090 -dir <raiz-privada>/zap-ejecucion-002 -autorun <raiz-privada>/zap-plan-002.yaml`. El plan es copia del YAML versionado con nombre de reporte nuevo. Durante su delay se ejecutó seguridad/recorrido-pasivo.php con pedido ficticio 3 y cuentas privadas. El proceso ZAP terminó y no dejó listener 8090.
+
+Los originales están bajo `C:/Users/Stalin/AppData/Local/DhacerRendimiento/f9b_001/evidencias-privadas/`: resúmenes/series/stdout/stderr/CSV de recursos de cada ensayo, seguridad-http-final.json, usabilidad-http.json, inventario-final.json, estado-ficticio-final-002.json, zap-pasivo-002.html y zap-pasivo-002.json. Los reportes crudos de ZAP pueden incluir tokens: no publicarlos ni abrirlos durante la grabación. Usar el [informe sanitizado para mostrar resultados](evidencias/informe_9b.html). Los hashes públicos permiten vincularlo a los originales sin publicar secretos.
+
+La base real y la copia protegida no se consultaron ni modificaron. El listener operativo conservó su PID 12220; no se reinició. Los módulos ficticios permanecen disponibles en 8089. No se hicieron cambios de .env operativo, migraciones históricas, credenciales reales, infraestructura pagada ni despliegues.
+
+#### Validaciones de desarrollo y siguiente paso
+
+Ejecución local final: **618 Laravel, 3799 aserciones, 80358 ms**, repartidas en **33 unitarias puras + 574 Feature + 11 Security**. JUnit: cero errores, fallos y omitidas. JavaScript: **28/28**. Larastan nivel 5: **0 errores**, sin nuevas supresiones. Pint del alcance aprobado. Vite compiló en **3,85 s**; se conservan los avisos de fontaine opcional y tiempos de plugins. Composer audit y npm audit: **0 vulnerabilidades**. MySQL/concurrencia de desarrollo se valida en la CI efímera independiente, no contra la base de rendimiento que contiene el dataset; su resultado final se publica en la descripción y checks del PR y se verifica antes de la entrega.
+
+Siguen documentadas la deuda de 41 archivos de formato y la limitación de workflow_dispatch mientras el workflow no exista en la rama predeterminada main. No se cambió la rama predeterminada ni el workflow para ocultar fallos.
+
+**El PR requiere revisión con estas observaciones; no acredita todas las metas de 9B.** Después del merge manual podrá prepararse el PR documental 9C separado. No se inventaron participantes, actas, firmas ni tiempos UAT. Los [dos guiones](../guiones-demostracion.md) distinguen funcionamiento y pruebas; no hacen pasar pendientes por aprobaciones.
+
+#### Cierre con inspector agrupado y perfil PHP comparativo
+
+Las cifras anteriores conservan los primeros intentos. El cierre posterior añadió lecturas agrupadas de ambos procesos/puertos, sin caché ni omitir comprobaciones. Tres muestras aisladas redujeron la mediana del inspector de 1492 a 1308 ms; los hashes efectivos coincidieron y un PID incorrecto fue rechazado con código 1. No se amplió el timeout de 15 s. Ver inspector_9b.json.
+
+Se detectó OPcache desactivado en el PHP privado. Se conservó ese INI y se ensayó una variante únicamente en Apache ficticio: OPcache 64 MiB, CLI desactivado, cache_id exclusivo `dhacer_f9b_001_20261025`, validate_timestamps=1 y revalidate_freq=0. Se mantuvieron 32 hilos y memory_limit=128M. PHP documenta que en Windows el ID separa las instancias compartidas por usuario/SAPI: [manual oficial](https://www.php.net/manual/en/opcache.configuration.php). La identidad HTTP y los valores efectivos del perfil se comprobaron; no se cambió PHP ni Apache operativo. Ver perfil_opcache_9b.json y la plantilla php-opcache.example.ini.
+
+| Ejecución de cierre | VU pico | Solicitudes | Solicitudes/s | p95 listados | Errores HTTP | Iteraciones completas / interrumpidas |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Carga agrupada sin OPcache | 20 | 640 | 5,014 | 4,805 s | 0 % | 100 / 0 |
+| Estrés agrupado sin OPcache | 29 | 298 | 3,760 | 2,870 s | 0,336 % | 38 / 29 |
+| Recuperación agrupada sin OPcache | 1 | 8 | 0,691 | 1,524 s | 0 % | 1 / 0 |
+| Humo inicial con OPcache | 1 | 8 | Ver JSON | 1,166 s | 0 % | 1 / 0 |
+| **Carga final con OPcache** | **20** | **946** | **7,110** | **3,384 s** | **0 %** | **151 / 0** |
+| **Estrés final con OPcache** | **31** | **431** | **5,181** | **2,170 s** | **0,232 %** | **59 / 31** |
+| Recuperación final separada con OPcache | 1 | 8 | Ver JSON | 1,291 s | 0 % | 1 / 0 |
+
+La fase activa de cada carga fue de 120 s; el cierre normal permitió completar las iteraciones existentes (127,7 s sin OPcache y 133,1 s con OPcache). La carga final tuvo **775/775 checks correctos, ningún error HTTP y ninguna interrupción**. Los dos perfiles de cierre usaron los mismos 3001 pedidos. Los primeros ensayos anteriores a la medición de usabilidad tenían 3000; se identifican por separado en el JSON. No es un ensayo estadístico de múltiples repeticiones independientes ni prueba de capacidad productiva.
+
+El estrés final volvió a detenerse por timeout del inspector a 83,3 s. Hubo 341 checks devueltos correctos, pero el aborto impide aprobar el escenario; **no se acreditan 50 VU ni el sostenimiento/recuperación integrados**. La memoria libre mínima fue **4512 MiB en la carga final y 4910 MiB en el estrés final**, con CPU máxima muestreada 100 %. No se forzaron más intentos. La recuperación separada confirmó disponibilidad con seis checks y cero errores, no el minuto programado del estrés completo. Los prefijos crudos son humo-opcache-001, carga20-opcache-001, estres50-opcache-001 y recuperacion-opcache-001.
+
+Los umbrales finales de admisión son 2048 MiB para humo, 4096 para carga y 3072 para estrés, basados en el consumo observado y con autorización para revisar los preventivos. Se conserva el corte bajo 1024 MiB durante cinco muestras y el máximo de diez minutos. No se alteraron los objetivos de usuarios, errores o latencia. El JSON incluye máximos individuales de working set y memoria privada de los procesos muestreados; no sumar working sets como si fueran RAM física exclusiva.
+
+**D9B-P01 — N+1 de preparación con surtidos (media, pendiente de corrección autorizada).** El diagnóstico CLI de solo lectura encontró **1270 consultas para 180 pedidos surtidos** del día, frente a **8 para 100 normales** de otra fecha. No se comparan sus totales ni se usa este tiempo CLI como latencia HTTP. Las lecturas de paquetes y componentes se repiten 360 veces cada una; lineasFisicas obtiene además presentaciones/productos/variantes por pedido. Fuentes: CumplimientoPedidoController::listaPreparacion y GestionarSurtidos::pendientes/lineasFisicas/paquetes. Ver perfil_preparacion_9b.json.
+
+Propuesta mínima, NO implementada: cargar paquetes activos y su versión actual, componentes y SKU/relaciones por lote para el conjunto filtrado; compartir esa fotografía solo dentro de la consulta entre pendientes y líneas físicas. Conservar composiciones pendientes, histórico, unidades comerciales/físicas, precios y filtros; no introducir caché entre peticiones ni tocar despacho/stock. No se propone índice nuevo sin medirlo. Requiere autorización para cambiar código empresarial y comparar totales antes/después. Este hallazgo contribuye a la meta de latencia incumplida; el inspector también añade sobrecarga bajo concurrencia.
+
+El diagnóstico está versionado como perfilar-preparacion.php. Solo mide controlador y agregación sin renderizar Blade ni emular una sesión HTTP completa. El primer intento de render CLI carecía de la variable errors aportada por el middleware HTTP; se conserva ese error de instrumentación y no se clasifica como fallo de la página (que respondió 200 en el recorrido HTTP). Otro snapshot de lectura inicial consultó origen en vez de origen_tipo; se corrigió solo la consulta temporal tras revisar el modelo, sin modificar datos. Ambos intentos originales quedaron privados.
+
+Después del perfil final, **54/54 verificaciones HTTP volvieron a aprobar**, incluido D9A-01, roles y las quince exportaciones. Inventario de cierre: correcto, cero inconsistencias/huérfanos. No se repitió el script que crea pedido/envasado: la medición de escritura y sus tiempos pertenecen al perfil inicial. Las cantidades finales continúan en 3001 pedidos, 3005 líneas, 181 envasados y 2464 movimientos; los tres materiales suman 295224 unidades y los productos 4487912. Son únicamente saldos ficticios, no cifras de la empresa.
+
+**Balance definitivo de esta entrega:** carga de 20 usuarios completada y error HTTP objetivo cumplido; latencia objetivo NO cumplida; estrés hasta 50 y compatibilidad visual PENDIENTES/OBSERVADOS; ZAP con advertencias; UAT pendientes de empresa. No se declara 9B plenamente aprobada. La documentación 9C no se mezcla con este PR y requiere primero su merge manual. La demostración sigue utilizable mediante el lanzador probado.
