@@ -1,5 +1,6 @@
 @extends('layouts.app')
 @section('title', 'Indicadores y CSV')
+@section('page-title', 'Indicadores y CSV')
 @push('styles')<link rel="stylesheet" href="{{ asset('css/indicadores.css') }}">@endpush
 @push('scripts')<script src="{{ asset('js/indicadores.js') }}" defer></script>@endpush
 @section('content')

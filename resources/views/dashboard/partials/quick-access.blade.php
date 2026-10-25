@@ -1,77 +1,53 @@
 @php
-    $usuarioAccesos = auth()->user();
-    $usuarioAccesos->loadMissing('role.permisos');
-    $permisosAccesos = $usuarioAccesos->role?->permisos?->pluck('nombre')->all() ?? [];
-    $puedeVerProductos = in_array('productos.ver', $permisosAccesos, true);
-    $puedeCrearProductos = in_array('productos.crear', $permisosAccesos, true);
-    $puedeVerClientes = in_array('clientes.ver', $permisosAccesos, true);
-    $puedeVerPedidos = in_array('pedidos.ver', $permisosAccesos, true);
-    $puedeCrearPedidos = in_array('pedidos.crear', $permisosAccesos, true);
+    $esAdministrador = $usuario->role?->nombre === 'Administrador';
+    $grupos = [
+        'Gestión comercial' => [
+            ['clientes.ver', 'clientes.index', 'groups', 'Clientes', 'Consulta y gestión de clientes.'],
+            ['productos.ver', 'productos.index', 'inventory_2', 'Catálogo', 'Productos, aromas y presentaciones.'],
+            ['pedidos.ver', 'pedidos.index', 'receipt_long', 'Pedidos', 'Pedidos normales, surtidos y notas de pedido.'],
+            ['pedidos.crear', 'pedidos.create', 'add_shopping_cart', 'Registrar pedido', 'Unidades y empaques con su composición comercial.'],
+            ['surtidos.configurar', 'surtidos.index', 'view_module', 'Modalidades surtidas', 'Formatos habilitados y SKU compatibles.'],
+        ],
+        'Preparación y distribución' => [
+            ['pedidos.ver', 'cumplimiento.lista-preparacion', 'checklist', 'Lista General de Preparación', 'Demanda por producto, presentación y aroma.'],
+            ['pedidos.ver', 'cumplimiento.index', 'local_shipping', 'Cumplimiento de pedidos', 'Preparación, despacho, entregas y retornos.'],
+            ['seguimiento.ver', 'seguimiento.index', 'travel_explore', 'Seguimiento', 'Consulta de estados y trazabilidad.'],
+        ],
+        'Inventario y envasado' => [
+            ['inventario.ver', 'inventario.index', 'inventory', 'Disponibilidad', 'Existencias de productos terminados e insumos.'],
+            ['inventario.ver', 'inventario.movimientos.index', 'swap_horiz', 'Movimientos', 'Entradas, salidas y ajustes trazables.'],
+            ['inventario.ver', 'inventario.stock', 'notifications_active', 'Stock y alertas', 'Revisión de niveles y mínimos.'],
+            ['envasado.ver', 'envasado.index', 'water_drop', 'Envasados', 'Producción registrada, materiales y correcciones.'],
+        ],
+        'Información y administración' => [
+            ['indicadores.ver', 'indicadores.index', 'monitoring', 'Indicadores y CSV', 'Reportes filtrados y exportaciones según permisos.'],
+            ['administrador', 'usuarios.index', 'manage_accounts', 'Usuarios', 'Cuentas y acceso al sistema.'],
+            ['administrador', 'roles.index', 'verified_user', 'Roles y permisos', 'Autorizaciones por responsabilidad.'],
+            ['auditoria.ver', 'auditoria.index', 'policy', 'Auditoría', 'Acciones sensibles y responsables.'],
+        ],
+    ];
+    $cantidadAccesos = 0;
 @endphp
-
-<section class="section">
-    <div style="display:flex; align-items:center; gap:12px;">
-        <div class="icon-box">
-            <span class="material-symbols-outlined">bolt</span>
+@foreach($grupos as $nombreGrupo => $accesos)
+    @php
+        $visibles = array_filter($accesos, fn ($acceso) => ($acceso[0] === 'administrador' ? $esAdministrador : ($usuario->role?->tienePermiso($acceso[0]) ?? false)) && ($acceso[0] !== 'auditoria.ver' || $esAdministrador));
+        $cantidadAccesos += count($visibles);
+    @endphp
+    @if($visibles)
+    <section class="dashboard-process" aria-labelledby="proceso-{{ $loop->index }}">
+        <h2 id="proceso-{{ $loop->index }}">{{ $nombreGrupo }}</h2>
+        <div class="dashboard-links">
+        @foreach($visibles as [$permiso, $ruta, $icono, $titulo, $descripcion])
+            <a href="{{ route($ruta) }}" class="dashboard-link">
+                <span class="dashboard-link-icon material-symbols-outlined" aria-hidden="true">{{ $icono }}</span>
+                <div><h3>{{ $titulo }}</h3><p>{{ $descripcion }}</p></div>
+                <span class="material-symbols-outlined dashboard-arrow" aria-hidden="true">arrow_forward</span>
+            </a>
+        @endforeach
         </div>
-
-        <div>
-            <h2 class="section-title">Accesos rápidos</h2>
-            <p class="section-description">Funciones disponibles en el sistema.</p>
-        </div>
-    </div>
-
-    <div class="quick-grid">
-        @if($usuarioAccesos->role?->nombre === 'Administrador')
-            <a href="{{ route('usuarios.index') }}" class="quick-card">
-                <span class="material-symbols-outlined">group</span>
-                <h3>Gestionar Usuarios</h3>
-                <p>Registrar, consultar y administrar usuarios.</p>
-            </a>
-
-            <a href="{{ route('roles.index') }}" class="quick-card">
-                <span class="material-symbols-outlined">verified_user</span>
-                <h3>Roles y Permisos</h3>
-                <p>Administrar niveles de acceso del sistema.</p>
-            </a>
-        @endif
-
-        @if($puedeVerProductos)
-            <a href="{{ route('productos.index') }}" class="quick-card">
-                <span class="material-symbols-outlined">inventory_2</span>
-                <h3>Catálogo de Productos</h3>
-                <p>Consultar productos, variantes y presentaciones.</p>
-            </a>
-        @endif
-
-        @if($puedeCrearProductos)
-            <a href="{{ route('productos.create') }}" class="quick-card">
-                <span class="material-symbols-outlined">add_box</span>
-                <h3>Nuevo Producto</h3>
-                <p>Registrar un nuevo producto en el catálogo.</p>
-            </a>
-        @endif
-
-        @if($puedeVerClientes)
-            <a href="{{ route('clientes.index') }}" class="quick-card">
-                <span class="material-symbols-outlined">contacts</span>
-                <h3>Clientes</h3>
-                <p>Administrar clientes y su información de mercado.</p>
-            </a>
-        @endif
-        @if($puedeVerPedidos)
-            <a href="{{ route('pedidos.index') }}" class="quick-card">
-                <span class="material-symbols-outlined">receipt_long</span>
-                <h3>Pedidos</h3>
-                <p>Revisar estados e imprimir dos notas en A4 horizontal.</p>
-            </a>
-        @endif
-        @if($puedeCrearPedidos)
-            <a href="{{ route('pedidos.create') }}" class="quick-card">
-                <span class="material-symbols-outlined">add_shopping_cart</span>
-                <h3>Nuevo Pedido</h3>
-                <p>Registrar un pedido desde el catálogo de presentaciones.</p>
-            </a>
-        @endif
-    </div>
-</section>
+    </section>
+    @endif
+@endforeach
+@if($cantidadAccesos === 0)
+<p class="dashboard-note">Tu cuenta no tiene accesos de módulos asignados. Consulta al Administrador.</p>
+@endif
