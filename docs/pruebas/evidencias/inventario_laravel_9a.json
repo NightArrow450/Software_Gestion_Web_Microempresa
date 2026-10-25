@@ -3,18 +3,18 @@
     "suite": "Unit",
     "archivos": 8,
     "casos": 33,
-    "metodos": 26.0
+    "metodos": 26
   },
   {
     "suite": "Feature",
-    "archivos": 61,
-    "casos": 535,
-    "metodos": 357.0
+    "archivos": 63,
+    "casos": 544,
+    "metodos": 364
   },
   {
     "suite": "Security",
     "archivos": 1,
     "casos": 11,
-    "metodos": 11.0
+    "metodos": 11
   }
 ]

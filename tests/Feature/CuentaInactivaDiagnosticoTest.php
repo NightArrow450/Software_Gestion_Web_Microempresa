@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Evidencia;
+namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Tests\RolesEscenario;
 use Tests\TestCase;
 
-/** Reproducción del defecto D9A-01; ejecutar explícitamente, no es una prueba aprobada. */
+/** Regresión permanente de D9A-01, trasladada sin eliminar su reproducción. */
 class CuentaInactivaDiagnosticoTest extends TestCase
 {
     use RefreshDatabase, RolesEscenario;
