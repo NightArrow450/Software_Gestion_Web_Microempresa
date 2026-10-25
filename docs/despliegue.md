@@ -1,42 +1,27 @@
-# Preparación para producción y Railway
+# Preparación neutral para un despliegue futuro
 
-Esta fase prepara la aplicación. No realiza un despliegue ni modifica variables reales de Railway.
+No existe despliegue público contratado o realizado por esta fase. Laragon continúa como entorno operativo local. No se requiere Railway ni un proveedor específico.
 
-## Laragon
+## Futuro servidor Linux
 
-Conservar el .env local: APP_ENV=local, APP_DEBUG=true, APP_URL por HTTP y SESSION_SECURE_COOKIE=false. TRUSTED_PROXIES queda vacío y PROXY_MODE=standard. .env.example mantiene valores locales y campos vacíos para el administrador. No copiar el ejemplo de producción sobre el archivo local.
+Revisar PHP 8.3 y extensiones desde composer.lock, MySQL compatible (validación actual con 8.4.3), servidor HTTP con raíz public/ y PHP-FPM, HTTPS y permisos de storage/bootstrap/cache. Instalar desde lockfiles y compilar Vite con Node 22. No usar artisan serve como servidor público ni subir node_modules o secretos.
 
-## Variables de producción
+Preparar variables privadas: APP_ENV=production, APP_DEBUG=false, APP_URL HTTPS, APP_KEY estable y privada, cookies seguras, conexión exclusiva y proxies explícitamente confiables. No copiar estos valores al .env local. La configuración de demostración debe estar desactivada.
 
-Usar .env.production.example como referencia para las variables del servicio, sin subir secretos. Crear una APP_KEY privada y estable para la instancia nueva; no regenerarla en una instancia existente. Completar la conexión MySQL y APP_URL con los valores reales al desplegar. No se incluyen credenciales reales en el repositorio.
+Las opciones PROXY_MODE=railway existentes son una compatibilidad previa y opcional, no una dependencia ni una autorización de despliegue. El modo estándar se conserva. Nunca confiar indiscriminadamente en proxies; verificar la topología y las cabeceras en el destino real antes de activarlas.
 
-APP_ENV=production activa HTTPS y HSTS. APP_DEBUG=false evita diagnósticos públicos. SESSION_SECURE_COOKIE=true requiere HTTPS. LOG_STACK=stderr,seguridad y LOG_LEVEL=warning mantienen los avisos de la aplicación; el canal de seguridad conserva también eventos informativos.
+## Persistencia y operación
 
-ADMIN_EMAIL y ADMIN_PASSWORD son obligatorios al ejecutar AdminUserSeeder en producción. La contraseña inicial exige al menos 10 caracteres, mayúsculas, minúsculas y números. El seeder asigna contraseña e indicador obligatorio SOLO al crear. Si encuentra la cuenta, conserva ambos valores y solo garantiza su rol y estado. No es una herramienta de restablecimiento.
+Mantener MySQL en almacenamiento persistente privado con usuario limitado y copias verificadas. No exponer el puerto de base de datos públicamente. storage y archivos subidos deben persistir si se utilizan; no asumir persistencia de un filesystem efímero.
 
-DemoSeeder se ejecuta manualmente en desarrollo y rechaza producción. DatabaseSeeder no lo invoca. No contiene módulos adicionales ni cambia categorías de insumos.
+Definir almacenamiento de sesiones/caché adecuado a una o varias instancias. Revisar QUEUE_CONNECTION y tareas realmente registradas antes de instalar workers o cron; no inventar jobs inexistentes. Programar rotación de logs y copias con restauración independiente. Los logs de seguridad no deben incluir claves, cookies o cuerpos sensibles.
 
-## Proxy de Railway: decisión pendiente de verificación en el despliegue real
+/salud y /up permiten comprobaciones; una respuesta puntual no certifica todos los flujos de negocio. Verificar HTTPS, permisos, compilación y módulos después de una actualización autorizada.
 
-La documentación oficial del ingreso público de Railway especifica X-Real-IP como IP remota del cliente, X-Forwarded-Proto=https y X-Forwarded-Host como host original:
-https://docs.railway.com/networking/public-networking/specs-and-limits
+## Actualización y recuperación
 
-PROXY_MODE=railway toma X-Real-IP únicamente de un proxy confiable en producción y descarta X-Forwarded-For aportado por el cliente. Si X-Real-IP falta o es inválida, utiliza la dirección del par de red, sin inventar una IP. En modo standard utiliza las cabeceras habituales de proxies confiables.
+Ver [operación local](operacion-local.md) para respaldo, aplicación individual de cambios autorizados y recuperación. Mantener una versión anterior compatible y analizar DDL antes de revertir código. No restaurar automáticamente ni ejecutar seeders generales sobre información existente.
 
-TRUSTED_PROXIES acepta IP o rangos CIDR separados por comas. No se han verificado rangos de ingreso para este proyecto y no se inventan. Por eso el ejemplo lo deja vacío. Antes del despliegue:
-1. Confirmar la topología y configurar IP/rangos reales si la plataforma los proporciona.
-2. Si no se pueden conocer, se permite explícitamente TRUSTED_PROXIES=* SOLO con APP_ENV=production, PROXY_MODE=railway y todo el tráfico de usuarios entrando por el proxy HTTP público de Railway.
-3. Documentar en la configuración de ese despliegue por qué se eligió * y comprobar IP, HTTPS y host con una solicitud externa real.
+.env.production.example es solo referencia; AdminUserSeeder requiere credenciales privadas y no es herramienta de restablecimiento. DatabaseSeeder no debe ejecutarse como actualización general. DemoSeeder no es un control de aislamiento y no se usará para inicializar producción.
 
-Riesgo de *: cualquier par puede presentar cabeceras confiables. No exponer el servidor HTTP mediante TCP Proxy ni permitir servicios privados no confiables que lo contacten directamente. Esas rutas evitan el ingreso público y podrían suplantar la IP usada por el limitador y la auditoría. No se elige * automáticamente; en local se ignora aunque se configure accidentalmente.
-
-La redirección HTTPS conserva el método (308). /salud y /up permiten comprobaciones HTTP internas sin autenticación ni datos sensibles. Railway exige HTTP 200 en el healthcheck y permite configurar /salud como ruta de comprobación:
-https://docs.railway.com/deployments/healthchecks
-
-## Pasos posteriores, autorizados al decidir desplegar
-
-Revisar y respaldar la base de datos. Ejecutar php artisan migrate --force y luego php artisan db:seed --class=AdminUserSeeder --force --no-interaction con variables válidas y roles ya instalados. La migración nueva solo añade debe_cambiar_password=false para cuentas existentes; no cambia hashes. Las cuentas iniciales nuevas deben cambiar su contraseña al ingresar. No ejecutar DemoSeeder en producción.
-
-Compilar los recursos con npm ci y npm run build. Después de configurar variables, reconstruir la caché con php artisan config:cache y verificar que storage y bootstrap/cache sean escribibles. Usar un almacenamiento compartido de caché (database/Redis) entre réplicas para que el limitador no dependa del proceso. No usar el servidor de desarrollo de Artisan como servidor público.
-
-Comprobar /salud, HTTPS, las cabeceras y los eventos de seguridad antes de habilitar usuarios. Los archivos de log diarios requieren almacenamiento persistente o exportación si deben sobrevivir reinicios; stderr queda disponible para el sistema de logs de Railway. No registrar contraseñas, cookies, tokens, cuerpos completos ni consultas con secretos.
+Una prueba remota o un despliegue futuro requerirá autorización, presupuesto revisado si aplica y datos sintéticos al inicio. No usar clientes reales en servicios gratuitos de prueba. La Fase 9 precede a cualquier afirmación de aceptación o rendimiento de producción.
