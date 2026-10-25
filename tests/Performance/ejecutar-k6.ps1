@@ -1,0 +1,19 @@
+param([Parameter(Mandatory)][ValidateSet('humo','carga','estres')][string]$Escenario,
+      [Parameter(Mandatory)][string]$SalidaPrivadaNueva)
+$ErrorActionPreference='Stop'
+foreach ($sufijo in @('', '.resumen.json', '.series.json', '.stdout.txt', '.stderr.txt', '.recursos.csv')) {
+    if (Test-Path -LiteralPath ($SalidaPrivadaNueva+$sufijo)) { throw 'No se sobrescriben evidencias.' }
+}
+if (-not $env:RENDIMIENTO_CONFIG -or -not $env:RENDIMIENTO_MANIFIESTO -or -not $env:RENDIMIENTO_CLAVE_CONTROL -or -not $env:RENDIMIENTO_CUENTAS) { throw 'Faltan las variables privadas de autorización.' }
+$bootstrap = Join-Path $PSScriptRoot 'configuracion/privada-bootstrap.php'
+& php -d "auto_prepend_file=$bootstrap" (Join-Path $PSScriptRoot 'verificar-entorno.php') medir
+if ($LASTEXITCODE -ne 0) { throw 'No se iniciará k6: identidad no verificada.' }
+$generador=Get-Command k6 -ErrorAction Stop
+$memoria=Get-CimInstance Win32_PerfFormattedData_PerfOS_Memory
+if ($memoria.AvailableMBytes -lt 2048) { throw 'No se iniciará la carga con menos de 2048 MiB libres. Requiere evaluar una alternativa.' }
+$env:K6_NO_USAGE_REPORT='true'
+$argumentos=@('run','--summary-export',('"'+$SalidaPrivadaNueva+'.resumen.json"'),'--out',('"json='+$SalidaPrivadaNueva+'.series.json"'),('"'+(Join-Path $PSScriptRoot "k6/$Escenario.js")+'"'))
+$proceso = Start-Process -FilePath $generador.Source -ArgumentList $argumentos -WindowStyle Hidden -PassThru -RedirectStandardOutput ($SalidaPrivadaNueva+'.stdout.txt') -RedirectStandardError ($SalidaPrivadaNueva+'.stderr.txt')
+& (Join-Path $PSScriptRoot 'medir-recursos.ps1') -Manifiesto $env:RENDIMIENTO_MANIFIESTO -PidK6 $proceso.Id -SalidaNueva ($SalidaPrivadaNueva+'.recursos.csv')
+$proceso.WaitForExit()
+if ($proceso.ExitCode -ne 0) { throw 'k6 terminó con observaciones o interrupción; conservar todos los reportes.' }

@@ -1,0 +1,36 @@
+# PREPARADO. Requiere autorización y comprobación previa; sin activeScan ni spider.
+# Visitado a través del proxy con recorridos GET autorizados y credenciales ficticias privadas.
+env:
+  contexts:
+    - name: DHACER_F9B
+      urls:
+        - http://127.0.0.1:8089
+      includePaths:
+        - 'http://127\.0\.0\.1:8089/(login|dashboard|pedidos|productos|cumplimiento/lista-preparacion|envasados)(\?.*)?'
+      excludePaths:
+        - 'http://127\.0\.0\.1:8089/logout.*'
+        - 'http://127\.0\.0\.1:8089/.*(nuevo|editar|exportar).*'
+  parameters:
+    failOnError: true
+    failOnWarning: false
+    progressToStdout: false
+jobs:
+  - type: passiveScan-config
+    parameters:
+      scanOnlyInScope: true
+  - type: delay
+    parameters:
+      time: '120'
+  - type: passiveScan-wait
+    parameters:
+      maxDuration: 2
+  - type: report
+    parameters:
+      template: traditional-html
+      reportDir: C:/Users/Stalin/AppData/Local/DhacerRendimiento/f9b_001/evidencias-privadas
+      reportFile: zap-pasivo
+      reportTitle: DHACER ECO LIMP - análisis pasivo nativo autorizado
+  - type: exitStatus
+    parameters:
+      errorLevel: High
+      warnLevel: Low
