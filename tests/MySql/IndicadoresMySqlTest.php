@@ -151,6 +151,35 @@ class IndicadoresMySqlTest extends PruebaEntregaMySql
         $this->assertSame(13, (int) DB::table('inventarios')->where('presentacion_producto_id', $e['presentacion']->id)->value('cantidad_actual'));
     }
 
+    public static function cadenasDeMovimientos(): array
+    {
+        return [
+            'saltos compensados' => [[['2026-10-20', 10, 8], ['2026-10-20', 5, 7], ['2026-10-20', 10, 10]], 'Revisar continuidad del historial'],
+            'cadena continua' => [[['2026-10-20', 10, 8], ['2026-10-20', 8, 11], ['2026-10-20', 11, 6]], 'Concordante'],
+            'predecesor fuera del período' => [[['2026-09-30', 10, 8], ['2026-10-20', 5, 7], ['2026-10-20', 7, 9]], 'Revisar continuidad del historial'],
+            'balance agregado no verificable' => [[['2026-10-01', 10, 8], ['2026-11-01', 8, 11], ['2026-10-20', 11, 12]], 'Revisar continuidad del historial'],
+        ];
+    }
+
+    #[DataProvider('cadenasDeMovimientos')]
+    public function test_concordancia_mysql_comprueba_cada_enlace_y_el_balance_del_periodo(array $movimientos, string $etiqueta): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-10-20', 'America/Lima'));
+        $e = $this->escenarioEnvasado(100, 10);
+        foreach ($movimientos as [$fecha, $antes, $despues]) {
+            DB::table('movimientos_inventario')->insert(['presentacion_producto_id' => $e['presentacion']->id, 'usuario_id' => $e['usuario']->id, 'tipo' => 'ajuste', 'cantidad' => $despues, 'stock_anterior' => $antes, 'stock_nuevo' => $despues, 'motivo' => 'Historial ficticio para validar continuidad en MySQL aislado.', 'origen_tipo' => 'manual', 'origen_id' => (string) Str::uuid(), 'created_at' => $fecha.' 12:00:00', 'updated_at' => $fecha.' 12:00:00']);
+        }
+        $originales = DB::table('movimientos_inventario')->orderBy('id')->get()->toJson();
+
+        $f = FiltrosIndicadores::validar(['reporte' => 'saldos_periodo', 'desde' => '2026-10-01', 'hasta' => '2026-10-31']);
+        $saldos = iterator_to_array(app(FilasIndicadores::class)->filas($f));
+
+        $this->assertCount(1, $saldos);
+        $this->assertSame($etiqueta, $saldos[0]['conciliacion']);
+        $this->assertSame($originales, DB::table('movimientos_inventario')->orderBy('id')->get()->toJson());
+        $this->assertSame(10, (int) DB::table('inventarios')->where('presentacion_producto_id', $e['presentacion']->id)->value('cantidad_actual'));
+    }
+
     public function test_preparacion_conserva_identidad_del_inventario_ante_codigos_historicos_distintos(): void
     {
         $e = $this->escenarioEnvasado(100, 6);

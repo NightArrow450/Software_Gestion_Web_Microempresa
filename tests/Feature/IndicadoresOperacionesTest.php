@@ -13,6 +13,8 @@ use App\Services\ResumenIndicadores;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\SurtidosEscenario;
 use Tests\TestCase;
 
@@ -281,5 +283,50 @@ class IndicadoresOperacionesTest extends TestCase
         $this->assertSame([], $this->filas('inventario', ['sku' => $codigo]));
         $this->assertSame(13, (int) $this->filas('inventario', ['sku' => 'SKU-ACTUAL-REGRESION'])[0]['stock_actual']);
         $this->assertSame(87.0, (float) $e['insumo']->fresh()->cantidad_actual);
+    }
+
+    public static function cadenasDeSaldos(): array
+    {
+        return [
+            'saltos compensados' => [[['2026-10-20', 10, 8], ['2026-10-20', 5, 7], ['2026-10-20', 10, 10]], 'Revisar continuidad del historial', 10, 0, 10],
+            'continua con saldo inicial' => [[['2026-10-20', 10, 8], ['2026-10-20', 8, 11], ['2026-10-20', 11, 6]], 'Concordante', 10, -4, 6],
+            'salto al entrar al período' => [[['2026-09-30', 10, 8], ['2026-10-20', 5, 7], ['2026-10-20', 7, 9]], 'Revisar continuidad del historial', 5, 4, 9],
+            'balance agregado no verificable' => [[['2026-10-01', 10, 8], ['2026-11-01', 8, 11], ['2026-10-20', 11, 12]], 'Revisar continuidad del historial', 10, -1, 12],
+        ];
+    }
+
+    #[DataProvider('cadenasDeSaldos')]
+    public function test_concordancia_exige_continuidad_y_balance_sin_reconstruir_saldos(array $movimientos, string $etiqueta, int $inicial, int $variacion, int $final): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-10-20', 'America/Lima'));
+        $e = $this->escenarioEnvasado(100, 10);
+        foreach ($movimientos as [$fecha, $antes, $despues]) {
+            DB::table('movimientos_inventario')->insert(['presentacion_producto_id' => $e['presentacion']->id, 'usuario_id' => $e['usuario']->id, 'tipo' => 'ajuste', 'cantidad' => $despues, 'stock_anterior' => $antes, 'stock_nuevo' => $despues, 'motivo' => 'Historial ficticio para regresión de continuidad.', 'origen_tipo' => 'manual', 'origen_id' => (string) Str::uuid(), 'created_at' => $fecha.' 12:00:00', 'updated_at' => $fecha.' 12:00:00']);
+        }
+        $originales = DB::table('movimientos_inventario')->orderBy('id')->get()->toJson();
+
+        $saldos = $this->filas('saldos_periodo');
+
+        $this->assertCount(1, $saldos);
+        $this->assertSame($etiqueta, $saldos[0]['conciliacion']);
+        $this->assertSame((float) $inicial, (float) $saldos[0]['saldo_inicial']);
+        $this->assertSame((float) $variacion, (float) $saldos[0]['variacion']);
+        $this->assertSame((float) $final, (float) $saldos[0]['saldo_final']);
+        $this->assertSame($originales, DB::table('movimientos_inventario')->orderBy('id')->get()->toJson());
+    }
+
+    public function test_continuidad_separa_productos_e_insumos_y_conserva_fracciones(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-10-20', 'America/Lima'));
+        $e = $this->escenarioEnvasado(100, 10);
+        foreach ([['presentacion_producto_id', $e['presentacion']->id, 10, 8], ['insumo_id', $e['insumo']->id, 100, 99.5], ['presentacion_producto_id', $e['presentacion']->id, 8, 9], ['insumo_id', $e['insumo']->id, 99.5, 99.125]] as [$columna, $id, $antes, $despues]) {
+            DB::table('movimientos_inventario')->insert([$columna => $id, 'usuario_id' => $e['usuario']->id, 'tipo' => 'ajuste', 'cantidad' => $despues, 'stock_anterior' => $antes, 'stock_nuevo' => $despues, 'motivo' => 'Cadena independiente con cantidades físicas ficticias.', 'origen_tipo' => 'manual', 'origen_id' => (string) Str::uuid(), 'created_at' => now(), 'updated_at' => now()]);
+        }
+
+        $saldos = $this->filas('saldos_periodo');
+
+        $this->assertSame(['Concordante', 'Concordante'], array_column($saldos, 'conciliacion'));
+        $this->assertSame(-0.875, (float) $saldos[1]['variacion']);
+        $this->assertSame(99.125, (float) $saldos[1]['saldo_final']);
     }
 }
