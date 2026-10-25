@@ -22,11 +22,13 @@ class ActividadIndicadores
         return $q;
     }
 
-    public function consultaMovimientos(array $f): Builder
+    public function consultaMovimientos(array $f, bool $aplicarPeriodo = true): Builder
     {
         $q = DB::table('movimientos_inventario as m')->leftJoin('presentaciones_producto as p', 'p.id', '=', 'm.presentacion_producto_id')->leftJoin('insumos as i', 'i.id', '=', 'm.insumo_id');
         $this->filtrar($q, $f, insumo: 'm.insumo_id');
-        FiltrosIndicadores::periodo($q, 'm.created_at', $f);
+        if ($aplicarPeriodo) {
+            FiltrosIndicadores::periodo($q, 'm.created_at', $f);
+        }
         foreach (['tipo' => 'm.tipo', 'origen' => 'm.origen_tipo', 'pedido_id' => 'm.pedido_id'] as $k => $c) {
             if (! empty($f[$k])) {
                 $q->where($c, $f[$k]);
@@ -47,12 +49,19 @@ class ActividadIndicadores
 
     public function saldos_periodo(array $f): \Generator
     {
-        $q = $this->consultaMovimientos($f)->select(['m.presentacion_producto_id', 'm.insumo_id'])->selectRaw('MIN(m.id) primer_id, MAX(m.id) ultimo_id, SUM(m.stock_nuevo-m.stock_anterior) variacion')->groupBy('m.presentacion_producto_id', 'm.insumo_id');
+        $historial = $this->consultaMovimientos($f, aplicarPeriodo: false)
+            ->select('m.id')
+            ->selectRaw('LAG(m.stock_nuevo) OVER (PARTITION BY m.presentacion_producto_id, m.insumo_id ORDER BY m.id) saldo_previo');
+        $q = $this->consultaMovimientos($f)->joinSub($historial, 'cadena', 'cadena.id', '=', 'm.id')
+            ->select(['m.presentacion_producto_id', 'm.insumo_id'])
+            ->selectRaw('MIN(m.id) primer_id, MAX(m.id) ultimo_id, SUM(m.stock_nuevo-m.stock_anterior) variacion')
+            ->selectRaw('SUM(CASE WHEN cadena.saldo_previo IS NOT NULL AND m.stock_anterior <> cadena.saldo_previo THEN 1 ELSE 0 END) saltos')
+            ->groupBy('m.presentacion_producto_id', 'm.insumo_id');
         $resumen = DB::query()->fromSub($q, 'r')->join('movimientos_inventario as primero', 'primero.id', '=', 'r.primer_id')->join('movimientos_inventario as ultimo', 'ultimo.id', '=', 'r.ultimo_id')->leftJoin('presentaciones_producto as p', 'p.id', '=', 'r.presentacion_producto_id')->leftJoin('insumos as i', 'i.id', '=', 'r.insumo_id');
         foreach ($resumen->select(['r.*', 'primero.stock_anterior', 'ultimo.stock_nuevo', 'p.codigo_sku', 'i.codigo', 'i.unidad_medida'])->orderBy('r.primer_id')->lazy(100) as $r) {
             yield ['presentacion_id' => $r->presentacion_producto_id, 'insumo_id' => $r->insumo_id, 'sku' => $r->codigo_sku ?? $r->codigo, 'unidad_medida' => $r->presentacion_producto_id ? 'unidad' : $r->unidad_medida,
                 'saldo_inicial' => $r->stock_anterior, 'variacion' => $r->variacion, 'saldo_final' => $r->stock_nuevo, 'primer_movimiento_id' => $r->primer_id, 'ultimo_movimiento_id' => $r->ultimo_id,
-                'conciliacion' => abs((float) $r->stock_anterior + (float) $r->variacion - (float) $r->stock_nuevo) < 0.0005 ? 'Concordante' : 'Revisar continuidad del historial'];
+                'conciliacion' => (int) $r->saltos === 0 && abs((float) $r->stock_anterior + (float) $r->variacion - (float) $r->stock_nuevo) < 0.0005 ? 'Concordante' : 'Revisar continuidad del historial'];
         }
     }
 
@@ -83,7 +92,7 @@ class ActividadIndicadores
             if ($corregir) {
                 $q->join('envasado_correcciones as c', 'c.envasado_id', '=', 'e.id');
             }
-            $this->filtrar($q, $f);
+            $this->filtrar($q, $f, skuHistorico: $this->skuHistoricoEnvasado());
             FiltrosIndicadores::periodo($q, $corregir ? 'c.created_at' : 'e.created_at', $f);
             if (! empty($f['pedido_id'])) {
                 $q->where('e.pedido_id', $f['pedido_id']);
@@ -110,7 +119,7 @@ class ActividadIndicadores
             if ($corregir) {
                 $q->join('envasado_correccion_materiales as cm', 'cm.envasado_consumo_id', '=', 'co.id')->join('envasado_correcciones as c', 'c.id', '=', 'cm.envasado_correccion_id');
             }
-            $this->filtrar($q, $f, insumo: 'co.insumo_id');
+            $this->filtrar($q, $f, insumo: 'co.insumo_id', skuHistorico: $this->skuHistoricoEnvasado());
             FiltrosIndicadores::periodo($q, $corregir ? 'c.created_at' : 'e.created_at', $f);
             if (! empty($f['pedido_id'])) {
                 $q->where('e.pedido_id', $f['pedido_id']);
@@ -133,7 +142,7 @@ class ActividadIndicadores
             if ($corregir) {
                 $q->join('envasado_correccion_materiales as cm', 'cm.envasado_consumo_id', '=', 'co.id')->join('envasado_correcciones as c', 'c.id', '=', 'cm.envasado_correccion_id');
             }
-            $this->filtrar($q, $f, insumo: 'co.insumo_id');
+            $this->filtrar($q, $f, insumo: 'co.insumo_id', skuHistorico: $this->skuHistoricoEnvasado());
             FiltrosIndicadores::periodo($q, $corregir ? 'c.created_at' : 'e.created_at', $f);
             if (! empty($f['pedido_id'])) {
                 $q->where('e.pedido_id', $f['pedido_id']);
@@ -149,6 +158,13 @@ class ActividadIndicadores
                     'perdido' => $corregir ? $r->cantidad_perdida : '0.000', 'salida_neta' => ($bruto - $devuelto < 0 ? '-' : '').CantidadesEnvasado::decimal(abs($bruto - $devuelto))];
             }
         }
+    }
+
+    private function skuHistoricoEnvasado(): string
+    {
+        $expresion = "JSON_EXTRACT(e.presentacion_historica, '$.sku')";
+
+        return DB::getDriverName() === 'mysql' ? "JSON_UNQUOTE($expresion)" : $expresion;
     }
 
     private function referencias(): Builder
