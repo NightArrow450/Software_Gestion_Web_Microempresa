@@ -10,7 +10,8 @@ $bootstrap = Join-Path $PSScriptRoot 'configuracion/privada-bootstrap.php'
 if ($LASTEXITCODE -ne 0) { throw 'No se iniciará k6: identidad no verificada.' }
 $generador=Get-Command k6 -ErrorAction Stop
 $memoria=Get-CimInstance Win32_PerfFormattedData_PerfOS_Memory
-if ($memoria.AvailableMBytes -lt 2048) { throw 'No se iniciará la carga con menos de 2048 MiB libres. Requiere evaluar una alternativa.' }
+$minimaMiB = switch ($Escenario) { 'humo' { 2048 }; 'carga' { 5120 }; 'estres' { 6144 } }
+if ($memoria.AvailableMBytes -lt $minimaMiB) { throw "No se iniciará $Escenario con menos de $minimaMiB MiB libres. Requiere evaluar una alternativa sin reducir los VU." }
 $env:K6_NO_USAGE_REPORT='true'
 $env:HTTP_PROXY=''
 $env:HTTPS_PROXY=''

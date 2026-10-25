@@ -2,7 +2,7 @@
 
 Fecha: 25/10/2026. Base develop/50ac59e. Rama feature/fase9b-pruebas-no-funcionales.
 
-**Estado: PREPARADO, NO COMPLETADO.** Esta etapa desarrolla herramientas y controles. No autoriza instalar, crear/arrancar infraestructura local, inicializar bases, ejecutar CargaSeeder, carga/estrés ni ZAP. El propietario autorizó separadamente solo la CI efímera habitual de GitHub. 9C sigue pendiente.
+**Estado: PREPARADO, NO COMPLETADO.** La etapa 1 desarrolló herramientas y controles. En la etapa 2 se autorizaron e instalaron herramientas portables y se preparó el checkout/configuración privada; siguen prohibidos inicializar MySQL, crear bases, arrancar Apache de rendimiento, migraciones, CargaSeeder, k6 y escaneos ZAP. Ver la actualización de preparación al final de este documento. La CI efímera habitual sigue autorizada separadamente. 9C sigue pendiente.
 
 ## Requisitos y estados
 
@@ -17,9 +17,9 @@ No confundir PREPARADO con EJECUTADO Y APROBADO. Cuando se ejecute se registrar�
 
 ## Herramientas e instalación pendiente
 
-Diagnóstico: Windows 10 10.0.19045, i7-6700HQ, 4 núcleos/8 hilos, unos 12 GiB RAM y 2.3 GiB libres en la lectura inicial. PHP 8.3.36 ZTS, Laravel 13.35.0, Apache 2.4.68 WinNT, MySQL 8.4.3, Node 22.23.2 disponibles. Registrar de nuevo el equipo y memoria antes de ejecutar.
+Diagnóstico original de etapa 1: Windows 10 10.0.19045, i7-6700HQ, 4 núcleos/8 hilos, unos 12 GiB RAM y 2.3 GiB libres en la lectura inicial. PHP 8.3.36 ZTS, Laravel 13.35.0, Apache 2.4.68 WinNT, MySQL 8.4.3, Node 22.23.2 disponibles. Registrar de nuevo el equipo y memoria antes de ejecutar.
 
-Chrome 146.0.7680.80 y Edge 156.0.4314.42 se localizaron por binario; no son revisiones visuales. Firefox, k6, ZAP, Java y Docker no se localizaron; WSL no tiene distribución registrada utilizable. No se instalaron.
+Chrome 146.0.7680.80 y Edge 156.0.4314.42 se localizaron por binario; no son revisiones visuales. Firefox, k6, ZAP, Java y Docker no se localizaron; WSL no tiene distribución registrada utilizable. En la etapa 1 no se instalaron; la instalación local autorizada de etapa 2 y sus versiones se documentan al final.
 
 Después de autorización: descargar k6 local de [Grafana](https://grafana.com/docs/k6/latest/set-up/install-k6/), ZAP nativo de [ZAP](https://www.zaproxy.org/download/) y Java de un distribuidor oficial enlazado por ZAP; verificar hashes/versiones antes de ejecutar. La versión ZAP consultada 2.17.0 requiere Java 17 o superior. Elegir/fijar una versión Java mantenida compatible al instalar. Firefox desde [Mozilla](https://www.mozilla.org/firefox/). Sin Docker, cuentas cloud ni servicios de pago. No desactivar antivirus para instalar.
 
@@ -29,9 +29,9 @@ Raíz privada candidata: C:/Users/Stalin/AppData/Local/DhacerRendimiento/f9b_001
 
 | Componente | Propuesta |
 | --- | --- |
-| Apache | Binario existente 2.4.68, configuración propia, 127.0.0.1:8089, WinNT 64 hilos, logs/PID propios |
+| Apache | Binario existente 2.4.68, configuración propia, 127.0.0.1:8089, WinNT 32 hilos, logs/PID propios |
 | PHP | 8.3.36 ZTS con php8apache2_4.dll, php.ini separado, 128 MiB por solicitud, errores a archivo privado |
-| MySQL | 8.4.3, 127.0.0.1:3313, mysqlx desactivado, datadir/UUID/PID nuevos, 80 conexiones, buffer InnoDB 256 MiB |
+| MySQL | 8.4.3, 127.0.0.1:3313, mysqlx desactivado, datadir/UUID/PID nuevos, 64 conexiones, buffer InnoDB 256 MiB |
 | Base | dhacer_eco_limp_demo_f9b_001, nueva y exclusivamente sintética |
 | Cuenta aplicación | demo_f9b_001 limitada literalmente a esa base; sin roles ni privilegios globales/delegación |
 | Almacenamiento | storage, sesiones y cachés exclusivos del checkout; cookie dhacer_f9b_001 y APP_KEY propios |
@@ -101,7 +101,7 @@ PENDIENTES: k6 y autorización de medir. Variables privadas: manifiesto/SHA-256,
 
 Salidas nuevas: resumen JSON, series JSON, stdout/stderr privados y recursos CSV. Medir VU efectivos, solicitudes/segundo, promedio, med=p50, p90/p95, máximo, errores HTTP y checks. Tags distinguen control/consulta, endpoint y estrés/descenso/recuperación. Carga exige p95 listados <1000 ms, errores HTTP globales/consulta <1% y checks 100%; una redirección a login falla el check aunque HTTP sea 302.
 
-El monitor recoge cada aproximadamente dos segundos CPU total, memoria libre, CPU y memoria por PID, incluidos procesos hijos del servidor. No empieza con menos de 2048 MiB libres. Detiene solo su k6 si hay menos de 512 MiB durante 15 muestras, fallo de observación o 10 minutos. El período supera 30 s si las consultas CIM tardan. Conserva interrupciones y VU alcanzados como observación, sin declarar completado el estrés. No apaga Apache/MySQL ni toca bases.
+El monitor recoge cada aproximadamente dos segundos CPU total, memoria libre, CPU y memoria por PID, incluidos procesos hijos del servidor. Exige 2048 MiB libres para humo, 5120 para carga y 6144 para estrés. Detiene solo su k6 si hay menos de 1024 MiB durante cinco muestras, fallo de observación o 10 minutos. El período de cinco muestras supera 10 s si las consultas CIM tardan. Conserva interrupciones y VU alcanzados como observación, sin declarar completado el estrés. No apaga Apache/MySQL ni toca bases.
 
 El modelo cerrado por VU puede reducir throughput al ralentizarse. Servidor/generador comparten equipo; Windows no acredita capacidad Linux/producción. El guard de demostración y las inspecciones de identidad tienen sobrecarga incluida. No usar artisan serve para certificar concurrencia. Registrar procesos ajenos, OPcache, calentamiento y memoria; no apagar aplicaciones operativas sin autorización.
 
@@ -157,3 +157,87 @@ Plantilla usabilidad_9b.csv: separar medición técnica de trabajador/9C. Inicio
 Ver evidencias/preparacion_9b.json para resultados reales de desarrollo. Mantener privados manifiestos, claves, cuentas, cookies, reportes crudos y logs; no publicar respaldos ni datos reales. Archivos versionados son plantillas o salidas sanitizadas sin secretos.
 
 Próximo paso: presentar para aprobación instalaciones/rutas exactas, instancia/datadir/UUID/PID/puertos, cuentas y concesiones, perfil Apache/PHP, recursos disponibles, manifiesto/huellas, procedimiento de inicialización y ejecución de carga. Solo después se ejecutarán las pruebas reales. No cerrar 9B ni iniciar 9C con esta preparación.
+
+## Actualización: etapa 2, herramientas y configuración privada
+
+25/10/2026, America/Lima. Autorizada la instalación local, SIN autorizar inicialización ni pruebas. Se verificó que las cuatro herramientas no estaban en PATH/ubicaciones habituales ni registradas como aplicaciones. Se extrajeron paquetes oficiales en C:/Users/Stalin/AppData/Local/DhacerRendimiento/herramientas/, sin instaladores globales, servicios, reinicio, cambios de PATH/JAVA_HOME de Windows ni cambios en Laragon.
+
+| Herramienta | Versión iniciada mediante consulta CLI | Fuente y verificación |
+| --- | --- | --- |
+| k6 | 2.3.0, commit e088784614 | Release oficial grafana/k6; SHA-256 del asset y ayuda run verificados |
+| Temurin JRE | 21.0.12.1+1, Java 21 LTS | API Adoptium y paquete oficial; SHA-256 verificado |
+| ZAP | 2.17.0 con Java privado | Crossplatform oficial; SHA-256 verificado; -version sin objetivo ni plan |
+| Firefox | 158.0.1, win64/es-ES | Paquete Mozilla, SHA256SUMS y firma Authenticode Mozilla válidos; --headless --version |
+
+Las URLs, huellas y rutas se registran en [evidencia sanitizada](evidencias/entorno_9b_etapa2.json). No son ejecuciones de navegación ni escaneo. ZAP creó solo un perfil privado para comprobar versión, sin instalar su CA en Windows ni apuntar a una aplicación. Incluye Automation Framework 0.58.0 y Reports 0.43.0; avisó que su catálogo no se había actualizado durante más de tres meses. Revisar/actualizar desde fuentes oficiales antes del escaneo autorizado; no se oculta ese aviso.
+
+Firefox no requirió ejecutar su instalador: se extrajo la carga del instalador firmado. Tar de Windows no admite ese LZMA; se usó 7zr 26.05 del repositorio oficial ip7z/7zip, con SHA-256 verificado, como auxiliar local sin registro. Su aviso de bytes tras el archivo corresponde a datos añadidos del ejecutable firmado; el Firefox extraído tiene firma Mozilla válida y responde con su versión. No se ejecutó Maintenance Service.
+
+Checkout independiente: C:/Users/Stalin/AppData/Local/DhacerRendimiento/f9b_001/checkout, creado desde 90ded69 y actualizado por avance rápido al commit final de esta preparación (solo documentación/configuración/guardas). No se copió .env operativo. Dependencias instaladas del lock con composer install --no-scripts y npm ci --ignore-scripts; Vite compiló en 2.73 s dentro del checkout privado. No se ejecutó composer setup, Artisan migrate ni ningún seeder. Un primer intento de comprobación antes de terminar Composer falló por faltar autoload; después de concluir la instalación se repitió y se obtuvo el bloqueo previsto del manifiesto, salida 1, antes de consultar procesos/MySQL.
+
+Apache con archivo privado pasó httpd -t: Syntax OK, sin arrancar. PHP con php.ini privado cargó PDO MySQL, mbstring, OpenSSL, fileinfo, curl, intl y zip; composer check-platform-reqs aprobó. Credenciales específicas ficticias, APP_KEY y clave HMAC preparadas fuera de Git; ACL del directorio limita acceso al usuario actual y SYSTEM. No se muestran, versionan ni reutilizan contraseñas reales.
+
+### Recursos y perfil para aprobación
+
+Cinco muestras reales de preparación: CPU 8–24 % (promedio 15.8 %), RAM libre 3331–3455 MiB. La lectura final queda en la evidencia; son instantáneas, no una certificación de capacidad. Antes de cada servicio/ensayo deberá medirse de nuevo.
+
+El perfil inicial de 64 × 128 MiB permitiría hasta 8 GiB de memoria PHP por solicitudes simultáneas, sin contar memoria nativa ni MySQL: no es adecuado como supuesto seguro con unos 3 GiB libres. Se propone Apache 32 hilos, PHP 128 MiB, MySQL 64 conexiones y buffer InnoDB 256 MiB. Apache aún permitiría hasta 4 GiB de memoria PHP; esas cuotas no son reservas ni límites totales del proceso. Medir el uso real tras autorización.
+
+Se mantienen 20 VU/2 minutos y estrés hasta 50 VU: reducir hilos del servidor no reduce usuarios virtuales; se observarán las colas reales. No se ha ejecutado ninguna carga. El lanzador queda más conservador: mínimos 2/5/6 GiB para humo/carga/estrés; detener solo su k6 ante menos de 1 GiB durante cinco muestras, pérdida de observación o diez minutos. El equipo observado NO cumple hoy el mínimo de carga/estrés. Solicitar liberar recursos o autorizar una alternativa, sin bajar VU ni ocultar incumplimientos.
+
+ZAP se usará en otra ventana, con Java propuesto -Xms64m -Xmx512m y memoria nativa adicional, nunca simultáneamente con k6/estrés sin nueva evaluación. Tampoco mantener navegadores de compatibilidad abiertos durante la medición. No se cerró ninguna aplicación del usuario automáticamente.
+
+### Manifiesto privado previo a inicialización
+
+Archivo: C:/Users/Stalin/AppData/Local/DhacerRendimiento/f9b_001/manifiesto.json.
+
+SHA-256 de esta propuesta: **8c49dc7ca9966ae65b3e74c1d10be1e7ba20e0d63ae03f78d444c76a4ed8efcd**.
+
+Contiene checkout operativo/aislado, MySQL 3313, datadir exclusivo, binarios, Apache 8089 y huella de su configuración, cuenta demo_f9b_001 y base dhacer_eco_limp_demo_f9b_001. Estado PREPARADO_NO_INICIALIZADO; operaciones vacías, PID 0 y UUID/argumentos PENDIENTES. Son campos deliberadamente bloqueantes: PID, UUID y huellas de argumentos efectivos no pueden certificarse antes de iniciar. No se inventan. Tras autorizar esa operación se capturarán y se presentará una nueva huella antes de autorizar escrituras posteriores.
+
+Configuraciones privadas: httpd.conf, mysql.ini y php/php.ini bajo esa raíz. Datadir mysql/datos vacío; sin listeners en 3313/8089/8449/8090. No se establecieron conexiones SQL a las bases protegidas. Esto NO afirma que otras aplicaciones del usuario no tengan conexiones operativas: no se consultó ni intervino su servidor.
+
+### Comandos exactos previstos, NO ejecutados
+
+**Puerta A: nueva autorización para inicializar y arrancar solo la instancia independiente.** No incluye migraciones, carga o pruebas. Confirmar otra vez puertos, RAM, binario, huellas y datadir vacío antes de ejecutar:
+
+```powershell
+& 'C:/laragon/bin/mysql/mysql-8.4.3-winx64/bin/mysqld.exe' '--defaults-file=C:/Users/Stalin/AppData/Local/DhacerRendimiento/f9b_001/mysql.ini' --initialize
+```
+
+El log privado contendrá la contraseña temporal del root NUEVO; no publicarlo. No se usa --initialize-insecure ni contraseña vacía. Luego, únicamente si se autoriza también arrancar:
+
+```powershell
+Start-Process -FilePath 'C:/laragon/bin/mysql/mysql-8.4.3-winx64/bin/mysqld.exe' -ArgumentList '--defaults-file=C:/Users/Stalin/AppData/Local/DhacerRendimiento/f9b_001/mysql.ini' -WindowStyle Hidden -PassThru
+Get-NetTCPConnection -LocalAddress 127.0.0.1 -LocalPort 3313 -State Listen
+```
+
+Verificar PID REAL del listener (puede diferir del lanzador), executable/argumentos/datadir y UUID de auto.cnf. Conservar evidencia privada y detener si difiere. No crear aún base ni cuentas. La verificación positiva sigue PENDIENTE.
+
+**Puerta B: autorización de bootstrap de cuentas/base en esa identidad ya comprobada.** El cliente-root-pendiente.ini es privado y tiene contraseña marcador; solo después de autorización se completará con la temporal del servidor nuevo. La rotación preparada cambia únicamente root@localhost de ESA instancia:
+
+```powershell
+& 'C:/laragon/bin/mysql/mysql-8.4.3-winx64/bin/mysql.exe' '--defaults-file=C:/Users/Stalin/AppData/Local/DhacerRendimiento/f9b_001/cliente-root-pendiente.ini' --protocol=TCP --host=127.0.0.1 --port=3313 --connect-expired-password --execute='SOURCE C:/Users/Stalin/AppData/Local/DhacerRendimiento/f9b_001/rotacion-root-pendiente.sql'
+```
+
+Después de rotar, consultar identidad efectiva antes de cualquier CREATE:
+
+```powershell
+& 'C:/laragon/bin/mysql/mysql-8.4.3-winx64/bin/mysql.exe' '--defaults-file=C:/Users/Stalin/AppData/Local/DhacerRendimiento/f9b_001/cliente-root-posterior.ini' --protocol=TCP --host=127.0.0.1 --port=3313 --execute='SELECT VERSION(), @@port, @@datadir, @@server_uuid, CURRENT_USER(), CURRENT_ROLE()'
+```
+
+Solo si coincide y está autorizado crear base/cuentas:
+
+```powershell
+& 'C:/laragon/bin/mysql/mysql-8.4.3-winx64/bin/mysql.exe' '--defaults-file=C:/Users/Stalin/AppData/Local/DhacerRendimiento/f9b_001/cliente-root-posterior.ini' --protocol=TCP --host=127.0.0.1 --port=3313 --execute='SOURCE C:/Users/Stalin/AppData/Local/DhacerRendimiento/f9b_001/cuentas-pendientes.sql'
+```
+
+Ese SQL privado contiene únicamente CREATE DATABASE de la base nueva y dos cuentas: aplicación SELECT/INSERT/UPDATE/DELETE; migrador además CREATE/ALTER/INDEX/REFERENCES/TRIGGER sobre la base literal. Sin roles, privilegios globales ni GRANT OPTION. Se escapan los guiones bajos para no conceder patrones amplios; verificar @@partial_revokes y SHOW GRANTS reales antes de usar las cuentas. Root de bootstrap no es la cuenta de la aplicación. No inicializa tablas Laravel ni crea datos de empresa.
+
+**Puerta C: autorización de arranque Apache aislado y verificación positiva.** Sintaxis ya comprobada; comando futuro, no ejecutado:
+
+```powershell
+Start-Process -FilePath 'C:/laragon/bin/apache/httpd-2.4.68-260617-Win64-VS18/bin/httpd.exe' -ArgumentList '-f C:/Users/Stalin/AppData/Local/DhacerRendimiento/f9b_001/httpd.conf' -WindowStyle Hidden -PassThru
+```
+
+Capturar identidad efectiva y concesiones, actualizar manifiesto/SHA privado y confirmar autoridad de la operación antes del verificador completo. Las migraciones, CargaSeeder, k6, escaneos y datos ficticios siguen requiriendo otra autorización; no se ejecutan como continuación automática de ninguno de estos comandos.

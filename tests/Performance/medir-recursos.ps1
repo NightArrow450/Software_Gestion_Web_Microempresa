@@ -31,10 +31,10 @@ while ($generador) {
         } | Export-Csv -LiteralPath $SalidaNueva -Append -NoTypeInformation -Encoding utf8
         $previos[$proceso.Id]=@{fecha=$ahora;cpu=$proceso.CPU}
     }
-    if ($memoria.AvailableMBytes -lt 512) { $bajaMemoria++ } else { $bajaMemoria=0 }
+    if ($memoria.AvailableMBytes -lt 1024) { $bajaMemoria++ } else { $bajaMemoria=0 }
     $generador = Get-CimInstance Win32_Process -Filter ('ProcessId='+$PidK6)
-    if ($bajaMemoria -ge 15 -or ([DateTime]::UtcNow-$inicio).TotalSeconds -gt 600) {
-        if ($generador -and $generador.Name -eq 'k6.exe' -and $generador.CreationDate -eq $creacion) { Stop-Process -Id $PidK6; throw 'ENSAYO INTERRUMPIDO: memoria agotada o límite de 10 minutos. Conservar la evidencia.' }
+    if ($bajaMemoria -ge 5 -or ([DateTime]::UtcNow-$inicio).TotalSeconds -gt 600) {
+        if ($generador -and $generador.Name -eq 'k6.exe' -and $generador.CreationDate -eq $creacion) { Stop-Process -Id $PidK6; throw 'ENSAYO INTERRUMPIDO: menos de 1024 MiB libres durante cinco muestras o límite de 10 minutos. Conservar la evidencia.' }
     }
     if ($generador -and $generador.CreationDate -ne $creacion) { throw 'PID reutilizado; no se detendrá ningún proceso.' }
     Start-Sleep -Seconds 2
