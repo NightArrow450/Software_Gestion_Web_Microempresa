@@ -41,7 +41,15 @@ foreach (['surtidos_hoy' => 0, 'normales_dos_dias' => 2] as $escenario => $dias)
     arsort($patrones);
     $resultados[$escenario] = ['fecha_entrega' => $fecha, 'pedidos' => $datos['pedidos']->count(), 'filas' => $datos['filas']->count(),
         'consultas' => $consultas, 'tiempo_sql_ms' => $tiempoSql, 'tiempo_total_ms' => (hrtime(true) - $inicio) / 1e6,
+        'resultado_sha256' => hash('sha256', json_encode([$datos['filas']->all(), $datos['surtidosPendientes']->all()], JSON_THROW_ON_ERROR)),
+        'unidades_solicitadas' => $datos['filas']->sum('total_unidades'),
         'memoria_pico_proceso_bytes' => memory_get_peak_usage(true), 'patrones_repetidos' => array_slice($patrones, 0, 5, true)];
 }
-echo json_encode(['fecha' => date(DATE_ATOM), 'alcance' => 'Diagnóstico CLI del controlador sin renderizado Blade, solo lectura; sin OPcache CLI ni bindings, no sustituye latencias HTTP ni compara totales de períodos diferentes.',
+$estado = [];
+foreach (['pedidos', 'pedido_detalles', 'envasados', 'movimientos_inventario', 'migrations'] as $tabla) {
+    $estado[$tabla] = DB::table($tabla)->count();
+}
+$estado['saldo_productos'] = (string) DB::table('inventarios')->sum('cantidad_actual');
+$estado['saldo_insumos'] = (string) DB::table('insumos')->sum('cantidad_actual');
+echo json_encode(['fecha' => date(DATE_ATOM), 'estado_ficticio' => $estado, 'alcance' => 'Diagnóstico CLI del controlador sin renderizado Blade, solo lectura; sin OPcache CLI ni bindings, no sustituye latencias HTTP ni compara totales de períodos diferentes.',
     'escenarios' => $resultados], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR).PHP_EOL;

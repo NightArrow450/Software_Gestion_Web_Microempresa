@@ -187,14 +187,46 @@ class GestionarSurtidos
         return $versiones->map(fn ($v): array => (array) $v + ['componentes' => $componentes->get($v->id, collect())->all()])->all();
     }
 
-    public function pendientes(Pedido $pedido): array
+    /**
+     * Fotografía de lectura local al informe; nunca se almacena en el servicio ni se usa para despachar.
+     *
+     * @param  Collection<int, Pedido>  $pedidos
+     * @return array{paquetes: array<int, array>, skus: Collection<int, PresentacionProducto>}
+     */
+    public function precargarLectura(Collection $pedidos): array
+    {
+        $ids = $pedidos->flatMap(fn (Pedido $pedido) => $pedido->detalles)
+            ->where('tipo_linea', 'surtido')->pluck('id');
+        if ($ids->isEmpty() || ! $this->disponible()) {
+            return ['paquetes' => [], 'skus' => collect()];
+        }
+        $paquetes = DB::table('pedido_paquetes_surtidos as p')->join('paquete_surtido_composiciones as c', function ($join): void {
+            $join->on('c.paquete_surtido_id', '=', 'p.id')->on('c.version', '=', 'p.version');
+        })->whereIn('p.pedido_detalle_id', $ids)->where('p.activo', true)->orderBy('p.numero')
+            ->get(['p.id', 'p.pedido_detalle_id', 'p.numero', 'p.version', 'c.id as composicion_id', 'c.estado']);
+        $componentes = DB::table('paquete_surtido_componentes')->whereIn('composicion_id', $paquetes->pluck('composicion_id'))
+            ->orderBy('presentacion_producto_id')->get()->groupBy('composicion_id');
+        $porDetalle = $paquetes->groupBy('pedido_detalle_id')->map(fn ($grupo): array => $grupo->map(function ($p) use ($componentes): array {
+            $datos = (array) $p;
+            unset($datos['pedido_detalle_id']);
+
+            return $datos + ['componentes' => $componentes->get($p->composicion_id, collect())->map(fn ($c): array => (array) $c)->all()];
+        })->all())->all();
+        $idsSku = $componentes->flatten(1)->pluck('presentacion_producto_id')->unique();
+        $skus = $idsSku->isEmpty() ? collect() : PresentacionProducto::with(['producto', 'variante'])->whereIn('id', $idsSku)->get()->keyBy('id');
+
+        return ['paquetes' => $porDetalle, 'skus' => $skus];
+    }
+
+    /** @param array{paquetes: array<int, array>, skus: Collection<int, PresentacionProducto>}|null $lectura */
+    public function pendientes(Pedido $pedido, ?array $lectura = null): array
     {
         $resultado = [];
         foreach ($pedido->detalles as $d) {
             if ($d->tipo_linea !== 'surtido') {
                 continue;
             }
-            $paquetes = $this->paquetes($d);
+            $paquetes = $lectura === null ? $this->paquetes($d) : ($lectura['paquetes'][$d->id] ?? []);
             $definidos = count(array_filter($paquetes, fn (array $p): bool => $p['estado'] === 'definida'));
             $porDistribuir = (int) $d->cantidad * (int) $d->unidades_por_empaque - array_sum(array_map(fn (array $p): int => array_sum(array_column($p['componentes'], 'cantidad')), $paquetes));
             if ($definidos < $d->cantidad) {
@@ -240,7 +272,7 @@ class GestionarSurtidos
     }
 
     /** Proyecciones solo de lectura: no se persisten como líneas comerciales ni se suman sus precios. @return Collection<int, PedidoDetalle> */
-    public function lineasFisicas(Pedido $pedido): Collection
+    public function lineasFisicas(Pedido $pedido, ?array $lectura = null): Collection
     {
         $pedido->loadMissing('detalles');
         if (! $pedido->detalles->contains('tipo_linea', 'surtido')) {
@@ -255,7 +287,7 @@ class GestionarSurtidos
 
                 continue;
             }
-            foreach ($this->paquetes($d) as $p) {
+            foreach ($lectura === null ? $this->paquetes($d) : ($lectura['paquetes'][$d->id] ?? []) as $p) {
                 if ($p['estado'] !== 'definida') {
                     continue;
                 }
@@ -264,7 +296,7 @@ class GestionarSurtidos
                 }
             }
         }
-        $skus = $componentes === [] ? collect() : PresentacionProducto::with(['producto', 'variante'])->whereIn('id', array_column($componentes, 'presentacion_producto_id'))->get()->keyBy('id');
+        $skus = $lectura['skus'] ?? ($componentes === [] ? collect() : PresentacionProducto::with(['producto', 'variante'])->whereIn('id', array_column($componentes, 'presentacion_producto_id'))->get()->keyBy('id'));
         foreach ($componentes as $c) {
             $linea = new PedidoDetalle(['presentacion_producto_id' => $c['presentacion_producto_id'], 'codigo_sku' => $c['sku'], 'descripcion_producto' => $c['descripcion'], 'modalidad' => 'unidad', 'cantidad' => $c['cantidad']]);
             $linea->setAttribute('componente_surtido', true);

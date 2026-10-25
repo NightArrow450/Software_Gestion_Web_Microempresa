@@ -64,11 +64,12 @@ class CumplimientoPedidoController extends Controller
             ->get();
 
         $surtidos = app(GestionarSurtidos::class);
-        $surtidosPendientes = $pedidos->flatMap(fn (Pedido $pedido): array => $surtidos->pendientes($pedido))->values();
+        $lecturaSurtidos = $surtidos->precargarLectura($pedidos);
+        $surtidosPendientes = $pedidos->flatMap(fn (Pedido $pedido): array => $surtidos->pendientes($pedido, $lecturaSurtidos))->values();
         $productosPendientes = $surtidosPendientes->isEmpty() ? [] : DB::table('formatos_surtidos')->whereIn('id', $surtidosPendientes->pluck('formato_surtido_id'))->pluck('producto_id')->mapWithKeys(fn ($id): array => ['producto:'.$id => true])->all();
         $agrupados = [];
         foreach ($pedidos as $pedido) {
-            foreach ($surtidos->lineasFisicas($pedido) as $detalle) {
+            foreach ($surtidos->lineasFisicas($pedido, $lecturaSurtidos) as $detalle) {
                 $presentacion = $detalle->presentacion;
                 $cantidad = (int) $detalle->cantidad;
                 $porEmpaque = (int) $detalle->unidadesPorEmpaqueEfectivas();
