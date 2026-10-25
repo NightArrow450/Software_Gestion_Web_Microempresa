@@ -25,6 +25,7 @@ use App\Services\VerificadorInventario;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use RuntimeException;
 use Tests\Performance\AutorizacionRendimiento;
 
@@ -37,8 +38,12 @@ class CargaSeeder extends Seeder
         if (! preg_match('/\A(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).{10,100}\z/', $clave)) {
             throw new RuntimeException('Falta contraseña ficticia privada válida para las cuentas de carga.');
         }
-        foreach (['users', 'roles', 'permisos', 'clientes', 'productos', 'pedidos', 'insumos', 'movimientos_inventario', 'envasados'] as $tabla) {
-            if (DB::table($tabla)->exists()) {
+        $tablas = Schema::getTableListing(DB::getDatabaseName(), false);
+        if (count($tablas) !== 44 || DB::table('migrations')->count() !== 45) {
+            throw new RuntimeException('El esquema no coincide con las 45 migraciones y 44 tablas autorizadas.');
+        }
+        foreach ($tablas as $tabla) {
+            if ($tabla !== 'migrations' && DB::table($tabla)->exists()) {
                 throw new RuntimeException('Carga bloqueada: la base debe contener solo el esquema vacío autorizado.');
             }
         }

@@ -64,7 +64,7 @@ Pedidos normales por unidad y empaque de 12/15, surtidos con composiciones disti
 
 Las fechas de pedidos cubren hasta 30 días; movimientos/envasados son operaciones sintéticas registradas en la fecha de ejecución, no se alteran timestamps de movimientos inmutables para aparentar otra antigüedad. Si se necesitan períodos históricos adicionales, acordar otro dataset antes de ejecutarlo.
 
-La base debe contener solo el esquema vacío. Una marca exclusiva fuera de Git impide repetir una carga iniciada, incluso si falla. No se modifica DatabaseSeeder ni se llama DemoSeeder/AdminUserSeeder. La ejecución positiva está PENDIENTE; no se invocó run() ni en una prueba de desarrollo. El test negativo comprueba solamente la puerta común anterior a cualquier acceso DB.
+La base debe contener solo el esquema vacío: 44 tablas, 45 migraciones y ninguna fila en las demás tablas, incluidas categorías/configuraciones. Una marca exclusiva fuera de Git impide repetir una carga iniciada, incluso si falla. No se modifica DatabaseSeeder ni se llama DemoSeeder/AdminUserSeeder. La ejecución positiva está PENDIENTE; no se invocó run() ni en una prueba de desarrollo. El test negativo comprueba solamente la puerta común anterior a cualquier acceso DB.
 
 ## Comandos futuros por autorización
 

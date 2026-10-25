@@ -6,7 +6,7 @@ env:
       urls:
         - http://127.0.0.1:8089
       includePaths:
-        - 'http://127\.0\.0\.1:8089/(login|dashboard|pedidos|productos|cumplimiento/lista-preparacion|envasados)(\?.*)?'
+        - 'http://127\.0\.0\.1:8089/(login|dashboard|pedidos(/[0-9]+)?|productos|cumplimiento/lista-preparacion|envasados)(\?.*)?'
       excludePaths:
         - 'http://127\.0\.0\.1:8089/logout.*'
         - 'http://127\.0\.0\.1:8089/.*(nuevo|editar|exportar).*'
