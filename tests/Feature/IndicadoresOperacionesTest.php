@@ -237,4 +237,49 @@ class IndicadoresOperacionesTest extends TestCase
         $this->assertSame($codigo, $entregas[0]['sku']);
         $this->assertSame(600, $entregas[0]['aceptado_centimos']);
     }
+
+    public function test_envasados_y_consumos_filtran_su_sku_historico_en_pantalla_y_csv(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-10-20', 'America/Lima'));
+        $e = $this->escenarioEnvasado(100, 0);
+        $this->actingAs($e['usuario']);
+        foreach (['indicadores.ver', 'indicadores.economicos.ver', 'indicadores.exportar'] as $nombre) {
+            $e['usuario']->role->permisos()->syncWithoutDetaching(Permiso::firstOrCreate(['nombre' => $nombre], ['descripcion' => $nombre])->id);
+        }
+        $e['usuario']->unsetRelation('role');
+        $datos = ['presentacion_producto_id' => $e['presentacion']->id, 'configuracion_envasado_id' => $e['configuracion']->id, 'version_configuracion' => 0];
+        $anterior = app(RegistrarEnvasado::class)->ejecutar($datos + ['cantidad' => 10], $e['usuario']);
+        $foto = $anterior->getRawOriginal('presentacion_historica');
+        $codigo = $e['presentacion']->codigo_sku;
+        $e['presentacion']->update(['codigo_sku' => 'SKU-ACTUAL-REGRESION']);
+        app(CorregirEnvasado::class)->ejecutar($anterior, ['clasificacion' => 'error_administrativo', 'cantidad' => 2, 'revertidas_previas' => 0, 'motivo' => 'Corrección ficticia posterior al cambio de código.', 'devoluciones' => [$anterior->consumos->sole()->id => 2]], $e['usuario']);
+        app(RegistrarEnvasado::class)->ejecutar($datos + ['cantidad' => 5], $e['usuario']);
+
+        foreach (['envasados' => 'efecto_neto', 'materiales' => 'salida_neta', 'materiales_resumen' => 'salida_neta'] as $reporte => $metrica) {
+            $filtro = ['reporte' => $reporte, 'sku' => $codigo, 'economico' => 1];
+            $viejas = $this->filas($reporte, ['sku' => $codigo]);
+            $nuevas = $this->filas($reporte, ['sku' => 'SKU-ACTUAL-REGRESION']);
+            $this->assertCount($reporte === 'materiales_resumen' ? 1 : 2, $viejas, $reporte);
+            $this->assertSame(8.0, (float) array_sum(array_column($viejas, $metrica)), $reporte);
+            $this->assertCount(1, $nuevas, $reporte);
+            $this->assertSame(5.0, (float) array_sum(array_column($nuevas, $metrica)), $reporte);
+            $this->get(route('indicadores.index', $filtro))->assertOk()->assertViewHas('resultado', fn ($r): bool => $r['cantidad'] === count($viejas));
+            $csv = $this->get(route('indicadores.exportar', $filtro))->assertOk()->streamedContent();
+            $salida = fopen('php://temp', 'w+b');
+            fwrite($salida, substr($csv, 3));
+            rewind($salida);
+            $cabecera = fgetcsv($salida, null, ';', '"', '');
+            $filas = [];
+            while (($fila = fgetcsv($salida, null, ';', '"', '')) !== false) {
+                $filas[] = array_combine($cabecera, $fila);
+            }
+            fclose($salida);
+            $this->assertCount(count($viejas), $filas);
+            $this->assertSame(8.0, (float) array_sum(array_column($filas, $metrica)));
+        }
+        $this->assertSame($foto, $anterior->fresh()->getRawOriginal('presentacion_historica'));
+        $this->assertSame([], $this->filas('inventario', ['sku' => $codigo]));
+        $this->assertSame(13, (int) $this->filas('inventario', ['sku' => 'SKU-ACTUAL-REGRESION'])[0]['stock_actual']);
+        $this->assertSame(87.0, (float) $e['insumo']->fresh()->cantidad_actual);
+    }
 }

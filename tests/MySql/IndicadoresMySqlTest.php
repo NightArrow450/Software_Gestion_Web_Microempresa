@@ -130,6 +130,27 @@ class IndicadoresMySqlTest extends PruebaEntregaMySql
         $this->assertSame(['Concordante', 'Concordante'], array_column($saldos, 'conciliacion'));
     }
 
+    public function test_sku_historico_del_envasado_filtra_en_mysql_aunque_cambie_el_catalogo(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-10-24 12:00:00', 'America/Lima'));
+        $e = $this->escenarioEnvasado(100, 0);
+        $datos = ['presentacion_producto_id' => $e['presentacion']->id, 'configuracion_envasado_id' => $e['configuracion']->id, 'version_configuracion' => 0];
+        $antiguo = app(RegistrarEnvasado::class)->ejecutar($datos + ['cantidad' => 10], $e['usuario']);
+        $codigo = $e['presentacion']->codigo_sku;
+        $e['presentacion']->update(['codigo_sku' => 'NUEVO-HISTORICO-MYSQL']);
+        app(CorregirEnvasado::class)->ejecutar($antiguo, ['clasificacion' => 'error_administrativo', 'cantidad' => 2, 'revertidas_previas' => 0, 'motivo' => 'Corrección aislada posterior al cambio de SKU.', 'devoluciones' => [$antiguo->consumos->sole()->id => 2]], $e['usuario']);
+        app(RegistrarEnvasado::class)->ejecutar($datos + ['cantidad' => 5], $e['usuario']);
+
+        foreach (['envasados' => 'efecto_neto', 'materiales' => 'salida_neta', 'materiales_resumen' => 'salida_neta'] as $reporte => $metrica) {
+            $viejas = iterator_to_array(app(FilasIndicadores::class)->filas(FiltrosIndicadores::validar(['reporte' => $reporte, 'sku' => $codigo])));
+            $nuevas = iterator_to_array(app(FilasIndicadores::class)->filas(FiltrosIndicadores::validar(['reporte' => $reporte, 'sku' => 'NUEVO-HISTORICO-MYSQL'])));
+            $this->assertSame(8.0, (float) array_sum(array_column($viejas, $metrica)), $reporte);
+            $this->assertSame(5.0, (float) array_sum(array_column($nuevas, $metrica)), $reporte);
+        }
+        $this->assertSame($codigo, $antiguo->fresh()->presentacion_historica['sku']);
+        $this->assertSame(13, (int) DB::table('inventarios')->where('presentacion_producto_id', $e['presentacion']->id)->value('cantidad_actual'));
+    }
+
     public function test_preparacion_conserva_identidad_del_inventario_ante_codigos_historicos_distintos(): void
     {
         $e = $this->escenarioEnvasado(100, 6);

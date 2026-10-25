@@ -83,7 +83,7 @@ class ActividadIndicadores
             if ($corregir) {
                 $q->join('envasado_correcciones as c', 'c.envasado_id', '=', 'e.id');
             }
-            $this->filtrar($q, $f);
+            $this->filtrar($q, $f, skuHistorico: $this->skuHistoricoEnvasado());
             FiltrosIndicadores::periodo($q, $corregir ? 'c.created_at' : 'e.created_at', $f);
             if (! empty($f['pedido_id'])) {
                 $q->where('e.pedido_id', $f['pedido_id']);
@@ -110,7 +110,7 @@ class ActividadIndicadores
             if ($corregir) {
                 $q->join('envasado_correccion_materiales as cm', 'cm.envasado_consumo_id', '=', 'co.id')->join('envasado_correcciones as c', 'c.id', '=', 'cm.envasado_correccion_id');
             }
-            $this->filtrar($q, $f, insumo: 'co.insumo_id');
+            $this->filtrar($q, $f, insumo: 'co.insumo_id', skuHistorico: $this->skuHistoricoEnvasado());
             FiltrosIndicadores::periodo($q, $corregir ? 'c.created_at' : 'e.created_at', $f);
             if (! empty($f['pedido_id'])) {
                 $q->where('e.pedido_id', $f['pedido_id']);
@@ -133,7 +133,7 @@ class ActividadIndicadores
             if ($corregir) {
                 $q->join('envasado_correccion_materiales as cm', 'cm.envasado_consumo_id', '=', 'co.id')->join('envasado_correcciones as c', 'c.id', '=', 'cm.envasado_correccion_id');
             }
-            $this->filtrar($q, $f, insumo: 'co.insumo_id');
+            $this->filtrar($q, $f, insumo: 'co.insumo_id', skuHistorico: $this->skuHistoricoEnvasado());
             FiltrosIndicadores::periodo($q, $corregir ? 'c.created_at' : 'e.created_at', $f);
             if (! empty($f['pedido_id'])) {
                 $q->where('e.pedido_id', $f['pedido_id']);
@@ -149,6 +149,13 @@ class ActividadIndicadores
                     'perdido' => $corregir ? $r->cantidad_perdida : '0.000', 'salida_neta' => ($bruto - $devuelto < 0 ? '-' : '').CantidadesEnvasado::decimal(abs($bruto - $devuelto))];
             }
         }
+    }
+
+    private function skuHistoricoEnvasado(): string
+    {
+        $expresion = "JSON_EXTRACT(e.presentacion_historica, '$.sku')";
+
+        return DB::getDriverName() === 'mysql' ? "JSON_UNQUOTE($expresion)" : $expresion;
     }
 
     private function referencias(): Builder
