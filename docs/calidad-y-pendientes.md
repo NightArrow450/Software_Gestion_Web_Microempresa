@@ -28,9 +28,11 @@ MySQL: concurrencia envasado 6, inventario 7, retornos 5; entregas/retornos 24, 
 - Importes no acreditan cobros. Históricos incompletos no se reconstruyen como exactos.
 - CSV automatizado no equivale a apertura manual en todas las versiones de Excel.
 
-## Fase 9 obligatoria, no implementada aquí
+## Fase 9 obligatoria
 
-Conservar los catorce puntos originales como requisitos de entrada, sin reducirlos a esta lista. Antes de cerrar la matriz se necesitan el documento original, entrevista, Anexo 7 y definiciones X1–X12. No inventar texto, correspondencias ni participación.
+Actualización 9A: consultar el [informe parcial](pruebas/00_informe_resumen.md) y la [matriz de los catorce requisitos](pruebas/02_casos_funcionales.md). El inventario anterior corresponde al cierre de Fase 8; el nuevo descubrimiento registra 588 casos Laravel y 68 MySQL. D9A-01 está corregido y su reproducción se conserva como regresión habitual aprobada. 9B y 9C no se han ejecutado.
+
+Conservar los catorce puntos originales como requisitos de entrada, sin reducirlos a esta lista. El documento original ya está archivado en las evidencias de 9A; siguen pendientes la entrevista, Anexo 7 y definiciones X1–X12 para cerrar la trazabilidad académica. No inventar texto, correspondencias ni participación.
 
 Tres PR controlados: funcionales/unitarias/integración; no funcionales; aceptación UAT e informe. Propuesta inicial a revisar: 32 casos unitarios adicionales, sin cuota ni redundancias (8 de importes/precios, 8 de milésimas, 6 de estados, 8 de CSV y 2 de identidad física).
 
