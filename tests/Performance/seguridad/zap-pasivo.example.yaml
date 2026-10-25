@@ -30,6 +30,12 @@ jobs:
       reportDir: C:/Users/Stalin/AppData/Local/DhacerRendimiento/f9b_001/evidencias-privadas
       reportFile: zap-pasivo
       reportTitle: DHACER ECO LIMP - análisis pasivo nativo autorizado
+  - type: report
+    parameters:
+      template: traditional-json
+      reportDir: C:/Users/Stalin/AppData/Local/DhacerRendimiento/f9b_001/evidencias-privadas
+      reportFile: zap-pasivo
+      reportTitle: DHACER ECO LIMP - análisis pasivo nativo autorizado
   - type: exitStatus
     parameters:
       errorLevel: High

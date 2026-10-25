@@ -41,7 +41,7 @@ export default function recorrido() {
     for (const [nombre, ruta] of [['pedidos', '/pedidos'], ['productos', '/productos?search=sint%C3%A9tico'],
         ['detalle', `/pedidos/${__ENV.PEDIDO_FICTICIO_ID}`], ['preparacion', '/cumplimiento/lista-preparacion'], ['envasados', '/envasados']]) {
         const segundos = (Date.now() - exec.scenario.startTime) / 1000;
-        const etapa = exec.scenario.name === 'estres' ? (segundos >= 180 ? 'recuperacion' : segundos >= 150 ? 'descenso' : 'estres') : 'medicion';
+        const etapa = exec.scenario.name === 'estres' ? (segundos >= 240 ? 'recuperacion' : segundos >= 210 ? 'descenso' : 'estres') : 'medicion';
         const r = http.get(base + ruta, { redirects: 0, tags: { nombre, fase: 'consulta', etapa, listado: nombre === 'detalle' ? 'no' : 'si' } });
         check(r, { 'consulta autenticada válida': x => x.status === 200 && !String(x.body).includes('name="password"') }, { fase: 'consulta' });
         sleep(1);

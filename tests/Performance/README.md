@@ -1,8 +1,10 @@
-# Fase 9B: preparación controlada, SIN EJECUTAR cargas
+# Fase 9B: ejecución controlada y resultados observados
 
-Estado: PREPARADO. No se creó infraestructura, no se ejecutó CargaSeeder, k6 ni ZAP. Estos archivos no autorizan instalaciones ni pruebas contra una aplicación. Leer [procedimiento completo](../../docs/pruebas/03_no_funcionales.md).
+Estado actual: infraestructura y carga ficticia creadas, k6/HTTP/ZAP ejecutados con observaciones. Visual y UAT pendientes. Leer [resultados y comandos](../../docs/pruebas/03_no_funcionales.md#resultados-reales-de-ejecución-9b). La autorización integral del propietario cubre únicamente f9b_001, no otras bases ni servidores. No repetir CargaSeeder ni las migraciones para arrancar la demostración.
 
 ## Puertas obligatorias
+
+La autorización integral del propietario ya cubre estas operaciones rutinarias en f9b_001. Las puertas siguen siendo comprobaciones técnicas obligatorias, no solicitudes repetidas de permiso. Otro destino o datos reales quedan fuera del alcance.
 
 1. Aprobación de instalación de herramientas e identidad del entorno independiente.
 2. Crear infraestructura solo con autorización posterior, nunca sobre Laragon operativo ni su copia de respaldo.
@@ -54,6 +56,6 @@ El control HTTP usa Alias exclusivo del Apache de pruebas; NO se agrega a routes
 - El control añade sobrecarga real, incluida la inspección de procesos. No ocultarla: las latencias de listados se etiquetan aparte; el consumo de CPU incluye esas protecciones.
 - Prohibido activar trazas HTTP con cuerpos/cookies. Reportes crudos privados; revisar/sanitizar antes de incorporarlos a docs/pruebas/evidencias/.
 
-El lanzador exige 2048 MiB libres para humo, 5120 para carga y 6144 para estrés. El monitor termina únicamente su k6 ante menos de 1024 MiB durante cinco muestras, fallo de observación o límite de 10 minutos. Las muestras tardan al menos 2 segundos, por lo que ese período no es un reloj exacto de 10 s. Conserva la interrupción y los VU alcanzados; no certifica haber completado 50 VU. Apache/MySQL y bases no se detienen, reinician ni reparan automáticamente. Estos límites más conservadores se prepararon tras instalar herramientas; las cargas siguen siendo 20 y 50 VU.
+El lanzador exige 2048 MiB libres para humo, 4096 para carga y 3072 para estrés. Los umbrales se revisaron con autorización después de medir el consumo real: la primera carga dejó un mínimo de 3769 MiB y otras repeticiones confirmaron el margen. No se modificaron los objetivos de 20/50 VU. El monitor conserva la interrupción bajo 1024 MiB durante cinco muestras o límite de diez minutos. La identidad sigue abortando ante cualquier fallo; no se amplió su timeout de 15 segundos. Las muestras tardan al menos dos segundos. Apache/MySQL no se reinician ni reparan automáticamente. No extrapolar la capacidad del laboratorio, cuyo inspector también consume CPU, a producción.
 
-La validación positiva de Apache, PHP, manifiesto, privilegios y el endpoint firmado requiere la infraestructura autorizada futura. Las plantillas son propuestas, no configuraciones ya certificadas.
+Apache, PHP, manifiesto, privilegios y endpoint firmado se verificaron en f9b_001. La demostración se reinicia con iniciar-demostracion.ps1 desde su checkout independiente; no repetir migraciones ni CargaSeeder. Se ensayaron los perfiles sin OPcache y con OPcache privado de 64 MiB (php-opcache.example.ini), con cache_id exclusivo y validación de timestamps. Los resultados de ambos perfiles están separados. La compatibilidad visual y las UAT siguen pendientes.
