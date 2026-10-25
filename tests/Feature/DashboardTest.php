@@ -66,6 +66,18 @@ class DashboardTest extends TestCase
         $this->get(route('auditoria.index'))->assertForbidden();
     }
 
+    public function test_conteo_conserva_cuentas_activas_sin_atribuirlas_a_roles_eliminados(): void
+    {
+        $admin = Role::create(['nombre' => 'Administrador', 'es_sistema' => true]);
+        $comercial = Role::create(['nombre' => 'Operaciones Comerciales', 'es_sistema' => false]);
+        $usuario = User::factory()->create(['role_id' => $admin->id]);
+        User::factory()->create(['role_id' => $comercial->id]);
+        $comercial->delete();
+
+        $this->actingAs($usuario)->get(route('dashboard'))->assertOk()
+            ->assertViewHas('resumenUsuarios', ['total' => 2, 'administradores' => 1, 'comerciales' => 0, 'produccion' => 0]);
+    }
+
     public function test_cabecera_de_indicadores_usa_su_titulo_especifico(): void
     {
         $usuario = User::factory()->create();
