@@ -6,4 +6,8 @@ $ruta = realpath((string) getenv('RENDIMIENTO_CONFIG'));
 if (! $ruta || str_starts_with(strtolower(str_replace('\\', '/', $ruta)), strtolower(str_replace('\\', '/', dirname(__DIR__, 3))).'/')) {
     throw new RuntimeException('Falta configuración privada externa del entorno independiente.');
 }
-Dotenv\Dotenv::createUnsafeImmutable(dirname($ruta), basename($ruta))->load();
+if (PHP_SAPI === 'cli') {
+    Dotenv\Dotenv::createUnsafeImmutable(dirname($ruta), basename($ruta))->load();
+} else {
+    Dotenv\Dotenv::createImmutable(dirname($ruta), basename($ruta))->load();
+}

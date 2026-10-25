@@ -15,8 +15,8 @@ final class AutorizacionRendimiento
     /** @return array<string, mixed> */
     public function verificar(string $operacion): array
     {
-        $ruta = realpath((string) getenv('RENDIMIENTO_MANIFIESTO'));
-        $hash = (string) getenv('RENDIMIENTO_MANIFIESTO_SHA256');
+        $ruta = realpath(self::variablePrivada('RENDIMIENTO_MANIFIESTO'));
+        $hash = self::variablePrivada('RENDIMIENTO_MANIFIESTO_SHA256');
         if (! $ruta || ! preg_match('/\A[a-f0-9]{64}\z/', $hash)
             || str_starts_with(strtolower(str_replace('\\', '/', $ruta)), strtolower(str_replace('\\', '/', base_path())).'/')
             || ! hash_equals($hash, hash_file('sha256', $ruta))) {
@@ -25,6 +25,9 @@ final class AutorizacionRendimiento
         $m = json_decode(file_get_contents($ruta), true, 512, JSON_THROW_ON_ERROR);
         if (! is_array($m)) {
             throw new RuntimeException('Manifiesto no válido.');
+        }
+        foreach (['checkout', 'operativo', 'mysql_datadir', 'mysql_binario', 'apache_binario', 'apache_config'] as $campo) {
+            self::rutaCanonica((string) ($m[$campo] ?? ''));
         }
         self::validarConfiguracion($m, $operacion, [
             'checkout' => realpath(base_path()), 'operativo' => realpath((string) config('demostracion.proyecto_operativo')),
@@ -37,7 +40,7 @@ final class AutorizacionRendimiento
         }
         $proceso = new Process(['powershell.exe', '-NoProfile', '-NonInteractive', '-File', __DIR__.'/identidad-procesos.ps1',
             '-PidMySql', (string) $m['mysql_pid'], '-PidApache', (string) $m['apache_pid'],
-            '-PuertoMySql', (string) $m['mysql_puerto'], '-PuertoApache', (string) parse_url($m['url'], PHP_URL_PORT)]);
+            '-PuertoMySql', (string) $m['mysql_puerto'], '-PuertoApache', (string) parse_url($m['url'], PHP_URL_PORT), '-Manifiesto', $ruta]);
         $proceso->setTimeout(15)->mustRun();
         $procesos = json_decode($proceso->getOutput(), true, 512, JSON_THROW_ON_ERROR);
         foreach (['mysql', 'apache'] as $tipo) {
@@ -84,10 +87,50 @@ final class AutorizacionRendimiento
             || strtotime($m['vence']) === false || strtotime($m['vence']) <= time()
             || $c['host'] !== '127.0.0.1' || $c['base'] !== $m['base'] || $c['usuario'] !== $m['usuario'] || $c['puerto'] !== $puerto
             || $c['app_url'] !== $m['url'] || ! $c['checkout'] || ! $c['operativo']
-            || strcasecmp($c['checkout'], $c['operativo']) === 0
-            || strcasecmp($c['checkout'], $m['checkout']) !== 0 || strcasecmp($c['operativo'], $m['operativo']) !== 0) {
+            || self::normalizarRuta($c['checkout']) === self::normalizarRuta($c['operativo'])
+            || self::normalizarRuta($c['checkout']) !== self::normalizarRuta($m['checkout']) || self::normalizarRuta($c['operativo']) !== self::normalizarRuta($m['operativo'])) {
             throw new RuntimeException('Destino, operación o identidad de configuración no autorizados.');
         }
+    }
+
+    public static function rutaCanonica(string $ruta): string
+    {
+        $real = realpath($ruta);
+        if ($real === false || self::normalizarRuta($real) !== self::normalizarRuta($ruta)) {
+            throw new RuntimeException('Ruta inexistente, no canónica o redirigida.');
+        }
+        for ($actual = $real; ; $actual = dirname($actual)) {
+            if (is_link($actual)) {
+                throw new RuntimeException('No se permiten enlaces en las rutas autorizadas.');
+            }
+            if (dirname($actual) === $actual) {
+                break;
+            }
+        }
+
+        return self::normalizarRuta($real);
+    }
+
+    /** @param array<int, array<string, mixed>> $filas */
+    public static function validarPermisosIniciales(array $filas): void
+    {
+        if (count($filas) !== 1 || ($filas[0]['nombre'] ?? null) !== 'pedidos.cancelar'
+            || ($filas[0]['descripcion'] ?? null) !== 'Permite cancelar pedidos con motivo.'
+            || ! array_key_exists('es_sistema', $filas[0]) || (bool) $filas[0]['es_sistema'] !== false) {
+            throw new RuntimeException('Carga bloqueada: permisos distintos del registro técnico de la migración inicial.');
+        }
+    }
+
+    private static function normalizarRuta(string $ruta): string
+    {
+        $ruta = rtrim(str_replace('\\', '/', $ruta), '/');
+
+        return PHP_OS_FAMILY === 'Windows' ? strtolower($ruta) : $ruta;
+    }
+
+    public static function variablePrivada(string $nombre): string
+    {
+        return (string) ($_ENV[$nombre] ?? getenv($nombre));
     }
 
     /** @param array<string, mixed> $m

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\DataProvider;
 use RuntimeException;
+use Symfony\Component\Process\Process;
 use Tests\Performance\AutorizacionRendimiento;
 use Tests\TestCase;
 
@@ -84,6 +85,98 @@ class AislamientoRendimientoTest extends TestCase
             $this->assertSame([], $consultas);
         } finally {
             $previo === false ? putenv('RENDIMIENTO_MANIFIESTO') : putenv('RENDIMIENTO_MANIFIESTO='.$previo);
+        }
+    }
+
+    public function test_separadores_equivalentes_no_cambian_el_destino_exacto(): void
+    {
+        [$m, $c] = $this->escenario();
+        $c['checkout'] = str_replace('/', '\\', $m['checkout']);
+        $c['operativo'] = str_replace('/', '\\', $m['operativo']);
+        AutorizacionRendimiento::validarConfiguracion($m, 'verificar', $c);
+        $this->addToAssertionCount(1);
+    }
+
+    public function test_un_directorio_con_prefijo_similar_no_es_equivalente(): void
+    {
+        [$m, $c] = $this->escenario();
+        $c['checkout'] .= '_otro';
+        $this->expectException(RuntimeException::class);
+        AutorizacionRendimiento::validarConfiguracion($m, 'verificar', $c);
+    }
+
+    public function test_ruta_real_existente_es_canonica(): void
+    {
+        $ruta = realpath(__DIR__);
+        $esperada = str_replace('\\', '/', $ruta);
+        $this->assertSame(PHP_OS_FAMILY === 'Windows' ? strtolower($esperada) : $esperada, AutorizacionRendimiento::rutaCanonica($ruta));
+    }
+
+    public function test_ruta_inexistente_se_rechaza(): void
+    {
+        $this->expectException(RuntimeException::class);
+        AutorizacionRendimiento::rutaCanonica(__DIR__.'/inexistente_'.bin2hex(random_bytes(8)));
+    }
+
+    public function test_alias_por_navegacion_no_se_acepta_como_ruta_canonica(): void
+    {
+        $this->expectException(RuntimeException::class);
+        AutorizacionRendimiento::rutaCanonica(__DIR__.'/../Feature');
+    }
+
+    public function test_solo_admite_el_permiso_tecnico_generado_por_la_migracion(): void
+    {
+        $permiso = ['nombre' => 'pedidos.cancelar', 'descripcion' => 'Permite cancelar pedidos con motivo.', 'es_sistema' => 0];
+        AutorizacionRendimiento::validarPermisosIniciales([$permiso]);
+        $this->addToAssertionCount(1);
+        $this->expectException(RuntimeException::class);
+        AutorizacionRendimiento::validarPermisosIniciales([$permiso, ['nombre' => 'otro']]);
+    }
+
+    public function test_no_admite_otro_permiso_inicial_ni_su_descripcion_alterada(): void
+    {
+        $this->expectException(RuntimeException::class);
+        AutorizacionRendimiento::validarPermisosIniciales([['nombre' => 'pedidos.cancelar', 'descripcion' => 'Diferente', 'es_sistema' => 0]]);
+    }
+
+    public function test_enlace_o_junction_no_puede_suplantar_la_ruta_autorizada(): void
+    {
+        $raiz = sys_get_temp_dir().DIRECTORY_SEPARATOR.'dhacer_rutas_'.bin2hex(random_bytes(8));
+        mkdir($raiz, 0700);
+        $destino = $raiz.DIRECTORY_SEPARATOR.'destino';
+        $enlace = $raiz.DIRECTORY_SEPARATOR.'alias';
+        mkdir($destino, 0700);
+        $creado = false;
+        try {
+            if (PHP_OS_FAMILY === 'Windows') {
+                (new Process(['cmd.exe', '/c', 'mklink', '/J', $enlace, $destino]))->mustRun();
+            } else {
+                $this->assertTrue(symlink($destino, $enlace));
+            }
+            $creado = true;
+            clearstatcache(true);
+            $this->expectException(RuntimeException::class);
+            AutorizacionRendimiento::rutaCanonica($enlace);
+        } finally {
+            if ($creado && PHP_OS_FAMILY !== 'Windows') {
+                unlink($enlace);
+            } elseif ($creado) {
+                rmdir($enlace);
+            }
+            rmdir($destino);
+            rmdir($raiz);
+        }
+    }
+
+    public function test_configuracion_local_de_la_peticion_prevalece_sobre_entorno_del_proceso(): void
+    {
+        putenv('RENDIMIENTO_PRUEBA_LOCAL=proceso');
+        $_ENV['RENDIMIENTO_PRUEBA_LOCAL'] = 'peticion';
+        try {
+            $this->assertSame('peticion', AutorizacionRendimiento::variablePrivada('RENDIMIENTO_PRUEBA_LOCAL'));
+        } finally {
+            unset($_ENV['RENDIMIENTO_PRUEBA_LOCAL']);
+            putenv('RENDIMIENTO_PRUEBA_LOCAL');
         }
     }
 }

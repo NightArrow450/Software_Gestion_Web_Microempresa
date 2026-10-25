@@ -44,6 +44,11 @@ class CargaSeeder extends Seeder
         }
         foreach ($tablas as $tabla) {
             if ($tabla !== 'migrations' && DB::table($tabla)->exists()) {
+                if ($tabla === 'permisos') {
+                    AutorizacionRendimiento::validarPermisosIniciales(DB::table($tabla)->get()->map(static fn ($fila): array => (array) $fila)->all());
+
+                    continue;
+                }
                 throw new RuntimeException('Carga bloqueada: la base debe contener solo el esquema vacío autorizado.');
             }
         }
