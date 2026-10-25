@@ -405,3 +405,77 @@ El diagnóstico está versionado como perfilar-preparacion.php. Solo mide contro
 Después del perfil final, **54/54 verificaciones HTTP volvieron a aprobar**, incluido D9A-01, roles y las quince exportaciones. Inventario de cierre: correcto, cero inconsistencias/huérfanos. No se repitió el script que crea pedido/envasado: la medición de escritura y sus tiempos pertenecen al perfil inicial. Las cantidades finales continúan en 3001 pedidos, 3005 líneas, 181 envasados y 2464 movimientos; los tres materiales suman 295224 unidades y los productos 4487912. Son únicamente saldos ficticios, no cifras de la empresa.
 
 **Balance definitivo de esta entrega:** carga de 20 usuarios completada y error HTTP objetivo cumplido; latencia objetivo NO cumplida; estrés hasta 50 y compatibilidad visual PENDIENTES/OBSERVADOS; ZAP con advertencias; UAT pendientes de empresa. No se declara 9B plenamente aprobada. La documentación 9C no se mezcla con este PR y requiere primero su merge manual. La demostración sigue utilizable mediante el lanzador probado.
+
+### Revisión focalizada posterior autorizada — 25/10/2026
+
+Este apartado actualiza el balance anterior, sin eliminar los 14 ensayos originales. Las correcciones se limitan a D9B-P01, instrumentación y pruebas. No se cambió el esquema ni se conectó a las bases protegidas.
+
+#### D9B-P01: corrección y equivalencia
+
+La lista obtiene una fotografía local de paquetes activos, su versión vigente, componentes y SKU con producto/variante para el conjunto de pedidos filtrados. La misma fotografía sirve a `pendientes` y `lineasFisicas`; no se almacena en el servicio, sesión ni caché. Los otros consumidores conservan su lectura actual, incluidos cierre y despacho. No cambian transacciones, precios, cantidades, historial, permisos ni inventario.
+
+| Mismo escenario ficticio | Consultas antes | Consultas después | Tiempo CLI antes | Tiempo CLI después | Resultado |
+| --- | ---: | ---: | ---: | ---: | --- |
+| 180 pedidos surtidos, 27 filas, 3720 unidades | 1270 | 15 | 1586,86 ms | 368,31 ms | SHA-256 de filas y pendientes idéntico |
+| 100 pedidos normales, 5 filas, 1600 unidades | 8 | 8 | 42,85 ms | 45,12 ms | SHA-256 idéntico; variación pequeña no atribuida a una regresión |
+
+Son lecturas del controlador sin Blade, en procesos CLI comparables; no se equiparan con latencias HTTP ni se comparan totales entre los dos períodos. Las nuevas regresiones comparan toda la proyección normal y surtida, versiones anteriores, paquetes retirados, composiciones pendientes, demanda física y ausencia de caché obsoleta. El número de consultas de precarga es constante (hasta cinco); su uso posterior no ejecuta consultas por pedido. D9B-P01 queda corregido cuando las regresiones y la CI final aprueban.
+
+#### Bloqueo del instrumento de medición
+
+El fallo original era `ProcessTimedOutException` del inspector PowerShell a 15 s con CPU muestreada al 100 %, no un error SQL ni una identidad distinta. Todos los VU verifican procesos/puertos antes de visitar módulos; iniciar hasta 32 inspectores dentro del Apache de 32 hilos genera contención adicional a la aplicación.
+
+El primer ajuste de dos cupos resultó demasiado restrictivo: `carga20-cierre-001` se detuvo a 35,5 s por espera agotada, con 229 solicitudes. Se conserva como fallo de instrumentación, no como carga aprobada ni brecha de aislamiento. La identidad vuelve a verificarse antes de otra prueba.
+
+El ajuste final permite **ocho inspectores simultáneos**, con archivos de bloqueo dentro de la raíz privada, liberación incluso ante excepciones y espera máxima inicial de 35 s. Cada solicitud realiza sus comprobaciones de nuevo; no hay caché, resultados compartidos ni comprobaciones omitidas. El primer ensayo con ocho cupos llegó a 46 VU y se detuvo por espera de 35 s. Se añadió una cola por antigüedad con ventana de ocho candidatos para impedir que solicitudes nuevas se adelanten fuera de esa ventana; el límite final de espera es 60 s. El endpoint de control y su cliente disponen de 90 s solo para absorber esa espera. Cada subproceso conserva su timeout de 15 s; una espera o inspección fallida produce 503 y aborta k6. No se modifica el límite de ejecución del resto de la aplicación. Un turno residual de un proceso abortado provoca bloqueo seguro: no se limpia automáticamente para forzar el ensayo. Se sustituyó el cmdlet de red por una consulta directa a `MSFT_NetTCPConnection`, manteniendo puerto, estado Listen, dirección loopback y propietario. Las pruebas cubren ejecución repetida, propagación del fallo, liberación y rechazo si todos los cupos están ocupados.
+
+Las métricas HTTP de identidad y consultas se separan por etiquetas. El throughput incluye instrumentación; no es capacidad productiva. El monitor intenta incluir los descendientes PowerShell exclusivos del Apache ficticio; la revisión de CSV no los encontró detrás de cmd.exe. Por ello su desglose individual queda sin medir (null), aunque la RAM y CPU globales sí incluyen todo el instrumento. No se afirma cero consumo del inspector. Se conservan 32 hilos Apache, PHP 128 MiB, OPcache privado 64 MiB y los controles de memoria. No se ejecutaron suites pesadas simultáneamente con k6.
+
+#### Revisión de los cinco tipos de alertas ZAP
+
+Se conservaron el JSON/HTML originales privados y el resumen sanitizado anterior, con sus hashes. Esta revisión no convierte el escaneo pasivo en una prueba de explotación completa.
+
+| ID / riesgo de ZAP | Evidencia e impacto | Evaluación / acción |
+| --- | --- | --- |
+| 10038 / medio | Cinco rutas sin CSP ejecutable; existe `Content-Security-Policy-Report-Only` en CabecerasSeguridad | Falta real de defensa adicional: Report-Only no bloquea inyecciones. No prueba por sí sola un XSS explotable. Promover una política requiere revisar JS/CSS inline y una autorización productiva específica; no se modifica aquí. |
+| 90003 / medio | Cinco instancias de enlaces externos sin SRI; las vistas cargan CSS de Google Fonts | Dependencia real de integridad/disponibilidad de terceros. No indica compromiso actual. Preferible alojar fuentes localmente o fijar recursos inmutables verificables; no imponer hashes a CSS variable por navegador ni cambiar assets productivos sin aprobación. |
+| 10044 / bajo | ZAP detectó cuerpo grande en la redirección de login | Se añadió comprobación HTTP que compara el cuerpo completo contra la plantilla estándar de RedirectResponse del framework. Publicar únicamente bytes, hash y equivalencia; nunca el cuerpo o las cookies. El resultado nuevo queda en cierre_9b.json. No inferir fuga solo por tamaño. |
+| 10010 / bajo | Las cinco instancias corresponden a `XSRF-TOKEN` | No corresponden a la cookie de sesión. El token CSRF debe poder leerlo el cliente JS en el mecanismo del framework; no se marca HttpOnly indiscriminadamente. La cookie de sesión conserva HttpOnly/SameSite. No constituye por sí solo secuestro de sesión. |
+| 10036 / bajo | La cabecera Server del Apache ficticio informa versión | Divulgación real del laboratorio. No demuestra una vulnerabilidad de esa versión ni certifica el servidor productivo. Endurecimiento de cabecera propuesto; no se cambia el Apache operativo. |
+
+Fuentes primarias: [regla ZAP 10044](https://www.zaproxy.org/docs/alerts/10044-1/), [regla ZAP 90003](https://www.zaproxy.org/docs/alerts/90003/) y [middleware CSRF Laravel 13](https://api.laravel.com/docs/13.x/Illuminate/Foundation/Http/Middleware/PreventRequestForgery.html). Cero alertas altas no significa ausencia de vulnerabilidades. HTTPS, HSTS y Secure no se acreditan desde el HTTP local. Se conserva la advertencia de antigüedad del catálogo de reglas.
+
+#### Compatibilidad y aceptación
+
+Se intentó nuevamente iniciar Chrome y leer su estado mediante la herramienta aprobada. La verificación de URL volvió a detener el control antes de poder navegar de forma segura. No se modificó ni se eludió ese control, y no se recurrió a otra automatización de interfaz tras el bloqueo. Por ello las **180 combinaciones de Chrome/Firefox/Edge y 360/390/768/1024/1366 px siguen PENDIENTES DE EJECUCIÓN**. No hay capturas nuevas certificadas, ni los GET o las pruebas JavaScript sustituyen esta matriz. Es una limitación externa del instrumento, no un defecto visual demostrado de la aplicación.
+
+Las mediciones técnicas de usabilidad y las operaciones ficticias anteriores se conservan sin repetir escrituras para mejorar cifras. UAT: PENDIENTE DE EJECUCIÓN — VALIDACIÓN CON LA EMPRESA. La documentación de 9C irá en otro PR solo después del merge manual de 9B. Se mantienen exactamente dos guiones de video.
+
+#### Resultado final de las repeticiones focalizadas
+
+La cola corrigió el timeout original del subproceso pero no todos los atascos HTTP. `estres50-cierre-002` alcanzó 50 VU y se detuvo a 176 s por timeout HTTP de control de 90 s; no se registró una nueva excepción del inspector. El proceso terminó y los turnos se liberaron. Se conserva este intento con sus 50 iteraciones interrumpidas.
+
+**Perfil final C:** se conservó la configuración anterior y se estableció `KeepAlive Off` únicamente en Apache ficticio. El original quedó respaldado privadamente; se verificaron sintaxis, configuración y argumentos, se reinició solo el Apache independiente y se actualizaron las huellas/PID mediante el lanzador. MySQL operativo y MySQL independiente no se reiniciaron. El primer control de parada rechazó el auxiliar conhost; una lectura confirmó que era la consola nativa hija del Apache ficticio, y solo se detuvieron los procesos httpd verificados.
+
+Apache documenta que [ThreadsPerChild limita las conexiones concurrentes en mpm_winnt](https://httpd.apache.org/docs/2.4/mod/mpm_winnt.html) y que [KeepAlive conserva conexiones entre solicitudes](https://httpd.apache.org/docs/2.4/mod/core.html#keepalive). La combinación de 32 hilos, 50 clientes persistentes y el coste del inspector es compatible con el atasco observado. El ensayo sin persistencia completó las etapas; esto respalda la mitigación, pero no aporta una traza de red/WMI suficiente para atribuir toda la latencia a una causa única. **No se propone desactivar KeepAlive en producción sin un estudio propio.** Tampoco se aumentaron los hilos ni el presupuesto de memoria para forzar el resultado.
+
+| Perfil final C | VU máximos reales | Solicitudes | Solicitudes/s | p95 listados | Errores HTTP | Checks correctos | Completas / interrumpidas |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Humo | 1 | 8 | 1,020 | 378,985 ms | 0 % | 6 | 1 / 0 |
+| Carga, 120 s activos | 20 | 1102 | 8,210 | 825,318 ms | 0 % | 905 | 177 / 0 |
+| Estrés, etapas de 310 s | 50 | 1584 | 5,024 | **3731,294 ms** | 0 % | 1286 | 245 / 4 |
+| Recuperación separada, 60 s activos | 1 | 56 | 0,852 | 386,822 ms | 0 % | 46 | 9 / 0 |
+
+El número de completas de la carga se contrasta con la consola y el JSON en cierre_9b.json; no confundir checks, solicitudes e iteraciones. La duración efectiva incluye cierre normal de las iteraciones. El estrés completó subida 10/20/35/50, minuto de sostenimiento, descenso, minuto de recuperación objetivo y cierre. Hubo 65 muestras con 50 VU; se conservan primera/última marca temporal. Sus **cuatro interrupciones de iteración durante la reducción de VU** se registran aunque no produjeron errores HTTP devueltos; no afirmar que se completaron todos los recorridos iniciados. Los 1286 checks corresponden a respuestas efectivamente comprobadas. La recuperación separada certifica además un minuto estabilizado a un VU, evitando confundir el drenaje de iteraciones del estrés con esa medición.
+
+**La carga cumple p95 <1 s y errores <1 %. El estrés sigue incumpliendo p95 <1 s.** El p95 del control fue 14,490 s en carga y 46,061 s en estrés, separado de los listados. La instrumentación limita el throughput y ocupa recursos del mismo equipo; los resultados no son capacidad certificada de producción ni una simulación Linux. El perfil con KeepAlive On había completado cargas de 1234 y 1270 solicitudes con p95 de 796 y 801 ms; se conserva su mayor throughput, sin elegir únicamente la cifra más favorable.
+
+RAM libre mínima: 5223 MiB en carga, 5441 MiB en estrés y 5911 MiB en recuperación. CPU máxima: 100 %, 100 % y 37 % respectivamente. No se alcanzó el corte por RAM ni el límite de diez minutos. El nuevo cierre conserva **12 ensayos adicionales**, además de los 14 anteriores; se incluyen los abortos de instrumento y la recuperación. Métodos, valores, hashes y comandos están en [cierre_9b.json](evidencias/cierre_9b.json); la comparación exacta de D9B-P01, en [comparacion_preparacion_9b.json](evidencias/comparacion_preparacion_9b.json).
+
+Seguridad nueva: **55/55** comprobaciones HTTP aprobadas. ZAP 10044: respuesta de login 302, 370 bytes, cuerpo idéntico a RedirectResponse; no hay fuga demostrada en ese cuerpo. No se extrapola a todas las redirecciones. Las otras observaciones de CSP, fuentes y servidor permanecen documentadas; no se hizo una corrección productiva sensible sin permiso.
+
+La verificación ficticia final conserva **3001 pedidos, 3005 líneas, 181 envasados, 2464 movimientos, 45 migraciones, saldo de productos 4487912 y saldo de materiales 295224,000**. Inventario correcto, cero inconsistencias/huérfanos y cero despachos sin salida vinculada. Solo los accesos de prueba pueden agregar auditoría/sesiones ficticias; no se alteraron cantidades comerciales o saldos. Las bases protegidas nunca se conectaron.
+
+Validación local final: **622 pruebas Laravel / 3826 aserciones / 64907 ms**, 33 unitarias puras + 578 Feature + 11 Security, cero fallos/errores/omitidas. JavaScript **28/28**, Larastan nivel 5 cero errores, Pint aprobado, Vite 3,94 s con los avisos opcionales existentes y ambas auditorías sin vulnerabilidades. La suite MySQL se ejecuta exclusivamente en la CI efímera; el resultado del último commit se publica en el PR.
+
+**Estado:** D9B-P01 corregido y equivalencia comprobada; estrés completo con meta de latencia no cumplida y cuatro iteraciones interrumpidas; compatibilidad visual pendiente por bloqueo externo de URL; endurecimiento productivo propuesto y UAT empresarial pendientes. El PR queda para revisión manual con estas limitaciones, no como aprobación universal. No se inició 9C.

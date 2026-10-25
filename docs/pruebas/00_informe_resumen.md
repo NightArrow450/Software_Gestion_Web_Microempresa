@@ -89,3 +89,22 @@ Fuentes nuevas: [resultados](evidencias/resultados_9b.json), [ZAP sanitizado](ev
 **No se declara 9B completamente aprobada:** latencia fuera de meta, estrés/recuperación incompletos, N+1 confirmado en preparación de surtidos (1270 consultas para 180 pedidos) y revisión visual pendiente. Las bases protegidas no se utilizaron. No hubo merge automático. La preparación documental de 9C corresponde a otro PR después del merge manual; la participación empresarial sigue PENDIENTE DE EJECUCIÓN — VALIDACIÓN CON LA EMPRESA.
 
 Se consolidaron [exactamente dos guiones](../guiones-demostracion.md): funcionamiento de la web y pruebas del software. La demostración puede reiniciarse con el lanzador de identidad del checkout privado, sin migraciones ni seeders.
+
+## Revisión focalizada final de 9B — 25/10/2026
+
+Este apartado actualiza los resultados anteriores, que permanecen como historial. [Evidencia nueva](evidencias/cierre_9b.json) y [comparación D9B-P01](evidencias/comparacion_preparacion_9b.json).
+
+- D9B-P01 corregido: 1270 → 15 consultas para los mismos 180 pedidos surtidos; filas, pendientes y 3720 unidades idénticos por SHA-256. Normales: 8 → 8. Sin migraciones ni cambios de inventario.
+- Instrumentación: inspección fresca por solicitud, máximo ocho inspectores, ventana por antigüedad, espera acotada a 60 s y timeout de subproceso intacto en 15 s. Perfil Apache privado final de 32 hilos con KeepAlive Off; no se cambió el servidor operativo. Se conservaron los intentos fallidos y los perfiles intermedios.
+- Humo final: 1 VU, 8 solicitudes, cero errores HTTP, p95 379 ms.
+- Carga final: 20 VU/120 s, 1102 solicitudes, 8,210 solicitudes/s, 905 checks correctos, cero errores HTTP y p95 825 ms: metas de latencia y errores cumplidas.
+- Estrés final: completó las etapas hasta 50 VU y el sostenimiento/recuperación programados; 1584 solicitudes, 5,024 solicitudes/s, 1286 checks correctos, cero errores HTTP. **p95 3,731 s: meta NO cumplida.** Cuatro iteraciones interrumpidas durante la bajada de VU, registradas sin ocultarlas.
+- Recuperación separada: 1 VU/60 s, 56 solicitudes, 46 checks correctos, cero errores y cero interrupciones, p95 387 ms.
+- HTTP de seguridad: 55/55. La redirección señalada por ZAP tiene un cuerpo de 370 bytes idéntico a la plantilla del framework. CSP ejecutable y SRI siguen como endurecimientos propuestos sujetos a autorización; ausencia de alertas altas no equivale a ausencia de vulnerabilidades.
+- Laravel final local: **622/622**, **3826 aserciones**, **33 unitarias puras + 578 Feature + 11 Security** sin duplicación, cero omitidas. JavaScript 28/28; Larastan nivel 5 cero errores; Pint/Vite y auditorías aprobados. MySQL/CI final: resultado real enlazado en el PR #43, exclusivamente contenedor temporal independiente.
+- Inventario ficticio sin inconsistencias ni huérfanos; pedidos, líneas, envasados, movimientos y saldos coinciden con el snapshot anterior. No hubo conexión a las bases protegidas.
+- **180 combinaciones visuales pendientes:** el nuevo intento de Chrome volvió a ser bloqueado al no acreditarse la URL. No se fabrican capturas. Usabilidad técnica anterior conservada; UAT real pendiente de empresa.
+
+La prueba de estrés es ejecutada, pero no cumple toda la meta de rendimiento. No se certifica capacidad productiva: el inspector y k6 comparten CPU con la aplicación. El muestreo no desglosó PowerShell detrás de cmd.exe; RAM/CPU globales sí incluyen su coste. Se mantienen la deuda de formato de 41 archivos, workflow_dispatch condicionado a main y los límites del verificador acumulado en memoria.
+
+PR #43 para revisión y merge manual con limitaciones explícitas. No se inició 9C ni se mezclaron sus documentos; después del merge se preparará su PR independiente. Los dos videos usan las evidencias guardadas, sin repetir estrés ni presentar UAT como realizadas.
