@@ -2,7 +2,7 @@
 
 Fecha: 25/10/2026, America/Lima. Base: develop, integración fa437077fb7cdb7d8a1c9437353d1fa394ad6b42. Rama: feature/fase9a-pruebas-funcionales-unitarias.
 
-**La Fase 9 NO está aprobada en conjunto.** D9A-01 fue corregido con autorización específica y su reproducción ahora es una regresión permanente aprobada. 9B y 9C no se han iniciado.
+**La Fase 9 NO está aprobada en conjunto.** D9A-01 fue corregido con autorización específica y su reproducción ahora es una regresión permanente aprobada. 9B tiene solo [scripts, controles y procedimientos preparados](03_no_funcionales.md): no se ejecutaron las pruebas no funcionales reales ni CargaSeeder. 9C no se ha iniciado. Las cifras de este informe corresponden al cierre de 9A; los resultados nuevos de preparación de 9B se registran aparte y no se reutilizan como carga/estrés.
 
 ## Fuente y alcance
 

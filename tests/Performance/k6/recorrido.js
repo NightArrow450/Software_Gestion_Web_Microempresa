@@ -16,10 +16,10 @@ export function identidad() {
         fail('Falta clave de control privada o pedido sintético autorizado.');
     }
     const nonce = crypto.sha256(`${Date.now()}-${exec.vu.idInTest}-${Math.random()}`, 'hex');
-    const r = http.get(`${base}/__control_rendimiento`, { redirects: 0, headers: { 'X-Control-Nonce': nonce }, tags: { nombre: 'identidad', fase: 'control' } });
+    const r = http.get(`${base}/__control_rendimiento`, { redirects: 0, headers: { 'X-Control-Nonce': nonce, 'X-Control-Operacion': 'medir' }, tags: { nombre: 'identidad', fase: 'control' } });
     let d;
     try { d = r.json(); } catch (_) { exec.test.abort('Respuesta de identidad inválida; se detiene sin visitar módulos.'); }
-    const mensaje = `${manifiesto.autorizacion}|${base}|${manifiesto.base}|${nonce}`;
+    const mensaje = `${manifiesto.autorizacion}|${base}|${manifiesto.base}|medir|${nonce}`;
     if (r.status !== 200 || d.url !== base || d.base !== manifiesto.base || d.autorizacion !== manifiesto.autorizacion
         || d.firma !== crypto.hmac('sha256', __ENV.RENDIMIENTO_CLAVE_CONTROL, mensaje, 'hex')) {
         exec.test.abort('El servidor no acredita la identidad independiente autorizada.');

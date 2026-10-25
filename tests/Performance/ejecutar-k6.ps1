@@ -12,8 +12,19 @@ $generador=Get-Command k6 -ErrorAction Stop
 $memoria=Get-CimInstance Win32_PerfFormattedData_PerfOS_Memory
 if ($memoria.AvailableMBytes -lt 2048) { throw 'No se iniciará la carga con menos de 2048 MiB libres. Requiere evaluar una alternativa.' }
 $env:K6_NO_USAGE_REPORT='true'
+$env:HTTP_PROXY=''
+$env:HTTPS_PROXY=''
+$env:ALL_PROXY=''
+$env:NO_PROXY='127.0.0.1,localhost'
 $argumentos=@('run','--summary-export',('"'+$SalidaPrivadaNueva+'.resumen.json"'),'--out',('"json='+$SalidaPrivadaNueva+'.series.json"'),('"'+(Join-Path $PSScriptRoot "k6/$Escenario.js")+'"'))
 $proceso = Start-Process -FilePath $generador.Source -ArgumentList $argumentos -WindowStyle Hidden -PassThru -RedirectStandardOutput ($SalidaPrivadaNueva+'.stdout.txt') -RedirectStandardError ($SalidaPrivadaNueva+'.stderr.txt')
-& (Join-Path $PSScriptRoot 'medir-recursos.ps1') -Manifiesto $env:RENDIMIENTO_MANIFIESTO -PidK6 $proceso.Id -SalidaNueva ($SalidaPrivadaNueva+'.recursos.csv')
+$inicioProceso=$proceso.StartTime
+try {
+    & (Join-Path $PSScriptRoot 'medir-recursos.ps1') -Manifiesto $env:RENDIMIENTO_MANIFIESTO -PidK6 $proceso.Id -SalidaNueva ($SalidaPrivadaNueva+'.recursos.csv')
+} catch {
+    $actual=Get-Process -Id $proceso.Id -ErrorAction SilentlyContinue
+    if ($actual -and $actual.ProcessName -eq 'k6' -and $actual.StartTime -eq $inicioProceso) { Stop-Process -Id $actual.Id }
+    throw
+}
 $proceso.WaitForExit()
 if ($proceso.ExitCode -ne 0) { throw 'k6 terminó con observaciones o interrupción; conservar todos los reportes.' }

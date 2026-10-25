@@ -8,6 +8,8 @@ if (-not $generador -or $generador.Name -ne 'k6.exe') { throw 'PID del generador
 $creacion = $generador.CreationDate
 $bajaMemoria = 0
 $inicio = [DateTime]::UtcNow
+$previos=@{}
+$nucleos=[Environment]::ProcessorCount
 while ($generador) {
     $memoria = Get-CimInstance Win32_PerfFormattedData_PerfOS_Memory
     $cpu = Get-CimInstance Win32_PerfFormattedData_PerfOS_Processor -Filter "Name='_Total'"
@@ -15,9 +17,20 @@ while ($generador) {
     $hijos = @(Get-CimInstance Win32_Process | Where-Object { $_.ParentProcessId -in $ids -and $_.Name -in @('httpd.exe','mysqld.exe','php.exe') })
     $ids += @($hijos.ProcessId)
     $procesos = @(Get-Process -Id ($ids | Select-Object -Unique) -ErrorAction SilentlyContinue)
-    [pscustomobject]@{fecha_utc=[DateTime]::UtcNow.ToString('o');cpu_equipo_pct=$cpu.PercentProcessorTime;
-        memoria_disponible_mb=$memoria.AvailableMBytes;memoria_procesos_bytes=($procesos.WorkingSet64|Measure-Object -Sum).Sum;
-        cpu_procesos_segundos=($procesos.CPU|Measure-Object -Sum).Sum} | Export-Csv -LiteralPath $SalidaNueva -Append -NoTypeInformation -Encoding utf8
+    $ahora=[DateTime]::UtcNow
+    foreach ($proceso in $procesos) {
+        $porcentaje=0
+        if ($previos.ContainsKey($proceso.Id)) {
+            $previo=$previos[$proceso.Id]
+            $segundos=($ahora-$previo.fecha).TotalSeconds
+            if ($segundos -gt 0) { $porcentaje=100*($proceso.CPU-$previo.cpu)/($segundos*$nucleos) }
+        }
+        [pscustomobject]@{fecha_utc=$ahora.ToString('o');pid=$proceso.Id;proceso=$proceso.ProcessName;cpu_proceso_pct=$porcentaje;
+            cpu_equipo_pct=$cpu.PercentProcessorTime;memoria_disponible_mb=$memoria.AvailableMBytes;
+            working_set_bytes=$proceso.WorkingSet64;memoria_privada_bytes=$proceso.PrivateMemorySize64;cpu_acumulada_segundos=$proceso.CPU
+        } | Export-Csv -LiteralPath $SalidaNueva -Append -NoTypeInformation -Encoding utf8
+        $previos[$proceso.Id]=@{fecha=$ahora;cpu=$proceso.CPU}
+    }
     if ($memoria.AvailableMBytes -lt 512) { $bajaMemoria++ } else { $bajaMemoria=0 }
     $generador = Get-CimInstance Win32_Process -Filter ('ProcessId='+$PidK6)
     if ($bajaMemoria -ge 15 -or ([DateTime]::UtcNow-$inicio).TotalSeconds -gt 600) {
