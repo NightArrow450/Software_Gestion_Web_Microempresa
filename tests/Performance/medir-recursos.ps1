@@ -14,8 +14,11 @@ while ($generador) {
     $memoria = Get-CimInstance Win32_PerfFormattedData_PerfOS_Memory
     $cpu = Get-CimInstance Win32_PerfFormattedData_PerfOS_Processor -Filter "Name='_Total'"
     $ids = @([int]$m.mysql_pid,[int]$m.apache_pid,$PidK6)
-    $hijos = @(Get-CimInstance Win32_Process | Where-Object { $_.ParentProcessId -in $ids -and $_.Name -in @('httpd.exe','mysqld.exe','php.exe') })
-    $ids += @($hijos.ProcessId)
+    $candidatos = @(Get-CimInstance Win32_Process | Where-Object { $_.Name -in @('httpd.exe','mysqld.exe','php.exe','powershell.exe') })
+    do {
+        $nuevos = @($candidatos | Where-Object { $_.ParentProcessId -in $ids -and $_.ProcessId -notin $ids })
+        $ids += @($nuevos.ProcessId)
+    } while ($nuevos.Count -gt 0)
     $procesos = @(Get-Process -Id ($ids | Select-Object -Unique) -ErrorAction SilentlyContinue)
     $ahora=[DateTime]::UtcNow
     foreach ($proceso in $procesos) {

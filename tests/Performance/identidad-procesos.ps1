@@ -22,7 +22,7 @@ foreach ($entrada in @(@('mysql',$PidMySql,'mysqld.exe'),@('apache',$PidApache,'
     finally { $sha.Dispose() }
     $resultado[$entrada[0]] = @{binario=$proceso.ExecutablePath;argumentos_sha256=$huella}
 }
-$conexiones = @(Get-NetTCPConnection -State Listen -LocalPort @($PuertoMySql,$PuertoApache))
+$conexiones = @(Get-CimInstance -Namespace root/StandardCimv2 -ClassName MSFT_NetTCPConnection -Filter ('State=2 AND (LocalPort='+$PuertoMySql+' OR LocalPort='+$PuertoApache+')'))
 foreach ($puerto in @(@($PuertoMySql,$PidMySql),@($PuertoApache,$PidApache))) {
     $listeners = @($conexiones | Where-Object { $_.LocalPort -eq $puerto[0] })
     if ($listeners.Count -eq 0) { throw 'No existe el listener autorizado.' }

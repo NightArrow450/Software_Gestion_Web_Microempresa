@@ -16,10 +16,13 @@ try {
         || strcasecmp((string) realpath($_SERVER['DOCUMENT_ROOT'] ?? ''), (string) realpath($app->publicPath())) !== 0) {
         throw new RuntimeException('Control no autorizado.');
     }
+    $inicioControl = hrtime(true);
+    set_time_limit(90);
     $m = (new AutorizacionRendimiento)->verificar($operacion);
     $mensaje = $m['autorizacion'].'|'.$m['url'].'|'.$m['base'].'|'.$operacion.'|'.$nonce;
     $opcache = function_exists('opcache_get_status') ? opcache_get_status(false) : false;
     echo json_encode(['autorizacion' => $m['autorizacion'], 'url' => $m['url'], 'base' => $m['base'], 'firma' => hash_hmac('sha256', $mensaje, $clave),
+        'duracion_control_ms' => (hrtime(true) - $inicioControl) / 1e6,
         'perfil_php' => ['opcache' => is_array($opcache) && ($opcache['opcache_enabled'] ?? false), 'cache_id' => ini_get('opcache.cache_id'), 'memory_limit' => ini_get('memory_limit')]], JSON_THROW_ON_ERROR);
 } catch (Throwable $error) {
     error_log('Control independiente bloqueado: '.get_class($error).' '.$error->getMessage());

@@ -1,4 +1,4 @@
-param([Parameter(Mandatory)][ValidateSet('humo','carga','estres')][string]$Escenario,
+param([Parameter(Mandatory)][ValidateSet('humo','carga','estres','recuperacion')][string]$Escenario,
       [Parameter(Mandatory)][string]$SalidaPrivadaNueva)
 $ErrorActionPreference='Stop'
 foreach ($sufijo in @('', '.resumen.json', '.series.json', '.stdout.txt', '.stderr.txt', '.recursos.csv')) {
@@ -10,7 +10,7 @@ $bootstrap = Join-Path $PSScriptRoot 'configuracion/privada-bootstrap.php'
 if ($LASTEXITCODE -ne 0) { throw 'No se iniciará k6: identidad no verificada.' }
 $generador=Get-Command k6 -ErrorAction Stop
 $memoria=Get-CimInstance Win32_PerfFormattedData_PerfOS_Memory
-$minimaMiB = switch ($Escenario) { 'humo' { 2048 }; 'carga' { 4096 }; 'estres' { 3072 } }
+$minimaMiB = switch ($Escenario) { 'humo' { 2048 }; 'carga' { 4096 }; 'estres' { 3072 }; 'recuperacion' { 2048 } }
 if ($memoria.AvailableMBytes -lt $minimaMiB) { throw "No se iniciará $Escenario con menos de $minimaMiB MiB libres. Requiere evaluar una alternativa sin reducir los VU." }
 $env:K6_NO_USAGE_REPORT='true'
 $env:HTTP_PROXY=''

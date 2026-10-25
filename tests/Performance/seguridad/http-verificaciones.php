@@ -4,6 +4,8 @@ use App\Services\EntornoDemostracion;
 use App\Services\FilasIndicadores;
 use GuzzleHttp\Cookie\CookieJar;
 use Illuminate\Contracts\Console\Kernel;
+use Illuminate\Http\Client\Response;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Tests\Performance\AutorizacionRendimiento;
@@ -30,18 +32,26 @@ $token = static function (string $html): string {
 
     return html_entity_decode($coincidencia[1]);
 };
-$entrar = static function ($http, string $correo) use ($base, $token, $clave): void {
+$entrar = static function ($http, string $correo) use ($base, $token, $clave): Response {
     $pagina = $http->get($base.'/login');
     $r = $http->asForm()->post($base.'/login', ['_token' => $token($pagina->body()), 'email' => $correo, 'password' => $clave]);
     if ($r->status() !== 302 || ! str_ends_with((string) $r->header('Location'), '/dashboard')) {
         throw new RuntimeException('No se logró autenticar la cuenta ficticia prevista.');
     }
+
+    return $r;
 };
 $invitado = $cliente();
 $registrar('invitado_ruta_protegida', $invitado->get($base.'/dashboard')->status() === 302);
 $registrar('csrf_login_ausente', $invitado->asForm()->post($base.'/login', ['email' => 'vu1@carga.invalid', 'password' => 'incorrecta'])->status() === 419);
 $admin = $cliente();
-$entrar($admin, 'admin@carga.invalid');
+$login = $entrar($admin, 'admin@carga.invalid');
+$plantillaRedireccion = new RedirectResponse($base.'/dashboard');
+$registrar('ZAP_10044_cuerpo_redireccion_estandar', $login->body() === $plantillaRedireccion->getContent(), [
+    'http' => $login->status(), 'bytes' => strlen($login->body()),
+    'plantilla_framework_exacta' => $login->body() === $plantillaRedireccion->getContent(),
+    'sha256_cuerpo' => hash('sha256', $login->body()),
+]);
 $pagina = $admin->get($base.'/dashboard');
 $registrar('administrador_dashboard', $pagina->status() === 200);
 $sku = (int) DB::table('presentaciones_producto')->orderBy('id')->value('id');
