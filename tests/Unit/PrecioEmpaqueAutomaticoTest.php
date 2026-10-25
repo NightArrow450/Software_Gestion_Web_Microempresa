@@ -2,12 +2,32 @@
 
 namespace Tests\Unit;
 
-use App\Models\PresentacionProducto;
 use App\Http\Controllers\ProductoController;
+use App\Models\PresentacionProducto;
 use PHPUnit\Framework\TestCase;
 
 class PrecioEmpaqueAutomaticoTest extends TestCase
 {
+    public function test_sin_venta_por_empaque_se_conserva_el_precio_guardado(): void
+    {
+        $p = new PresentacionProducto(['venta_por_empaque' => false, 'precio_unitario' => 2, 'unidades_por_empaque' => 12, 'precio_empaque' => 31]);
+        $this->assertSame('31.00', $p->precio_empaque);
+    }
+
+    public function test_sin_precio_base_el_accesor_conserva_precio_historico_o_ausencia(): void
+    {
+        $p = new PresentacionProducto(['venta_por_empaque' => true, 'precio_unitario' => null, 'unidades_por_empaque' => 12, 'precio_empaque' => '36.50']);
+        $this->assertSame('36.50', $p->precio_empaque);
+        $p->precio_empaque = null;
+        $this->assertNull($p->precio_empaque);
+    }
+
+    public function test_factores_comerciales_limite_conservan_centimos(): void
+    {
+        $this->assertSame('0.04', PresentacionProducto::calcularPrecioEmpaque('0.02', 2));
+        $this->assertSame('10.00', PresentacionProducto::calcularPrecioEmpaque('0.01', 1000));
+    }
+
     public function test_multiplica_el_precio_unitario_por_las_unidades(): void
     {
         $this->assertSame('54.00', PresentacionProducto::calcularPrecioEmpaque('4.50', 12));
@@ -22,7 +42,7 @@ class PrecioEmpaqueAutomaticoTest extends TestCase
 
     public function test_el_servidor_calcula_el_precio_y_no_confia_en_el_precio_enviado(): void
     {
-        $controlador = new ProductoController();
+        $controlador = new ProductoController;
         $metodo = new \ReflectionMethod(ProductoController::class, 'datosPresentacion');
         $datos = $metodo->invoke($controlador, [
             'venta_por_unidad' => false,
