@@ -1,0 +1,37 @@
+{
+  "fecha": "2026-10-25T15:00:55.2570832-05:00",
+  "defecto": "D9B-P01",
+  "alcance": "Controlador CLI sin Blade, solo lectura en MySQL 8.4.3 ficticio; mismos filtros y datos antes/después",
+  "antes_sha256": "0b3275db94569b555058cffbd4ee8164d5cac5b13f8d14ff17f7fe1da22da458",
+  "despues_sha256": "e162fe78c2acc448e404a86385c461ecef5ce738f71110bca11a0a71736f4f13",
+  "escenarios": [
+    {
+      "pedidos": 180,
+      "resultado_sha256": "f474d6ddba34a485ffe71ea679e85f2ec20a20f3e35c9a382d36bb0407ec66af",
+      "nombre": "surtidos_hoy",
+      "despues_ms": 368.3089,
+      "antes_ms": 1586.8586,
+      "despues_memoria_pico_bytes": 31457280,
+      "antes_memoria_pico_bytes": 31457280,
+      "antes_consultas": 1270,
+      "unidades": 3720,
+      "resultado_identico": true,
+      "despues_consultas": 15,
+      "filas": 27
+    },
+    {
+      "pedidos": 100,
+      "resultado_sha256": "a52f822019b68096d2a558904d6cc1de98888658f75320a8a432be54c28dd26f",
+      "nombre": "normales_dos_dias",
+      "despues_ms": 45.1233,
+      "antes_ms": 42.8476,
+      "despues_memoria_pico_bytes": 31457280,
+      "antes_memoria_pico_bytes": 31457280,
+      "antes_consultas": 8,
+      "unidades": 1600,
+      "resultado_identico": true,
+      "despues_consultas": 8,
+      "filas": 5
+    }
+  ]
+}

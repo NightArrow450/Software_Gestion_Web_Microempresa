@@ -1,114 +1,67 @@
-# Guiones para ocho videos
+# Dos videos de DHACER ECO LIMP
 
-**Preparación, no evidencia de ejecución.** Grabar versiones definitivas después de Fase 9. Todos los resultados siguientes son esperados y deben contrastarse con el recorrido autorizado. No se han ejecutado estas escrituras como parte del PR 5.
+Guiones para grabación manual, con datos exclusivamente ficticios. No se graban automáticamente. Los recorridos HTTP y servicios se comprobaron en 9B; la revisión visual multibrowser quedó PENDIENTE por el bloqueo del control de interfaz. No afirmar que esa revisión o las UAT ya aprobaron.
 
 ## Preparación común
 
-Seguir [aislamiento y autorización](demostracion.md). Comprobar rótulo DEMOSTRACIÓN y origen local independiente antes de cada toma. Desactivar notificaciones, autocompletado y herramientas que puedan mostrar contraseñas; no filmar .env, logs privados o consolas con secretos. Usar cuentas y clientes ficticios, no cuentas empresariales.
+- Utilizar únicamente `http://127.0.0.1:8089`, checkout independiente y base `dhacer_eco_limp_demo_f9b_001`. Nunca grabar sobre la aplicación operativa de Laragon.
+- Abrir PowerShell y ejecutar el lanzador probado:
 
-Hoja de datos sintéticos propuesta, que se revisará antes de inicializar:
+```powershell
+& 'C:/Users/Stalin/AppData/Local/DhacerRendimiento/f9b_001/checkout/tests/Performance/iniciar-demostracion.ps1' -RaizPrivada 'C:/Users/Stalin/AppData/Local/DhacerRendimiento/f9b_001'
+```
 
-- Producto ficticio Limpiador de demostración; aromas Alfa/Beta/Gamma; SKU distintos de 1 L y otra presentación 500 ml para mostrar orden.
-- Precio unitario 1 L: S/ 2,00; empaque de 12: S/ 24,00; formato surtido de 12: S/ 24,00.
-- Pedido mixto: una caja normal de 12 Alfa y dos surtidos de 12. Paquete 1: 5 Alfa, 4 Beta, 3 Gamma. Paquete 2: 2 Alfa, 6 Beta, 4 Gamma. Total comercial esperado S/ 72,00; demanda física Alfa 19, Beta 10, Gamma 7.
-- Entradas ficticias autorizadas: 100 unidades de cada SKU de 1 L y 1.000 unidades de cada material utilizado. Documentar movimiento inicial, no editar saldos directamente.
-- Alternativa de prueba Alfa 1 L: un envase DEMO y una etiqueta DEMO por unidad. Son consumos ilustrativos, no recetas ni compatibilidades de la empresa. Sin mangas.
-- Fijar y anotar fechas de pedidos/producción dentro de los filtros del día de grabación. No cambiar el reloj del sistema operativo.
+- El lanzador valida rutas, rechaza enlaces/junctions, comprueba configuraciones, inicia solo los procesos independientes cuando sea necesario, actualiza sus identidades y verifica MySQL/HTTP. No inicializa, migra ni siembra datos. Su sesión documental vence en cuatro horas; volver a invocarlo renueva ese plazo. No alterar políticas de seguridad si Windows bloquea el script.
+- Confirmar el rótulo de demostración antes de grabar. La configuración privada permanece fuera del checkout; no abrirla en cámara ni mostrar logs, cookies, tokens o contraseñas.
+- Cuentas ficticias: `admin@carga.invalid` (Administrador), `vu1@carga.invalid` (Operaciones Comerciales), `produccion@carga.invalid` (Producción/Reparto). La contraseña está en `usuarios_carga_clave` del archivo privado `credenciales-preparadas.json`, bajo la raíz del entorno. Consultarla fuera de cámara; no copiarla al repositorio o al guion.
+- Datos comprobados al terminar la carga: 300 clientes, 150 productos, 450 SKU, 3000 pedidos. La medición HTTP posterior agregó el pedido 3001, de cinco líneas, y un envasado de dos unidades. No borrar registros para repetir tomas: anotar los nuevos números y saldos.
+- Producto de ejemplo existente: `Producto sintético 0`, aromas Alfa/Beta/Gamma, presentación 1 L, SKU `CARGA_0_ALFA`, `CARGA_0_BETA`, `CARGA_0_GAMMA`; unidad S/ 2,00 y paquete de 12 S/ 24,00. El formato surtido y la alternativa de materiales de Alfa ya están configurados. Son consumos ilustrativos ficticios; no recetas de la empresa. No se consumen mangas.
+- Preparar Excel fuera de cámara si se mostrará un CSV. La codificación/separador se comprobaron por HTTP; una apertura nueva en Excel y la legibilidad visual requieren comprobación manual.
 
-Si se repite un guion, comenzar con una nueva base demo autorizada o anotar claramente los saldos acumulados; no presentar los cálculos de una base limpia como si correspondieran a una repetida.
+## Video 1 — Funcionamiento de la página web
 
-## 1. Acceso, panel y responsabilidades
+Las operaciones siguientes son las tareas previstas para grabar, no nuevas operaciones que el agente haya registrado como parte de este guion. Conservar el número del pedido que se cree y usarlo en las etapas posteriores. Pausar la grabación al cambiar de cuenta.
 
-**Objetivo:** presentar navegación y permisos. **Rol:** Administrador, luego cuentas ficticias Comercial y Producción/Reparto. **Requisitos:** tres cuentas privadas, roles/permisos revisados, entorno aprobado.
+| Orden | Navegación y rol | Operación / resultado que mostrar | Narración sugerida |
+| --- | --- | --- | --- |
+| 1 | `/login` → `/dashboard`, Administrador | Iniciar sesión y señalar el entorno ficticio. Mostrar el panel y los accesos reales. | «Esta es una demostración aislada; no contiene información de clientes reales». |
+| 2 | `/usuarios` → `/roles-permisos`, Administrador | Consultar los tres roles y sus permisos sin modificarlos. | «Los accesos se controlan en las rutas y en el servidor, además del menú». |
+| 3 | `/clientes` → `/productos`, Administrador o Comercial | Consultar un cliente sintético y Producto sintético 0. Abrir sus tres SKU y precios. | «Cada aroma tiene inventario físico propio; el catálogo no crea un producto por cada combinación surtida». |
+| 4 | `/modalidades-surtidas`, Comercial | Consultar el formato compatible de doce unidades, sin crear combinaciones fijas. | «El formato define tamaño y precio; los aromas se distribuyen en cada pedido». |
+| 5 | `/pedidos/nuevo`, Comercial | Seleccionar un cliente sintético. Añadir una caja normal de 12 Alfa y una línea con dos surtidos de 12. Paquete 1: 5 Alfa, 4 Beta, 3 Gamma. Copiar al paquete 2 y modificarlo a 2 Alfa, 7 Beta, 3 Gamma. Cada paquete debe sumar 12. Guardar y anotar el número generado. | «Podemos copiar para agilizar y después modificar cada paquete de forma independiente». |
+| 6 | Detalle `/pedidos/{id}` | Comprobar total S/ 72,00: una caja normal de S/ 24 más dos surtidas de S/ 24. Demanda física: Alfa 19, Beta 11, Gamma 6; total 36 unidades. Consultar la nota y el anexo; revisar la vista previa manualmente antes de imprimir. | «Los componentes no vuelven a sumar sus precios. El paquete conserva su precio comercial». |
+| 7 | Detalle del pedido, Comercial | Confirmar mediante el control existente y consultar `/seguimiento/{id}`. | «El pedido original y las transiciones quedan en el historial». |
+| 8 | `/inventario` → `/inventario/movimientos`, Producción/Reparto | Consultar stock de los SKU y los tres materiales. Anotar el saldo actual de Alfa, llamado S0. | «Una existencia disponible no significa producción nueva ni reserva exclusiva para un cliente». |
+| 9 | `/envasados/nuevo`, Producción/Reparto | Elegir Alfa, su alternativa configurada y 2 unidades, sin pedido. Consultar consumos y confirmar solo esta producción ficticia. Esperar Alfa S0+2 y consumo de 2 envases, 2 etiquetas y 2 contratapas, según la configuración sintética. | «El consumo y la entrada de producto terminado se realizan juntos; no debemos registrar otra entrada manual». |
+| 10 | `/cumplimiento/lista-preparacion`, Producción/Reparto | Buscar el producto. Mostrar demanda por SKU, stock, producción registrada y faltante. Si se usa el modal, mostrarlo y cerrarlo sin confirmar otro envasado. | «Se trabaja producto por producto. Stock y envasado registrado son conceptos distintos; el orden visual no bloquea otras tareas». |
+| 11 | `/cumplimiento/{id}`, Producción/Reparto | Iniciar y finalizar preparación del pedido, luego despacharlo. Anotar saldos antes/después: Alfa −19, Beta −11, Gamma −6, una sola vez. | «El despacho descuenta los SKU físicos exactos de las cajas normales y surtidas». |
+| 12 | Mismo detalle de Cumplimiento, Producción/Reparto | Registrar aceptación de 35 unidades y rechazo de 1 Beta. Usar el desglose físico correspondiente: Beta aceptadas 10 y rechazada 1, resto completo. Indicar motivo neutral. | «El rechazo no cambia el pedido original ni devuelve automáticamente stock». |
+| 13 | Retornos del mismo pedido, Producción/Reparto | Registrar la recepción física de esa unidad Beta como apta. Mostrar que el stock todavía no sube. | «La recepción física y la autorización comercial son controles separados». |
+| 14 | Mismo detalle, Comercial o Administrador | Revisar y aprobar la unidad apta. Esperar Beta +1 respecto al saldo después del despacho; revisar movimiento trazable. No rectificar otros resultados. | «Solo la aprobación reincorpora lo apto. Los materiales del envasado no regresan automáticamente; no se generan reembolsos». |
+| 15 | `/indicadores`, Comercial o Administrador | Elegir un período que incluya la fecha actual y, en los reportes que lo admiten, filtrar por el pedido anotado. Comparar cantidades comerciales, físicas, entregas y retornos en sus reportes respectivos. Exportar CSV y abrirlo fuera de cualquier diálogo que muestre secretos. | «Los reportes mantienen sus fuentes y períodos; no sumamos dos veces paquetes, componentes o movimientos». |
+| 16 | `/auditoria`, Administrador | Consultar las acciones del recorrido; cerrar sesión. | «El sistema conserva responsables e historial para revisar las operaciones». |
 
-1. Abrir login del servidor demo y señalar el rótulo; pausar captura al introducir contraseña.
-2. Entrar al panel. Mostrar grupos de accesos y los conteos administrativos reales de esa base ficticia.
-3. Abrir Usuarios y Roles y Permisos; consultar, sin ampliar permisos para facilitar la grabación.
-4. Cerrar sesión y entrar con Producción/Reparto. Comparar accesos; comprobar que no aparecen Usuarios o Auditoría. Mostrar cierre de sesión.
+Si una validación impide continuar, mostrar el mensaje real y detener esa toma. No ajustar saldos, estados o permisos directamente para hacer coincidir el guion. Si cambian las cantidades del pedido, recalcular sus efectos; las cifras anteriores solo corresponden al ejemplo 12 + 12 + 12.
 
-**Esperado:** cada rol ve solo accesos autorizados; el panel no muestra estadísticas inventadas. **Narración:** «El sistema organiza el trabajo por responsabilidad; ocultar un enlace no sustituye la protección de las rutas». **Precaución:** no mostrar claves, cookies ni datos personales reales.
+## Video 2 — Pruebas del software
 
-## 2. Clientes, catálogo y presentaciones
+Utilizar los reportes guardados; no repetir carga o estrés durante la grabación. No presentar automatización HTTP como participación de trabajadores.
 
-**Objetivo:** identificar catálogo físico y comercial. **Rol:** Comercial o Administrador con permisos de crear/editar. **Requisitos:** hoja de datos y base ficticia inicializada.
+| Orden | Qué mostrar | Interpretación y narración |
+| --- | --- | --- |
+| 1 | `docs/pruebas/00_informe_resumen.md` y los 14 requisitos originales archivados | «Se separaron pruebas funcionales, no funcionales y aceptación. Los pendientes permanecen identificados». |
+| 2 | Resultado Laravel final y los archivos `tests/Unit`, `tests/Feature`, `tests/Security` | «La ejecución local final aprobó 622 casos: 33 unitarios puros, 578 Feature y 11 de seguridad, sin duplicar estos últimos». Mostrar ejemplos de cantidades, empaques, surtidos y estados. |
+| 3 | La ejecución final de GitHub Actions del PR #43, especialmente MySQL | Mostrar la cifra real del trabajo temporal y sus controles de concurrencia; no usar una salida anterior como si fuera la actual. La base de rendimiento y la base efímera de CI son distintas. |
+| 4 | `tests/Feature/SesionUsuarioActivoTest.php` y el informe D9A-01 | «Se reprodujo y corrigió el acceso de una cuenta desactivada con sesión abierta». En 9B el HTTP real verificó dos sesiones, otro módulo, JSON 401 y rechazo de login inactivo. |
+| 5 | `docs/pruebas/evidencias/cierre_9b.json`, los resultados originales y el informe HTML sanitizado | «Se ejecutó humo de un usuario, carga de veinte por dos minutos y estrés progresivo». Mostrar solicitudes, p95, errores e interrupciones reales. |
+| 6 | Filas de carga y estrés | «La carga final de veinte usuarios durante dos minutos registró 1102 solicitudes, cero errores HTTP y p95 de 825 ms: cumple la meta de un segundo. El estrés completó las etapas hasta cincuenta usuarios, con 1584 solicitudes y cero errores HTTP; su p95 de 3,731 segundos incumple la meta. Hubo cuatro iteraciones interrumpidas al reducir usuarios. Mostrar también los intentos anteriores fallidos». |
+| 7 | Recuperación separada de un usuario | «Además de la recuperación integrada, se midió un minuto separado de un usuario: 56 solicitudes, 46 checks correctos, ningún error HTTP ni interrupción y p95 de listados de 387 ms. Son lecturas en el entorno ficticio». |
+| 8 | `zap_resumen_9b.json`, informe sanitizado y comprobaciones HTTP | «ZAP fue exclusivamente pasivo y local: dos tipos de alerta media, tres bajos y cinco informativos, sin altos. Hay observaciones; no afirmamos ausencia de vulnerabilidades». No abrir reportes crudos que puedan incluir tokens. |
+| 9 | Matriz `compatibilidad_9b.csv` | «La comprobación visual en Chrome, Firefox y Edge quedó pendiente porque el control de interfaz no pudo acreditar la URL. Las lecturas HTTP no sustituyen una revisión responsive». No afirmar que se probaron las 180 combinaciones. |
+| 10 | `usabilidad_9b.csv` y resultado de envasado | «El pedido de cinco líneas tardó 1,125 s y el envasado 2,425 s en automatización HTTP. Son tiempos técnicos del perfil inicial, no tiempos de trabajadores. El envasado aumentó dos unidades y un doble envío no duplicó movimientos». |
+| 11 | Estado de 9C en el informe | «La aceptación empresarial se conserva y está PENDIENTE DE EJECUCIÓN — VALIDACIÓN CON LA EMPRESA. Después del merge manual de 9B se preparará su PR documental separado: casos por rol, criterios, trazabilidad, actas y resultados. No hay firmas ni participantes inventados». Actualizar este segmento solo cuando ese PR exista. |
+| 12 | Conclusión técnica | «Las pruebas aportan evidencia reproducible, distinguiendo aprobaciones, observaciones y pendientes. No se usaron las bases reales ni se desplegó el sistema públicamente». |
 
-1. En Clientes, registrar Cliente Demostración A con datos mínimos válidos, sin identificadores empresariales reales.
-2. En Catálogo, registrar o consultar el producto ficticio, variantes Alfa/Beta/Gamma y presentaciones 500 ml/1 L.
-3. Mostrar venta por unidad, tamaño de empaque y precio; registrar S/ 2,00 y caja de 12 para 1 L según la hoja.
-4. Abrir Modalidades surtidas y habilitar el formato ficticio compatible para los tres SKU de 1 L. No combinar capacidades diferentes ni crear un producto por mezcla.
+## Límites para ambas grabaciones
 
-**Esperado:** SKU independientes y formato habilitado sin inventario o composición automática. **Narración:** «El catálogo define posibilidades; la distribución de aromas se define en cada pedido». **Precaución:** no modificar categorías empresariales ni atribuir consumos de prueba a la empresa.
-
-## 3. Pedido normal, surtidos y composición pendiente
-
-**Objetivo:** demostrar precio único y composiciones individuales. **Rol:** Comercial con pedidos.crear y surtidos.componer. **Requisitos:** cliente, SKU y formato del guion 2.
-
-1. En Registrar pedido elegir cliente y fechas válidas. Añadir una caja normal de 12 Alfa y una línea de dos surtidos de 12.
-2. Definir paquete 1: 5/4/3. Copiar al segundo, luego modificar solo el segundo a 2/6/4. Verificar que el primero no cambia y cada paquete suma 12.
-3. Guardar; revisar dos líneas comerciales, S/ 72,00 total y desglose físico. Abrir nota imprimible y anexo; revisar páginas antes de imprimir.
-4. En otro pedido ficticio separado, guardar composición pendiente sin asignar aromas. Mostrar las unidades sin distribuir y la restricción de cierre; no intentar forzar despacho.
-5. Confirmar el pedido mixto con el rol autorizado para continuar el recorrido.
-
-**Esperado:** 36 unidades físicas, precio sin duplicarse por aroma y composición histórica individual. **Narración:** «Dos paquetes del mismo tamaño pueden tener mezclas distintas; una composición pendiente no inventa SKU». **Precaución:** no confundir precio comercial con pago recibido.
-
-## 4. Preparación, disponibilidad y orden de trabajo
-
-**Objetivo:** separar demanda, stock y producción. **Rol:** Producción/Reparto con pedidos.ver y cumplimiento.preparar; entradas iniciales por usuario autorizado. **Requisitos:** pedido mixto confirmado y entradas sintéticas documentadas.
-
-1. Abrir Lista General de Preparación; comprobar filtros del pedido y demanda Alfa 19/Beta 10/Gamma 7.
-2. Mostrar productos juntos y presentaciones en orden físico. Revisar desglose de empaques y exportación a impresión.
-3. Comparar las 100 unidades disponibles por SKU con la producción registrada en el período, inicialmente sin operaciones del guion 5.
-4. Abrir Inventario/Movimientos y relacionar las entradas sintéticas. Volver a la lista sin modificar stock.
-5. En Cumplimiento, iniciar preparación del pedido mixto; no finalizar hasta revisar composición y demanda.
-
-**Esperado:** cobertura por stock no equivale a «envasado registrado». **Narración:** «Se trabaja producto por producto; el orden es visual y no obliga a bloquear otros trabajos». **Precaución:** confirmar filtros y no sumar producción otra vez al stock.
-
-## 5. Envasados anticipados, vinculados y correcciones
-
-**Objetivo:** seguir consumo y compensación. **Rol:** Administrador/Producción para registrar; Administrador para corregir. **Requisitos:** alternativa sintética Alfa, materiales suficientes y pedido confirmado/en preparación.
-
-1. En presentación Alfa, abrir Materiales de envasado. Consultar alternativa con un envase y una etiqueta DEMO por unidad; confirmar que es ilustrativa.
-2. En Envasados, registrar 6 unidades sin pedido; revisar vista previa antes de confirmar.
-3. Desde la Lista General pulsar Registrar envasado para Alfa; registrar 4 unidades vinculadas, sin abandonar la lista. Revisar materiales y confirmar.
-4. Mostrar producción, stock y vínculo sin reserva ni cambio automático del pedido.
-5. Como Administrador, corregir 1 unidad por error administrativo, indicando que envase/etiqueta ficticios no se usaron y se recuperan. En otra corrección, registrar pérdida física de 1 unidad sin devolver materiales.
-6. Consultar originales y compensaciones en detalle y Movimientos.
-
-**Esperado con base indicada:** Alfa pasa 100→106→110→109→108. Cada material pasa 1.000→994→990→991 y permanece 991 tras pérdida sin recuperación. **Narración:** «Producción y consumo se confirman juntos; el error administrativo y la pérdida física no son equivalentes». **Precaución:** no introducir una segunda entrada manual de terminado ni devolver materiales realmente consumidos.
-
-## 6. Despacho, entrega parcial y retorno autorizado
-
-**Objetivo:** mostrar el circuito físico y la separación de responsabilidades. **Rol:** Producción/Reparto para preparación/despacho/resultado/recepción con permisos; Comercial o Administrador para aprobar. **Requisitos:** guiones previos, composición completa y saldos anotados.
-
-1. Finalizar preparación y despachar el pedido mixto. Revisar movimientos y cantidades físicas por aroma.
-2. Registrar rechazo de 2 Alfa y 1 Beta, aceptando el resto. Motivo neutral: «El receptor indica que estas unidades no corresponden a lo acordado». No atribuir culpas.
-3. Comprobar entrega parcial y stock sin devolución automática.
-4. Registrar recepción física: Alfa 1 apta/1 dañada y Beta 1 apta. Revisar que todavía no suba stock.
-5. Cerrar sesión; Comercial/Administrador revisa y aprueba las aptas. Mostrar entrada trazable y cantidades dañadas sin reincorporar.
-6. Abrir seguimiento e historial; demostrar que cantidades/precio originales se conservan. No rectificar por comodidad ni generar reembolsos.
-
-**Esperado:** antes de despacho 108/100/100; después 89/90/93; rechazo y recepción mantienen esos saldos; aprobación deja 90/91/93. Aceptadas 33 y rechazadas 3. **Narración:** «Rechazo, recepción y aprobación son hechos diferentes». **Precaución:** Producción no aprueba; retornos no devuelven etiquetas/envases.
-
-## 7. Indicadores, filtros y CSV
-
-**Objetivo:** distinguir información comercial, física y económica. **Rol:** Comercial o Administrador con los tres permisos de indicadores. **Requisitos:** operaciones ficticias anteriores y fechas anotadas.
-
-1. Abrir Indicadores y CSV; mostrar cabecera y período.
-2. Filtrar Comercial por pedido mixto: observar S/ 72,00 sin multiplicarlo por componentes.
-3. Consultar Composiciones, Físicas y Pendientes; comparar paquetes, envases y unidades sin distribuir.
-4. Consultar entregas/retornos/aprobaciones y producción/materiales/movimientos. Explicar fecha de cada hecho y evitar sumar medidas superpuestas.
-5. Exportar detalle del reporte y abrir en Excel verificando columnas, tildes y período. Mostrar lista de quince reportes; no afirmar que se abrieron todos si no se hizo.
-
-**Esperado:** pantalla y CSV coherentes con el mismo filtro; diferencias económicas informativas, no cobros ni reembolsos. **Narración:** «Un paquete comercial no es un SKU físico; los reportes conservan esa distinción». **Precaución:** guardar CSV ficticios fuera de Git y no abrir archivos reales durante la captura.
-
-## 8. Auditoría y trazabilidad
-
-**Objetivo:** relacionar acciones, responsable y movimientos sin confundir módulos. **Rol:** Administrador con auditoria.ver; Seguimiento según permiso. **Requisitos:** acciones ficticias registradas durante los guiones.
-
-1. Abrir Auditoría y filtrar fecha/entidad del envasado o configuración.
-2. Mostrar ID de usuario, acción y detalle permitido; no hay edición/borrado.
-3. Comparar una corrección con sus movimientos compensatorios y con el registro original.
-4. En Seguimiento abrir pedido, estados e incidencias de entrega y retorno. Diferenciar esos eventos del canal privado de logs de seguridad.
-5. Terminar con cierre de sesión y explicar pendientes de aceptación real de la empresa.
-
-**Esperado:** trazabilidad por identificadores/fechas, sin alterar originales. **Narración:** «Auditoría responde quién y qué acción; Movimientos explica la variación de existencias». **Precaución:** minimizar IP/correos y no afirmar que todo clic se audita.
+No filmar credenciales, APP_KEY, cookies, archivos privados o respaldos. No afirmar UAT realizadas, revisión visual completa ni ausencia de vulnerabilidades. El estrés alcanzó cincuenta y completó sus etapas, pero no todas sus metas: p95 3,731 s y cuatro interrupciones durante la bajada. El p95 inferior a un segundo corresponde a humo, carga y recuperación del perfil final, no a todo el estrés. Si el entorno no acredita su identidad, detenerse sin ejecutar migraciones, limpiezas, seeders ni cambios en Laragon operativo.

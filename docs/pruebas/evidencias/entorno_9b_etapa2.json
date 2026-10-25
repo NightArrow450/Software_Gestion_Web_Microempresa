@@ -1,0 +1,118 @@
+{
+  "fecha": "2026-10-25",
+  "zona": "America/Lima",
+  "estado": "PREPARADO_NO_INICIALIZADO",
+  "herramientas": [
+    {
+      "ruta": "C:/Users/Stalin/AppData/Local/DhacerRendimiento/herramientas/k6/k6-v2.3.0-windows-amd64/k6.exe",
+      "version": "2.3.0",
+      "nombre": "k6",
+      "sha256_paquete": "112276d495e5741c968e2bc09ea6196099c1275bd6db9ee0875d173c7148ce43",
+      "fuente_oficial": "https://github.com/grafana/k6/releases/tag/v2.3.0"
+    },
+    {
+      "ruta": "C:/Users/Stalin/AppData/Local/DhacerRendimiento/herramientas/java/jdk-21.0.12.1+1-jre/bin/java.exe",
+      "version": "21.0.12.1+1",
+      "nombre": "Java Temurin JRE",
+      "sha256_paquete": "d35f31e712f0fcf6ac5a093edc90204fbff22f720ba3950bd09d331d5e621636",
+      "fuente_oficial": "https://github.com/adoptium/temurin21-binaries/releases/tag/jdk-21.0.12.1%2B1"
+    },
+    {
+      "ruta": "C:/Users/Stalin/AppData/Local/DhacerRendimiento/herramientas/zap/ZAP_2.17.0/zap-2.17.0.jar",
+      "version": "2.17.0",
+      "nombre": "ZAP",
+      "sha256_paquete": "94c8f767b1c2e94f0db66b3ae56514d5e3f5a728ee1b6c798e0c8fe2d61fbff0",
+      "fuente_oficial": "https://github.com/zaproxy/zaproxy/releases/tag/v2.17.0"
+    },
+    {
+      "ruta": "C:/Users/Stalin/AppData/Local/DhacerRendimiento/herramientas/firefox/core/firefox.exe",
+      "version": "158.0.1",
+      "nombre": "Firefox",
+      "sha256_paquete": "5a705393a0d88fadef3d252420a9641149f584c5d9fb7715b9d36f5c080cd6e8",
+      "fuente_oficial": "https://archive.mozilla.org/pub/firefox/releases/158.0.1/"
+    }
+  ],
+  "extractor_auxiliar": {
+    "motivo": "tar Windows no admite LZMA del instalador Firefox; extractor oficial local sin registro",
+    "version": "26.05",
+    "sha256": "9bf582b894dfa665f852d7e9112b02290a1c303c2d95a21fcdc41ffcb03143b7",
+    "nombre": "7zr"
+  },
+  "recursos_muestras": [
+    {
+      "fecha_utc": "2026-10-25T16:28:10.6463876Z",
+      "cpu_pct": 19,
+      "disponible_mb": 3331
+    },
+    {
+      "fecha_utc": "2026-10-25T16:28:13.2280889Z",
+      "cpu_pct": 18,
+      "disponible_mb": 3437
+    },
+    {
+      "fecha_utc": "2026-10-25T16:28:15.8162923Z",
+      "cpu_pct": 8,
+      "disponible_mb": 3443
+    },
+    {
+      "fecha_utc": "2026-10-25T16:28:18.3764737Z",
+      "cpu_pct": 10,
+      "disponible_mb": 3453
+    },
+    {
+      "fecha_utc": "2026-10-25T16:28:20.9415301Z",
+      "cpu_pct": 24,
+      "disponible_mb": 3455
+    }
+  ],
+  "validaciones": {
+    "bases_creadas": false,
+    "composer": "install --no-scripts, lock conservado",
+    "ejecuciones_k6": 0,
+    "mysql_inicializado": false,
+    "php_plataforma": "APROBADA con php.ini privado",
+    "escaneos_zap": 0,
+    "vite": "APROBADO en checkout privado, 2.73 s",
+    "datadir_vacio": true,
+    "manifiesto_incompleto": "BLOQUEADO, salida 1 esperada",
+    "listeners_rendimiento": 0,
+    "apache_sintaxis": "Syntax OK, sin arrancar",
+    "versiones_cli": "APROBADAS"
+  },
+  "manifiesto": {
+    "operaciones": [],
+    "sha256": "8c49dc7ca9966ae65b3e74c1d10be1e7ba20e0d63ae03f78d444c76a4ed8efcd",
+    "pid_mysql": 0,
+    "pid_apache": 0,
+    "uuid": "PENDIENTE: no se inventa antes de inicializar",
+    "ruta": "C:/Users/Stalin/AppData/Local/DhacerRendimiento/f9b_001/manifiesto.json"
+  },
+  "perfil": {
+    "innodb_buffer_mib": 256,
+    "mysql_conexiones": 64,
+    "ram_humo_mib": 2048,
+    "ram_carga_mib": 5120,
+    "vu_estres": 50,
+    "apache_hilos": 32,
+    "php_limite_mib": 128,
+    "ram_estres_mib": 6144,
+    "vu_carga": 20
+  },
+  "limitaciones": [
+    "ZAP mostró aviso de catálogo de addons antiguo; revisar antes de autorizar escaneo",
+    "Sin validación positiva de identidad SQL, privilegios o concurrencia: servidor aún no existe",
+    "Los recursos observados no cumplen mínimos propuestos para carga/estrés",
+    "Dependencias locales preparadas sin scripts ni .env real"
+  ],
+  "checkout_commit_base": "90ded6931c11db3924ef854c5665e0ee50cfe9af",
+  "recursos_lectura_cierre": {
+    "memoria_libre_mib": 3165,
+    "cpu_pct": 22,
+    "fecha_utc": "2026-10-25T16:47:36.8164153Z"
+  },
+  "configuraciones_sha256": {
+    "mysql": "7a17ea12cfebf2574d6c099b9791d81d7e57cf04ace15e3f6de34ea99f902854",
+    "php": "5c22a6a5031596524cac8e2d8c145e8ae35d94a761499479709ec56756a385c2",
+    "apache": "bb6811952a29efebd1c730ac33770cfa46888c8fbb4bcb5cc4ee91a005d42099"
+  }
+}

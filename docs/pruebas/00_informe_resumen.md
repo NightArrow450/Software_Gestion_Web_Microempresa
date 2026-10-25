@@ -1,8 +1,8 @@
-# Fase 9A: informe técnico parcial
+# Fase 9: informe técnico consolidado parcial
 
 Fecha: 25/10/2026, America/Lima. Base: develop, integración fa437077fb7cdb7d8a1c9437353d1fa394ad6b42. Rama: feature/fase9a-pruebas-funcionales-unitarias.
 
-**La Fase 9 NO está aprobada en conjunto.** D9A-01 fue corregido con autorización específica y su reproducción ahora es una regresión permanente aprobada. 9B y 9C no se han iniciado.
+**La Fase 9 NO está aprobada en conjunto.** D9A-01 está corregido. La ejecución posterior de 9B corrigió el bloqueo de rutas, cargó datos ficticios, ejecutó k6, seguridad HTTP y ZAP pasivo. Hay observaciones de latencia, interrupciones del control de identidad y revisión visual pendiente. El entorno ficticio está disponible, sin tocar las bases protegidas. Ver [resultados de ejecución 9B](03_no_funcionales.md#resultados-reales-de-ejecución-9b). 9C mantiene la aceptación con trabajadores pendiente; su PR documental separado requiere primero el merge manual de 9B. Las cifras históricas de 9A siguientes no se reutilizan como resultados de carga/estrés.
 
 ## Fuente y alcance
 
@@ -71,3 +71,40 @@ R4 tiene la regresión de sesión inactiva corregida y sus matrices existentes a
 9B deberá ejecutar k6, ZAP, compatibilidad y tiempos con autorización previa del entorno. 9C deberá incorporar los documentos académicos y resultados reales de trabajadores. Se mantienen [las limitaciones de calidad previas](../calidad-y-pendientes.md), incluidas memoria del verificador y mediciones de volumen que no certifican carga HTTP.
 
 **Conclusión:** ampliación técnica de 9A preparada para revisión, con D9A-01 corregido. No constituye aceptación de empresa ni cierre de Fase 9.
+
+## Ejecución posterior de Fase 9B (25/10/2026)
+
+- Laravel local final: **618/618**, **3799 aserciones**, cero omitidas: **33 unitarias puras, 574 Feature y 11 Security** (estas once están incluidas, no se suman por segunda vez).
+- JavaScript **28/28**; Larastan nivel 5 **0 errores**; Pint aprobado; Vite aprobado (3,85 s, avisos de fontaine opcional y tiempos de plugins); auditorías Composer/npm sin vulnerabilidades.
+- Dataset MySQL separado: 45 migraciones, 44 tablas y 12 triggers; 300 clientes, 150 productos y 3000 pedidos de carga. La medición posterior creó el pedido 3001 y un envasado de dos unidades. Inventario final correcto y cero despachos sin salida vinculada.
+- HTTP: **54/54**, incluidas 15 exportaciones CSV. No sustituye validación visual ni apertura manual en Excel.
+- Carga final de 20 VU con OPcache: **946 solicitudes**, **7,110 solicitudes/s**, **0 % de errores HTTP**, **775 checks correctos**, p95 listados **3,384 s**; dos minutos activos y 151 iteraciones completas, ninguna interrumpida. La meta de un segundo no se alcanzó. Se conservan los intentos anteriores.
+- Estrés final con OPcache: **31/50 VU**, 431 solicitudes, interrumpido a 83,3 s por el inspector; recuperación integrada no ejecutada. Recuperación separada final de 1 VU: seis checks correctos, errores HTTP 0 %, p95 1,291 s.
+- ZAP pasivo: código **2 por advertencias**, dos tipos de alerta media, tres bajos y cinco informativos, sin altos. No se corrigió producción para silenciarlos.
+- Compatibilidad: **180 combinaciones PENDIENTES**, control GUI detenido por URL de Chrome no acreditada. No se inventaron capturas ni pruebas en Firefox/Edge.
+- Usabilidad técnica: pedido de cinco líneas 1,125 s, envasado 2,425 s mediante HTTP automatizado. **No certifica tiempos humanos ni la meta UAT de 90 s.**
+
+Fuentes nuevas: [resultados](evidencias/resultados_9b.json), [ZAP sanitizado](evidencias/zap_resumen_9b.json), [informe HTML](evidencias/informe_9b.html), [snapshot de la base ficticia](evidencias/estado_ficticio_final.json) y [validaciones de desarrollo](evidencias/validaciones_desarrollo_9b.json). Los resultados de la CI MySQL del último commit se incorporan al PR; no se reutiliza una ejecución anterior para aprobarlo.
+
+**No se declara 9B completamente aprobada:** latencia fuera de meta, estrés/recuperación incompletos, N+1 confirmado en preparación de surtidos (1270 consultas para 180 pedidos) y revisión visual pendiente. Las bases protegidas no se utilizaron. No hubo merge automático. La preparación documental de 9C corresponde a otro PR después del merge manual; la participación empresarial sigue PENDIENTE DE EJECUCIÓN — VALIDACIÓN CON LA EMPRESA.
+
+Se consolidaron [exactamente dos guiones](../guiones-demostracion.md): funcionamiento de la web y pruebas del software. La demostración puede reiniciarse con el lanzador de identidad del checkout privado, sin migraciones ni seeders.
+
+## Revisión focalizada final de 9B — 25/10/2026
+
+Este apartado actualiza los resultados anteriores, que permanecen como historial. [Evidencia nueva](evidencias/cierre_9b.json) y [comparación D9B-P01](evidencias/comparacion_preparacion_9b.json).
+
+- D9B-P01 corregido: 1270 → 15 consultas para los mismos 180 pedidos surtidos; filas, pendientes y 3720 unidades idénticos por SHA-256. Normales: 8 → 8. Sin migraciones ni cambios de inventario.
+- Instrumentación: inspección fresca por solicitud, máximo ocho inspectores, ventana por antigüedad, espera acotada a 60 s y timeout de subproceso intacto en 15 s. Perfil Apache privado final de 32 hilos con KeepAlive Off; no se cambió el servidor operativo. Se conservaron los intentos fallidos y los perfiles intermedios.
+- Humo final: 1 VU, 8 solicitudes, cero errores HTTP, p95 379 ms.
+- Carga final: 20 VU/120 s, 1102 solicitudes, 8,210 solicitudes/s, 905 checks correctos, cero errores HTTP y p95 825 ms: metas de latencia y errores cumplidas.
+- Estrés final: completó las etapas hasta 50 VU y el sostenimiento/recuperación programados; 1584 solicitudes, 5,024 solicitudes/s, 1286 checks correctos, cero errores HTTP. **p95 3,731 s: meta NO cumplida.** Cuatro iteraciones interrumpidas durante la bajada de VU, registradas sin ocultarlas.
+- Recuperación separada: 1 VU/60 s, 56 solicitudes, 46 checks correctos, cero errores y cero interrupciones, p95 387 ms.
+- HTTP de seguridad: 55/55. La redirección señalada por ZAP tiene un cuerpo de 370 bytes idéntico a la plantilla del framework. CSP ejecutable y SRI siguen como endurecimientos propuestos sujetos a autorización; ausencia de alertas altas no equivale a ausencia de vulnerabilidades.
+- Laravel final local: **622/622**, **3826 aserciones**, **33 unitarias puras + 578 Feature + 11 Security** sin duplicación, cero omitidas. JavaScript 28/28; Larastan nivel 5 cero errores; Pint/Vite y auditorías aprobados. MySQL/CI final: resultado real enlazado en el PR #43, exclusivamente contenedor temporal independiente.
+- Inventario ficticio sin inconsistencias ni huérfanos; pedidos, líneas, envasados, movimientos y saldos coinciden con el snapshot anterior. No hubo conexión a las bases protegidas.
+- **180 combinaciones visuales pendientes:** el nuevo intento de Chrome volvió a ser bloqueado al no acreditarse la URL. No se fabrican capturas. Usabilidad técnica anterior conservada; UAT real pendiente de empresa.
+
+La prueba de estrés es ejecutada, pero no cumple toda la meta de rendimiento. No se certifica capacidad productiva: el inspector y k6 comparten CPU con la aplicación. El muestreo no desglosó PowerShell detrás de cmd.exe; RAM/CPU globales sí incluyen su coste. Se mantienen la deuda de formato de 41 archivos, workflow_dispatch condicionado a main y los límites del verificador acumulado en memoria.
+
+PR #43 para revisión y merge manual con limitaciones explícitas. No se inició 9C ni se mezclaron sus documentos; después del merge se preparará su PR independiente. Los dos videos usan las evidencias guardadas, sin repetir estrés ni presentar UAT como realizadas.
