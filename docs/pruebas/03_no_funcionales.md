@@ -2,7 +2,7 @@
 
 Fecha: 25/10/2026. Base develop/50ac59e. Rama feature/fase9b-pruebas-no-funcionales.
 
-**Estado: PREPARADO, NO COMPLETADO.** La etapa 1 desarrolló herramientas y controles. En la etapa 2 se autorizaron e instalaron herramientas portables y se preparó el checkout/configuración privada; siguen prohibidos inicializar MySQL, crear bases, arrancar Apache de rendimiento, migraciones, CargaSeeder, k6 y escaneos ZAP. Ver la actualización de preparación al final de este documento. La CI efímera habitual sigue autorizada separadamente. 9C sigue pendiente.
+**Estado: EJECUCIÓN PARCIAL BLOQUEADA, NO COMPLETADO.** La autorización integral posterior permitió inicializar la instancia ficticia y preparar sus cuentas. Un control de rutas Windows bloqueó el avance antes de migraciones y CargaSeeder; no se ejecutaron k6 ni ZAP. Ver el registro final de esta página. Las secciones anteriores de preparación conservan sus restricciones y resultados históricos; no describen una ejecución aprobada. La CI efímera habitual sigue autorizada separadamente. 9C sigue pendiente.
 
 ## Requisitos y estados
 
@@ -241,3 +241,26 @@ Start-Process -FilePath 'C:/laragon/bin/apache/httpd-2.4.68-260617-Win64-VS18/bi
 ```
 
 Capturar identidad efectiva y concesiones, actualizar manifiesto/SHA privado y confirmar autoridad de la operación antes del verificador completo. Las migraciones, CargaSeeder, k6, escaneos y datos ficticios siguen requiriendo otra autorización; no se ejecutan como continuación automática de ninguno de estos comandos.
+
+### Ejecución integral autorizada y bloqueo previo al esquema
+
+25/10/2026, hasta las 12:17 America/Lima. La autorización integral del propietario sustituyó las puertas de aprobación intermedia, pero ordenó detenerse si fallaba un control de identidad, permisos, rutas o aislamiento. No se modificaron ni desactivaron esos controles.
+
+- La instancia MySQL 8.4.3 se inicializó con el comando `--defaults-file=.../f9b_001/mysql.ini --initialize` ya documentado, sobre el directorio privado vacío. Se inició exclusivamente en 127.0.0.1:3313.
+- Identidad SQL comprobada: puerto 3313, datadir exclusivo `C:/Users/Stalin/AppData/Local/DhacerRendimiento/f9b_001/mysql/datos/`, UUID `772cebd8-d097-11f1-89cd-086266ba1fba`, cuenta administrativa local y sin roles activos. No se conectó a 3306 ni se utilizaron credenciales operativas.
+- La primera rotación recibió el error 1820 al procesar el comentario inicial del archivo SOURCE con una contraseña expirada. Se retiró únicamente ese comentario del SQL privado y la instrucción ALTER USER posterior terminó correctamente. No se publicó ninguna contraseña.
+- Se creó únicamente `dhacer_eco_limp_demo_f9b_001` y las cuentas ficticias previstas. La inspección final de information_schema confirmó **0 tablas** en esa base. Los privilegios efectivos de las cuentas de aplicación/migración aún no cuentan con certificación positiva del verificador completo.
+- Apache independiente pasó `httpd -t` y arrancó en 127.0.0.1:8089. Esto no acredita todavía funcionamiento de los módulos: no existe esquema Laravel ni datos sintéticos.
+- El comando del checkout separado `php -d auto_prepend_file=tests/Performance/configuracion/privada-bootstrap.php tests/Performance/verificar-entorno.php verificar`, con configuración privada externa, terminó bloqueado. El diagnóstico de lectura identificó `RuntimeException: Destino, operación o identidad de configuración no autorizados.` en AutorizacionRendimiento.php:89.
+
+**Causa observada:** realpath devuelve `C:\Users\Stalin\AppData\Local\DhacerRendimiento\f9b_001\checkout` y `C:\laragon\www\Software_Gestion_Web_Microempresa`, mientras que los campos checkout y operativo del manifiesto usan `/`. La comparación strcasecmp no normaliza separadores. Base, usuario, puerto, URL, vigencia y operación coincidieron. No es evidencia de acceso a un destino ajeno; tampoco permite declarar aprobada la validación completa, que se detuvo antes de las etapas siguientes.
+
+**Propuesta mínima, NO aplicada:** registrar en el manifiesto privado las rutas canónicas de realpath verificadas, renovar su SHA-256 y repetir el control sin modificar sus condiciones. Si requiere cambio del verificador en vez de configuración, deberá tratarse expresamente; no ampliar permisos ni omitir controles para avanzar.
+
+**Estado final seguro:** se cerraron únicamente los procesos ficticios identificados. `httpd -k stop` no pudo usarse porque el proceso no estaba instalado como servicio (AH00436); se terminaron sus PID exclusivos, sin peticiones comerciales en curso. MySQL independiente se cerró mediante mysqladmin con su archivo cliente privado y puerto explícito 3313. Puertos 3313/8089 sin listeners al finalizar. El listener operativo 3306 conservó el PID 12220 y no se reinició.
+
+La RAM libre antes de inicializar era aproximadamente 5273 MiB; una lectura posterior mostró unos 5823 MiB. No se midió consumo bajo carga ni se modificaron los umbrales preventivos o los objetivos de 20/50 VU.
+
+**PENDIENTE DE EJECUCIÓN:** migraciones ficticias, CargaSeeder, inventario del dataset, HTTP funcional, humo/carga/estrés/recuperación, escritura de envasado, seguridad HTTP, ZAP, matriz de navegadores y usabilidad. No hay métricas de estos ensayos. Los dos guiones definitivos y la preparación utilizable para grabar siguen pendientes de contar con datos y recorridos comprobados; no se presentan como vídeos listos ni aceptación humana. No se ejecutaron suites locales nuevas en este intento. La CI efímera, si se ejecuta para este commit documental, es validación de desarrollo y no sustituye estas pruebas.
+
+Las bases protegidas no se consultaron ni modificaron durante estas operaciones. No se tocaron el .env, los servicios operativos ni el código productivo. Evidencia sanitizada: [ejecucion_9b_bloqueo_rutas.json](evidencias/ejecucion_9b_bloqueo_rutas.json). Fase 9B incompleta; 9C no iniciada.

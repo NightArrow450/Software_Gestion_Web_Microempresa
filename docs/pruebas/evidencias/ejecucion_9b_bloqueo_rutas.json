@@ -1,0 +1,39 @@
+{
+  "fecha": "2026-10-25T12:17:14-05:00",
+  "estado": "BLOQUEADO_ANTES_DE_MIGRACIONES",
+  "mysql": {
+    "version": "8.4.3",
+    "host": "127.0.0.1",
+    "puerto": 3313,
+    "datadir": "C:/Users/Stalin/AppData/Local/DhacerRendimiento/f9b_001/mysql/datos/",
+    "uuid": "772cebd8-d097-11f1-89cd-086266ba1fba",
+    "base": "dhacer_eco_limp_demo_f9b_001",
+    "tablas": 0,
+    "inicializado": true,
+    "credencial_administrativa_rotada": true,
+    "estado_final": "DETENIDO"
+  },
+  "apache": {
+    "host": "127.0.0.1",
+    "puerto": 8089,
+    "sintaxis": "Syntax OK",
+    "estado_final": "DETENIDO"
+  },
+  "control": {
+    "resultado": "RECHAZADO",
+    "mensaje": "Destino, operación o identidad de configuración no autorizados.",
+    "origen": "tests/Performance/AutorizacionRendimiento.php:89",
+    "causa_observada": "Separadores de ruta diferentes entre realpath Windows y manifiesto: checkout y operativo no coinciden mediante strcasecmp.",
+    "coinciden": ["base", "usuario", "puerto", "url", "vigencia", "operacion_verificar"],
+    "controles_modificados": false
+  },
+  "migraciones_ejecutadas": 0,
+  "carga_seeder_ejecutado": false,
+  "k6_ejecutado": false,
+  "zap_ejecutado": false,
+  "pruebas_navegadores_ejecutadas": false,
+  "bases_protegidas_utilizadas": false,
+  "listener_operativo_pid_antes_y_despues": 12220,
+  "objetivos_vu_conservados": [20, 50],
+  "fase_9c_iniciada": false
+}

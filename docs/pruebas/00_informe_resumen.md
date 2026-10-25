@@ -2,7 +2,7 @@
 
 Fecha: 25/10/2026, America/Lima. Base: develop, integración fa437077fb7cdb7d8a1c9437353d1fa394ad6b42. Rama: feature/fase9a-pruebas-funcionales-unitarias.
 
-**La Fase 9 NO está aprobada en conjunto.** D9A-01 fue corregido con autorización específica y su reproducción ahora es una regresión permanente aprobada. 9B tiene [scripts, controles, herramientas locales y configuración privada preparados](03_no_funcionales.md): no se inicializó el MySQL de rendimiento, no se creó su base ni se ejecutaron pruebas no funcionales reales o CargaSeeder. 9C no se ha iniciado. Las cifras de este informe corresponden al cierre de 9A; los resultados nuevos de preparación de 9B se registran aparte y no se reutilizan como carga/estrés.
+**La Fase 9 NO está aprobada en conjunto.** D9A-01 fue corregido con autorización específica y su reproducción ahora es una regresión permanente aprobada. En 9B se inicializó MySQL independiente y se creó únicamente la base ficticia vacía con sus cuentas limitadas. El control de rutas Windows bloqueó el avance antes de migraciones y CargaSeeder; los servidores ficticios quedaron detenidos. No se ejecutaron cargas ni escaneos. Ver el [registro de ejecución y bloqueo](03_no_funcionales.md#ejecución-integral-autorizada-y-bloqueo-previo-al-esquema). 9C no se ha iniciado. Las cifras de este informe corresponden al cierre de 9A; no se reutilizan como carga/estrés.
 
 ## Fuente y alcance
 
