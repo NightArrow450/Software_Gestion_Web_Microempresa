@@ -43,6 +43,7 @@
         @include('components.header')
 
         <main class="page">
+            @include('components.demostracion')
 
             @include('components.alerts')
 

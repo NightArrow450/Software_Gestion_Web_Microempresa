@@ -7,6 +7,7 @@ use App\Http\Middleware\EvitarEdicionObsoleta;
 use App\Http\Middleware\ExigirCambioPassword;
 use App\Http\Middleware\ForzarHttps;
 use App\Http\Middleware\PermisoMiddleware;
+use App\Http\Middleware\ProtegerDemostracion;
 use App\Http\Middleware\ProxiesConfiables;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\TransaccionAccionesSensibles;
@@ -37,6 +38,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->prepend(CabecerasSeguridad::class);
+        $middleware->prepend(ProtegerDemostracion::class);
         $middleware->replace(TrustProxies::class, ProxiesConfiables::class);
         $middleware->append(ForzarHttps::class);
         $middleware->web(append: [ExigirCambioPassword::class, EvitarDobleEnvio::class, EvitarEdicionObsoleta::class, TransaccionAccionesSensibles::class]);
