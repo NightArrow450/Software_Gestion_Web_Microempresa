@@ -42,7 +42,7 @@
         <thead><tr><th>CANTIDAD</th><th>DESCRIPCIÓN DEL PRODUCTO</th><th>P.U.</th><th>IMPORTE</th></tr></thead>
         <tbody>
         @foreach($pedido->detalles->take(18) as $detalle)<tr><td class="centrado">{{ $detalle->cantidad }}</td>
-            <td>{{ $detalle->descripcion_producto }} {{ $detalle->modalidad === 'empaque' ? '('.$detalle->descripcionModalidad().')' : '' }}</td>
+            <td>{{ $detalle->descripcion_producto }} {{ $detalle->modalidad === 'empaque' ? '('.$detalle->descripcionModalidad().')' : '' }} @if($detalle->cantidad_fisica_ajustada !== null) · Ajuste explícito: {{ $detalle->cantidad_fisica_ajustada }} unidades físicas; importe revisado @endif</td>
             <td class="derecha">{{ number_format((float)$detalle->precio_unitario,2) }}</td>
             <td class="derecha">{{ number_format((float)$detalle->importe,2) }}</td></tr>@endforeach
         @for($i=$pedido->detalles->take(18)->count();$i<18;$i++)

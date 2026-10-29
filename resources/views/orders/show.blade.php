@@ -31,11 +31,7 @@
         true
     );
 
-    $editable = $pedido->modelo_comercial === 'unidades' || in_array(
-        $pedido->estado,
-        ['registrado', 'observado'],
-        true
-    );
+    $editable = true;
 @endphp
 
 <div class="page-heading">
@@ -156,6 +152,7 @@
 
                         <td>
                             {{ $detalle->descripcion_producto }}
+                            @if($detalle->cantidad_fisica_ajustada !== null)<p>Ajuste comercial explícito: {{ $detalle->cantidad_fisica_ajustada }} unidades físicas · importe revisado S/ {{ $detalle->importe }}</p>@endif
                         </td>
 
                         <td>

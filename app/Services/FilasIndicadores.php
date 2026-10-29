@@ -26,7 +26,7 @@ class FilasIndicadores
         'materiales_resumen' => 'insumo_id,codigo,unidad_medida,consumo_bruto,devuelto,perdido,salida_neta',
         'saldos_periodo' => 'presentacion_id,insumo_id,sku,unidad_medida,saldo_inicial,variacion,saldo_final,primer_movimiento_id,ultimo_movimiento_id,conciliacion',
         'situacion_entregas' => 'pedido_id,estado_actual,linea_id,despacho_componente_id,presentacion_id,sku,despachadas,aceptadas,rechazadas,pendientes,recibidas,aptas,danadas,por_revisar,no_recuperadas,reincorporadas,por_retornar,por_aprobar,aceptado_centimos,rechazado_centimos,pendiente_centimos,verificable',
-        'comercial' => 'pedido_id,linea_id,fecha_pedido,fecha_entrega,estado_actual,tipo_linea,modalidad,descripcion,sku,cantidad_comercial,tamano,paquetes_definidos,paquetes_pendientes,importe_centimos,modelo_comercial,unidades_en_espera',
+        'comercial' => 'pedido_id,linea_id,fecha_pedido,fecha_entrega,estado_actual,tipo_linea,modalidad,descripcion,sku,cantidad_comercial,tamano,paquetes_definidos,paquetes_pendientes,importe_centimos,modelo_comercial,unidades_en_espera,ajuste_fisico_explicito',
         'preparacion' => 'presentacion_id,sku,solicitadas,stock_actual,faltante_conocido,cobertura',
         'fisicas' => 'pedido_id,linea_id,paquete_id,composicion_id,componente_id,presentacion_id,sku,descripcion,unidades_fisicas,fuente',
         'pendientes' => 'pedido_id,linea_id,descripcion,paquetes_pendientes,unidades_sin_composicion,unidades_sin_distribuir',

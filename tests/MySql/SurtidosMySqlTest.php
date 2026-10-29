@@ -124,11 +124,9 @@ class SurtidosMySqlTest extends PruebaInventarioMySql
             $control->refresh();
             $originales[$control->id] = [$control->getAttributes(), $control->detalles->map->getAttributes()->all()];
         }
-        $this->post(route('pedidos.store'), ['cliente_id' => $normal->cliente_id, 'fecha_pedido' => today()->toDateString(), 'fecha_entrega' => today()->toDateString(), 'condicion_pago' => 'contado', 'detalles' => [
+        $pedido = $this->crearPedidoHistoricoSurtido($e, null, [
             ['presentacion_producto_id' => $e['skus'][0]->id, 'modalidad' => 'empaque', 'unidades_por_empaque' => 12, 'cantidad' => 1],
-            ['tipo_linea' => 'surtido', 'formato_surtido_id' => $e['formato'], 'modalidad' => 'empaque', 'unidades_por_empaque' => 12, 'cantidad' => 2, 'paquetes_json' => json_encode($this->paquetesSurtidos($e))],
-        ]])->assertRedirect()->assertSessionHasNoErrors();
-        $pedido = Pedido::latest('id')->firstOrFail();
+        ]);
         $this->assertSame('72.00', $pedido->total);
         $this->assertSame(2, $pedido->detalles->count());
         $this->post(route('pedidos.procesar', $pedido), ['accion' => 'confirmar'])->assertSessionHasNoErrors();

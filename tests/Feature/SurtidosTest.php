@@ -84,7 +84,7 @@ class SurtidosTest extends TestCase
         $pedido = $this->registrar($e);
         $d = $pedido->detalles->sole();
         DB::table('formatos_surtidos')->where('id', $e['formato'])->update(['precio_empaque' => 99, 'unidades_por_empaque' => 15]);
-        $cabecera = ['cliente_id' => $pedido->cliente_id, 'fecha_pedido' => today()->toDateString(), 'fecha_entrega' => today()->toDateString(), 'condicion_pago' => 'contado'];
+        $cabecera = ['cliente_id' => $pedido->cliente_id, 'fecha_pedido' => today()->toDateString(), 'fecha_entrega' => today()->toDateString(), 'condicion_pago' => 'contado', 'motivo' => 'Ajuste auditado que conserva la tarifa y modalidad históricas.'];
         $this->put(route('pedidos.update', $pedido), $cabecera + ['detalles' => [['id' => $d->id, 'tipo_linea' => 'surtido', 'formato_surtido_id' => $e['formato'], 'modalidad' => 'empaque', 'cantidad' => 2, 'unidades_por_empaque' => 12, 'paquetes_json' => json_encode($this->paquetesSurtidos($e))]]])->assertSessionHasNoErrors();
         $this->assertSame($d->id, $pedido->fresh()->detalles->sole()->id);
         $this->assertSame('48.00', $pedido->fresh()->total);
@@ -188,20 +188,14 @@ class SurtidosTest extends TestCase
         $e = $this->escenarioSurtido();
         $pedido = $this->registrar($e);
         $fila = ['tipo_linea' => 'surtido', 'formato_surtido_id' => $e['formato'], 'modalidad' => 'empaque', 'cantidad' => 2, 'paquetes_json' => json_encode($this->paquetesSurtidos($e))];
-        $respuesta = $this->withSession(['_old_input' => ['cliente_id' => $pedido->cliente_id, 'detalles' => [100000 => $fila]]])->get(route('pedidos.create'));
+        $respuesta = $this->withSession(['_old_input' => ['cliente_id' => $pedido->cliente_id, 'detalles' => [100000 => $fila]]])->get(route('pedidos.edit', $pedido));
         $respuesta->assertOk()->assertSee('paquetes_json')->assertSee('componentes');
         $this->assertStringContainsString("filas: JSON.parse('[", $respuesta->getContent());
     }
 
     private function registrar(array $e, ?array $paquetes = null, array $otros = []): Pedido
     {
-        $pedidoBase = $this->pedidoEnvasado($e, 'registrado');
-        $cliente = $pedidoBase->cliente_id;
-        $pedidoBase->detalles()->delete();
-        $pedidoBase->delete();
-        $this->post(route('pedidos.store'), ['cliente_id' => $cliente, 'fecha_pedido' => today()->toDateString(), 'fecha_entrega' => today()->toDateString(), 'condicion_pago' => 'contado', 'detalles' => array_merge([['tipo_linea' => 'surtido', 'formato_surtido_id' => $e['formato'], 'modalidad' => 'empaque', 'cantidad' => 2, 'unidades_por_empaque' => 12, 'precio_unitario' => '0.01', 'paquetes_json' => json_encode($paquetes ?? $this->paquetesSurtidos($e))]], $otros)])->assertRedirect()->assertSessionHasNoErrors();
-
-        return Pedido::latest('id')->firstOrFail();
+        return $this->crearPedidoHistoricoSurtido($e, $paquetes, $otros);
     }
 
     public function test_registro_guarda_dos_composiciones_distintas_y_cobra_solo_dos_paquetes(): void
@@ -254,7 +248,7 @@ class SurtidosTest extends TestCase
     {
         $e = $this->escenarioSurtido();
         $pedido = $this->registrar($e);
-        $this->get(route('pedidos.create'))->assertOk()->assertSee('Añadir paquete surtido habilitado')->assertSee('surtidos.js');
+        $this->get(route('pedidos.edit', $pedido))->assertOk()->assertSee('Composiciones históricas')->assertSee('surtidos.js');
         $this->get(route('surtidos.index'))->assertOk()->assertSee('composición de aromas');
         $this->get(route('pedidos.show', $pedido))->assertOk()->assertSee('Paquete 1')->assertSee('Paquete 2')->assertSee('Lavanda');
     }

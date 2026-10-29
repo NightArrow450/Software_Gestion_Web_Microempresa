@@ -14,6 +14,7 @@ return new class extends Migration
         });
         Schema::table('pedido_detalles', function (Blueprint $table): void {
             $table->unsignedInteger('cantidad_espera')->default(0);
+            $table->unsignedInteger('cantidad_fisica_ajustada')->nullable();
         });
         Schema::create('pedido_versiones', function (Blueprint $table): void {
             $table->id();

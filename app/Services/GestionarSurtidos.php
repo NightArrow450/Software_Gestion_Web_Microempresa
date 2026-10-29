@@ -289,13 +289,24 @@ class GestionarSurtidos
                 return $restante;
             })->filter(fn (PedidoDetalle $detalle): bool => $detalle->cantidad > 0)->values();
         }
+        $historicas = $pedido->detalles->map(function (PedidoDetalle $detalle): PedidoDetalle {
+            if ($detalle->cantidad_fisica_ajustada === null) {
+                return $detalle;
+            }
+            $proyeccion = clone $detalle;
+            $proyeccion->modalidad = 'unidad';
+            $proyeccion->cantidad = $detalle->cantidad_fisica_ajustada;
+            $proyeccion->descripcion_producto .= ' · Ajuste físico explícito';
+
+            return $proyeccion;
+        });
         if (! $pedido->detalles->contains('tipo_linea', 'surtido')) {
-            return $pedido->detalles;
+            return $historicas;
         }
         $pedido->loadMissing('detalles.presentacion.producto', 'detalles.presentacion.variante');
         $salida = collect();
         $componentes = [];
-        foreach ($pedido->detalles as $d) {
+        foreach ($historicas as $d) {
             if ($d->tipo_linea !== 'surtido') {
                 $salida->push($d);
 

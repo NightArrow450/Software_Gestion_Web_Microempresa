@@ -104,19 +104,26 @@ class RegistroPedidosTest extends TestCase
         ];
     }
 
-    public function test_registra_pedido_y_calcula_precio_de_cajas(): void
+    public function test_ajusta_historico_y_conserva_precio_pactado_de_cajas(): void
     {
         $usuario = $this->usuarioConPermisos([
             'pedidos.crear',
             'pedidos.ver',
+            'pedidos.editar',
         ]);
 
         [$cliente, $presentacion] = $this->datosBase();
 
         $this->actingAs($usuario);
 
-        $respuesta = $this->post(
-            route('pedidos.store'),
+        $pedido = Pedido::create(['cliente_id' => $cliente->id, 'usuario_id' => $usuario->id, 'cliente_nombre' => $cliente->nombre,
+            'fecha_pedido' => '2026-10-12', 'fecha_entrega' => '2026-10-13', 'condicion_pago' => 'contado', 'estado' => 'registrado', 'total' => '108.00']);
+        $detalle = $pedido->detalles()->create(['presentacion_producto_id' => $presentacion->id, 'codigo_sku' => $presentacion->codigo_sku,
+            'descripcion_producto' => 'Limpia Vidrios histórico', 'modalidad' => 'empaque', 'unidades_por_empaque' => 12, 'cantidad' => 2, 'precio_unitario' => '54.00', 'importe' => '108.00']);
+        $pedido->historialEstados()->create(['usuario_id' => $usuario->id, 'estado_nuevo' => 'registrado', 'motivo' => 'Fotografía anterior al rediseño.']);
+
+        $respuesta = $this->put(
+            route('pedidos.update', $pedido),
             array_merge(
                 $this->solicitud(
                     $cliente->id,
@@ -124,11 +131,11 @@ class RegistroPedidosTest extends TestCase
                     'empaque',
                     2
                 ),
-                ['total' => '0.01']
+                ['total' => '0.01', 'motivo' => 'Se conserva el precio histórico sin aceptar el total manipulado.']
             )
         );
 
-        $respuesta->assertRedirect();
+        $respuesta->assertRedirect()->assertSessionHasNoErrors();
 
         $this->assertDatabaseHas('pedidos', [
             'id' => 1,

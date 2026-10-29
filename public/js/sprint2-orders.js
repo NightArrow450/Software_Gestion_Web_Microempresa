@@ -17,7 +17,7 @@
     const clienteBuscador = document.getElementById('buscar-cliente');
     const clientesResultados = document.getElementById('resultados-clientes');
     const clientes = config.clientes || [];
-    if (clienteSelector && clienteBuscador && clientesResultados) {
+    if (clienteSelector && clienteBuscador && clientesResultados && !config.historico) {
         clienteBuscador.hidden = false;
         clienteSelector.hidden = true;
         clienteSelector.required = false;
@@ -96,7 +96,7 @@
     limitarEntrega();
 
     function recalcular() {
-        let totalCentimos = 0;
+        let totalCentimos = Number(config.ajusteCabeceraCentimos) || 0;
         contenedor.querySelectorAll('.s2-product-row').forEach(fila => {
             const producto = presentaciones.find(p => String(p.id) === fila.querySelector('.js-presentacion').value);
             const modalidad = fila.querySelector('.js-modalidad').value;
@@ -107,9 +107,12 @@
             tamano.disabled = !esEmpaque;
             fila.querySelector('.js-descripcion-empaque').textContent = esEmpaque
                 ? `${producto?.tipo_empaque || 'Empaque'} de ${tamano.value || '…'}` : '';
-            const precio = window.BusquedaPedidos.precioLineaCentimos(producto, modalidad, tamano.value);
+            const precio = fila.dataset.precioHistorico !== undefined ? Number(fila.dataset.precioHistorico) : window.BusquedaPedidos.precioLineaCentimos(producto, modalidad, tamano.value);
             const centimos = precio === null ? NaN : precio;
-            const importe = Number.isInteger(cantidad) && cantidad > 0 && Number.isFinite(centimos) ? centimos * cantidad : 0;
+            const revision = document.getElementById(`importe-historico-${fila.querySelector('.js-detalle-id').value}`);
+            const importe = revision?.value !== undefined && revision.value !== '' ? Math.round(Number(revision.value) * 100)
+                : cantidad === Number(fila.dataset.cantidadHistorica) && fila.dataset.importeHistorico !== undefined ? Number(fila.dataset.importeHistorico)
+                : Number.isInteger(cantidad) && cantidad > 0 && Number.isFinite(centimos) ? centimos * cantidad : 0;
             fila.querySelector('.js-precio').value = Number.isFinite(centimos) ? (centimos / 100).toFixed(2) : 'Sin precio';
             fila.querySelector('.js-importe').value = (importe / 100).toFixed(2);
             fila.querySelector('.js-cantidad').setCustomValidity(importe > 99999999 ? 'El importe de una línea no puede superar S/ 999 999,99.' : '');
@@ -129,7 +132,7 @@
         const selector = fila.querySelector('.js-modalidad');
         selector.replaceChildren();
         if (producto?.unidad && producto.precio_unidad !== null) selector.add(new Option('Unidad', 'unidad'));
-        if (producto?.empaque && producto.precio_empaque !== null) selector.add(new Option('Empaque', 'empaque'));
+        if (!config.historico && producto?.empaque && producto.precio_empaque !== null) selector.add(new Option('Empaque', 'empaque'));
         if (!selector.options.length) selector.add(new Option('Sin forma de venta', ''));
         if (Array.from(selector.options).some(option => option.value === preferencia)) selector.value = preferencia;
         recalcular();
@@ -175,6 +178,13 @@
         contenedor.appendChild(fragmento);
         const actual = contenedor.lastElementChild;
         configurarModalidad(actual, datos.modalidad || 'unidad');
+        if (datos.id) {
+            actual.dataset.precioHistorico = String(Math.round(Number(datos.precio_unitario) * 100));
+            actual.dataset.cantidadHistorica = String(datos.cantidad);
+            if (datos.importe !== undefined) actual.dataset.importeHistorico = String(Math.round(Number(datos.importe) * 100));
+            actual.querySelector('.js-modalidad').replaceChildren(new Option(datos.modalidad === 'empaque' ? 'Empaque histórico' : 'Unidad histórica', datos.modalidad));
+            tamanoCampo.readOnly = true;
+        }
         let modalidadAnterior = actual.querySelector('.js-modalidad').value;
         let tamanoAnterior = tamanoCampo.value;
         function consolidarDuplicado() {
@@ -299,6 +309,7 @@
     });
     document.getElementById('agregar-fila').addEventListener('click', () => buscar.focus());
     document.addEventListener('pedido:surtido-cambio', recalcular);
+    document.querySelectorAll('[id^="importe-historico-"]').forEach(campo => campo.addEventListener('input', recalcular));
     (Array.isArray(config.filas) ? config.filas : []).forEach(datos => datos.tipo_linea === 'surtido' ? window.PedidosSurtidos.agregar(datos) : agregarFila(datos));
     recalcular();
     document.getElementById('form-pedido').addEventListener('submit', event => {

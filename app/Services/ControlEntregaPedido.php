@@ -80,6 +80,7 @@ class ControlEntregaPedido
                 $factor = PresentacionProducto::whereKey($detalle->presentacion_producto_id)->lockForUpdate()->value('unidades_por_empaque');
             }
             $unidades = in_array($detalle->modalidad, ['unidad', 'empaque'], true) && $factor > 0 ? (int) $detalle->cantidad * (int) $factor : null;
+            $unidades = $detalle->cantidad_fisica_ajustada ?? $unidades;
             $lineas[$detalle->id] = ['id' => $detalle->id, 'presentacion_id' => $detalle->presentacion_producto_id, 'sku' => $detalle->codigo_sku, 'descripcion' => $detalle->descripcion_producto, 'modalidad' => $detalle->modalidad, 'cantidad_original' => (int) $detalle->cantidad, 'factor' => $factor, 'despachadas' => $unidades, 'importe_centimos' => (int) round((float) $detalle->importe * 100), 'verificada' => false];
         }
         foreach ($lineas as &$linea) {

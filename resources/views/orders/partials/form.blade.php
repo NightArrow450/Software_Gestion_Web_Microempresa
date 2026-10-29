@@ -1,9 +1,17 @@
 @php
     $editando = isset($pedido);
     $filasPrevias = old('detalles', $editando
-        ? $pedido->detalles->map(fn($d) => ['id' => $d->id, 'tipo_linea' => $d->tipo_linea ?? 'normal', 'formato_surtido_id' => $d->formato_surtido_id, 'paquetes_json' => json_encode(app(\App\Services\GestionarSurtidos::class)->paquetes($d)), 'precio_unitario' => $d->precio_unitario, 'presentacion_producto_id' => $d->presentacion_producto_id, 'modalidad' => $d->modalidad, 'cantidad' => $d->cantidad, 'unidades_por_empaque' => $d->unidades_por_empaque ?? $d->presentacion?->unidades_por_empaque])->all()
+        ? $pedido->detalles->map(fn($d) => ['id' => $d->id, 'tipo_linea' => $d->tipo_linea ?? 'normal', 'formato_surtido_id' => $d->formato_surtido_id, 'paquetes_json' => json_encode(app(\App\Services\GestionarSurtidos::class)->paquetes($d)), 'precio_unitario' => $d->precio_unitario, 'importe' => $d->importe, 'presentacion_producto_id' => $d->presentacion_producto_id, 'modalidad' => $d->modalidad, 'cantidad' => $d->cantidad, 'unidades_por_empaque' => $d->unidades_por_empaque ?? $d->presentacion?->unidades_por_empaque])->all()
         : [['presentacion_producto_id'=>'', 'modalidad'=>'unidad','cantidad'=>1]]);
     $filasPrevias = array_values($filasPrevias);
+    foreach ($filasPrevias as &$filaHistoricaPrevia) {
+        $fuenteHistorica = $pedido->detalles->firstWhere('id', (int) ($filaHistoricaPrevia['id'] ?? 0));
+        if ($fuenteHistorica) {
+            $filaHistoricaPrevia['precio_unitario'] = $fuenteHistorica->precio_unitario;
+            $filaHistoricaPrevia['importe'] = $fuenteHistorica->importe;
+        }
+    }
+    unset($filaHistoricaPrevia);
 @endphp
 <form method="POST" id="form-pedido" action="{{ $editando ? route('pedidos.update', $pedido) : route('pedidos.store') }}">
 @csrf @include('components.token-operacion')
@@ -12,12 +20,24 @@
 <input type="hidden" name="_updated_at" value="{{ $pedido->getRawOriginal('updated_at') }}">
 @endif @if($editando) @method('PUT') @endif
 <section class="form-section">
-    <h2 class="form-section-title">Datos de la nota de pedido</h2>
+    <h2>Ajuste de pedido histórico</h2>
+    <p>Se conservan la modalidad, el tamaño y el precio pactados. El importe revisado es una decisión comercial explícita; no modifica pagos ni movimientos anteriores. Las unidades físicas revisadas solo se admiten antes del despacho y junto con un importe revisado.</p>
+    <label for="motivo-historico">Motivo del ajuste *</label><textarea id="motivo-historico" name="motivo" class="form-control" required minlength="10" maxlength="1000">{{ old('motivo') }}</textarea>
+    @foreach($pedido->detalles as $historica)
+    <details><summary>Ajuste explícito: {{ $historica->descripcion_producto }} · {{ $historica->descripcionModalidad() }} · importe vigente S/ {{ $historica->importe }}</summary>
+        <label for="importe-historico-{{ $historica->id }}">Importe total revisado de esta línea (opcional)</label><input class="form-control" id="importe-historico-{{ $historica->id }}" name="ajustes_historicos[{{ $historica->id }}][importe_revisado]" type="number" min="0" max="999999.99" step="0.01" value="{{ old('ajustes_historicos.'.$historica->id.'.importe_revisado') }}">
+        @if($historica->tipo_linea !== 'surtido')<label for="fisica-historica-{{ $historica->id }}">Unidades físicas revisadas (opcional; no convierte el precio)</label><input class="form-control" id="fisica-historica-{{ $historica->id }}" name="ajustes_historicos[{{ $historica->id }}][cantidad_fisica_revisada]" type="number" min="1" step="1" value="{{ old('ajustes_historicos.'.$historica->id.'.cantidad_fisica_revisada') }}">@endif
+    </details>
+    @endforeach
+</section>
+<section class="form-section">
+    <h2 class="form-section-title">Datos originales de la nota de pedido</h2>
+    <p>La cabecera histórica se conserva. Los ajustes de cantidades, importes e incidencias se registran abajo con un motivo.</p>
     <div class="form-grid">
         <div class="form-group s2-cliente-busqueda"><label for="buscar-cliente" class="form-label">Cliente *</label>
             <input class="form-control" type="search" id="buscar-cliente" placeholder="Escribe el nombre, documento o mercado" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="resultados-clientes" hidden>
             <div class="s2-sugerencias" id="resultados-clientes" role="listbox" hidden></div>
-            <select class="form-control" id="cliente_id" name="cliente_id" required>
+            <select class="form-control" id="cliente_id" name="cliente_id" required disabled>
                 <option value="">Selecciona un cliente activo</option>
                 @foreach($clientes as $cliente)<option value="{{ $cliente->id }}" @selected((string)old('cliente_id', $pedido->cliente_id ?? '') === (string)$cliente->id)>{{ $cliente->nombre }} — {{ $cliente->mercado ?: 'Sin mercado' }}</option>@endforeach
             </select>
@@ -25,11 +45,11 @@
         </div>
         <div class="form-group"><label class="form-label">Vendedor responsable</label><div class="form-control" style="background:var(--surface-low)">{{ $editando ? ($pedido->vendedor?->first_name.' '.$pedido->vendedor?->last_name) : auth()->user()->first_name.' '.auth()->user()->last_name }}</div></div>
         <div class="form-group"><label class="form-label" for="fecha_pedido">Fecha de registro *</label>
-            <input class="form-control" type="date" id="fecha_pedido" name="fecha_pedido" required min="{{ today('America/Lima')->subDays(30)->toDateString() }}" max="{{ today('America/Lima')->toDateString() }}" value="{{ old('fecha_pedido', $editando ? $pedido->fecha_pedido->format('Y-m-d') : now('America/Lima')->toDateString()) }}"></div>
+            <input class="form-control" type="date" id="fecha_pedido" name="fecha_pedido" required readonly min="{{ today('America/Lima')->subDays(30)->toDateString() }}" max="{{ today('America/Lima')->toDateString() }}" value="{{ old('fecha_pedido', $editando ? $pedido->fecha_pedido->format('Y-m-d') : now('America/Lima')->toDateString()) }}"></div>
         <div class="form-group"><label class="form-label" for="fecha_entrega">Fecha prevista de entrega *</label>
-            <input class="form-control" type="date" id="fecha_entrega" name="fecha_entrega" required value="{{ old('fecha_entrega', $editando ? $pedido->fecha_entrega->format('Y-m-d') : now('America/Lima')->toDateString()) }}"></div>
+            <input class="form-control" type="date" id="fecha_entrega" name="fecha_entrega" required readonly value="{{ old('fecha_entrega', $editando ? $pedido->fecha_entrega->format('Y-m-d') : now('America/Lima')->toDateString()) }}"></div>
         <div class="form-group"><label class="form-label" for="condicion_pago">Condición de pago *</label>
-            <select class="form-control" name="condicion_pago" id="condicion_pago"><option value="contado" @selected(old('condicion_pago', $pedido->condicion_pago ?? 'contado') === 'contado')>Al contado</option>
+            <select class="form-control" name="condicion_pago" id="condicion_pago" disabled><option value="contado" @selected(old('condicion_pago', $pedido->condicion_pago ?? 'contado') === 'contado')>Al contado</option>
                 <option value="credito" @selected(old('condicion_pago', $pedido->condicion_pago ?? '') === 'credito')>Crédito</option></select></div>
         <div class="form-group"><label class="form-label" for="observaciones">Observaciones (opcional)</label>
             <textarea class="form-control" id="observaciones" name="observaciones" rows="2">{{ old('observaciones',$pedido->observaciones ?? '') }}</textarea></div>
@@ -37,7 +57,7 @@
 </section>
 <section class="form-section">
     <div class="page-heading" style="margin-bottom:14px"><div><h2 class="form-section-title" style="margin-bottom:4px">Productos solicitados</h2>
-        <div class="s2-note">El precio se obtiene del catálogo. Admite unidad o empaque si está habilitado. Máximo 18 líneas por nota física.</div></div>
+        <div class="s2-note">En líneas existentes se conserva el precio histórico. No cambies su modalidad ni tamaño. Las adiciones se venden por unidades. El servidor valida los ajustes explícitos.</div></div>
         <button type="button" class="btn btn-secondary" id="agregar-fila"><span class="material-symbols-outlined">search</span> Buscar producto</button></div>
     @if(count($presentaciones) === 0 && count($formatosSurtidos ?? []) === 0)<div class="s2-error">No existen presentaciones activas. Crea presentaciones y registra precios en Catálogo de Productos antes de agregar un pedido.</div>@endif
     <div class="form-group s2-busqueda" id="busqueda-productos">
@@ -47,8 +67,7 @@
         <p class="s2-note" id="aviso-buscador" aria-live="polite">Escribe para buscar. Selecciona la presentación y modalidad de venta.</p>
     </div>
     @if(count($formatosSurtidos ?? []) > 0)
-    <div class="form-group"><label for="formato-surtido">Añadir paquete surtido habilitado</label><select class="form-control" id="formato-surtido">@foreach($formatosSurtidos as $formato)<option value="{{ $formato['id'] }}" @disabled(!$formato['estado'])>{{ $formato['nombre'] }} · {{ $formato['unidades_por_empaque'] }} unidades · S/ {{ $formato['precio_empaque'] }}</option>@endforeach</select>
-    <button type="button" class="btn btn-secondary" id="agregar-surtido">Añadir línea surtida</button><p class="s2-note">Cada paquete tiene composición propia. Puede quedar pendiente, pero no podrá finalizar preparación ni despacharse sin definirla.</p></div>
+    <div class="form-group"><h3>Composiciones históricas</h3><p class="s2-note">Las líneas surtidas existentes conservan sus paquetes y tarifas. Puedes revisar su composición antes del despacho; las nuevas adiciones se registran por unidades físicas.</p></div>
     @endif
     <div id="filas-pedido"></div>
     <template id="plantilla-fila">
@@ -61,7 +80,7 @@
                     <span class="form-help js-descripcion-empaque" aria-live="polite"></span>
                 </div>
             </div>
-            <div><label>Cantidad *</label><input class="form-control js-cantidad" name="detalles[__INDEX__][cantidad]" type="number" min="1" max="10000" step="1" required value="1"></div>
+            <div><label>Cantidad *</label><input class="form-control js-cantidad" name="detalles[__INDEX__][cantidad]" type="number" min="0" max="4294967295" step="1" required value="1"></div>
             <div><label>Precio S/</label><input class="form-control js-precio" readonly placeholder="—" tabindex="-1"></div>
             <div><label>Importe S/</label><input class="form-control js-importe" readonly placeholder="0.00" tabindex="-1"></div>
             <button type="button" class="btn btn-danger remove-row js-eliminar" aria-label="Eliminar producto"><span class="material-symbols-outlined">delete</span></button>
@@ -83,7 +102,9 @@ window.configuracionSprint2 = {
         'documento' => $cliente->documento,
         'mercado' => $cliente->mercado,
     ])->values()->all()) }},
-    filas: {{ Illuminate\Support\Js::from($filasPrevias) }}
+    filas: {{ Illuminate\Support\Js::from($filasPrevias) }},
+    historico: true,
+    ajusteCabeceraCentimos: {{ (int) round(((float) $pedido->total - (float) $pedido->detalles->sum('importe')) * 100) }}
 };
 </script>
 <script src="{{ asset('js/pedidos-busqueda-utils.js') }}"></script>
