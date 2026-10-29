@@ -1,0 +1,58 @@
+name: Azure - preparar paquete Linux
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  paquete:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      APP_ENV: production
+      APP_DEBUG: 'false'
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ':memory:'
+      CACHE_STORE: array
+      SESSION_DRIVER: array
+      QUEUE_CONNECTION: sync
+      MAIL_MAILER: log
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # v2
+        with:
+          php-version: '8.4'
+          extensions: bcmath, ctype, curl, dom, fileinfo, intl, mbstring, pdo_mysql, pdo_sqlite, tokenizer, xml, zip
+          coverage: none
+          tools: composer:v2
+      - name: Instalar dependencias de producción desde lockfile
+        run: |
+          test ! -f .env
+          composer validate --strict --no-check-publish
+          composer install --no-dev --prefer-dist --no-interaction --no-progress --no-scripts --no-plugins
+          php artisan package:discover --no-interaction
+      - uses: ./.github/actions/preparar-vite
+      - name: Validar configuración Nginx y sintaxis de scripts
+        run: |
+          bash -n docs/azure/startup.sh docs/azure/crear-paquete.sh
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq nginx
+          printf 'events {}\nhttp { include %s/docs/azure/nginx.conf; }\n' "$GITHUB_WORKSPACE" > "$RUNNER_TEMP/nginx-azure.conf"
+          sudo nginx -t -c "$RUNNER_TEMP/nginx-azure.conf"
+      - name: Generar ZIP sin secretos, bases ni dependencias de desarrollo
+        run: bash docs/azure/crear-paquete.sh
+      - name: Conservar paquete para publicar desde el portal
+        uses: actions/upload-artifact@v4
+        with:
+          name: azure-php84-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/azure-release.zip
+            ${{ runner.temp }}/azure-release.zip.sha256
+          retention-days: 7
+          if-no-files-found: error

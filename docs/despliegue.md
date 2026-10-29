@@ -2,6 +2,10 @@
 
 No existe despliegue público contratado o realizado por esta fase. Laragon continúa como entorno operativo local. No se requiere Railway ni un proveedor específico.
 
+## Preparación Azure
+
+Para el despliegue autorizado de prueba en App Service Linux y MySQL, seguir [la guía Azure Portal](azure/GUIA_PORTAL.md). Incluye el empaquetado Linux, variables, arranque y comprobaciones. Los recursos de Azure y sus costos todavía deben verificarse en la suscripción; la preparación de archivos no confirma un despliegue realizado.
+
 ## Futuro servidor Linux
 
 Revisar PHP 8.3 y extensiones desde composer.lock, MySQL compatible (validación actual con 8.4.3), servidor HTTP con raíz public/ y PHP-FPM, HTTPS y permisos de storage/bootstrap/cache. Instalar desde lockfiles y compilar Vite con Node 22. No usar artisan serve como servidor público ni subir node_modules o secretos.
