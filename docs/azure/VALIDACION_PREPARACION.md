@@ -4,7 +4,7 @@ Fecha: 29/10/2026. Revisión local; no equivale a un despliegue remoto.
 
 Comprobado:
 
-- YAML del workflow interpretado correctamente; ejecución por push a develop y permisos contents:read.
+- YAML del workflow interpretado correctamente; ejecución por push a jm-develop y permisos contents:read.
 - Sintaxis Bash de los scripts y de los bloques del workflow.
 - Guardas de los scripts: rechazan arrancar fuera de producción/MySQL o empaquetar fuera del runner Linux previsto, antes de tocar el sistema.
 - Empaquetador Python probado con una carpeta sintética: genera ZIP con rutas relativas y SHA256; rechaza archivos .env y un paquete sin manifest Vite.

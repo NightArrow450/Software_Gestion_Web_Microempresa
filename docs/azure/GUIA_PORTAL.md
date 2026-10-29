@@ -2,7 +2,7 @@
 
 Preparado el 29/10/2026. Destino: **App Service Linux, PHP 8.4, MySQL Flexible Server**. Se mantiene Laravel/Blade/Vite. No requiere Docker local, Redis, un dominio comprado ni cambiar la arquitectura.
 
-**Estado:** archivos preparados localmente; todavía no publicados en GitHub, workflow no ejecutado en GitHub y ningún recurso Azure creado por esta preparación. No se ha verificado tu suscripción. Los 30 minutos son un límite para el intento, no una garantía de finalización.
+**Estado:** preparación separada en la rama `jm-develop`; publicar y comprobar el workflow en esa rama. Ningún recurso Azure fue creado por esta preparación y no se ha verificado tu suscripción. Los 30 minutos son un límite para el intento, no una garantía de finalización.
 
 ## 1. Antes de crear servicios
 
@@ -16,7 +16,7 @@ Si faltan permisos, cuota o disponibilidad y no se resuelve en los primeros 10 m
 
 ## 2. Preparar el paquete Linux en GitHub
 
-Los archivos nuevos están en el repositorio local, rama `develop`. Revisa el diff y publica únicamente estos cambios en tu repositorio GitHub mediante tu flujo habitual. **Todavía no se hizo commit ni push.** No subas `.env`, `.local-dev`, contraseñas, SQLite ni carpetas ajenas al repo.
+Los archivos de Azure están aislados en la rama `jm-develop`. Revisa el diff y publica únicamente en esa rama; no mezclar ni publicar estos cambios en `develop` sin coordinar con su responsable. No subas `.env`, `.local-dev`, contraseñas, SQLite ni carpetas ajenas al repo.
 
 Cambios que debes incluir:
 
@@ -24,9 +24,9 @@ Cambios que debes incluir:
 - `docs/azure/` (esta guía, scripts, Nginx y plantilla)
 - Enlace añadido en `docs/despliegue.md`.
 
-Después del push a `develop`, en GitHub abre **Actions → Azure - preparar paquete Linux**. Se ejecutará automáticamente y solo construirá un ZIP; no crea ni publica servicios Azure. También existe ejecución manual cuando GitHub reconozca el workflow desde la rama predeterminada. No hace falta modificar `main` solo para el primer intento: el push a `develop` ya lo activa.
+Después del push a `jm-develop`, en GitHub abre **Actions → Azure - preparar paquete Linux**. Se ejecutará automáticamente y solo construirá un ZIP; no crea ni publica servicios Azure. También existe ejecución manual cuando GitHub reconozca el workflow desde la rama predeterminada. No hace falta modificar `main` para el primer intento: el push a `jm-develop` ya lo activa.
 
-El workflow instala PHP 8.4 y dependencias de producción desde los lockfiles, compila Vite con la acción existente, valida Nginx y crea el ZIP. Espera resultado verde y revisa también la ejecución de **Calidad e integridad** del mismo commit. GitHub puede limitar los minutos de Actions según el plan; no afirmar que es ilimitado.
+El workflow instala PHP 8.4 y dependencias de producción desde los lockfiles, compila Vite con la acción existente, valida Nginx y crea el ZIP. Espera resultado verde. El workflow existente **Calidad e integridad** conserva sus disparadores originales y no se ejecuta automáticamente por un push a `jm-develop`: este empaquetado no sustituye la suite de pruebas, cuyos resultados locales anteriores están documentados por separado. GitHub puede limitar los minutos de Actions según el plan; no afirmar que es ilimitado.
 
 En la ejecución verde descarga el artefacto `azure-php84-<commit>`. **Extrae el ZIP descargado:** contiene `azure-release.zip` y su archivo `.sha256`. El archivo que se publicará es `azure-release.zip`, no el contenedor del artefacto ni un ZIP del repositorio. Guarda el commit y conserva ese paquete para recuperación.
 
