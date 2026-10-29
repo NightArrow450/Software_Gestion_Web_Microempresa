@@ -1,0 +1,42 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "adminPassword": {
+      "type": "secureString",
+      "minLength": 8
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.DBforMySQL/flexibleServers",
+      "apiVersion": "2024-12-30",
+      "name": "dhacer-tesis-v1-gp",
+      "location": "westus3",
+      "sku": {
+        "name": "Standard_D2ds_v4",
+        "tier": "GeneralPurpose"
+      },
+      "tags": {
+        "proyecto": "tesis",
+        "uso": "prueba-temporal"
+      },
+      "properties": {
+        "createMode": "Default",
+        "administratorLogin": "dhaceradmin",
+        "administratorLoginPassword": "[parameters('adminPassword')]",
+        "version": "8.0.21",
+        "storage": {
+          "storageSizeGB": 32,
+          "autoGrow": "Disabled"
+        },
+        "backup": {
+          "backupRetentionDays": 7,
+          "geoRedundantBackup": "Disabled"
+        },
+        "highAvailability": { "mode": "Disabled" },
+        "network": { "publicNetworkAccess": "Disabled" }
+      }
+    }
+  ]
+}
