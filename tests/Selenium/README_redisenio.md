@@ -60,7 +60,7 @@ completa se prepara otro laboratorio vacío verificado. Si se interrumpe, los ID
 ficticios quedan en `evidencia/escenario-ids.json`; revisar las operaciones ya
 registradas antes de reanudar un caso individual. No repetir escrituras a ciegas.
 
-## Cinco escenarios preparados
+## Seis escenarios verificados
 
 1. Venta de 53 unidades a S/2: 5 Lavanda sueltas, paquete de 24 Frutos y paquete
    mixto de 8 BB, 8 Manzana y 8 Limón; copia y edición independiente. Total S/106.
@@ -75,12 +75,20 @@ registradas antes de reanudar un caso individual. No repetir escrituras a ciegas
 5. Escritorio, 360, 390, 768 y 1024 px sin desborde del documento; nota histórica
    sin conversión; dos notas por hoja y anexo de agrupaciones, PDF y consola.
 
+6. Modal desde la lista en 360/390 px sin confirmar producción: consumos visibles,
+   Escape cierra y stock/movimientos no cambian. Editor de agrupaciones ya enviadas
+   en móvil y distribución por salida e historial 54 → 32 visibles en escritorio.
+
 Los snapshots de stock se obtienen mediante consultas de lectura sobre la base
 visual verificada. Las capturas y el PDF contienen exclusivamente datos ficticios
-y se guardan fuera del repositorio, en `evidencia/` del laboratorio. El PDF debe
+y se guardan en `evidencia/` del laboratorio. Se versiona una selección sin secretos para la revisión. El PDF debe
 revisarse visualmente y contarse; no inferir su legibilidad por la prueba HTML.
 
-**Estado actual:** preparación completada; Selenium, capturas y revisión final
-de impresión **PENDIENTES DE EJECUCIÓN**. La revisión automática bloqueó iniciar
-el servidor web desde la herramienta. Se ha solicitado su arranque manual;
-no se ha intentado eludir ese bloqueo ni se presentan resultados simulados.
+**Resultado real:** seis casos distintos aprobados. Campaña principal 5/5 en
+334,44 s; repetición más estricta del caso 05 y nuevo caso 06, 2/2 en 164,65 s.
+Las cuatro pruebas no repetidas en la segunda campaña ya estaban aprobadas;
+no se omiten fallos. El intento inicial erró por el selector de envío del propio
+guion y se conservó su log. El usuario inició manualmente el servidor autorizado.
+PDF: dos páginas A4 horizontales, dos notas y un anexo, sin hojas vacías. Véase
+[la evidencia seleccionada](../../docs/pruebas/evidencias/redisenio_pr44/README.md).
+No equivale a UAT real, pruebas de estrés ni revisión en dispositivos físicos.

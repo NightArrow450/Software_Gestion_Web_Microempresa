@@ -16,8 +16,8 @@ Por decisión de la empresa no se controla el volumen de mezclas preparadas ni l
 | --- | --- |
 | Acceso y administración | Autenticación, cuentas activas, contraseña inicial, usuarios, roles y permisos. |
 | Catálogo y clientes | Clientes, productos, categorías, aromas, presentaciones, unidades y empaques. |
-| Pedidos | Registro, edición permitida, confirmación, observación, cancelación y notas imprimibles. |
-| Surtidos | Composición individual por paquete, versiones, pendientes y SKU compatibles. |
+| Pedidos | Ventas nuevas por unidades, agrupaciones opcionales, edición auditada, históricos conservados, confirmación y notas. |
+| Archivo de surtidos | Composiciones, versiones y pendientes de pedidos históricos. Los nuevos agrupan dentro del pedido, sin otro precio comercial. |
 | Preparación | Consolidación por producto, presentación y aroma; demanda, stock y producción diferenciados. |
 | Inventarios | Productos terminados e insumos físicos, movimientos, ajustes, mínimos e historial. |
 | Envasados | Materiales configurables, anticipados o vinculados, consumo y entrada atómicos, correcciones. |
@@ -31,6 +31,7 @@ Los importes comerciales no son dinero efectivamente cobrado. Las referencias hi
 
 - [Instalación, mantenimiento y recuperación](docs/operacion-local.md).
 - [Módulos, navegación y permisos](docs/modulos.md).
+- [Rediseño por unidades, históricos y validación visual del PR44](docs/redisenio-ventas-unidad.md).
 - [Envasados y materiales](docs/envasados.md).
 - [Auditoría y trazabilidad](docs/auditoria.md).
 - [Demostración aislada y controles previos](docs/demostracion.md).

@@ -77,7 +77,7 @@ class Escenario:
 
     def submit(self, form, button=None):
         previous = self.find("body")
-        submit = button or self.find("button.btn-primary", form)
+        submit = button or self.find('button[type="submit"].btn-primary,button:not([type]).btn-primary', form)
         confirm = "confirm(" in (submit.get_attribute("onclick") or "")
         self.click(submit)
         if confirm:
@@ -171,8 +171,11 @@ class Escenario:
 @pytest.fixture(scope="module")
 def scenario():
     context = Escenario()
-    yield context
-    context.driver.quit()
+    try:
+        yield context
+    finally:
+        context.shot("ultima-pantalla-selenium")
+        context.driver.quit()
 
 
 def test_01_venta_53_unidades_agrupaciones_copia_y_precio(scenario):
@@ -340,7 +343,8 @@ def test_05_moviles_impresion_y_pedidos_historicos(scenario):
         assert s.driver.execute_script("return innerWidth") == width, "La captura debe usar el ancho real solicitado"
         for label, path in [("pedido", f"/pedidos/{s.ids['principal']}"), ("editor", f"/pedidos/{s.ids['quitagrasa']}/editar"), ("preparacion", "/cumplimiento/lista-preparacion"), ("retornos", f"/cumplimiento/{s.ids['principal']}")]:
             s.get(path)
-            assert s.driver.execute_script("return document.documentElement.scrollWidth <= innerWidth + 1"), f"Desborde {label} a {width}px"
+            assert s.driver.execute_script("return innerWidth") == width, f"Ancho efectivo incorrecto en {label}"
+            assert s.driver.execute_script("return document.documentElement.scrollWidth") <= width + 1, f"Desborde {label} a {width}px"
             if width in [1366, 360, 390]:
                 s.shot(f"{label}-{width}px")
     s.driver.execute_cdp_cmd("Emulation.clearDeviceMetricsOverride", {})
@@ -361,3 +365,61 @@ def test_05_moviles_impresion_y_pedidos_historicos(scenario):
     severe = [r for r in s.driver.get_log("browser") if r["level"] == "SEVERE" and "favicon.ico" not in r["message"]]
     (s.evidence / "consola.json").write_text(json.dumps(severe, ensure_ascii=False, indent=2), "utf-8")
     assert not severe
+
+
+def test_06_modal_y_agrupaciones_en_360_390_y_trazabilidad_visible(scenario):
+    s = scenario
+    before = s.snapshot("antes-revision-modal-movil")
+    s.login("operaciones")
+    s.order("Quitagrasa ficticio", None, 1)
+    visual = s.save_order()
+    s.confirm_order(visual)
+    s.ids["solo_consulta_modal"] = visual
+    (s.evidence / "escenario-ids.json").write_text(json.dumps(s.ids), "utf-8")
+    s.login("reparto")
+    for width in [360, 390]:
+        s.driver.execute_cdp_cmd("Emulation.setDeviceMetricsOverride", {"width": width, "height": 950, "deviceScaleFactor": 1, "mobile": True})
+        s.get("/cumplimiento/lista-preparacion")
+        assert s.driver.execute_script("return innerWidth") == width
+        s.click(s.find('[data-registrar-envasado][data-sku="QGR-1"]'))
+        dialog = s.find("#envasado-integrado")
+        Select(s.find('[name="configuracion_envasado_id"]', dialog)).select_by_visible_text("Configuración ficticia PR44")
+        s.field("cantidad", 1, dialog)
+        s.click(s.button("Consultar consumos antes de confirmar", dialog))
+        s.wait.until(lambda d: len(d.find_elements(By.CSS_SELECTOR, '[data-vista-previa-envasado] form')) == 1)
+        confirmation = s.find("[data-confirmacion-envasado]")
+        s.driver.execute_script("arguments[0].scrollIntoView({block:'start'})", confirmation)
+        assert s.driver.execute_script("return document.documentElement.scrollWidth") <= width + 1
+        bounds = dialog.rect
+        assert bounds["x"] >= 0 and bounds["x"] + bounds["width"] <= width + 1
+        s.shot(f"modal-consumos-{width}px")
+        s.driver.switch_to.active_element.send_keys(Keys.ESCAPE)
+        s.wait.until(lambda d: not dialog.is_displayed())
+    after = s.snapshot("despues-revision-modal-sin-confirmar")
+    assert after["inventarios"] == before["inventarios"]
+    assert after["materiales"] == before["materiales"]
+    assert after["movimientos"] == before["movimientos"]
+    s.login("operaciones")
+    for width in [360, 390]:
+        s.driver.execute_cdp_cmd("Emulation.setDeviceMetricsOverride", {"width": width, "height": 950, "deviceScaleFactor": 1, "mobile": True})
+        s.get(f"/pedidos/{s.ids['principal']}/editar")
+        group = s.find("[data-grupos]")
+        s.driver.execute_script("arguments[0].scrollIntoView({block:'start'})", group)
+        assert s.driver.execute_script("return innerWidth") == width
+        assert s.driver.execute_script("return document.documentElement.scrollWidth") <= width + 1
+        assert "Paquete ya despachado" in group.text
+        s.shot(f"agrupaciones-editor-{width}px")
+    s.driver.execute_cdp_cmd("Emulation.clearDeviceMetricsOverride", {})
+    s.driver.set_window_size(1366, 1000)
+    s.get(f"/cumplimiento/{s.ids['principal']}")
+    heading = s.driver.find_element(By.XPATH, "//h3[normalize-space(.)='Salidas físicas registradas']")
+    section = heading.find_element(By.XPATH, "..")
+    for details in section.find_elements(By.CSS_SELECTOR, "details"):
+        if not details.get_attribute("open"):
+            s.click(details.find_element(By.TAG_NAME, "summary"))
+    s.driver.execute_script("arguments[0].scrollIntoView({block:'start'})", heading)
+    s.shot("08-salidas-con-distribucion-expandida")
+    s.get(f"/cumplimiento/{s.ids['quitagrasa']}")
+    heading = s.driver.find_element(By.XPATH, "//h3[normalize-space(.)='Cambios respecto a la solicitud original']")
+    s.driver.execute_script("arguments[0].scrollIntoView({block:'start'})", heading)
+    s.shot("09-ajuste-54-a-32-auditado")

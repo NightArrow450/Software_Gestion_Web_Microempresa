@@ -18,7 +18,7 @@ Operaciones edita con motivo y control de versión durante la atención. Reducir
 
 En históricos pendientes, las cantidades comerciales se valoran con el precio pactado. Si una cantidad física no corresponde a ese modelo, la pantalla ofrece un ajuste explícito de unidades físicas e importe revisado a Administrador u Operaciones autorizados. Conserva el importe original, el nuevo, el autor y el motivo; no modifica pagos ni convierte automáticamente precios.
 
-Las notas mantienen dos pedidos por hoja A4 horizontal y anexos legibles de agrupaciones o composiciones históricas. La validación visual definitiva del PR44 está pendiente; consultar [el informe del rediseño](redisenio-ventas-unidad.md).
+Las notas mantienen dos pedidos por hoja A4 horizontal y anexos legibles de agrupaciones o composiciones históricas. La validación visual del PR44 y las dos páginas de impresión están comprobadas con datos ficticios; consultar [el informe del rediseño](redisenio-ventas-unidad.md).
 
 ## Preparación e inventario
 

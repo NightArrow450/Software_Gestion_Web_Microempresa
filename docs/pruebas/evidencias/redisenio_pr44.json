@@ -1,13 +1,13 @@
 {
   "fecha": "2026-10-29",
   "pr": 44,
-  "estado": "borrador; navegador e impresión pendientes",
+  "estado": "Validación funcional y visual completada; PR pendiente de revisión y autorización de merge",
   "laravel": {
     "result": "passed",
     "tests": 663,
     "passed": 663,
     "assertions": 4110,
-    "duration_ms": 51777
+    "duration_ms": 53863
   },
   "descubrimiento_laravel": {
     "Unit": 33,
@@ -42,12 +42,49 @@
     "composer_validate": "passed"
   },
   "selenium": {
-    "descubiertos": 5,
-    "ejecutados": 0,
-    "estado": "PENDIENTE DE EJECUCIÓN",
-    "motivo": "Revisión automática bloqueó iniciar el servidor PHP; arranque manual solicitado."
+    "descubiertos": 6,
+    "escenarios_distintos_aprobados": 6,
+    "estado": "passed",
+    "campana_principal": {
+      "aprobados": 5,
+      "segundos": 334.44
+    },
+    "repeticion_focalizada": {
+      "aprobados": 2,
+      "segundos": 164.65,
+      "casos": [
+        "05: anchos efectivos e impresión",
+        "06: modal móvil, agrupaciones y trazabilidad"
+      ]
+    },
+    "nota": "El caso 05 se ejecutó dos veces. Los cuatro casos no seleccionados en la repetición ya habían aprobado en la campaña principal; no fueron omitidos para ocultar fallos.",
+    "primer_intento": "Selector del propio guion pulsaba Añadir unidades en lugar de Guardar; corregido antes de guardar el primer pedido.",
+    "entorno": {
+      "web": "127.0.0.1:8026",
+      "mysql": "127.0.0.1:3347",
+      "base": "dhacer_eco_limp_test_visual_redisenio_20261029",
+      "datos": "exclusivamente ficticios",
+      "perfil": "Chrome nuevo y privado de las pruebas"
+    }
   },
-  "visual_e_impresion": "PENDIENTE DE EJECUCIÓN",
+  "visual_e_impresion": {
+    "estado": "passed",
+    "anchos_css": [
+      360,
+      390,
+      768,
+      1024,
+      1366
+    ],
+    "sin_scroll_horizontal_documento": true,
+    "emulacion": "Viewport verificado en Chrome; no dispositivo físico",
+    "pdf_paginas": 2,
+    "notas_primera_pagina": 2,
+    "anexo_paginas": 1,
+    "orientacion": "A4 horizontal",
+    "paginas_en_blanco": 0,
+    "inspeccion_visual": "PNGs renderizados con Poppler revisados; texto y cantidades legibles."
+  },
   "seguridad": {
     "env_operativo_modificado": false,
     "migraciones_reales_ejecutadas": false,
@@ -67,5 +104,206 @@
     "base_reutilizada": "65/70; conflictos de operación, base no vacía y conexiones",
     "base_nueva_nombre_largo": "69/70; sufijo del laboratorio excedía límite de nombre",
     "correccion": "Base nueva de nombre corto, sin borrados ni exclusiones."
+  },
+  "stock_por_etapa": {
+    "antes-ventas": {
+      "inventarios": {
+        "LIM-1": 100,
+        "LIM-2": 100,
+        "LIM-3": 100,
+        "LIM-4": 100,
+        "LIM-5": 100,
+        "QGR-1": 0,
+        "VID-1": 100,
+        "HIS-1": 60
+      },
+      "materiales": {
+        "ENVASE": "200.000",
+        "ETIQUETA": "200.000",
+        "CONTRATAPA": "200.000",
+        "MANGA": "100.000"
+      },
+      "movimientos": 0
+    },
+    "salida-parcial-29": {
+      "inventarios": {
+        "LIM-1": 95,
+        "LIM-2": 76,
+        "LIM-3": 100,
+        "LIM-4": 100,
+        "LIM-5": 100,
+        "QGR-1": 0,
+        "VID-1": 100,
+        "HIS-1": 60
+      },
+      "materiales": {
+        "ENVASE": "200.000",
+        "ETIQUETA": "200.000",
+        "CONTRATAPA": "200.000",
+        "MANGA": "100.000"
+      },
+      "movimientos": 2
+    },
+    "salida-final-53": {
+      "inventarios": {
+        "LIM-1": 95,
+        "LIM-2": 76,
+        "LIM-3": 92,
+        "LIM-4": 92,
+        "LIM-5": 92,
+        "QGR-1": 0,
+        "VID-1": 100,
+        "HIS-1": 60
+      },
+      "materiales": {
+        "ENVASE": "200.000",
+        "ETIQUETA": "200.000",
+        "CONTRATAPA": "200.000",
+        "MANGA": "100.000"
+      },
+      "movimientos": 5
+    },
+    "rechazo-sin-entrada": {
+      "inventarios": {
+        "LIM-1": 95,
+        "LIM-2": 76,
+        "LIM-3": 92,
+        "LIM-4": 92,
+        "LIM-5": 92,
+        "QGR-1": 0,
+        "VID-1": 100,
+        "HIS-1": 60
+      },
+      "materiales": {
+        "ENVASE": "200.000",
+        "ETIQUETA": "200.000",
+        "CONTRATAPA": "200.000",
+        "MANGA": "100.000"
+      },
+      "movimientos": 5
+    },
+    "recepcion-sin-aprobacion": {
+      "inventarios": {
+        "LIM-1": 95,
+        "LIM-2": 76,
+        "LIM-3": 92,
+        "LIM-4": 92,
+        "LIM-5": 92,
+        "QGR-1": 0,
+        "VID-1": 100,
+        "HIS-1": 60
+      },
+      "materiales": {
+        "ENVASE": "200.000",
+        "ETIQUETA": "200.000",
+        "CONTRATAPA": "200.000",
+        "MANGA": "100.000"
+      },
+      "movimientos": 5
+    },
+    "retorno-aprobado-una-unidad": {
+      "inventarios": {
+        "LIM-1": 95,
+        "LIM-2": 76,
+        "LIM-3": 93,
+        "LIM-4": 92,
+        "LIM-5": 92,
+        "QGR-1": 0,
+        "VID-1": 100,
+        "HIS-1": 60
+      },
+      "materiales": {
+        "ENVASE": "200.000",
+        "ETIQUETA": "200.000",
+        "CONTRATAPA": "200.000",
+        "MANGA": "100.000"
+      },
+      "movimientos": 6
+    },
+    "envasado-32": {
+      "inventarios": {
+        "LIM-1": 95,
+        "LIM-2": 76,
+        "LIM-3": 93,
+        "LIM-4": 92,
+        "LIM-5": 92,
+        "QGR-1": 32,
+        "VID-1": 100,
+        "HIS-1": 60
+      },
+      "materiales": {
+        "ENVASE": "168.000",
+        "ETIQUETA": "168.000",
+        "CONTRATAPA": "168.000",
+        "MANGA": "100.000"
+      },
+      "movimientos": 10
+    },
+    "reduccion-comercial-sin-modificar-produccion": {
+      "inventarios": {
+        "LIM-1": 95,
+        "LIM-2": 76,
+        "LIM-3": 93,
+        "LIM-4": 92,
+        "LIM-5": 92,
+        "QGR-1": 32,
+        "VID-1": 100,
+        "HIS-1": 60
+      },
+      "materiales": {
+        "ENVASE": "168.000",
+        "ETIQUETA": "168.000",
+        "CONTRATAPA": "168.000",
+        "MANGA": "100.000"
+      },
+      "movimientos": 10
+    },
+    "quitagrasa-despachado": {
+      "inventarios": {
+        "LIM-1": 95,
+        "LIM-2": 76,
+        "LIM-3": 93,
+        "LIM-4": 92,
+        "LIM-5": 92,
+        "QGR-1": 0,
+        "VID-1": 100,
+        "HIS-1": 60
+      },
+      "materiales": {
+        "ENVASE": "168.000",
+        "ETIQUETA": "168.000",
+        "CONTRATAPA": "168.000",
+        "MANGA": "100.000"
+      },
+      "movimientos": 11
+    },
+    "despues-revision-modal-sin-confirmar": {
+      "inventarios": {
+        "LIM-1": 95,
+        "LIM-2": 76,
+        "LIM-3": 93,
+        "LIM-4": 92,
+        "LIM-5": 92,
+        "QGR-1": 0,
+        "VID-1": 100,
+        "HIS-1": 60
+      },
+      "materiales": {
+        "ENVASE": "168.000",
+        "ETIQUETA": "168.000",
+        "CONTRATAPA": "168.000",
+        "MANGA": "100.000"
+      },
+      "movimientos": 11
+    }
+  },
+  "evidencia_archivos": {
+    "01-editor-dos-paquetes-escritorio.png": "03415897eb630ccc27633e877913c38e36ec125b3cd6bc84339fd57ff500dec0",
+    "08-salidas-con-distribucion-expandida.png": "b748e6099c3895977c3afdec7e6e635d43c6c5d4f319c1af9d09745808264540",
+    "09-ajuste-54-a-32-auditado.png": "2c5abb196045bdfc04cf5380a5158fbb2cc9228afbe2362439343155e2bd3d60",
+    "agrupaciones-editor-360px.png": "9d6a5dee2d6d4e760acd3450450f33af6fde87606d1e27bc9ecede730d9ff6dc",
+    "impresion-pr44-2.png": "95c8c89027ad15309191dbbabcc515bc618093bc4394eb71f69438fe8262d704",
+    "modal-consumos-390px.png": "504ce4f1937a791db9b4ba4b172eafbd3906f88b5102657d338b70a83aefc5e9",
+    "notas-y-agrupaciones-pr44.pdf": "881f17def42e19113761fd58f6f5924de2c9ff9f8f4e94d7fc8f3991f75ca91c"
   }
 }

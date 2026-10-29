@@ -1,9 +1,10 @@
 # PR44: ventas por unidades, históricos y atención física parcial
 
-Estado del corte del 29/10/2026: **borrador; no fusionar ni aplicar a Laragon**.
-Las regresiones automatizadas están corregidas. La ejecución de Selenium, la
-revisión visual y la comprobación de las páginas impresas todavía están pendientes.
-No se considera terminado el rediseño mientras falten esas evidencias.
+Estado del corte del 29/10/2026: **validación funcional y visual completada;
+pendiente de revisión del PR y autorización separada para Laragon**. Las
+regresiones automatizadas están corregidas y las evidencias de Selenium,
+escritorio, móvil e impresión fueron revisadas. No se ha hecho merge ni se ha
+modificado la base real. Véase [el informe visual y de inventario](pruebas/evidencias/redisenio_pr44/README.md).
 
 ## Modelo comercial y precios
 
@@ -139,12 +140,14 @@ conservan. El catálogo distingue precio unitario de referencia de empaque hist�
 
 Se conserva la maquetación de dos notas por A4 horizontal, con anexos adicionales
 de agrupaciones y composiciones históricas. El aviso de impresión distingue hojas
-de notas y anexos. **La legibilidad, los móviles y el número real de páginas no
-se dan por validados hasta ejecutar el navegador y revisar sus evidencias.**
+de notas y anexos. La prueba real de Chrome produjo dos páginas A4 horizontales:
+dos notas en la primera y un anexo en la segunda, sin hojas vacías. Las páginas
+se renderizaron con Poppler y se revisaron visualmente. El anexo separa las
+unidades sueltas de los paquetes para evitar confundir su pertenencia.
 
 ## Resultados reales del corte
 
-- Laravel completo: **663/663**, **4110 aserciones**, 51,777 s. Descubrimiento:
+- Laravel completo: **663/663**, **4110 aserciones**, 53,863 s. Descubrimiento:
   33 escenarios Unit, 619 Feature y 11 Security, estas últimas incluidas una vez.
 - JavaScript: **45/45**, sin omitidas ni fallos.
 - Larastan nivel 5: **0 errores**, sin exclusiones generales nuevas.
@@ -159,13 +162,19 @@ se dan por validados hasta ejecutar el navegador y revisar sus evidencias.**
   177,284 s, sobre `dhacer_eco_limp_test_r44f_1029a`, nueva y vacía al comenzar.
   Incluye los índices únicos, datos históricos, parciales y concurrencia.
   El servidor escucha en 3347 y no contiene ninguna base protegida.
-- Selenium 4.52.0 / pytest 9.2.0: cinco escenarios descubiertos, **PENDIENTES DE
-  EJECUCIÓN**. Entorno virtual privado y Chrome/ChromeDriver compatibles preparados.
-- Revisión visual e impresión: **PENDIENTES DE EJECUCIÓN**. La revisión automática
-  rechazó iniciar el servidor PHP aislado. Se solicitó arranque manual y no se
-  intentó eludirlo. No se han generado capturas ni resultados ficticios de navegador.
+- Selenium 4.52.0 / pytest 9.2.0: **seis escenarios distintos aprobados**.
+  Campaña principal: 5/5 en 334,44 s. Repetición focalizada del caso 05 y nuevo
+  caso 06: 2/2 en 164,65 s. No se presentan como siete casos distintos.
+- Revisión visual: escritorio 1366 px y viewports efectivos 360/390/768/1024 px
+  sin scroll horizontal del documento. El modal y el editor de paquetes también
+  se revisaron en 360/390 px. Tablas anchas mantienen su contenedor desplazable.
+- Impresión: **dos páginas A4 horizontales**, dos notas y un anexo, sin páginas
+  en blanco; PDF y capturas con datos ficticios incluidos en la evidencia.
+- El bloqueo inicial de arranque se resolvió con la intervención manual del
+  usuario. El primer intento Selenium detectó un selector incorrecto del propio
+  guion; se corrigió y se repitió la campaña completa, sin ocultar el fallo.
 - GitHub: las ejecuciones del último commit se enlazan y actualizan en el PR44.
-  Aprobar CI no sustituye Selenium ni la validación visual pendiente.
+  CI y navegador tienen evidencias separadas; los resultados se enlazan en el PR.
 
 La repetición MySQL detectó errores de preparación del laboratorio: reutilización
 de una base que debía ser nueva, referencias repetidas, límite de conexiones y
@@ -195,10 +204,11 @@ auxiliares con ese prefijo y comprueba que no contengan tablas ajenas. No usar
 El laboratorio de esta revisión escucha únicamente en 127.0.0.1:3347, con directorio
 de datos fuera de Laragon operativo y UUID comprobado. No contiene las bases
 protegidas. La base visual separada quedó con 47 migraciones, datos ficticios y
-cuenta HTTP DML limitada a esa base. Manifiesto, credenciales, logs y evidencias
-quedan fuera del repositorio. Ver [instrucciones Selenium](../tests/Selenium/README_redisenio.md).
+cuenta HTTP DML limitada a esa base. Manifiesto, credenciales y logs privados
+quedan fuera del repositorio. Solo se versionan evidencias seleccionadas que
+contienen datos ficticios y un resumen de saldos por etapa. Ver [instrucciones Selenium](../tests/Selenium/README_redisenio.md).
 
-## Límites y cierre pendiente
+## Límites y condiciones de actualización
 
 El archivo histórico de surtidos usa paginación de 20 formatos. La medición inicial
 SQLite con 46 formatos fue de 6 consultas, 12 301 bytes HTML, aproximadamente 108 ms
@@ -213,13 +223,19 @@ sin incrustar todos los SKU en HTML. Es una prueba autenticada con relaciones
 preparadas, no una medición fría de producción ni un ensayo de estrés. Las
 mediciones generales previas hasta 300 registros conservan su limitación.
 
-Pendientes para cerrar el PR: ejecutar los cinco casos Selenium en el servidor
-verificado, corregir cualquier defecto encontrado, revisar capturas de escritorio,
-360/390 px y PDF, y verificar los cinco trabajos sobre el último commit. Los guiones
-de videos previos describen el flujo anterior y requieren actualización después
-de completar esta validación. No se declara el sistema listo para sustituirlos.
+La validación solicitada del rediseño está completada. La aprobación y el merge
+son responsabilidad del usuario. La aplicación de las dos migraciones sobre
+Laragon requiere otra autorización, respaldo restaurado y verificación previa.
+No se han inferido precios unitarios para SKU históricos que carecen de ellos:
+Operaciones deberá definirlos expresamente antes de vender esos SKU en pedidos
+nuevos. No hay decisiones comerciales pendientes que impidan revisar este código.
+
+Estas pruebas no son UAT con trabajadores reales, no sustituyen impresión física,
+no certifican todos los navegadores ni un nuevo ensayo de carga del rediseño.
+Los guiones anteriores deben consultarse junto con el flujo actualizado de este
+informe y `docs/modulos.md`; no se modifican los archivos locales de la Fase 9C.
 
 Las bases `software_gestion_web_microempresa` y `ecolimp_respaldo_prueba`, el `.env`
 operativo, las migraciones históricas y los cambios locales del checkout original
 permanecen fuera de estas operaciones. No hubo merge ni despliegue. El PR44 sigue
-independiente y en borrador; no se inicia otro alcance.
+independiente, pendiente de revisión del usuario; no se inicia otro alcance.

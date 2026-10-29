@@ -19,6 +19,7 @@
 <li>{{ $c['cantidad'] }} unidades de {{ $lineaGrupo['descripcion_producto'] ?? 'Referencia histórica' }} · {{ $lineaGrupo['codigo_sku'] ?? '' }}</li>
 @endforeach</ul>
 @empty<p>Entrega suelta. No se han definido paquetes.</p>@endforelse
+<h3>Unidades sueltas y en espera</h3>
 <ul>@foreach(($fotoUnidades['lineas'] ?? []) as $lineaGrupo)
 @php
     $sueltasUnidades = $lineaGrupo['cantidad'] - ($asignadasUnidades[$lineaGrupo['id']] ?? 0);
