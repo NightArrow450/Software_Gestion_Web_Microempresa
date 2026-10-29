@@ -127,7 +127,7 @@ class Escenario:
         return sku
 
     def order(self, product, aroma, amount):
-        self.get("/pedidos/create")
+        self.get("/pedidos/nuevo")
         self.wait.until(lambda d: len(Select(self.find("[data-clientes]")).options) > 1)
         Select(self.find("[data-clientes]")).select_by_visible_text("Cliente ficticio PR44")
         return self.add_sku(product, aroma, amount)
@@ -314,7 +314,7 @@ def test_04_envasado_integrado_reduccion_54_a_32_y_despacho(scenario):
     assert state["materiales"]["MANGA"] == "100.000"
     s.prepare(order, {"QGR-1": 32})
     s.login("operaciones")
-    s.get(f"/pedidos/{order}/edit")
+    s.get(f"/pedidos/{order}/editar")
     s.field("detalles[0][cantidad]", 32)
     s.field("motivo", "Se reduce la cantidad vigente de 54 a 32 por falta de insumos químicos, sin prometer reposición.")
     s.save_order()
@@ -336,15 +336,18 @@ def test_05_moviles_impresion_y_pedidos_historicos(scenario):
     s.login("operaciones")
     for width in [1366, 360, 390, 768, 1024]:
         s.driver.set_window_size(width, 950)
-        for label, path in [("pedido", f"/pedidos/{s.ids['principal']}"), ("editor", f"/pedidos/{s.ids['quitagrasa']}/edit"), ("preparacion", "/cumplimiento/lista-preparacion"), ("retornos", f"/cumplimiento/{s.ids['principal']}")]:
+        s.driver.execute_cdp_cmd("Emulation.setDeviceMetricsOverride", {"width": width, "height": 950, "deviceScaleFactor": 1, "mobile": width < 650})
+        assert s.driver.execute_script("return innerWidth") == width, "La captura debe usar el ancho real solicitado"
+        for label, path in [("pedido", f"/pedidos/{s.ids['principal']}"), ("editor", f"/pedidos/{s.ids['quitagrasa']}/editar"), ("preparacion", "/cumplimiento/lista-preparacion"), ("retornos", f"/cumplimiento/{s.ids['principal']}")]:
             s.get(path)
             assert s.driver.execute_script("return document.documentElement.scrollWidth <= innerWidth + 1"), f"Desborde {label} a {width}px"
             if width in [1366, 360, 390]:
                 s.shot(f"{label}-{width}px")
+    s.driver.execute_cdp_cmd("Emulation.clearDeviceMetricsOverride", {})
     s.driver.set_window_size(1366, 1000)
     s.get("/pedidos/1")
     assert "48.00" in s.find("body").text
-    s.get("/pedidos/1/edit")
+    s.get("/pedidos/1/editar")
     assert "histórico" in s.find("body").text.lower()
     s.shot("07-editor-historico-sin-conversion")
     state = s.snapshot("final-integral")
