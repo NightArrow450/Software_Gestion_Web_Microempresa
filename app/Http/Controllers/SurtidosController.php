@@ -4,8 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Pedido;
 use App\Models\PedidoDetalle;
-use App\Models\PresentacionProducto;
-use App\Models\Producto;
 use App\Services\ConfigurarFormatoSurtido;
 use App\Services\GestionarSurtidos;
 use Illuminate\Http\RedirectResponse;
@@ -19,12 +17,16 @@ class SurtidosController extends Controller
     public function index(GestionarSurtidos $servicio): View
     {
         abort_unless($servicio->disponible(), 503, 'Primero aplica las migraciones de surtidos con la autorización correspondiente.');
-        $formatos = DB::table('formatos_surtidos')->orderBy('nombre')->get();
-        $autorizados = DB::table('formato_surtido_skus')->get()->groupBy('formato_surtido_id');
-        $productos = Producto::where('estado', true)->orderBy('nombre')->get();
-        $skus = PresentacionProducto::with(['producto', 'variante'])->where('estado', true)->orderBy('codigo_sku')->get();
+        $formatos = DB::table('formatos_surtidos as f')
+            ->leftJoin('productos as p', 'p.id', '=', 'f.producto_id')
+            ->select('f.*', 'p.nombre as producto_nombre')
+            ->orderBy('f.nombre')->orderBy('f.id')->paginate(20)->withQueryString();
+        $autorizados = DB::table('formato_surtido_skus')
+            ->whereIn('formato_surtido_id', $formatos->pluck('id'))
+            ->select('formato_surtido_id')->selectRaw('COUNT(*) as cantidad')
+            ->groupBy('formato_surtido_id')->pluck('cantidad', 'formato_surtido_id');
 
-        return view('products.surtidos', compact('formatos', 'autorizados', 'productos', 'skus'));
+        return view('products.surtidos', compact('formatos', 'autorizados'));
     }
 
     public function guardar(Request $request, ConfigurarFormatoSurtido $servicio, ?int $formato = null): RedirectResponse
