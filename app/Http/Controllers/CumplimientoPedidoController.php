@@ -6,6 +6,7 @@ use App\Models\ConfiguracionEnvasado;
 use App\Models\Envasado;
 use App\Models\Inventario;
 use App\Models\Pedido;
+use App\Services\AtenderPedidoUnidades;
 use App\Services\ControlEntregaPedido;
 use App\Services\GestionarSurtidos;
 use App\Services\RegistrarResultadoEntrega;
@@ -56,7 +57,7 @@ class CumplimientoPedidoController extends Controller
 
         $pedidos = Pedido::query()
             ->with(['detalles.presentacion.producto', 'detalles.presentacion.variante'])
-            ->whereIn('estado', ['confirmado', 'en_preparacion'])
+            ->whereIn('estado', ['confirmado', 'en_preparacion', 'despacho_parcial'])
             ->when($fechaDesde !== null, fn ($q) => $q->whereDate('fecha_entrega', '>=', $fechaDesde))
             ->when($fechaHasta !== null, fn ($q) => $q->whereDate('fecha_entrega', '<=', $fechaHasta))
             ->orderBy('fecha_entrega')
@@ -185,7 +186,19 @@ class CumplimientoPedidoController extends Controller
         $controlEntrega = app(ControlEntregaPedido::class);
         $resumenEntrega = $controlEntrega->disponible() ? $controlEntrega->resumen($pedido) : null;
 
-        return view('cumplimiento.show', compact('pedido', 'resumenEntrega'));
+        $atencionUnidades = null;
+        if ($pedido->modelo_comercial === 'unidades') {
+            $ids = $pedido->detalles->pluck('presentacion_producto_id');
+            $atencionUnidades = [
+                'despachadas' => app(AtenderPedidoUnidades::class)->despachadas($pedido->id),
+                'stock' => Inventario::whereIn('presentacion_producto_id', $ids)->pluck('cantidad_actual', 'presentacion_producto_id'),
+                'preparadas' => DB::table('pedido_preparaciones')->where('pedido_id', $pedido->id)->orderBy('id')->get()->keyBy('pedido_detalle_id'),
+                'envasadas' => Envasado::where('pedido_id', $pedido->id)->groupBy('presentacion_producto_id')->select('presentacion_producto_id')->selectRaw('SUM(cantidad - unidades_revertidas) cantidad')->pluck('cantidad', 'presentacion_producto_id'),
+                'configuraciones' => ConfiguracionEnvasado::whereIn('presentacion_producto_id', $ids)->where('estado', true)->get(),
+            ];
+        }
+
+        return view('cumplimiento.show', compact('pedido', 'resumenEntrega', 'atencionUnidades'));
     }
 
     public function iniciarPreparacion(

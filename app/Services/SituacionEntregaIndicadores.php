@@ -11,10 +11,10 @@ class SituacionEntregaIndicadores
         $pedidos = DB::table('pedidos as pe')->whereIn('pe.estado', ControlEntregaPedido::ESTADOS);
         FiltrosIndicadores::pedido($pedidos, $f);
         FiltrosIndicadores::periodo($pedidos, 'pe.fecha_pedido', $f);
-        foreach ($pedidos->select('pe.id', 'pe.estado')->lazyById(100, 'pe.id', 'id')->chunk(100) as $lote) {
+        foreach ($pedidos->select('pe.id', 'pe.estado', 'pe.modelo_comercial')->lazyById(100, 'pe.id', 'id')->chunk(100) as $lote) {
             $ids = $lote->pluck('id');
             $incidencias = DB::table('incidencias_entrega')->whereIn('pedido_id', $ids)->get()->keyBy('pedido_id');
-            $fotos = DB::table('incidencia_entrega_eventos')->whereIn('incidencia_id', $incidencias->pluck('id'))->where('tipo', 'despacho_base')->get()->groupBy('incidencia_id');
+            $fotos = DB::table('incidencia_entrega_eventos')->whereIn('incidencia_id', $incidencias->pluck('id'))->whereIn('tipo', ['despacho_base', 'despacho_unidades'])->orderBy('id')->get()->groupBy('incidencia_id');
             $resultados = DB::table('entrega_pedido_detalles as ed')->join('entregas_pedido as e', 'e.id', '=', 'ed.entrega_id')->whereIn('e.incidencia_id', $incidencias->pluck('id'))->select('ed.*', 'e.incidencia_id')->get()->groupBy('incidencia_id');
             $retornos = DB::table('retorno_pedido_detalles as rd')->join('retornos_pedido as r', 'r.id', '=', 'rd.retorno_id')->whereIn('r.incidencia_id', $incidencias->pluck('id'))->select('rd.*', 'r.incidencia_id')->get()->groupBy('incidencia_id');
             $detalles = DB::table('pedido_detalles')->whereIn('pedido_id', $ids)->whereNull('retirado_en')->get()->groupBy('pedido_id');
@@ -29,6 +29,11 @@ class SituacionEntregaIndicadores
                 $inc = $incidencias->get($pedido->id);
                 $eventos = $inc ? $fotos->get($inc->id, collect()) : collect();
                 $lineas = $eventos->count() === 1 ? json_decode($eventos->sole()->datos, true, 512, JSON_THROW_ON_ERROR)['lineas'] : [];
+                if ($pedido->modelo_comercial === 'unidades') {
+                    foreach ($eventos as $evento) {
+                        $lineas = array_replace($lineas, json_decode($evento->datos, true, 512, JSON_THROW_ON_ERROR)['lineas']);
+                    }
+                }
                 if ($lineas === []) {
                     foreach ($detalles->get($pedido->id, collect()) as $d) {
                         $lineas[$d->id] = ['id' => $d->id, 'presentacion_id' => $d->presentacion_producto_id, 'sku' => $d->codigo_sku, 'despachadas' => null, 'importe_centimos' => null, 'verificada' => false];

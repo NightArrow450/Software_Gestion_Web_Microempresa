@@ -46,7 +46,7 @@ class FiltrosIndicadores
             'composicion' => ['nullable', 'in:pendiente,definida'],
             'sku' => ['nullable', 'string', 'max:50'],
             'tipo' => ['nullable', 'in:entrada,salida,ajuste'],
-            'origen' => ['nullable', 'in:manual,despacho,envasado,correccion_envasado,retorno_pedido'],
+            'origen' => ['nullable', 'in:manual,despacho,despacho_unidades,envasado,correccion_envasado,retorno_pedido'],
             'vinculacion' => ['nullable', 'in:general,vinculado'],
             'historial' => ['nullable', 'boolean'],
             'economico' => ['nullable', 'boolean'],

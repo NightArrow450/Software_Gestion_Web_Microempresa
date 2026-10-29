@@ -1,0 +1,325 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Cliente;
+use App\Models\Inventario;
+use App\Models\Pedido;
+use App\Models\Permiso;
+use App\Services\AprobarRetornoPedido;
+use App\Services\AtenderPedidoUnidades;
+use App\Services\ControlEntregaPedido;
+use App\Services\FilasIndicadores;
+use App\Services\FiltrosIndicadores;
+use App\Services\GestionarPedidoUnidades;
+use App\Services\RegistrarResultadoEntrega;
+use App\Services\RegistrarRetornoPedido;
+use App\Services\TransicionesPedido;
+use Illuminate\Database\QueryException;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\SurtidosEscenario;
+use Tests\TestCase;
+
+class PedidoUnidadesTest extends TestCase
+{
+    use RefreshDatabase, SurtidosEscenario;
+
+    private function entrada(array $e, int $cantidad = 54): array
+    {
+        $this->freezeTime();
+        $cliente = Cliente::create(['nombre' => 'Cliente por unidades', 'estado' => true]);
+
+        return ['cliente_id' => $cliente->id, 'fecha_pedido' => today('America/Lima')->toDateString(), 'fecha_entrega' => today('America/Lima')->toDateString(),
+            'condicion_pago' => 'contado', 'detalles' => [['presentacion_producto_id' => $e['presentacion']->id, 'cantidad' => $cantidad]]];
+    }
+
+    public static function cantidades(): array
+    {
+        return ['una unidad' => [1], 'cinco sin paquete' => [5], 'siete sin múltiplo' => [7], 'cincuenta y cuatro' => [54], 'sin máximo comercial de diez mil' => [10001]];
+    }
+
+    #[DataProvider('cantidades')]
+    public function test_vende_unidades_sin_multiplo_y_sin_stock(int $cantidad): void
+    {
+        $e = $this->escenarioSurtido(0);
+        $entrada = $this->entrada($e, $cantidad);
+        $pedido = app(GestionarPedidoUnidades::class)->guardar($entrada, $e['usuario']);
+        app(TransicionesPedido::class)->registrar($pedido, 'registrado', 'confirmado', $e['usuario']->id, [], 'Confirmación sin disponibilidad.');
+
+        $this->assertDatabaseHas('pedido_detalles', ['pedido_id' => $pedido->id, 'cantidad' => $cantidad, 'modalidad' => 'unidad', 'unidades_por_empaque' => null]);
+        $this->assertSame('unidades', $pedido->modelo_comercial);
+        $this->assertDatabaseCount('pedido_agrupaciones', 0);
+        $this->assertDatabaseCount('movimientos_inventario', 0);
+        $this->assertDatabaseHas('pedidos', ['id' => $pedido->id, 'estado' => 'confirmado']);
+    }
+
+    public function test_agrupa_variantes_sin_duplicar_precio_y_conserva_sueltas(): void
+    {
+        $e = $this->escenarioSurtido();
+        $entrada = $this->entrada($e, 5);
+        $entrada['detalles'] = array_map(fn ($sku, $n): array => ['presentacion_producto_id' => $sku->id, 'cantidad' => $n], $e['skus'], [5, 24, 24]);
+        $entrada['agrupaciones'] = [['capacidad' => 24, 'componentes' => [['sku_id' => $e['skus'][1]->id, 'cantidad' => 24]]],
+            ['capacidad' => 30, 'componentes' => [['sku_id' => $e['skus'][2]->id, 'cantidad' => 24]]]];
+        $pedido = app(GestionarPedidoUnidades::class)->guardar($entrada, $e['usuario']);
+
+        $this->assertSame('106.00', $pedido->total);
+        $this->assertSame(53, (int) $pedido->detalles()->sum('cantidad'));
+        $this->assertDatabaseCount('pedido_agrupaciones', 2);
+        $this->assertSame(48, (int) DB::table('pedido_agrupacion_detalles')->sum('cantidad'));
+        $this->assertDatabaseCount('movimientos_inventario', 0);
+    }
+
+    public function test_reduccion_conserva_version_original_y_no_modifica_produccion(): void
+    {
+        $e = $this->escenarioSurtido(32);
+        $entrada = $this->entrada($e);
+        $pedido = app(GestionarPedidoUnidades::class)->guardar($entrada, $e['usuario']);
+        $pedido->update(['estado' => 'en_preparacion']);
+        $pedido->refresh();
+        $detalle = $pedido->detalles()->sole();
+        $entrada['detalles'][0] += ['id' => $detalle->id];
+        $entrada['detalles'][0]['cantidad'] = 32;
+        $entrada['_version'] = $pedido->version;
+        $entrada['motivo'] = 'Se agotó el insumo químico; se retiran definitivamente 22 unidades.';
+        $nuevo = app(GestionarPedidoUnidades::class)->guardar($entrada, $e['usuario'], $pedido);
+        $foto = json_decode(DB::table('pedido_versiones')->orderBy('id')->first()->datos, true);
+
+        $this->assertSame(54, $foto['lineas'][0]['cantidad']);
+        $this->assertSame(32, (int) $nuevo->detalles()->sole()->cantidad);
+        $this->assertSame('64.00', $nuevo->total);
+        $this->assertSame(32, (int) Inventario::first()->cantidad_actual);
+        $this->assertDatabaseCount('movimientos_inventario', 0);
+        $this->assertDatabaseCount('pedido_versiones', 2);
+    }
+
+    public function test_despachos_parciales_no_duplican_stock_ni_marcan_entrega_total(): void
+    {
+        $e = $this->escenarioSurtido(54);
+        $pedido = app(GestionarPedidoUnidades::class)->guardar($this->entrada($e), $e['usuario']);
+        $pedido->update(['estado' => 'en_preparacion']);
+        $pedido->refresh();
+        $detalle = $pedido->detalles()->sole();
+        $servicio = app(AtenderPedidoUnidades::class);
+        $servicio->preparar($pedido, ['version_pedido' => $pedido->version, 'pedido_detalle_id' => $detalle->id, 'cantidad' => 32, 'motivo' => 'Preparación física parcial verificada.'], $e['usuario']);
+        $pedido->refresh();
+        $datos = ['version_pedido' => $pedido->version, 'operacion' => 'primera_salida_00001', 'motivo' => 'Se despachan 32 y quedan 22 por atender.', 'detalles' => [['id' => $detalle->id, 'cantidad' => 32]]];
+        $id = $servicio->despachar($pedido, $datos, $e['usuario']);
+        $this->assertSame($id, $servicio->despachar($pedido, $datos, $e['usuario']));
+        $pedido->refresh();
+        $resumen = app(ControlEntregaPedido::class)->resumen($pedido);
+        $fisica = array_values($resumen['lineas'])[0];
+        app(RegistrarResultadoEntrega::class)->ejecutar($pedido, ['version' => $resumen['version'], 'detalles' => [['pedido_detalle_id' => $fisica['id'], 'aceptadas' => 32, 'rechazadas' => 0]]], $e['usuario']);
+
+        $this->assertSame(22, (int) Inventario::first()->cantidad_actual);
+        $this->assertSame('despacho_parcial', $pedido->fresh()->estado);
+        $this->assertDatabaseCount('movimientos_inventario', 1);
+        $pedido->refresh();
+        $servicio->preparar($pedido, ['version_pedido' => $pedido->version, 'pedido_detalle_id' => $detalle->id, 'cantidad' => 22, 'motivo' => 'Se preparó físicamente el remanente.'], $e['usuario']);
+        $pedido->refresh();
+        $servicio->despachar($pedido, ['version_pedido' => $pedido->version, 'operacion' => 'segunda_salida_00002', 'motivo' => 'Se despachan las 22 unidades restantes.', 'detalles' => [['id' => $detalle->id, 'cantidad' => 22]]], $e['usuario']);
+        $this->assertSame(0, (int) Inventario::first()->cantidad_actual);
+        $this->assertDatabaseCount('movimientos_inventario', 2);
+        $this->assertSame(54, (int) $servicio->despachadas($pedido->id)->get($detalle->id));
+        $this->assertCount(2, $servicio->fotografia($pedido));
+    }
+
+    public function test_rechaza_asignar_mas_unidades_de_las_vendidas_y_revierte_el_pedido_completo(): void
+    {
+        $e = $this->escenarioSurtido();
+        $entrada = $this->entrada($e, 5);
+        $entrada['agrupaciones'] = [['capacidad' => 24, 'componentes' => [['sku_id' => $e['presentacion']->id, 'cantidad' => 6]]]];
+        try {
+            app(GestionarPedidoUnidades::class)->guardar($entrada, $e['usuario']);
+            $this->fail('Debía rechazarse una distribución que inventa unidades.');
+        } catch (ValidationException $exception) {
+            $this->assertStringContainsString('supera las unidades vendidas', $exception->getMessage());
+        }
+        $this->assertDatabaseCount('pedidos', 0);
+        $this->assertDatabaseCount('pedido_detalles', 0);
+    }
+
+    public function test_formulario_nuevo_y_guardado_http_utilizan_unidades(): void
+    {
+        $e = $this->escenarioSurtido();
+        $this->get(route('pedidos.create'))->assertOk()->assertSee('Pedidos por unidades físicas')->assertDontSee('Añadir paquete surtido habilitado');
+        $datos = $this->entrada($e, 7);
+        $this->post(route('pedidos.store'), $datos)->assertRedirect()->assertSessionHasNoErrors();
+        $pedido = Pedido::sole();
+        $this->assertSame('14.00', $pedido->total);
+        $this->assertSame('unidades', $pedido->modelo_comercial);
+        $respuesta = $this->get(route('pedidos.show', $pedido));
+        $this->assertNull($respuesta->exception, $respuesta->exception?->getMessage() ?? '');
+        $respuesta->assertOk()->assertSee('Historial de modificaciones comerciales');
+        $this->get(route('cumplimiento.show', $pedido))->assertOk()->assertSee('Preparación y atención por unidades');
+    }
+
+    public function test_servidor_no_permite_crear_un_nuevo_pedido_como_empaque(): void
+    {
+        $e = $this->escenarioSurtido();
+        $datos = $this->entrada($e, 5);
+        $datos['detalles'][0]['modalidad'] = 'empaque';
+        $datos['detalles'][0]['unidades_por_empaque'] = 12;
+        $this->post(route('pedidos.store'), $datos)->assertSessionHasErrors('detalles.0.modalidad');
+        $this->assertDatabaseCount('pedidos', 0);
+    }
+
+    public function test_servidor_rechaza_precio_faltante_sin_inventarlo(): void
+    {
+        $e = $this->escenarioSurtido();
+        $e['presentacion']->update(['precio_unitario' => null]);
+        $this->post(route('pedidos.store'), $this->entrada($e, 5))->assertSessionHasErrors('detalles.0.presentacion_producto_id');
+        $this->assertDatabaseCount('pedidos', 0);
+        $this->assertDatabaseCount('movimientos_inventario', 0);
+    }
+
+    public function test_agrupaciones_rechazan_capacidades_fisicas_incompatibles(): void
+    {
+        $e = $this->escenarioSurtido();
+        $e['skus'][1]->update(['contenido' => 2]);
+        $datos = $this->entrada($e, 5);
+        $datos['detalles'][] = ['presentacion_producto_id' => $e['skus'][1]->id, 'cantidad' => 7];
+        $datos['agrupaciones_json'] = json_encode([['capacidad' => 12, 'componentes' => [['sku_id' => $e['skus'][0]->id, 'cantidad' => 5], ['sku_id' => $e['skus'][1]->id, 'cantidad' => 7]]]]);
+        $this->post(route('pedidos.store'), $datos)->assertSessionHasErrors('agrupaciones');
+        $this->assertDatabaseCount('pedidos', 0);
+        $this->assertDatabaseCount('pedido_versiones', 0);
+    }
+
+    public function test_edicion_conserva_precio_pactado_y_version_original_aunque_cambie_catalogo(): void
+    {
+        $e = $this->escenarioSurtido();
+        $datos = $this->entrada($e, 5);
+        $pedido = app(GestionarPedidoUnidades::class)->guardar($datos, $e['usuario']);
+        $e['presentacion']->update(['precio_unitario' => 7]);
+        $datos['detalles'][0] += ['id' => $pedido->detalles()->sole()->id];
+        $datos['detalles'][0]['cantidad'] = 3;
+        $datos['_version'] = $pedido->version;
+        $datos['motivo'] = 'Reducción comercial conservando el precio pactado.';
+        $nuevo = app(GestionarPedidoUnidades::class)->guardar($datos, $e['usuario'], $pedido);
+        $this->assertSame('6.00', $nuevo->total);
+        $this->assertSame('2.00', $nuevo->detalles()->sole()->precio_unitario);
+        $this->assertDatabaseCount('pedido_versiones', 2);
+    }
+
+    public function test_dividir_y_reducir_aromas_conserva_original_y_aplica_precio_del_nuevo_sku(): void
+    {
+        $e = $this->escenarioSurtido();
+        $datos = $this->entrada($e, 24);
+        $pedido = app(GestionarPedidoUnidades::class)->guardar($datos, $e['usuario']);
+        $e['skus'][1]->update(['precio_unitario' => 3]);
+        $datos['detalles'][0] += ['id' => $pedido->detalles()->sole()->id];
+        $datos['detalles'][0]['cantidad'] = 8;
+        $datos['detalles'][] = ['presentacion_producto_id' => $e['skus'][1]->id, 'cantidad' => 7];
+        $datos['_version'] = $pedido->version;
+        $datos['motivo'] = 'Solo se dispone físicamente de estos aromas y cantidades.';
+        $nuevo = app(GestionarPedidoUnidades::class)->guardar($datos, $e['usuario'], $pedido);
+        $this->assertSame(15, (int) $nuevo->detalles()->sum('cantidad'));
+        $this->assertSame('37.00', $nuevo->total);
+        $original = json_decode(DB::table('pedido_versiones')->where('numero', 1)->value('datos'), true);
+        $this->assertSame(24, $original['lineas'][0]['cantidad']);
+        $this->assertDatabaseCount('movimientos_inventario', 0);
+    }
+
+    public function test_retirar_linea_no_elimina_su_registro_ni_su_historial(): void
+    {
+        $e = $this->escenarioSurtido();
+        $datos = $this->entrada($e, 5);
+        $pedido = app(GestionarPedidoUnidades::class)->guardar($datos, $e['usuario']);
+        $id = $pedido->detalles()->sole()->id;
+        $datos['detalles'][0] += ['id' => $id];
+        $datos['detalles'][0]['cantidad'] = 0;
+        $datos['_version'] = $pedido->version;
+        $datos['motivo'] = 'Se retira definitivamente esta obligación comercial.';
+        $nuevo = app(GestionarPedidoUnidades::class)->guardar($datos, $e['usuario'], $pedido);
+        $this->assertSame('0.00', $nuevo->total);
+        $this->assertFalse($nuevo->detalles()->exists());
+        $this->assertDatabaseCount('pedido_detalles', 1);
+        $this->assertNotNull(DB::table('pedido_detalles')->where('id', $id)->value('retirado_en'));
+        $this->assertDatabaseCount('pedido_versiones', 2);
+    }
+
+    public function test_cierre_no_declara_completa_la_preparacion_de_32_si_siguen_solicitadas_54(): void
+    {
+        $e = $this->escenarioSurtido(32);
+        $pedido = app(GestionarPedidoUnidades::class)->guardar($this->entrada($e), $e['usuario']);
+        $pedido->update(['estado' => 'en_preparacion']);
+        $pedido->refresh();
+        app(AtenderPedidoUnidades::class)->preparar($pedido, ['version_pedido' => $pedido->version, 'pedido_detalle_id' => $pedido->detalles()->sole()->id, 'cantidad' => 32, 'motivo' => 'Hay 32 unidades físicas; no se inventa el resto.'], $e['usuario']);
+        $this->post(route('cumplimiento.finalizar-preparacion', $pedido))->assertSessionHasErrors('estado');
+        $this->assertSame('en_preparacion', $pedido->fresh()->estado);
+        $this->assertDatabaseCount('movimientos_inventario', 0);
+    }
+
+    public function test_catalogo_de_pedidos_consulta_paginas_sin_cargar_todos_los_sku_en_html(): void
+    {
+        $e = $this->escenarioSurtido();
+        $this->getJson(route('pedidos.unidades.catalogo', ['tipo' => 'skus', 'producto_id' => $e['presentacion']->producto_id]))
+            ->assertOk()->assertJsonCount(3, 'data')->assertJsonPath('data.0.precio_unitario', '2.00');
+        $this->get(route('pedidos.create'))->assertOk()->assertDontSee($e['presentacion']->codigo_sku);
+    }
+
+    public function test_sin_permiso_comercial_no_puede_guardar_aunque_manipule_el_formulario(): void
+    {
+        $e = $this->escenarioSurtido();
+        $e['usuario']->role->permisos()->detach(Permiso::where('nombre', 'pedidos.crear')->value('id'));
+        $e['usuario']->unsetRelation('role');
+        $this->post(route('pedidos.store'), $this->entrada($e, 5))->assertForbidden();
+        $this->assertDatabaseCount('pedidos', 0);
+    }
+
+    public function test_indicadores_y_retornos_utilizan_solo_las_unidades_realmente_despachadas(): void
+    {
+        $e = $this->escenarioSurtido(100);
+        $datos = $this->entrada($e, 5);
+        $datos['detalles'][] = ['presentacion_producto_id' => $e['skus'][1]->id, 'cantidad' => 3];
+        $datos['agrupaciones'] = [['capacidad' => 8, 'componentes' => [['sku_id' => $e['skus'][0]->id, 'cantidad' => 5], ['sku_id' => $e['skus'][1]->id, 'cantidad' => 3]]]];
+        $pedido = app(GestionarPedidoUnidades::class)->guardar($datos, $e['usuario']);
+        $pedido->update(['estado' => 'en_preparacion']);
+        $pedido->refresh();
+        $filtros = fn (string $reporte): array => FiltrosIndicadores::validar(['reporte' => $reporte, 'pedido_id' => $pedido->id, 'desde' => $datos['fecha_pedido'], 'hasta' => $datos['fecha_entrega'], 'economico' => 1]);
+        $fuente = app(FilasIndicadores::class);
+        $comerciales = iterator_to_array($fuente->filas($filtros('comercial')), false);
+        $grupos = iterator_to_array($fuente->filas($filtros('composiciones')), false);
+        $this->assertSame(1600, array_sum(array_column($comerciales, 'importe_centimos')));
+        $this->assertSame(8, array_sum(array_column($grupos, 'unidades_fisicas')));
+        $this->assertSame(['unidades'], array_values(array_unique(array_column($grupos, 'modelo_comercial'))));
+        $d = $pedido->detalles()->orderBy('id')->first();
+        $atencion = app(AtenderPedidoUnidades::class);
+        $atencion->preparar($pedido, ['version_pedido' => $pedido->version, 'pedido_detalle_id' => $d->id, 'cantidad' => 3, 'motivo' => 'Preparación parcial físicamente comprobada.'], $e['usuario']);
+        $pedido->refresh();
+        $atencion->despachar($pedido, ['version_pedido' => $pedido->version, 'operacion' => 'salida_para_retorno_0001', 'motivo' => 'Se despachan solo tres unidades preparadas.', 'detalles' => [['id' => $d->id, 'cantidad' => 3]]], $e['usuario']);
+        $pedido->refresh();
+        $pendientes = iterator_to_array($fuente->filas($filtros('fisicas')), false);
+        $this->assertSame(5, array_sum(array_column($pendientes, 'unidades_fisicas')));
+        $control = app(ControlEntregaPedido::class);
+        $resumen = $control->resumen($pedido);
+        $fisica = array_values($resumen['lineas'])[0];
+        app(RegistrarResultadoEntrega::class)->ejecutar($pedido, ['version' => $resumen['version'], 'detalles' => [['pedido_detalle_id' => $fisica['id'], 'aceptadas' => 2, 'rechazadas' => 1, 'motivo' => 'El cliente no acepta este aroma sustituido.']]], $e['usuario']);
+        $this->assertDatabaseHas('inventarios', ['presentacion_producto_id' => $e['presentacion']->id, 'cantidad_actual' => 97]);
+        $resumen = $control->resumen($pedido->fresh());
+        app(RegistrarRetornoPedido::class)->ejecutar($pedido, ['version' => $resumen['version'], 'observaciones' => 'Se recibió físicamente una unidad apta.', 'detalles' => [['pedido_detalle_id' => $fisica['id'], 'aptas' => 1, 'danadas' => 0, 'en_revision' => 0, 'no_recuperadas' => 0]]], $e['usuario']);
+        $this->assertDatabaseHas('inventarios', ['presentacion_producto_id' => $e['presentacion']->id, 'cantidad_actual' => 97]);
+        $resumen = $control->resumen($pedido->fresh());
+        app(AprobarRetornoPedido::class)->ejecutar($pedido, ['version' => $resumen['version'], 'retorno_detalle_id' => $resumen['retornos']->sole()->id, 'cantidad' => 1, 'motivo' => 'Reincorporación aprobada después de la revisión.'], $e['usuario']);
+        $this->assertSame(98, (int) Inventario::where('presentacion_producto_id', $e['presentacion']->id)->value('cantidad_actual'));
+        $situacion = iterator_to_array($fuente->filas($filtros('situacion_entregas')), false);
+        $this->assertCount(1, $situacion);
+        $this->assertSame(3, $situacion[0]['despachadas']);
+        $this->assertSame(2, $situacion[0]['aceptadas']);
+        $this->assertSame(1, $situacion[0]['rechazadas']);
+        $this->assertSame(1, $situacion[0]['reincorporadas']);
+        $movimientos = iterator_to_array($fuente->filas($filtros('movimientos')), false);
+        $this->assertCount(1, $movimientos);
+        $this->assertSame($pedido->id, $movimientos[0]['pedido_id']);
+    }
+
+    public function test_versiones_comerciales_no_se_pueden_sobrescribir_por_sql(): void
+    {
+        $e = $this->escenarioSurtido();
+        $pedido = app(GestionarPedidoUnidades::class)->guardar($this->entrada($e), $e['usuario']);
+        $this->expectException(QueryException::class);
+        DB::table('pedido_versiones')->where('pedido_id', $pedido->id)->update(['datos' => '{}']);
+    }
+}

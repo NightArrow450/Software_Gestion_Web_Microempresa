@@ -9,6 +9,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ImpresionPedidosController;
 use App\Http\Controllers\IndicadoresController;
 use App\Http\Controllers\PedidoController;
+use App\Http\Controllers\PedidoUnidadesController;
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\UserController;
@@ -32,6 +33,9 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
+    Route::get('/pedidos-unidades/catalogo', [PedidoUnidadesController::class, 'catalogo'])->name('pedidos.unidades.catalogo');
+    Route::post('/cumplimiento/{pedido}/preparacion-real', [PedidoUnidadesController::class, 'preparar'])->whereNumber('pedido')->middleware('permiso:cumplimiento.preparar')->defaults('idempotente', true)->name('pedidos.unidades.preparar');
+    Route::post('/cumplimiento/{pedido}/despacho-real', [PedidoUnidadesController::class, 'despachar'])->whereNumber('pedido')->middleware('permiso:cumplimiento.despachar')->defaults('idempotente', true)->name('pedidos.unidades.despachar');
     Route::get('/cambiar-contrasena', [CambioPasswordController::class, 'edit'])->name('password.cambiar');
     Route::put('/cambiar-contrasena', [CambioPasswordController::class, 'update'])->name('password.actualizar');
 

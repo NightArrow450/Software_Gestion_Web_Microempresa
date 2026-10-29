@@ -17,7 +17,7 @@ class Pedido extends Model
         'condicion_pago', 'estado', 'total', 'observaciones',
         'cliente_nombre', 'cliente_documento', 'cliente_telefono',
         'cliente_mercado', 'cliente_puesto_referencia',
-        'cliente_distrito', 'cliente_direccion', 'procesado_por_id', 'procesado_en',
+        'cliente_distrito', 'cliente_direccion', 'procesado_por_id', 'procesado_en', 'modelo_comercial',
     ];
 
     protected $casts = [

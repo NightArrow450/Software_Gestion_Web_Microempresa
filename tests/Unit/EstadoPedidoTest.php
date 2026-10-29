@@ -16,6 +16,7 @@ class EstadoPedidoTest extends TestCase
             'en_preparacion' => ['listo_despacho'],
             'listo_despacho' => ['despachado'],
             'despachado' => ['entrega_pendiente', 'entrega_parcial', 'rechazado', 'entregado'],
+            'despacho_parcial' => ['despacho_parcial', 'entrega_pendiente', 'entrega_parcial', 'rechazado', 'entregado'],
             'entrega_pendiente' => ['entrega_pendiente', 'entrega_parcial', 'rechazado', 'entregado'],
             'entrega_parcial' => ['entrega_pendiente', 'entrega_parcial', 'rechazado', 'entregado'],
             'rechazado' => ['entrega_pendiente', 'entrega_parcial', 'rechazado', 'entregado'],
@@ -34,7 +35,7 @@ class EstadoPedidoTest extends TestCase
         $this->assertSame([
             'registrado' => 'Registrado', 'observado' => 'Observado', 'confirmado' => 'Confirmado',
             'en_preparacion' => 'En preparación', 'listo_despacho' => 'Listo para despacho',
-            'despachado' => 'Despachado', 'entrega_pendiente' => 'Entrega pendiente',
+            'despachado' => 'Despachado', 'despacho_parcial' => 'Despacho parcial', 'entrega_pendiente' => 'Entrega pendiente',
             'entrega_parcial' => 'Entrega parcial', 'rechazado' => 'Rechazado',
             'entregado' => 'Entregado', 'cancelado' => 'Cancelado',
         ], EstadoPedido::etiquetas());

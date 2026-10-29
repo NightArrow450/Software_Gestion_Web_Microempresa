@@ -58,6 +58,10 @@ class EnvasadoController extends Controller
         $envasado = $servicio->ejecutar($request->all(), $request->user());
 
         if ($filtrosLista !== null) {
+            if (! empty($filtrosLista['volver_pedido_id'])) {
+                return redirect()->route('cumplimiento.show', $filtrosLista['volver_pedido_id'])->with('success', 'Producción física registrada una sola vez. El stock ya incluye estas unidades.');
+            }
+
             return redirect()->route('cumplimiento.lista-preparacion', $filtrosLista)->with('success', 'Envasado registrado. Materiales descontados y stock actualizado; no registres otra entrada por esta producción.');
         }
 
@@ -74,13 +78,14 @@ class EnvasadoController extends Controller
         abort_unless($request->user()->loadMissing('role.permisos')->role?->permisos->contains('nombre', 'pedidos.ver'), 403);
 
         $filtros = $request->validate([
+            'volver_pedido_id' => ['nullable', 'integer', 'exists:pedidos,id'],
             'fecha_desde' => ['nullable', 'date_format:Y-m-d'],
             'fecha_hasta' => ['nullable', 'date_format:Y-m-d', ...($request->filled('fecha_desde') ? ['after_or_equal:fecha_desde'] : [])],
             'produccion_desde' => ['required', 'date_format:Y-m-d'],
             'produccion_hasta' => ['required', 'date_format:Y-m-d', 'after_or_equal:produccion_desde'],
         ]);
 
-        return array_map(fn (?string $valor): string => $valor ?? '', $filtros);
+        return array_map(fn ($valor): string => (string) ($valor ?? ''), $filtros);
     }
 
     public function show(Envasado $envasado): View

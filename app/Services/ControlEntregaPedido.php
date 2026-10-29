@@ -13,7 +13,7 @@ use stdClass;
 
 class ControlEntregaPedido
 {
-    public const ESTADOS = ['despachado', 'entrega_pendiente', 'entrega_parcial', 'rechazado', 'entregado'];
+    public const ESTADOS = ['despachado', 'entrega_pendiente', 'entrega_parcial', 'rechazado', 'entregado', 'despacho_parcial'];
 
     public function disponible(): bool
     {
@@ -54,6 +54,9 @@ class ControlEntregaPedido
     /** @return array<int, array<string, mixed>> */
     public function fotografia(Pedido $pedido, bool $actual = false): array
     {
+        if ($pedido->modelo_comercial === 'unidades') {
+            return app(AtenderPedidoUnidades::class)->fotografia($pedido);
+        }
         $detalles = $pedido->detalles()->with('presentacion')->when($actual, fn ($q) => $q->lockForUpdate())->get();
         $salidas = DB::table('movimientos_inventario')->where('pedido_id', $pedido->id)->where('tipo', 'salida')->when($actual, fn ($q) => $q->lockForUpdate())->get()->keyBy('presentacion_producto_id');
         $lineas = [];
@@ -95,7 +98,7 @@ class ControlEntregaPedido
     {
         $incidencia = DB::table('incidencias_entrega')->where('pedido_id', $pedido->id)->when($actual, fn ($q) => $q->lockForUpdate())->first();
         $base = $incidencia ? DB::table('incidencia_entrega_eventos')->where('incidencia_id', $incidencia->id)->where('tipo', 'despacho_base')->when($actual, fn ($q) => $q->lockForUpdate())->first() : null;
-        $lineas = $base ? json_decode($base->datos, true, 512, JSON_THROW_ON_ERROR)['lineas'] : $this->fotografia($pedido);
+        $lineas = $pedido->modelo_comercial === 'unidades' ? $this->fotografia($pedido) : ($base ? json_decode($base->datos, true, 512, JSON_THROW_ON_ERROR)['lineas'] : $this->fotografia($pedido));
         $resultados = $incidencia ? DB::table('entrega_pedido_detalles as d')->join('entregas_pedido as e', 'e.id', '=', 'd.entrega_id')->where('e.incidencia_id', $incidencia->id)->select('d.*')->when($actual, fn ($q) => $q->lockForUpdate())->get()->groupBy(fn ($r): int|string => self::claveFisica($r->pedido_detalle_id, $r->despacho_componente_id ?? null)) : collect();
         $retornos = $incidencia ? DB::table('retorno_pedido_detalles as d')->join('retornos_pedido as r', 'r.id', '=', 'd.retorno_id')->where('r.incidencia_id', $incidencia->id)->select('d.*', 'r.ocurrido_en')->when($actual, fn ($q) => $q->lockForUpdate())->get() : collect();
         foreach ($lineas as &$linea) {

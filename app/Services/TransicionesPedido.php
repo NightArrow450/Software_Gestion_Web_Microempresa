@@ -49,9 +49,15 @@ class TransicionesPedido
             // Solo DESPACHO genera salida automática. Si falta cualquier
             // producto, se abortan el stock, el historial y el cambio de estado.
             if ($estadoNuevo === 'listo_despacho') {
+                if ($actual->modelo_comercial === 'unidades') {
+                    app(AtenderPedidoUnidades::class)->validarCierre($actual);
+                }
                 app(GestionarSurtidos::class)->validarCierre($actual);
             }
             if ($estadoNuevo === 'despachado') {
+                if ($actual->modelo_comercial === 'unidades') {
+                    throw ValidationException::withMessages(['estado' => 'Registra el despacho por cantidades realmente preparadas; no se descuenta el pedido completo automáticamente.']);
+                }
                 $this->inventarioDespacho->ejecutar($actual, $usuarioId);
             }
 

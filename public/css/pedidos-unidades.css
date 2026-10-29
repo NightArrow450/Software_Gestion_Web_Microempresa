@@ -1,0 +1,8 @@
+[data-pedido-unidades] input,[data-pedido-unidades] select,[data-pedido-unidades] textarea {font-size:16px;min-height:44px}
+.unidades-linea,.unidades-grupo {border:1px solid var(--outline-variant,#d1d5db);border-radius:12px;padding:16px;margin:12px 0;overflow-wrap:anywhere}
+.unidades-campos {display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:12px;align-items:end}
+.unidades-campos label {display:block}
+.unidades-grupo .unidades-campos {grid-template-columns:2fr 1fr auto}
+[data-mensaje] {color:#9f1239}
+[data-pedido-unidades] .btn {min-height:44px}
+@media(max-width:650px){.unidades-campos,.unidades-grupo .unidades-campos,[data-pedido-unidades] .form-grid {grid-template-columns:1fr}[data-pedido-unidades] .btn {width:100%}}

@@ -6,6 +6,7 @@ use App\Models\Cliente;
 use App\Models\Pedido;
 use App\Models\PresentacionProducto;
 use App\Services\CalculadoraPedido;
+use App\Services\GestionarPedidoUnidades;
 use App\Services\GestionarSurtidos;
 use App\Services\RegistroAuditoria;
 use App\Services\TransicionesPedido;
@@ -74,65 +75,12 @@ class PedidoController extends Controller
 
     public function create(): View
     {
-        return view(
-            'orders.create',
-            $this->opcionesFormulario()
-        );
+        return app(PedidoUnidadesController::class)->formulario();
     }
 
-    public function store(
-        Request $request,
-        CalculadoraPedido $calculadora
-    ): RedirectResponse {
-        $data = $this->validarPedido($request);
-
-        $pedido = DB::transaction(function () use (
-            $data,
-            $request,
-            $calculadora
-        ) {
-            $cliente = Cliente::whereKey($data['cliente_id'])
-                ->where('estado', true)
-                ->first();
-
-            if (! $cliente) {
-                throw ValidationException::withMessages([
-                    'cliente_id' => 'Selecciona un cliente activo.',
-                ]);
-            }
-
-            [$detalles, $total] = $this->prepararDetalles(
-                $data['detalles'],
-                $calculadora
-            );
-
-            $pedido = Pedido::create(array_merge(
-                $this->cabecera($data, $cliente),
-                [
-                    'usuario_id' => $request->user()->id,
-                    'estado' => 'registrado',
-                    'total' => $total,
-                ]
-            ));
-
-            $this->persistirDetalles($pedido, $detalles, $data['detalles']);
-
-            $pedido->historialEstados()->create([
-                'usuario_id' => $request->user()->id,
-                'estado_anterior' => null,
-                'estado_nuevo' => 'registrado',
-                'motivo' => 'Pedido registrado.',
-            ]);
-
-            return $pedido;
-        });
-
-        return redirect()
-            ->route('pedidos.show', $pedido)
-            ->with(
-                'success',
-                'Pedido N.º '.$pedido->numero.' registrado correctamente.'
-            );
+    public function store(Request $request, CalculadoraPedido $calculadora): RedirectResponse
+    {
+        return app(PedidoUnidadesController::class)->guardar($request);
     }
 
     public function show(Pedido $pedido): View
@@ -147,11 +95,18 @@ class PedidoController extends Controller
                 ->orderBy('id'),
         ]);
 
-        return view('orders.show', compact('pedido'));
+        $versionesPedido = $pedido->modelo_comercial === 'unidades' ? DB::table('pedido_versiones as v')->join('users as u', 'u.id', '=', 'v.usuario_id')
+            ->where('v.pedido_id', $pedido->id)->select('v.*', 'u.first_name', 'u.last_name')->orderByDesc('v.numero')->paginate(10, ['*'], 'pagina_version') : null;
+        $fotosUnidades = app(GestionarPedidoUnidades::class)->fotografiasActuales(collect([$pedido]));
+
+        return view('orders.show', compact('pedido', 'versionesPedido', 'fotosUnidades'));
     }
 
     public function edit(Pedido $pedido): View
     {
+        if ($pedido->modelo_comercial === 'unidades') {
+            return app(PedidoUnidadesController::class)->formulario($pedido);
+        }
         abort_unless(
             in_array(
                 $pedido->estado,
@@ -178,6 +133,9 @@ class PedidoController extends Controller
         Pedido $pedido,
         CalculadoraPedido $calculadora
     ): RedirectResponse {
+        if ($pedido->modelo_comercial === 'unidades') {
+            return app(PedidoUnidadesController::class)->guardar($request, $pedido);
+        }
         $data = $this->validarPedido($request);
 
         DB::transaction(function () use (

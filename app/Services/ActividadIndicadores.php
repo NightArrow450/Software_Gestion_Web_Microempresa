@@ -24,12 +24,13 @@ class ActividadIndicadores
 
     public function consultaMovimientos(array $f, bool $aplicarPeriodo = true): Builder
     {
-        $q = DB::table('movimientos_inventario as m')->leftJoin('presentaciones_producto as p', 'p.id', '=', 'm.presentacion_producto_id')->leftJoin('insumos as i', 'i.id', '=', 'm.insumo_id');
+        $q = DB::table('movimientos_inventario as m')->leftJoin('presentaciones_producto as p', 'p.id', '=', 'm.presentacion_producto_id')->leftJoin('insumos as i', 'i.id', '=', 'm.insumo_id')
+            ->leftJoin('pedido_despachos as du', 'du.id', '=', 'm.despacho_unidades_id');
         $this->filtrar($q, $f, insumo: 'm.insumo_id');
         if ($aplicarPeriodo) {
             FiltrosIndicadores::periodo($q, 'm.created_at', $f);
         }
-        foreach (['tipo' => 'm.tipo', 'origen' => 'm.origen_tipo', 'pedido_id' => 'm.pedido_id'] as $k => $c) {
+        foreach (['tipo' => 'm.tipo', 'origen' => 'm.origen_tipo', 'pedido_id' => DB::raw('COALESCE(m.pedido_id,du.pedido_id)')] as $k => $c) {
             if (! empty($f[$k])) {
                 $q->where($c, $f[$k]);
             }
@@ -40,8 +41,8 @@ class ActividadIndicadores
 
     public function movimientos(array $f): \Generator
     {
-        foreach ($this->consultaMovimientos($f)->select(['m.*', 'p.codigo_sku', 'i.codigo as codigo_insumo', 'i.unidad_medida'])->lazyById(100, 'm.id', 'id') as $m) {
-            yield ['movimiento_id' => $m->id, 'fecha_registro' => $m->created_at, 'pedido_id' => $m->pedido_id, 'presentacion_id' => $m->presentacion_producto_id, 'insumo_id' => $m->insumo_id,
+        foreach ($this->consultaMovimientos($f)->select(['m.*', 'p.codigo_sku', 'i.codigo as codigo_insumo', 'i.unidad_medida', 'du.pedido_id as pedido_unidades_id'])->lazyById(100, 'm.id', 'id') as $m) {
+            yield ['movimiento_id' => $m->id, 'fecha_registro' => $m->created_at, 'pedido_id' => $m->pedido_id ?? $m->pedido_unidades_id, 'presentacion_id' => $m->presentacion_producto_id, 'insumo_id' => $m->insumo_id,
                 'sku' => $m->codigo_sku ?? $m->codigo_insumo, 'unidad_medida' => $m->presentacion_producto_id ? 'unidad' : $m->unidad_medida, 'tipo' => $m->tipo, 'origen_tipo' => $m->origen_tipo, 'origen_id' => $m->origen_id,
                 'cantidad' => $m->cantidad, 'stock_anterior' => $m->stock_anterior, 'stock_nuevo' => $m->stock_nuevo, 'variacion' => ((float) $m->stock_nuevo < (float) $m->stock_anterior ? '-' : '').CantidadesEnvasado::decimal(abs((int) round(((float) $m->stock_nuevo - (float) $m->stock_anterior) * 1000)))];
         }
@@ -178,14 +179,26 @@ class ActividadIndicadores
         $foto = DB::table('incidencia_entrega_eventos')->where('tipo', 'despacho_base')->select('incidencia_id')->selectRaw('MAX(id) foto_id, COUNT(*) fotos')->groupBy('incidencia_id');
         $q = $this->referencias()->join('entregas_pedido as e', 'e.incidencia_id', '=', 'inc.id')->joinSub($historial, 'ed', 'ed.entrega_id', '=', 'e.id')
             ->join('pedido_detalles as d', 'd.id', '=', 'ed.pedido_detalle_id')->leftJoin('pedido_despacho_componentes as dc', 'dc.id', '=', 'ed.despacho_componente_id')
+            ->leftJoin('pedido_despacho_lineas as lu', 'lu.detalle_fisico_id', '=', 'd.id')
+            ->leftJoin('movimientos_inventario as mu', function ($j): void {
+                $j->on('mu.despacho_unidades_id', '=', 'lu.despacho_id')->on('mu.presentacion_producto_id', '=', 'lu.presentacion_producto_id');
+            })
             ->leftJoinSub($foto, 'fb', 'fb.incidencia_id', '=', 'inc.id')->leftJoin('incidencia_entrega_eventos as ev', 'ev.id', '=', 'fb.foto_id')
             ->leftJoin('presentaciones_producto as p', 'p.id', '=', DB::raw('COALESCE(dc.presentacion_producto_id,d.presentacion_producto_id)'));
         FiltrosIndicadores::pedido($q, $f);
         FiltrosIndicadores::periodo($q, 'e.ocurrido_en', $f);
         $this->filtrar($q, $f, skuHistorico: 'COALESCE(dc.sku,d.codigo_sku)');
-        foreach ($q->select(['ed.*', 'e.ocurrido_en', 'e.created_at', 'e.tipo', 'pe.id as pedido_id', 'ev.datos', 'fb.fotos', 'p.id as presentacion_id'])->lazyById(100, 'ed.id', 'id') as $r) {
+        foreach ($q->select(['ed.*', 'e.ocurrido_en', 'e.created_at', 'e.tipo', 'pe.id as pedido_id', 'pe.modelo_comercial', 'ev.datos', 'fb.fotos', 'p.id as presentacion_id',
+            'lu.despacho_id as despacho_unidades_id', 'lu.cantidad as unidades_despacho', 'lu.precio_unitario as precio_fisico', 'd.codigo_sku as sku_fisico',
+            'mu.cantidad as cantidad_movimiento', 'mu.tipo as tipo_movimiento', 'mu.origen_tipo', 'mu.origen_id', 'mu.stock_anterior', 'mu.stock_nuevo'])->lazyById(100, 'ed.id', 'id') as $r) {
             $clave = ControlEntregaPedido::claveFisica((int) $r->pedido_detalle_id, $r->despacho_componente_id === null ? null : (int) $r->despacho_componente_id);
             $foto = (int) $r->fotos === 1 ? (json_decode($r->datos, true, 512, JSON_THROW_ON_ERROR)['lineas'][$clave] ?? null) : null;
+            if ($r->modelo_comercial === 'unidades' && $r->despacho_unidades_id !== null) {
+                $foto = ['sku' => $r->sku_fisico, 'despachadas' => (int) $r->unidades_despacho,
+                    'importe_centimos' => (int) round((float) $r->precio_fisico * 100) * (int) $r->unidades_despacho,
+                    'verificada' => $r->tipo_movimiento === 'salida' && $r->origen_tipo === 'despacho_unidades' && (string) $r->origen_id === (string) $r->despacho_unidades_id
+                        && (int) $r->cantidad_movimiento === (int) $r->unidades_despacho && (int) $r->stock_anterior - (int) $r->stock_nuevo === (int) $r->unidades_despacho];
+            }
             $antes = $this->valorar($foto, (int) $r->a_antes, (int) $r->r_antes);
             $despues = $this->valorar($foto, (int) $r->a_antes + (int) $r->aceptadas, (int) $r->r_antes + (int) $r->rechazadas);
             yield ['entrega_detalle_id' => $r->id, 'pedido_id' => $r->pedido_id, 'linea_id' => $r->pedido_detalle_id, 'despacho_componente_id' => $r->despacho_componente_id, 'presentacion_id' => $r->presentacion_id, 'sku' => $foto['sku'] ?? null,

@@ -31,7 +31,7 @@
         true
     );
 
-    $editable = in_array(
+    $editable = $pedido->modelo_comercial === 'unidades' || in_array(
         $pedido->estado,
         ['registrado', 'observado'],
         true
@@ -381,6 +381,8 @@
         en hoja A4 horizontal.
     </p>
 </section>
+@include('orders.partials.agrupaciones')
+@include('orders.partials.versiones')
 @endsection
 
 @push('scripts')

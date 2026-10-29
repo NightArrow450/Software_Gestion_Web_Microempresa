@@ -25,6 +25,7 @@ class MejoraBuscadorPedidosTest extends TestCase
             $permiso = Permiso::firstOrCreate(['nombre' => $nombre], ['descripcion' => $nombre]);
             $rol->permisos()->attach($permiso->id);
         }
+
         return User::create([
             'first_name' => 'Pruebas', 'last_name' => 'Ventas',
             'email' => 'ventas.autocompletar@example.com',
@@ -48,6 +49,7 @@ class MejoraBuscadorPedidosTest extends TestCase
             'venta_por_unidad' => true, 'venta_por_empaque' => true,
             'precio_unitario' => '8.50', 'precio_empaque' => '34.00', 'estado' => true,
         ]);
+
         return [$cliente, $producto, $presentacion];
     }
 
@@ -91,22 +93,24 @@ class MejoraBuscadorPedidosTest extends TestCase
             ->assertSessionHasErrors('detalles.1.presentacion_producto_id');
         $this->assertDatabaseCount('pedidos', 0);
     }
-    public function test_mismo_formulario_de_busqueda_en_creacion_y_edicion_y_bloqueo_de_confirmados(): void
+
+    public function test_busqueda_paginada_y_edicion_versionada_tambien_en_confirmados(): void
     {
         $this->actingAs($this->usuario(['pedidos.crear', 'pedidos.editar', 'pedidos.ver']));
         [$cliente, , $presentacion] = $this->datosCatalogo();
-        $this->get(route('pedidos.create'))->assertOk()->assertSee('buscar-presentacion');
+        $this->get(route('pedidos.create'))->assertOk()->assertSee('data-buscar-producto');
 
         $datos = $this->pedidoDatos($cliente->id, $presentacion->id);
         $this->post(route('pedidos.store'), $datos)->assertRedirect();
         $pedido = Pedido::firstOrFail();
         $this->get(route('pedidos.edit', $pedido))
-            ->assertOk()->assertSee('buscar-presentacion')->assertSee('QUIT-500');
+            ->assertOk()->assertSee('data-buscar-producto')->assertSee('QUIT-500');
 
         $pedido->update(['estado' => 'confirmado']);
-        $this->get(route('pedidos.edit', $pedido))->assertForbidden();
+        $this->get(route('pedidos.edit', $pedido))->assertOk();
+        $datos['motivo'] = 'Revisión comercial autorizada después de confirmar.';
         $this->put(route('pedidos.update', $pedido), $datos)
-            ->assertSessionHasErrors('pedido');
+            ->assertSessionHasNoErrors();
     }
 
     public function test_catalogo_de_sugerencias_excluye_inactivos_y_sin_precio(): void
@@ -123,12 +127,11 @@ class MejoraBuscadorPedidosTest extends TestCase
         $inactiva->estado = false;
         $inactiva->save();
 
-        $respuesta = $this->get(route('pedidos.create'))->assertOk();
-        $respuesta->assertViewHas('presentaciones', function (array $presentaciones) use ($activa) {
-            return count($presentaciones) === 1 && (int) $presentaciones[0]['id'] === $activa->id;
-        });
+        $respuesta = $this->getJson(route('pedidos.unidades.catalogo', ['tipo' => 'skus', 'producto_id' => $producto->id]))->assertOk();
+        $respuesta->assertJsonCount(2, 'data')->assertJsonPath('data.0.id', $activa->id)->assertJsonPath('data.1.precio_unitario', null);
+        $respuesta->assertDontSee('SKU-INACTIVO');
         $producto->update(['estado' => false]);
-        $this->get(route('pedidos.create'))->assertViewHas('presentaciones', fn (array $items) => count($items) === 0);
+        $this->getJson(route('pedidos.unidades.catalogo', ['tipo' => 'skus', 'producto_id' => $producto->id]))->assertOk()->assertJsonCount(0, 'data');
     }
 
     public function test_rutas_de_pedidos_no_permiten_acceso_sin_permiso(): void
@@ -146,8 +149,8 @@ class MejoraBuscadorPedidosTest extends TestCase
         Cliente::create(['nombre' => 'Cliente Inactivo', 'estado' => false]);
         $this->get(route('pedidos.create'))
             ->assertOk()
-            ->assertSee('buscar-cliente')
-            ->assertViewHas('clientes', fn ($clientes) => $clientes->count() === 1 && $clientes->first()->id === $cliente->id);
+            ->assertSee('data-buscar-cliente');
+        $this->getJson(route('pedidos.unidades.catalogo', ['tipo' => 'clientes']))->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $cliente->id);
     }
 
     public function test_detalle_del_pedido_incluye_boton_para_copiar_resumen_sin_enviar_mensaje(): void
@@ -160,5 +163,4 @@ class MejoraBuscadorPedidosTest extends TestCase
             ->assertSee('copiar-resumen-whatsapp')
             ->assertSee('Copiar resumen para WhatsApp');
     }
-
 }

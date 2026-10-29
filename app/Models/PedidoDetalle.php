@@ -16,12 +16,13 @@ class PedidoDetalle extends Model
         'descripcion_producto',
         'modalidad',
         'unidades_por_empaque',
-        'cantidad',
+        'cantidad', 'cantidad_espera',
         'precio_unitario',
         'importe',
     ];
 
     protected $casts = [
+        'cantidad_espera' => 'integer',
         'unidades_por_empaque' => 'integer',
         'precio_unitario' => 'decimal:2',
         'importe' => 'decimal:2',
