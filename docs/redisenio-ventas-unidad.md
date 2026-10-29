@@ -153,8 +153,12 @@ npm audit --json
 - Primer intento MySQL 8.4.3 en GitHub: 68 errores al preparar el esquema.
   El nombre automático del índice de agrupación/detalle superaba el límite de
   MySQL. Se reemplazó por `agrupacion_detalle_unico` en la migración nueva,
-  sin modificar migraciones históricas. La repetición del trabajo y las pruebas
-  específicas de concurrencia del rediseño quedan **PENDIENTES DE EJECUCIÓN**.
+  sin modificar migraciones históricas. El segundo intento descubrió una mezcla
+  de collations al comparar el identificador textual de origen con su conversión
+  numérica. Se usa comparación binaria exacta en el CHECK MySQL sin alterar el
+  charset de las columnas existentes. Se agregan dos escenarios MySQL para
+  duplicación concurrente de identidad y parciales con bloqueo de versión.
+  La repetición del trabajo queda **PENDIENTE DE EJECUCIÓN**.
 - Selenium, revisión visual móvil y paginación de impresión: **PENDIENTE DE
   EJECUCIÓN**. Los cambios locales Selenium del checkout original se conservan.
 - GitHub Actions: consultar los trabajos del último commit del borrador; no

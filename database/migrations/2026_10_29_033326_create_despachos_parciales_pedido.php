@@ -59,6 +59,7 @@ return new class extends Migration
         }
         $condicion = "(despacho_unidades_id IS NULL OR (origen_tipo IS NOT NULL AND origen_id IS NOT NULL AND origen_tipo = 'despacho_unidades' AND origen_id = CAST(despacho_unidades_id AS CHAR) AND pedido_id IS NULL AND presentacion_producto_id IS NOT NULL AND insumo_id IS NULL AND tipo = 'salida' AND cantidad > 0 AND cantidad = FLOOR(cantidad) AND stock_anterior - stock_nuevo = cantidad)) AND (origen_tipo IS NULL OR origen_tipo <> 'despacho_unidades' OR despacho_unidades_id IS NOT NULL)";
         if (DB::getDriverName() === 'mysql') {
+            $condicion = str_replace('origen_id = CAST(despacho_unidades_id AS CHAR)', 'CAST(origen_id AS BINARY) = CAST(CAST(despacho_unidades_id AS CHAR) AS BINARY)', $condicion);
             DB::statement("ALTER TABLE movimientos_inventario ADD CONSTRAINT movimiento_despacho_unidades_valido CHECK ($condicion)");
         } else {
             $condicion = str_replace('FLOOR(cantidad)', 'CAST(cantidad AS INTEGER)', $condicion);
