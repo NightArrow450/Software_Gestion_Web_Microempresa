@@ -150,7 +150,11 @@ npm audit --json
   CVE-2026-45070 / PKSA-wtxr-p26d-nn42. No se modificaron dependencias. Se
   requiere analizar y autorizar una actualización mínima por separado conforme
   a las reglas del proyecto; no se excluye el aviso para conseguir verde.
-- MySQL 8.4.3 y concurrencia del rediseño: **PENDIENTE DE EJECUCIÓN**.
+- Primer intento MySQL 8.4.3 en GitHub: 68 errores al preparar el esquema.
+  El nombre automático del índice de agrupación/detalle superaba el límite de
+  MySQL. Se reemplazó por `agrupacion_detalle_unico` en la migración nueva,
+  sin modificar migraciones históricas. La repetición del trabajo y las pruebas
+  específicas de concurrencia del rediseño quedan **PENDIENTES DE EJECUCIÓN**.
 - Selenium, revisión visual móvil y paginación de impresión: **PENDIENTE DE
   EJECUCIÓN**. Los cambios locales Selenium del checkout original se conservan.
 - GitHub Actions: consultar los trabajos del último commit del borrador; no

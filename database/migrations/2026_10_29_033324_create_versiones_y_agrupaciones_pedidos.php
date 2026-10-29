@@ -37,7 +37,7 @@ return new class extends Migration
             $table->foreignId('agrupacion_id')->constrained('pedido_agrupaciones')->restrictOnDelete();
             $table->foreignId('pedido_detalle_id')->constrained('pedido_detalles')->restrictOnDelete();
             $table->unsignedInteger('cantidad');
-            $table->unique(['agrupacion_id', 'pedido_detalle_id']);
+            $table->unique(['agrupacion_id', 'pedido_detalle_id'], 'agrupacion_detalle_unico');
         });
         foreach (['pedido_versiones', 'pedido_agrupaciones', 'pedido_agrupacion_detalles'] as $tabla) {
             foreach (['UPDATE', 'DELETE'] as $evento) {
