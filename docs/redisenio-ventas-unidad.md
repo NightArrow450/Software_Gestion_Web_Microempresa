@@ -133,16 +133,20 @@ composer audit --locked --no-interaction
 npm audit --json
 ```
 
-- Laravel completo: 645 escenarios, 597 aprobados, 48 fallidos en el último
+- Laravel completo: 645 escenarios, 603 aprobados, 42 fallidos en el último
   corte completo registrado. No se eliminan, omiten ni silencian esos fallos.
-- Fallos agrupados: EmpaqueVariablePorLineaTest (22), SurtidosTest (19),
-  FlujosEnvasadoCompletoTest (3), ProcesarPedidosTest (1), RegistroPedidosTest
-  (1) y ValidacionPedidosTest (2). Incluyen contratos antiguos de registro por
-  empaque/surtido, despacho total y validaciones de edición. Requieren revisar
+- Fallos agrupados: EmpaqueVariablePorLineaTest (22), SurtidosTest (19) y
+  RegistroPedidosTest (1). Incluyen contratos antiguos de registro por
+  empaque/surtido. Requieren revisar
   cada escenario y preservar su cobertura histórica con fixtures apropiados;
   no se consideran resueltos por cambiar la regla comercial de altas nuevas.
 - Focalizadas: 35 aprobadas, 312 aserciones. El archivo nuevo PedidoUnidadesTest
   aporta 21 escenarios; la cobertura focalizada no reemplaza la suite completa.
+- FlujosEnvasadoCompletoTest, ProcesarPedidosTest y ValidacionPedidosTest:
+  26 aprobadas y 282 aserciones después de adaptar sus solicitudes a preparación
+  física explícita, identidad de despacho, motivo y control de versión.
+  Se conservan las aserciones de saldos, insumos, estados e historial. El tope
+  económico por línea sigue probado sin imponer un máximo comercial de 10 000.
 - JavaScript: 37 aprobadas, incluidas nueve del formulario nuevo.
 - Larastan nivel 5: cero errores; Pint: aprobado sobre los PHP modificados.
 - Vite: compilación aprobada. npm audit: cero vulnerabilidades reportadas.
@@ -158,7 +162,13 @@ npm audit --json
   numérica. Se usa comparación binaria exacta en el CHECK MySQL sin alterar el
   charset de las columnas existentes. Se agregan dos escenarios MySQL para
   duplicación concurrente de identidad y parciales con bloqueo de versión.
-  La repetición del trabajo queda **PENDIENTE DE EJECUCIÓN**.
+  La tercera ejecución (`89311e4`, GitHub Actions 40851653310) realizó 70 pruebas,
+  con 68 aprobadas y dos fallidas. Las dos pruebas nuevas de concurrencia
+  aprobaron; fallaron el alta histórica por empaque/surtido y una expectativa
+  fija de 45 migraciones. Esta última se adapta para comprobar separadamente
+  41 → 45 → 47 migraciones, conservando todas sus aserciones y verificando que
+  las seis tablas nuevas no generen datos retroactivos. Su repetición queda
+  **PENDIENTE DE EJECUCIÓN**. No equivale a una validación integral del rediseño.
 - Selenium, revisión visual móvil y paginación de impresión: **PENDIENTE DE
   EJECUCIÓN**. Los cambios locales Selenium del checkout original se conservan.
 - GitHub Actions: consultar los trabajos del último commit del borrador; no

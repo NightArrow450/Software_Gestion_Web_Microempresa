@@ -40,7 +40,7 @@ class ValidacionPedidosTest extends TestCase
         return [
             'hoy en Lima' => ['2026-10-18', '2026-10-18', 1],
             'treinta días' => ['2026-09-18', '2026-09-18', 1],
-            'noventa días y cantidad máxima' => ['2026-10-18', '2027-01-16', 10000],
+            'noventa días y cantidad grande' => ['2026-10-18', '2027-01-16', 10000],
         ];
     }
 
@@ -66,7 +66,7 @@ class ValidacionPedidosTest extends TestCase
             'fecha inexistente' => ['fecha_pedido', '2026-02-30'],
             'entrega antes' => ['fecha_entrega', '2026-10-17'],
             'noventa y un días' => ['fecha_entrega', '2027-01-17'],
-            'cantidad excesiva' => ['detalles.0.cantidad', 10001],
+            'importe excesivo a dos soles por unidad' => ['detalles.0.cantidad', 500000],
         ];
     }
 
@@ -88,6 +88,9 @@ class ValidacionPedidosTest extends TestCase
         $this->post(route('pedidos.store'), $datos)->assertSessionHasNoErrors();
         $pedido = Pedido::firstOrFail();
         $datos['fecha_entrega'] = '2027-01-17';
+        $datos['_version'] = $pedido->version;
+        $datos['_updated_at'] = (string) $pedido->getRawOriginal('updated_at');
+        $datos['motivo'] = 'Intento de cambiar la fecha fuera del plazo permitido.';
 
         $this->put(route('pedidos.update', $pedido), $datos)->assertSessionHasErrors('fecha_entrega');
 

@@ -71,7 +71,24 @@ class FlujosEnvasadoCompletoTest extends TestCase
         $this->assertSame('confirmado', $pedido->fresh()->estado);
         $insumosAntes = DB::table('insumos')->orderBy('id')->pluck('cantidad_actual')->all();
         foreach (['iniciar-preparacion' => 'en_preparacion', 'finalizar-preparacion' => 'listo_despacho', 'despachar' => 'despachado', 'entregar' => 'entregado'] as $accion => $estado) {
-            $this->post(route('cumplimiento.'.$accion, $pedido))->assertSessionHasNoErrors()->assertRedirect();
+            if ($accion === 'finalizar-preparacion') {
+                $this->post(route('pedidos.unidades.preparar', $pedido), [
+                    'version_pedido' => $pedido->fresh()->version,
+                    'pedido_detalle_id' => $pedido->detalles()->sole()->id,
+                    'cantidad' => 5,
+                    'motivo' => 'Se verificaron físicamente cinco unidades preparadas.',
+                ])->assertSessionHasNoErrors()->assertRedirect();
+            }
+            if ($accion === 'despachar') {
+                $this->post(route('pedidos.unidades.despachar', $pedido), [
+                    'version_pedido' => $pedido->fresh()->version,
+                    'operacion' => 'despacho_flujo_completo_0001',
+                    'motivo' => 'Despacho de las cinco unidades realmente preparadas.',
+                    'detalles' => [['id' => $pedido->detalles()->sole()->id, 'cantidad' => 5]],
+                ])->assertSessionHasNoErrors()->assertRedirect();
+            } else {
+                $this->post(route('cumplimiento.'.$accion, $pedido))->assertSessionHasNoErrors()->assertRedirect();
+            }
             $this->assertSame($estado, $pedido->fresh()->estado);
             $this->verificarInventario();
         }
@@ -81,7 +98,8 @@ class FlujosEnvasadoCompletoTest extends TestCase
         foreach ($materiales as $insumo) {
             $this->assertSame($modo === 'normal' ? 100.0 : 95.0, (float) $insumo->fresh()->cantidad_actual);
         }
-        $this->assertSame(1, DB::table('movimientos_inventario')->where('pedido_id', $pedido->id)->where('origen_tipo', 'despacho')->count());
+        $despachos = DB::table('pedido_despachos')->where('pedido_id', $pedido->id)->pluck('id');
+        $this->assertSame(1, DB::table('movimientos_inventario')->whereIn('despacho_unidades_id', $despachos)->where('origen_tipo', 'despacho_unidades')->count());
         $this->assertSame(['registrado', 'confirmado', 'en_preparacion', 'listo_despacho', 'despachado', 'entregado'], $pedido->historialEstados()->orderBy('id')->pluck('estado_nuevo')->all());
         foreach (['seguimiento.show', 'seguimiento.trazabilidad'] as $ruta) {
             $this->get(route($ruta, $pedido))->assertOk()->assertSee($pedido->numero);

@@ -220,13 +220,33 @@ class SurtidosMySqlTest extends PruebaInventarioMySql
                 $antes[$tabla] = [$columnas, $filas];
             }
         }
-        $this->assertSame(0, Artisan::call('migrate', ['--database' => 'mysql_concurrencia', '--force' => true, '--no-interaction' => true]));
+        $migracionesSurtidos = array_map(fn (string $archivo): string => database_path('migrations/'.$archivo), [
+            '2026_10_24_095908_create_formatos_surtidos_tables.php',
+            '2026_10_24_095909_create_paquetes_surtidos_tables.php',
+            '2026_10_24_095910_add_componentes_surtidos_to_entregas.php',
+            '2026_10_24_102126_protect_surtidos_integridad.php',
+        ]);
+        $this->assertSame(0, Artisan::call('migrate', ['--database' => 'mysql_concurrencia', '--path' => $migracionesSurtidos, '--realpath' => true, '--force' => true, '--no-interaction' => true]));
         $this->assertSame(45, DB::table('migrations')->count());
+        foreach ($antes as $tabla => [$columnas, $filas]) {
+            $this->assertSame($filas, DB::table($tabla)->select($columnas)->get()->map(fn ($r): string => json_encode($r))->sort()->values()->all(), $tabla.' cambió registros históricos al incorporar surtidos.');
+        }
+        $migracionesUnidades = array_map(fn (string $archivo): string => database_path('migrations/'.$archivo), [
+            '2026_10_29_033324_create_versiones_y_agrupaciones_pedidos.php',
+            '2026_10_29_033326_create_despachos_parciales_pedido.php',
+        ]);
+        $this->assertSame(0, Artisan::call('migrate', ['--database' => 'mysql_concurrencia', '--path' => $migracionesUnidades, '--realpath' => true, '--force' => true, '--no-interaction' => true]));
+        $this->assertSame(47, DB::table('migrations')->count());
         foreach ($antes as $tabla => [$columnas, $filas]) {
             $this->assertSame($filas, DB::table($tabla)->select($columnas)->get()->map(fn ($r): string => json_encode($r))->sort()->values()->all(), $tabla.' cambió registros históricos.');
         }
         $this->assertSame('normal', DB::table('pedido_detalles')->where('pedido_id', $pedido->id)->value('tipo_linea'));
         $this->assertSame(0, DB::table('pedido_paquetes_surtidos')->count());
+        $this->assertNull(DB::table('pedidos')->where('id', $pedido->id)->value('modelo_comercial'));
+        $this->assertSame(0, (int) DB::table('pedido_detalles')->where('pedido_id', $pedido->id)->value('cantidad_espera'));
+        foreach (['pedido_versiones', 'pedido_agrupaciones', 'pedido_agrupacion_detalles', 'pedido_preparaciones', 'pedido_despachos', 'pedido_despacho_lineas'] as $tabla) {
+            $this->assertSame(0, DB::table($tabla)->count(), $tabla.' no debe generar datos retroactivos.');
+        }
         $this->assertTrue(app(ControlEntregaPedido::class)->resumen($pedido->fresh())['historico_sin_desglose']);
     }
 }
