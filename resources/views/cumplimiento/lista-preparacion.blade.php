@@ -108,6 +108,7 @@
                                 <span class="cumplimiento-sin-dato">No disponible</span>
                             @else
                                 <strong>{{ $fila['total_unidades'] }}</strong>
+                                <small class="cumplimiento-sku">En espera: {{ $fila['en_espera'] }}. Preparadas físicamente por despachar: {{ $fila['preparadas'] }} (no equivalen a producción nueva).</small>
                             @endif
                         </td>
                         <td data-label="Stock disponible">{{ $fila['presentaciones'] === [] ? 'No disponible' : $fila['stock_disponible'] }}</td>
@@ -117,7 +118,8 @@
                             <small class="cumplimiento-sku">{{ $fila['cobertura'] }}</small>
                             @foreach($fila['presentaciones'] as $presentacion)
                                 <div class="cumplimiento-presentacion">
-                                    <small>{{ $presentacion['sku'] }}: solicitadas {{ $presentacion['solicitadas'] ?? 'No disponible' }}, stock {{ $presentacion['stock'] }}, envasadas {{ $presentacion['envasadas'] }}, faltan {{ $presentacion['faltante'] ?? 'No disponible' }}.</small>
+                                    <small>{{ $presentacion['sku'] }}: solicitadas {{ $presentacion['solicitadas'] ?? 'No disponible' }}, en espera {{ $presentacion['en_espera'] }}, activas {{ $presentacion['activas'] ?? 'No disponible' }}, stock {{ $presentacion['stock'] }}, envasadas {{ $presentacion['envasadas'] }}, faltan para la atención activa {{ $presentacion['faltante'] ?? 'No disponible' }}.</small>
+                                    @if($presentacion['paquetes'] > 0)<small>{{ $presentacion['agrupadas'] }} de estas unidades están distribuidas en {{ $presentacion['paquetes'] }} paquete(s) pendiente(s) de salida. Ya están incluidas en las solicitadas; un paquete mixto puede aparecer en varios SKU. Consulta la distribución exacta en el detalle del pedido.</small>@endif
                                     @if($puedeRegistrar && $presentacion['activa'])
                                         <button type="button" class="btn btn-primary cumplimiento-no-imprimir" data-registrar-envasado="{{ $presentacion['id'] }}" data-sku="{{ $presentacion['sku'] }}" aria-haspopup="dialog" aria-controls="envasado-integrado">Registrar envasado</button>
                                     @elseif($puedeRegistrar)

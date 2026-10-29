@@ -11,7 +11,6 @@ use App\Services\GestionarSurtidos;
 use App\Services\TransicionesPedido;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -92,11 +91,11 @@ class PedidoController extends Controller
                 ->orderBy('id'),
         ]);
 
-        $versionesPedido = DB::table('pedido_versiones as v')->join('users as u', 'u.id', '=', 'v.usuario_id')
-            ->where('v.pedido_id', $pedido->id)->select('v.*', 'u.first_name', 'u.last_name')->orderByDesc('v.numero')->paginate(10, ['*'], 'pagina_version');
+        $versionesPedido = app(GestionarPedidoUnidades::class)->historial($pedido);
+        $cambiosOriginales = app(GestionarPedidoUnidades::class)->cambiosOriginales($pedido);
         $fotosUnidades = app(GestionarPedidoUnidades::class)->fotografiasActuales(collect([$pedido]));
 
-        return view('orders.show', compact('pedido', 'versionesPedido', 'fotosUnidades'));
+        return view('orders.show', compact('pedido', 'versionesPedido', 'fotosUnidades', 'cambiosOriginales'));
     }
 
     public function edit(Pedido $pedido): View

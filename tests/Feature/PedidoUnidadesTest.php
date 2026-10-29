@@ -94,6 +94,13 @@ class PedidoUnidadesTest extends TestCase
         $this->assertSame(32, (int) Inventario::first()->cantidad_actual);
         $this->assertDatabaseCount('movimientos_inventario', 0);
         $this->assertDatabaseCount('pedido_versiones', 2);
+        $entrada['_version'] = $nuevo->version;
+        $entrada['motivo'] = 'Se aclara la dirección sin borrar la reducción comercial anterior.';
+        $entrada['observaciones'] = 'Consultar el ajuste anterior al entregar.';
+        $nuevo = app(GestionarPedidoUnidades::class)->guardar($entrada, $e['usuario'], $nuevo);
+        $this->get(route('cumplimiento.show', $nuevo))->assertOk()->assertViewHas('cambiosOriginales', function (array $cambios): bool {
+            return count($cambios) === 1 && $cambios[0]['original'] === 54 && $cambios[0]['vigente'] === 32;
+        })->assertSee('Reparto debe explicar las sustituciones');
     }
 
     public function test_despachos_parciales_no_duplican_stock_ni_marcan_entrega_total(): void
@@ -498,5 +505,74 @@ class PedidoUnidadesTest extends TestCase
             $this->assertStringContainsString('componente no pertenece', $excepcion->getMessage());
         }
         $this->assertDatabaseCount('pedido_agrupacion_detalles', 2);
+    }
+
+    public function test_lista_distingue_espera_preparacion_y_faltante_activo_sin_sumar_stock(): void
+    {
+        $e = $this->escenarioSurtido(32);
+        $datos = $this->entrada($e);
+        $datos['detalles'][0]['cantidad_espera'] = 22;
+        $datos['motivo'] = 'Se dejan veintidós unidades en espera por falta de insumos.';
+        $pedido = app(GestionarPedidoUnidades::class)->guardar($datos, $e['usuario']);
+        $pedido->update(['estado' => 'confirmado']);
+        $pedido->refresh();
+        app(AtenderPedidoUnidades::class)->preparar($pedido, ['version_pedido' => $pedido->version, 'pedido_detalle_id' => $pedido->detalles()->sole()->id, 'cantidad' => 32, 'motivo' => 'Se comprobaron treinta y dos unidades físicamente listas.'], $e['usuario']);
+        $this->get(route('cumplimiento.lista-preparacion'))->assertOk()->assertViewHas('filas', function ($filas): bool {
+            $fila = $filas->sole();
+
+            return $fila['total_unidades'] === 54 && $fila['en_espera'] === 22 && $fila['preparadas'] === 32
+                && $fila['stock_disponible'] === 32 && $fila['envasadas'] === 0 && $fila['faltante'] === 0
+                && str_contains($fila['cobertura'], 'la atención no está completa');
+        });
+        $this->get(route('cumplimiento.show', $pedido))->assertOk()->assertSee($datos['motivo']);
+        $this->get(route('seguimiento.show', $pedido))->assertOk()->assertSee($datos['motivo']);
+        $filasIndicadores = iterator_to_array(app(FilasIndicadores::class)->filas(FiltrosIndicadores::validar(['reporte' => 'preparacion', 'pedido_id' => $pedido->id])));
+        $this->assertCount(1, $filasIndicadores);
+        $this->assertSame(54, $filasIndicadores[0]['solicitadas']);
+        $this->assertSame(22, $filasIndicadores[0]['unidades_en_espera']);
+        $this->assertSame(32, $filasIndicadores[0]['unidades_activas']);
+        $this->assertSame(0, $filasIndicadores[0]['faltante_conocido']);
+        $this->assertDatabaseCount('envasados', 0);
+    }
+
+    public function test_agrupaciones_json_requiere_listas_en_lugar_de_claves_arbitrarias(): void
+    {
+        $e = $this->escenarioSurtido();
+        $datos = $this->entrada($e, 2);
+        $datos['agrupaciones'] = ['nombre' => ['capacidad' => 2, 'componentes' => [['sku_id' => $e['presentacion']->id, 'cantidad' => 2]]]];
+        try {
+            app(GestionarPedidoUnidades::class)->guardar($datos, $e['usuario']);
+            $this->fail('La estructura debe ser una lista numerada de paquetes.');
+        } catch (ValidationException $excepcion) {
+            $this->assertArrayHasKey('agrupaciones', $excepcion->errors());
+        }
+        $this->assertDatabaseCount('pedidos', 0);
+        $datos['agrupaciones_json'] = json_encode($datos['agrupaciones'], JSON_THROW_ON_ERROR);
+        $this->from(route('pedidos.create'))->post(route('pedidos.store'), $datos)->assertRedirect(route('pedidos.create'))->assertSessionHasErrors('agrupaciones');
+        $this->get(route('pedidos.create'))->assertOk()->assertViewHas('agrupacionesIniciales', []);
+    }
+
+    public static function incidenciasFisicas(): array
+    {
+        return ['líquido no disponible' => ['liquido'], 'envases insuficientes' => ['envases'],
+            'etiquetas o tapas' => ['etiquetas_tapas'], 'insumos químicos' => ['insumos_quimicos'],
+            'tiempo insuficiente' => ['tiempo'], 'otra incidencia' => ['otro']];
+    }
+
+    #[DataProvider('incidenciasFisicas')]
+    public function test_incidencia_con_cero_preparado_no_inventa_liquido_ni_produccion(string $incidencia): void
+    {
+        $e = $this->escenarioSurtido(0);
+        $pedido = app(GestionarPedidoUnidades::class)->guardar($this->entrada($e), $e['usuario']);
+        $pedido->update(['estado' => 'confirmado']);
+        $pedido->refresh();
+        $this->post(route('pedidos.unidades.preparar', $pedido), ['version_pedido' => $pedido->version,
+            'pedido_detalle_id' => $pedido->detalles()->sole()->id, 'cantidad' => 0, 'incidencia' => $incidencia,
+            'motivo' => 'El personal comprobó físicamente que todavía no puede preparar unidades.'])->assertSessionHasNoErrors()->assertRedirect();
+        $this->assertDatabaseHas('pedido_preparaciones', ['pedido_id' => $pedido->id, 'cantidad' => 0, 'incidencia' => $incidencia]);
+        $this->assertDatabaseHas('inventarios', ['presentacion_producto_id' => $e['presentacion']->id, 'cantidad_actual' => 0]);
+        $this->assertDatabaseCount('envasados', 0);
+        $this->assertDatabaseCount('movimientos_inventario', 0);
+        $this->assertSame(54, app(AtenderPedidoUnidades::class)->pendientes($pedido));
     }
 }

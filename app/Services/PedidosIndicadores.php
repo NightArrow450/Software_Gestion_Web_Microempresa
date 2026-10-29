@@ -69,10 +69,11 @@ class PedidosIndicadores
                 $q->where($col, $f[$campo]);
             }
         }
-        foreach ($q->orderBy('c.id')->orderBy('co.id')->select(['d.pedido_id', 'pe.estado as estado_pedido', 'd.id as linea_id', 'ps.id as paquete_id', 'ps.numero', 'ps.activo', 'ps.version as vigente', 'c.id as composicion_id', 'c.version', 'c.estado', 'c.created_at', 'co.id as componente_id', 'co.presentacion_producto_id', 'co.sku', 'co.descripcion', 'co.cantidad'])->lazy(100) as $r) {
+        foreach ($q->orderBy('c.id')->orderBy('co.id')->select(['d.pedido_id', 'pe.estado as estado_pedido', 'd.id as linea_id', 'ps.id as paquete_id', 'ps.numero', 'ps.activo', 'ps.version as vigente', 'c.id as composicion_id', 'c.version', 'c.estado', 'c.created_at', 'co.id as componente_id', 'co.presentacion_producto_id', 'co.sku', 'co.descripcion', 'co.cantidad', 'd.unidades_por_empaque'])->lazy(100) as $r) {
             yield ['pedido_id' => $r->pedido_id, 'linea_id' => $r->linea_id, 'paquete_id' => $r->paquete_id, 'numero_paquete' => $r->numero, 'composicion_id' => $r->composicion_id,
                 'version' => $r->version, 'version_vigente' => (int) $r->vigente === (int) $r->version && $r->activo ? 'Sí' : 'No', 'estado_composicion' => $r->estado,
                 'fecha_registro' => $r->created_at, 'componente_id' => $r->componente_id, 'presentacion_id' => $r->presentacion_producto_id, 'sku' => $r->sku, 'descripcion' => $r->descripcion, 'unidades_fisicas' => $r->cantidad,
+                'modelo_comercial' => 'histórico', 'capacidad_paquete' => $r->unidades_por_empaque,
                 'demanda_definitiva' => (int) $r->vigente === (int) $r->version && $r->activo && $r->estado === 'definida' && in_array($r->estado_pedido, ['confirmado', 'en_preparacion'], true) ? 'Sí' : 'No'];
         }
         yield from $this->agrupacionesLogisticas($f);
@@ -114,11 +115,11 @@ class PedidosIndicadores
         $salidas = DB::table('pedido_despacho_lineas')->groupBy('detalle_comercial_id')->select('detalle_comercial_id')->selectRaw('SUM(cantidad) cantidad');
         $normales = (clone $q)->leftJoinSub($salidas, 'du', 'du.detalle_comercial_id', '=', 'd.id')->where('d.tipo_linea', 'normal')
             ->whereRaw("(pe.modelo_comercial IS NULL OR pe.modelo_comercial <> 'unidades' OR d.cantidad > COALESCE(du.cantidad,0))")
-            ->selectRaw("d.pedido_id,d.id linea_id,NULL paquete_id,NULL composicion_id,NULL componente_id,d.presentacion_producto_id presentacion_id,d.codigo_sku sku,d.descripcion_producto descripcion,CASE WHEN pe.modelo_comercial='unidades' THEN d.cantidad-COALESCE(du.cantidad,0) WHEN d.cantidad_fisica_ajustada IS NOT NULL THEN d.cantidad_fisica_ajustada WHEN d.modalidad='unidad' THEN d.cantidad WHEN COALESCE(d.unidades_por_empaque,p.unidades_por_empaque)>0 THEN d.cantidad * COALESCE(d.unidades_por_empaque,p.unidades_por_empaque) ELSE NULL END unidades,CASE WHEN pe.modelo_comercial='unidades' THEN 'Unidades vigentes aún no despachadas' WHEN d.cantidad_fisica_ajustada IS NOT NULL THEN 'Ajuste físico revisado' WHEN d.modalidad='empaque' AND d.unidades_por_empaque IS NULL THEN 'Respaldo del catálogo' ELSE 'Tamaño de la línea' END fuente");
+            ->selectRaw("d.pedido_id,d.id linea_id,NULL paquete_id,NULL composicion_id,NULL componente_id,d.presentacion_producto_id presentacion_id,d.codigo_sku sku,d.descripcion_producto descripcion,CASE WHEN pe.modelo_comercial='unidades' THEN d.cantidad-COALESCE(du.cantidad,0) WHEN d.cantidad_fisica_ajustada IS NOT NULL THEN d.cantidad_fisica_ajustada WHEN d.modalidad='unidad' THEN d.cantidad WHEN COALESCE(d.unidades_por_empaque,p.unidades_por_empaque)>0 THEN d.cantidad * COALESCE(d.unidades_por_empaque,p.unidades_por_empaque) ELSE NULL END unidades,CASE WHEN pe.modelo_comercial='unidades' THEN 'Unidades vigentes aún no despachadas' WHEN d.cantidad_fisica_ajustada IS NOT NULL THEN 'Ajuste físico revisado' WHEN d.modalidad='empaque' AND d.unidades_por_empaque IS NULL THEN 'Respaldo del catálogo' ELSE 'Tamaño de la línea' END fuente,CASE WHEN pe.modelo_comercial='unidades' THEN d.cantidad_espera ELSE 0 END espera");
         $surtidos = (clone $q)->join('pedido_paquetes_surtidos as ps', 'ps.pedido_detalle_id', '=', 'd.id')->join('paquete_surtido_composiciones as c', function ($j): void {
             $j->on('c.paquete_surtido_id', '=', 'ps.id')->on('c.version', '=', 'ps.version');
         })->join('paquete_surtido_componentes as co', 'co.composicion_id', '=', 'c.id')->where('ps.activo', true)->where('c.estado', 'definida')
-            ->selectRaw("d.pedido_id,d.id linea_id,ps.id paquete_id,c.id composicion_id,co.id componente_id,co.presentacion_producto_id presentacion_id,co.sku,co.descripcion,co.cantidad unidades,'Composición vigente definida' fuente");
+            ->selectRaw("d.pedido_id,d.id linea_id,ps.id paquete_id,c.id composicion_id,co.id componente_id,co.presentacion_producto_id presentacion_id,co.sku,co.descripcion,co.cantidad unidades,'Composición vigente definida' fuente,0 espera");
         $fisicas = DB::query()->fromSub($normales->unionAll($surtidos), 'f');
         foreach (['presentacion_id', 'sku'] as $col) {
             if (! empty($f[$col])) {
@@ -132,7 +133,7 @@ class PedidosIndicadores
     public function fisicas(array $f): \Generator
     {
         foreach ($this->consultaFisica($f)->orderBy('pedido_id')->orderBy('linea_id')->orderBy('componente_id')->lazy(100) as $r) {
-            yield ['pedido_id' => $r->pedido_id, 'linea_id' => $r->linea_id, 'paquete_id' => $r->paquete_id, 'composicion_id' => $r->composicion_id, 'componente_id' => $r->componente_id, 'presentacion_id' => $r->presentacion_id, 'sku' => $r->sku, 'descripcion' => $r->descripcion, 'unidades_fisicas' => $r->unidades === null ? null : (int) $r->unidades, 'fuente' => $r->fuente];
+            yield ['pedido_id' => $r->pedido_id, 'linea_id' => $r->linea_id, 'paquete_id' => $r->paquete_id, 'composicion_id' => $r->composicion_id, 'componente_id' => $r->componente_id, 'presentacion_id' => $r->presentacion_id, 'sku' => $r->sku, 'descripcion' => $r->descripcion, 'unidades_fisicas' => $r->unidades === null ? null : (int) $r->unidades, 'fuente' => $r->fuente, 'unidades_en_espera' => (int) $r->espera];
         }
     }
 
@@ -141,7 +142,7 @@ class PedidosIndicadores
         $codigo = 'COALESCE(actual.codigo_sku,f.sku)';
         $demanda = $this->consultaFisica($f)->leftJoin('presentaciones_producto as actual', 'actual.id', '=', 'f.presentacion_id')
             ->groupBy('f.presentacion_id', DB::raw($codigo))->select('f.presentacion_id')
-            ->selectRaw($codigo.' sku, SUM(f.unidades) solicitadas, SUM(CASE WHEN f.unidades IS NULL THEN 1 ELSE 0 END) incompletas');
+            ->selectRaw($codigo.' sku, SUM(f.unidades) solicitadas, SUM(f.espera) espera, SUM(CASE WHEN f.unidades IS NULL THEN 1 ELSE 0 END) incompletas');
         $q = DB::query()->fromSub($demanda, 'f')->leftJoin('inventarios as i', 'i.presentacion_producto_id', '=', 'f.presentacion_id')->select(['f.*', 'i.cantidad_actual']);
         $pendientes = false;
         foreach ($this->pendientes(array_diff_key($f, array_flip(['sku', 'presentacion_id']))) as $ignorado) {
@@ -151,8 +152,10 @@ class PedidosIndicadores
         foreach ($q->orderBy('f.presentacion_id')->orderBy('f.sku')->lazy(100) as $r) {
             $n = (int) $r->incompletas > 0 ? null : (int) $r->solicitadas;
             $stock = (int) ($r->cantidad_actual ?? 0);
-            yield ['presentacion_id' => $r->presentacion_id, 'sku' => $r->sku, 'solicitadas' => $n, 'stock_actual' => $stock, 'faltante_conocido' => $n === null ? null : max(0, $n - $stock),
-                'cobertura' => $pendientes ? 'Hay composiciones pendientes; cobertura no definitiva' : ($n === null ? 'No disponible' : ($stock >= $n ? 'Cubierta según stock' : 'Falta cubrir'))];
+            $espera = (int) $r->espera;
+            $activas = $n === null ? null : $n - $espera;
+            yield ['presentacion_id' => $r->presentacion_id, 'sku' => $r->sku, 'solicitadas' => $n, 'stock_actual' => $stock, 'faltante_conocido' => $activas === null ? null : max(0, $activas - $stock), 'unidades_en_espera' => $espera, 'unidades_activas' => $activas,
+                'cobertura' => $pendientes ? 'Hay composiciones pendientes; cobertura no definitiva' : ($n === null ? 'No disponible' : ($stock >= $activas ? 'Cubierta según stock' : 'Falta cubrir')).($espera > 0 ? ' · Atención pendiente por unidades en espera' : '')];
         }
     }
 

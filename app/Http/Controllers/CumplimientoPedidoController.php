@@ -70,6 +70,9 @@ class CumplimientoPedidoController extends Controller
         $lecturaSurtidos = $surtidos->precargarLectura($pedidos);
         $surtidosPendientes = $pedidos->flatMap(fn (Pedido $pedido): array => $surtidos->pendientes($pedido, $lecturaSurtidos))->values();
         $productosPendientes = $surtidosPendientes->isEmpty() ? [] : DB::table('formatos_surtidos')->whereIn('id', $surtidosPendientes->pluck('formato_surtido_id'))->pluck('producto_id')->mapWithKeys(fn ($id): array => ['producto:'.$id => true])->all();
+        $ultimasPreparaciones = DB::table('pedido_preparaciones')->whereIn('pedido_id', $pedidos->modelKeys())
+            ->groupBy('pedido_detalle_id')->selectRaw('MAX(id) id');
+        $preparadas = DB::table('pedido_preparaciones')->whereIn('id', $ultimasPreparaciones)->get()->keyBy('pedido_detalle_id');
         $agrupados = [];
         foreach ($pedidos as $pedido) {
             foreach ($surtidos->lineasFisicas($pedido, $lecturaSurtidos) as $detalle) {
@@ -112,10 +115,18 @@ class CumplimientoPedidoController extends Controller
                 if ($presentacion) {
                     $id = $presentacion->id;
                     if (! isset($agrupados[$clave]['presentaciones'][$id])) {
-                        $agrupados[$clave]['presentaciones'][$id] = ['id' => $id, 'sku' => $presentacion->codigo_sku, 'solicitadas' => 0, 'activa' => $presentacion->estado && $presentacion->producto->estado && ($presentacion->variante->estado ?? true)];
+                        $agrupados[$clave]['presentaciones'][$id] = ['id' => $id, 'sku' => $presentacion->codigo_sku, 'solicitadas' => 0, 'en_espera' => 0, 'preparadas' => 0, 'activa' => $presentacion->estado && $presentacion->producto->estado && ($presentacion->variante->estado ?? true)];
                     }
                     $anterior = $agrupados[$clave]['presentaciones'][$id]['solicitadas'];
                     $agrupados[$clave]['presentaciones'][$id]['solicitadas'] = $anterior === null || $totalUnidades === null ? null : $anterior + $totalUnidades;
+                    if ($pedido->modelo_comercial === 'unidades') {
+                        $espera = min($cantidad, (int) $detalle->cantidad_espera);
+                        $preparacion = $preparadas->get($detalle->id);
+                        $salidas = (int) ($lecturaSurtidos['despachadas'][$detalle->id] ?? 0);
+                        $disponibles = $preparacion ? max(0, (int) $preparacion->cantidad - $salidas + (int) $preparacion->despachadas_base) : 0;
+                        $agrupados[$clave]['presentaciones'][$id]['en_espera'] += $espera;
+                        $agrupados[$clave]['presentaciones'][$id]['preparadas'] += min($cantidad - $espera, $disponibles);
+                    }
                 }
                 $claveDesglose = $detalle->modalidad.'|'.$porEmpaque;
                 if (! isset($agrupados[$clave]['desglose'][$claveDesglose])) {
@@ -149,20 +160,36 @@ class CumplimientoPedidoController extends Controller
             ->toBase()->get();
         $porPresentacion = $produccion->groupBy('presentacion_producto_id');
         $pedidosIds = array_fill_keys($pedidos->modelKeys(), true);
-        $filas = collect(array_values($agrupados))->map(function (array $fila) use ($stock, $porPresentacion, $pedidosIds, $productosPendientes): array {
+        $versionesActuales = DB::table('pedido_versiones')->whereIn('pedido_id', $pedidos->modelKeys())->groupBy('pedido_id')->select('pedido_id')->selectRaw('MAX(numero) numero');
+        $agrupaciones = DB::table('pedido_agrupacion_detalles as c')->join('pedido_agrupaciones as g', 'g.id', '=', 'c.agrupacion_id')
+            ->join('pedido_versiones as v', 'v.id', '=', 'g.pedido_version_id')
+            ->joinSub($versionesActuales, 'uv', fn ($q) => $q->on('uv.pedido_id', '=', 'v.pedido_id')->on('uv.numero', '=', 'v.numero'))
+            ->join('pedido_detalles as d', 'd.id', '=', 'c.pedido_detalle_id')
+            ->leftJoin('pedido_despacho_agrupaciones as s', fn ($q) => $q->on('s.pedido_id', '=', 'g.pedido_id')->on('s.identidad', '=', 'g.identidad'))
+            ->whereNull('s.id')->groupBy('d.presentacion_producto_id')->select('d.presentacion_producto_id')
+            ->selectRaw('SUM(c.cantidad) unidades, COUNT(DISTINCT g.id) paquetes')->get()->keyBy('presentacion_producto_id');
+        $filas = collect(array_values($agrupados))->map(function (array $fila) use ($stock, $porPresentacion, $pedidosIds, $productosPendientes, $agrupaciones): array {
             foreach ($fila['presentaciones'] as &$presentacion) {
                 $registros = $porPresentacion->get($presentacion['id'], collect());
                 $presentacion['stock'] = (int) ($stock[$presentacion['id']] ?? 0);
+                $presentacion['agrupadas'] = (int) ($agrupaciones->get($presentacion['id'])->unidades ?? 0);
+                $presentacion['paquetes'] = (int) ($agrupaciones->get($presentacion['id'])->paquetes ?? 0);
                 $presentacion['envasadas'] = $registros->sum(fn (object $registro): int => (int) $registro->neto);
                 $presentacion['vinculadas'] = $registros->filter(fn (object $registro): bool => isset($pedidosIds[$registro->pedido_id]))->sum(fn (object $registro): int => (int) $registro->neto);
-                $presentacion['faltante'] = $presentacion['solicitadas'] === null ? null : max(0, $presentacion['solicitadas'] - $presentacion['stock']);
+                $presentacion['activas'] = $presentacion['solicitadas'] === null ? null : $presentacion['solicitadas'] - $presentacion['en_espera'];
+                $presentacion['faltante'] = $presentacion['activas'] === null ? null : max(0, $presentacion['activas'] - $presentacion['stock']);
             }
             unset($presentacion);
             $fila['stock_disponible'] = array_sum(array_column($fila['presentaciones'], 'stock'));
             $fila['envasadas'] = array_sum(array_column($fila['presentaciones'], 'envasadas'));
             $fila['vinculadas'] = array_sum(array_column($fila['presentaciones'], 'vinculadas'));
+            $fila['en_espera'] = array_sum(array_column($fila['presentaciones'], 'en_espera'));
+            $fila['preparadas'] = array_sum(array_column($fila['presentaciones'], 'preparadas'));
             $fila['faltante'] = $fila['total_unidades'] === null || $fila['presentaciones'] === [] ? null : array_sum(array_column($fila['presentaciones'], 'faltante'));
             $fila['cobertura'] = $fila['faltante'] === null ? 'No disponible' : ($fila['faltante'] === 0 ? 'Cubierta según stock' : ($fila['faltante'] < $fila['total_unidades'] ? 'Parcialmente cubierta' : 'Pendiente'));
+            if ($fila['en_espera'] > 0) {
+                $fila['cobertura'] .= ' · Hay unidades en espera; la atención no está completa';
+            }
 
             if (isset($productosPendientes[$fila['producto_clave']])) {
                 $fila['cobertura'] = 'Pendiente de composición surtida';
@@ -203,7 +230,10 @@ class CumplimientoPedidoController extends Controller
             ];
         }
 
-        return view('cumplimiento.show', compact('pedido', 'resumenEntrega', 'atencionUnidades'));
+        $versionesPedido = app(GestionarPedidoUnidades::class)->historial($pedido);
+        $cambiosOriginales = app(GestionarPedidoUnidades::class)->cambiosOriginales($pedido);
+
+        return view('cumplimiento.show', compact('pedido', 'resumenEntrega', 'atencionUnidades', 'versionesPedido', 'cambiosOriginales'));
     }
 
     public function iniciarPreparacion(

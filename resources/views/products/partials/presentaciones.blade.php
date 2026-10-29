@@ -207,7 +207,7 @@
                                 {{ $vendeUnidad ? 'checked' : '' }}
                                 data-sale-unit
                             >
-                            Se vende por unidad
+                            Modalidad histórica por unidad
                         </label>
 
                         <div class="sale-fields" data-unit-fields>
@@ -225,7 +225,7 @@
                                         placeholder="0.00"
                                     >
                                 </div>
-                                <span class="form-help">Precio mayor que cero, hasta S/ 999 999,99. Obligatorio para vender por caja o paquete.</span>
+                                <span class="form-help">Precio mayor que cero, hasta S/ 999 999,99. Los pedidos nuevos venden unidades físicas a este precio, sin exigir múltiplos. No se deduce de precios por empaque anteriores.</span>
                             </div>
                         </div>
                     </div>
@@ -240,7 +240,7 @@
                                 {{ $vendeEmpaque ? 'checked' : '' }}
                                 data-sale-pack
                             >
-                            Se vende por empaque
+                            Conservar referencia de empaque del catálogo histórico
                         </label>
 
                         <div class="sale-fields" data-pack-fields>

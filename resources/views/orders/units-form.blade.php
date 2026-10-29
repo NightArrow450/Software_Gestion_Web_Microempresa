@@ -46,7 +46,7 @@
 <button type="submit" class="btn btn-primary">Guardar pedido por unidades</button></section>
 </form>
 @php
-    $datosUnidadesIniciales = ['lineas'=>$lineas, 'agrupaciones'=>old('agrupaciones_json') ? json_decode(old('agrupaciones_json'), true) : ($foto['agrupaciones'] ?? []), 'bloqueadas' => isset($pedido) ? array_keys(app(\App\Services\DistribuirDespachoUnidades::class)->anteriores($pedido->id)['paquetes']) : []];
+    $datosUnidadesIniciales = ['lineas'=>$lineas, 'agrupaciones'=>$agrupacionesIniciales, 'bloqueadas' => isset($pedido) ? array_keys(app(\App\Services\DistribuirDespachoUnidades::class)->anteriores($pedido->id)['paquetes']) : []];
 @endphp
 <script type="application/json" id="pedido-unidades-inicial">@json($datosUnidadesIniciales)</script>
 @endsection

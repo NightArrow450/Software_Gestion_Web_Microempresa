@@ -44,7 +44,7 @@ class PedidoUnidadesMySqlTest extends PruebaInventarioMySql
     {
         $foto = app(GestionarPedidoUnidades::class)->fotografiasActuales(collect([$e['pedido']]))[$e['pedido']->id];
 
-        return ['version_pedido' => $e['pedido']->version, 'operacion' => $identidad,
+        return ['version_pedido' => $e['pedido']->version, 'operacion' => $identidad.'_'.$e['pedido']->id,
             'paquetes' => $e['pedido']->estado === 'despacho_parcial' ? [$foto['agrupaciones'][0]['identidad']] : [],
             'motivo' => 'Salida parcial de tres unidades físicamente preparadas.',
             'detalles' => [['id' => $e['detalle']->id, 'cantidad' => 3]]];
@@ -85,6 +85,13 @@ class PedidoUnidadesMySqlTest extends PruebaInventarioMySql
             $this->assertSame('23000', (string) $excepcion->getCode());
         }
         $this->assertSame(1, DB::table('pedido_despacho_agrupaciones')->where('pedido_id', $e['pedido']->id)->count());
+        $skuId = $e['presentacion']->id;
+        $this->get(route('cumplimiento.lista-preparacion'))->assertOk()->assertViewHas('filas', function ($filas) use ($skuId): bool {
+            $presentacion = $filas->flatMap(fn (array $fila): array => $fila['presentaciones'])->firstWhere('id', $skuId);
+
+            return $presentacion !== null && $presentacion['solicitadas'] === 3 && $presentacion['preparadas'] === 3
+                && $presentacion['agrupadas'] === 0 && $presentacion['paquetes'] === 0 && $presentacion['stock'] === 3;
+        });
     }
 
     public function test_version_obsoleta_no_duplica_y_nuevo_parcial_legitimo_sigue_permitido(): void

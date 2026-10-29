@@ -187,7 +187,7 @@
     </div>
 </section>
 
-@if($puedeEditar && $editable)
+@if($puedeEditar && in_array($pedido->estado, ['registrado', 'observado'], true))
     <section class="form-section">
         <h2 class="form-section-title">
             Procesar pedido (HU-02)

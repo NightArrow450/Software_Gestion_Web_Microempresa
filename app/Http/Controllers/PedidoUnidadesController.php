@@ -27,7 +27,7 @@ class PedidoUnidadesController extends Controller
         $lineas = $pedido ? $pedido->detalles->map(fn ($d): array => ['id' => $d->id, 'presentacion_producto_id' => $d->presentacion_producto_id, 'nombre' => $d->descripcion_producto, 'sku' => $d->codigo_sku, 'precio_unitario' => $d->precio_unitario, 'cantidad' => $d->cantidad, 'cantidad_espera' => $d->cantidad_espera,
             'compatibilidad' => [$d->presentacion->producto_id, (string) $d->presentacion->contenido, $d->presentacion->unidad_medida, $d->presentacion->tipo_envase]])->values()->all() : [];
         if (is_array(old('detalles'))) {
-            $previas = array_slice(old('detalles'), 0, 18);
+            $previas = array_slice(array_values(array_filter(old('detalles'), 'is_array')), 0, 18);
             $skusPrevios = PresentacionProducto::with(['producto', 'variante'])->whereIn('id', array_column($previas, 'presentacion_producto_id'))->get()->keyBy('id');
             $lineas = array_map(function (array $fila) use ($skusPrevios, $pedido): array {
                 $sku = $skusPrevios->get((int) ($fila['presentacion_producto_id'] ?? 0));
@@ -43,7 +43,14 @@ class PedidoUnidadesController extends Controller
             }, $previas);
         }
 
-        return view('orders.units-form', compact('pedido', 'cliente', 'lineas', 'foto'));
+        $agrupacionesIniciales = old('agrupaciones_json') ? json_decode(old('agrupaciones_json'), true) : ($foto['agrupaciones'] ?? []);
+        $agrupacionesIniciales = is_array($agrupacionesIniciales) && array_is_list($agrupacionesIniciales)
+            ? array_values(array_filter($agrupacionesIniciales, static fn ($grupo): bool => is_array($grupo)
+                && isset($grupo['capacidad']) && is_array($grupo['componentes'] ?? null)
+                && array_is_list($grupo['componentes']) && collect($grupo['componentes'])->every(static fn ($c): bool => is_array($c) && isset($c['sku_id'], $c['cantidad']))))
+            : [];
+
+        return view('orders.units-form', compact('pedido', 'cliente', 'lineas', 'foto', 'agrupacionesIniciales'));
     }
 
     public function catalogo(Request $request): JsonResponse

@@ -51,6 +51,7 @@
     @include('cumplimiento.partials.incidencia-resumen')
 @endif
 @include('orders.partials.composiciones', ['soloLectura' => true])
+@include('orders.partials.versiones')
 @endsection
 
 @push('styles')<link rel="stylesheet" href="{{ asset('css/entregas.css') }}">@endpush

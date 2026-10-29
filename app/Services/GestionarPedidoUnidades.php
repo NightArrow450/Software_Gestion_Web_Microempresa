@@ -7,6 +7,7 @@ use App\Models\Pedido;
 use App\Models\PresentacionProducto;
 use App\Models\User;
 use Carbon\CarbonImmutable;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -35,10 +36,10 @@ class GestionarPedidoUnidades
             'detalles.*.cantidad_espera' => ['nullable', 'integer', 'min:0', 'max:4294967295'],
             'detalles.*.modalidad' => ['sometimes', 'in:unidad'],
             'detalles.*.tipo_linea' => ['sometimes', 'in:normal'],
-            'agrupaciones' => ['sometimes', 'array', 'max:1000'],
+            'agrupaciones' => ['sometimes', 'array', 'list', 'max:1000'],
             'agrupaciones.*.capacidad' => ['required', 'integer', 'min:1', 'max:4294967295'],
             'agrupaciones.*.identidad' => ['nullable', 'uuid', 'distinct'],
-            'agrupaciones.*.componentes' => ['required', 'array', 'min:1', 'max:18'],
+            'agrupaciones.*.componentes' => ['required', 'array', 'list', 'min:1', 'max:18'],
             'agrupaciones.*.componentes.*.sku_id' => ['required', 'integer', 'min:1'],
             'agrupaciones.*.componentes.*.cantidad' => ['required', 'integer', 'min:1', 'max:4294967295'],
         ], ['detalles.*.modalidad.in' => 'Los pedidos nuevos se venden únicamente por unidades físicas.', 'detalles.*.presentacion_producto_id.distinct' => 'Agrupa la cantidad del mismo SKU en una sola línea comercial.'])->validate();
@@ -194,6 +195,38 @@ class GestionarPedidoUnidades
         $ultimas = DB::table('pedido_versiones')->whereIn('pedido_id', $ids)->groupBy('pedido_id')->selectRaw('MAX(id) id');
 
         return DB::table('pedido_versiones')->whereIn('id', $ultimas)->get()->mapWithKeys(fn ($v): array => [$v->pedido_id => json_decode($v->datos, true, 512, JSON_THROW_ON_ERROR)])->all();
+    }
+
+    public function historial(Pedido $pedido): LengthAwarePaginator
+    {
+        return DB::table('pedido_versiones as v')->join('users as u', 'u.id', '=', 'v.usuario_id')
+            ->where('v.pedido_id', $pedido->id)->select('v.*', 'u.first_name', 'u.last_name')
+            ->orderByDesc('v.numero')->paginate(10, ['*'], 'pagina_version')->withQueryString();
+    }
+
+    /** @return array<int, array{descripcion: string, original: int, vigente: int, modalidad: string}> */
+    public function cambiosOriginales(Pedido $pedido): array
+    {
+        $primera = DB::table('pedido_versiones')->where('pedido_id', $pedido->id)->orderBy('numero')->first();
+        if (! $primera) {
+            return [];
+        }
+        $originales = collect(json_decode($primera->datos, true, 512, JSON_THROW_ON_ERROR)['lineas'])->keyBy('id');
+        $pedido->loadMissing('detalles');
+        $vigentes = $pedido->detalles->keyBy('id');
+        $cambios = [];
+        foreach ($originales->keys()->merge($vigentes->keys())->unique() as $id) {
+            $original = $originales->get($id);
+            $actual = $vigentes->get($id);
+            $antes = (int) ($original['cantidad'] ?? 0);
+            $ahora = (int) ($actual->cantidad ?? 0);
+            if ($antes !== $ahora) {
+                $cambios[] = ['descripcion' => $original['descripcion_producto'] ?? $actual->descripcion_producto,
+                    'original' => $antes, 'vigente' => $ahora, 'modalidad' => $original['modalidad'] ?? $actual->modalidad];
+            }
+        }
+
+        return $cambios;
     }
 
     /** @param Collection<int, PresentacionProducto> $skus */

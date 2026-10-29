@@ -11,6 +11,7 @@
 <div class="print-controls"><button onclick="window.print()">Imprimir {{ $pedidos->count() }} nota(s) en A4 horizontal</button>
     <p>Selecciona A4 · Horizontal · Escala 100 % · Desactivar encabezados y pies del navegador. Dos notas diferentes por hoja. Total: {{ $pedidos->count() }} nota(s) / {{ $pedidos->chunk(2)->count() }} hoja(s). No se incluyen pedidos cancelados.
     @if($cantidadAnexos > 0)<strong>Además: {{ $cantidadAnexos }} anexo(s) de composición surtida en hojas adicionales. El total anterior cuenta solo las hojas de notas; los anexos pueden ocupar varias páginas según su extensión. Comprueba el total final en la vista previa de impresión.</strong>@endif</p>
+@if(collect($fotosUnidades)->contains(fn($foto) => !empty($foto['agrupaciones'])))<p>Las agrupaciones logísticas se detallan en anexos adicionales, sin duplicar importes. Comprueba el número final de páginas en la vista previa.</p>@endif
 </div>
 @foreach($pedidos->chunk(2) as $par)
 <div class="print-preview" tabindex="0" role="region" aria-label="Vista previa de notas de pedido"><main class="a4-hoja">

@@ -1,5 +1,11 @@
 @if($versionesPedido !== null)
 <section class="form-section"><h2>Historial de modificaciones comerciales</h2>
+@if(!empty($cambiosOriginales))
+<aside aria-label="Cambios respecto a la solicitud original"><h3>Cambios respecto a la solicitud original</h3>
+<p>Reparto debe explicar las sustituciones y cantidades vigentes al cliente. Esta información no presupone su aceptación; registra lo que realmente reciba o rechace.</p>
+<ul>@foreach($cambiosOriginales as $cambioOriginal)<li>{{ $cambioOriginal['descripcion'] }}: original {{ $cambioOriginal['original'] }} {{ $cambioOriginal['modalidad'] }}, vigente {{ $cambioOriginal['vigente'] }} {{ $cambioOriginal['modalidad'] }}.</li>@endforeach</ul>
+<p>Consulta debajo los motivos, responsables e importes de cada versión.</p></aside>
+@endif
 <p>Una versión nueva no modifica los hechos físicos de despacho, entrega ni retornos.</p>
 @foreach($versionesPedido as $v)
 <details><summary>Versión {{ $v->numero }} · {{ $v->created_at }} · {{ $v->first_name }} {{ $v->last_name }}</summary>

@@ -128,8 +128,8 @@
                     <th>Variante</th>
                     <th>Envase</th>
                     <th>Contenido</th>
-                    <th>Venta por unidad</th>
-                    <th>Empaque</th>
+                    <th>Precio unitario para pedidos nuevos</th>
+                    <th>Empaque del catálogo histórico</th>
                     <th>Estado</th>
                 </tr>
             </thead>
@@ -147,13 +147,12 @@
                         <td>{{ $presentacion->tipo_envase ?: '—' }}</td>
                         <td>{{ $presentacion->contenido + 0 }} {{ $presentacion->unidad_medida }}</td>
                         <td>
-                            @if($presentacion->venta_por_unidad)
-                                Sí
+                            @if(!is_null($presentacion->precio_unitario))
                                 @if(!is_null($presentacion->precio_unitario))
                                     · S/ {{ number_format((float) $presentacion->precio_unitario, 2) }}
                                 @endif
                             @else
-                                No
+                                Falta definir precio unitario; no se deduce del empaque.
                             @endif
                         </td>
                         <td>

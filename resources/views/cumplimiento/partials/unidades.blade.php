@@ -2,6 +2,9 @@
 <h2>Preparación y atención por unidades</h2>
 <p>El stock no demuestra que exista líquido preparado. Comprueba físicamente la disponibilidad. Registrar preparación no produce unidades, no consume materiales y no reserva stock; al despachar se vuelve a bloquear y comprobar el inventario.</p>
 <p>Las cantidades en espera siguen pendientes. Para reducir, sustituir, dividir aromas o retirar definitivamente, Operaciones debe editar el pedido con un motivo.</p>
+@if(auth()->user()->role?->tienePermiso('cumplimiento.preparar') && $pedido->estado === 'en_preparacion')
+<form method="POST" action="{{ route('cumplimiento.finalizar-preparacion', $pedido) }}">@csrf @include('components.token-operacion')<button class="btn btn-secondary">Finalizar preparación completa</button><p>Solo se permite si todas las unidades pendientes están físicamente preparadas y ninguna sigue en espera. Para una salida parcial utiliza el formulario de despacho de abajo.</p></form>
+@endif
 @foreach($pedido->detalles as $detalle)
 @php
     $salidas = (int) ($atencionUnidades['despachadas'][$detalle->id] ?? 0);
@@ -12,7 +15,7 @@
 @endphp
 <article class="cumplimiento-tarjeta"><h3>{{ $detalle->descripcion_producto }} · {{ $detalle->codigo_sku }}</h3>
 <p>Solicitadas vigentes: <strong>{{ $detalle->cantidad }}</strong> · Despachadas: {{ $salidas }} · Pendientes: {{ $pendiente }} · En espera: {{ $detalle->cantidad_espera }}</p>
-<p>Stock terminado: {{ $disponible }} · Faltan frente al stock: {{ max(0, $pendiente - $disponible) }} · Envasado neto vinculado: {{ $atencionUnidades['envasadas'][$detalle->presentacion_producto_id] ?? 0 }} (incluido en stock) · Preparadas por despachar: {{ min($preparadas, $pendiente) }}</p>
+<p>Stock terminado: {{ $disponible }} · Faltan para la atención activa frente al stock: {{ max(0, $pendiente - $detalle->cantidad_espera - $disponible) }} · Envasado neto vinculado: {{ $atencionUnidades['envasadas'][$detalle->presentacion_producto_id] ?? 0 }} (incluido en stock) · Preparadas por despachar: {{ min($preparadas, max(0, $pendiente - $detalle->cantidad_espera)) }}</p>
 @if($preparacion?->incidencia)<p><strong>Incidencia de disponibilidad:</strong> {{ $preparacion->incidencia }} · {{ $preparacion->motivo }}</p>@endif
 @if(auth()->user()->role?->tienePermiso('cumplimiento.preparar') && in_array($pedido->estado, ['confirmado','en_preparacion','listo_despacho','despacho_parcial'], true))
 <form method="POST" action="{{ route('pedidos.unidades.preparar', $pedido) }}">@csrf @include('components.token-operacion')
