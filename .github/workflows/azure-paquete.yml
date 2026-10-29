@@ -48,7 +48,7 @@ jobs:
       - name: Generar ZIP sin secretos, bases ni dependencias de desarrollo
         run: bash docs/azure/crear-paquete.sh
       - name: Conservar paquete para publicar desde el portal
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2, Node.js 24
         with:
           name: azure-php84-${{ github.sha }}
           path: |
