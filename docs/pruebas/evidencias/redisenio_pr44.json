@@ -1,0 +1,71 @@
+{
+  "fecha": "2026-10-29",
+  "pr": 44,
+  "estado": "borrador; navegador e impresión pendientes",
+  "laravel": {
+    "result": "passed",
+    "tests": 663,
+    "passed": 663,
+    "assertions": 4110,
+    "duration_ms": 51777
+  },
+  "descubrimiento_laravel": {
+    "Unit": 33,
+    "Feature": 619,
+    "Security_incluidas": 11
+  },
+  "mysql_8_4_3": {
+    "result": "passed",
+    "tests": 70,
+    "passed": 70,
+    "assertions": 1165,
+    "duration_ms": 177284
+  },
+  "mysql_aislado": {
+    "puerto": 3347,
+    "base_campana_final": "dhacer_eco_limp_test_r44f_1029a",
+    "bases_protegidas_utilizadas": false
+  },
+  "javascript": {
+    "tests": 45,
+    "passed": 45,
+    "failed": 0,
+    "skipped": 0
+  },
+  "calidad": {
+    "larastan_nivel": 5,
+    "larastan_errores": 0,
+    "pint": "passed",
+    "vite": "passed; aviso opcional fontaine",
+    "composer_audit": "0 avisos",
+    "npm_audit": "0 vulnerabilidades",
+    "composer_validate": "passed"
+  },
+  "selenium": {
+    "descubiertos": 5,
+    "ejecutados": 0,
+    "estado": "PENDIENTE DE EJECUCIÓN",
+    "motivo": "Revisión automática bloqueó iniciar el servidor PHP; arranque manual solicitado."
+  },
+  "visual_e_impresion": "PENDIENTE DE EJECUCIÓN",
+  "seguridad": {
+    "env_operativo_modificado": false,
+    "migraciones_reales_ejecutadas": false,
+    "merge_realizado": false
+  },
+  "mediciones_focalizadas": {
+    "formulario_sqlite": {
+      "skus": 60,
+      "consultas": 2,
+      "bytes_html": 11512,
+      "ms": 13.4,
+      "pico_proceso_bytes": 67108864,
+      "advertencia": "No representa arranque frío ni carga de producción."
+    }
+  },
+  "intentos_mysql_previos": {
+    "base_reutilizada": "65/70; conflictos de operación, base no vacía y conexiones",
+    "base_nueva_nombre_largo": "69/70; sufijo del laboratorio excedía límite de nombre",
+    "correccion": "Base nueva de nombre corto, sin borrados ni exclusiones."
+  }
+}

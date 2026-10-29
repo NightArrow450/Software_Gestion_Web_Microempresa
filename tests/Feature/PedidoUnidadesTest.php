@@ -266,6 +266,26 @@ class PedidoUnidadesTest extends TestCase
         $this->getJson(route('pedidos.unidades.catalogo', ['tipo' => 'skus', 'producto_id' => $e['presentacion']->producto_id]))
             ->assertOk()->assertJsonCount(3, 'data')->assertJsonPath('data.0.precio_unitario', '2.00');
         $this->get(route('pedidos.create'))->assertOk()->assertDontSee($e['presentacion']->codigo_sku);
+        for ($i = 1; $i <= 57; $i++) {
+            $sku = $e['presentacion']->replicate();
+            $sku->codigo_sku = sprintf('SKU-PAG-%03d', $i);
+            $sku->contenido = ($i + 100) / 100;
+            $sku->save();
+        }
+        $this->getJson(route('pedidos.unidades.catalogo', ['tipo' => 'skus', 'producto_id' => $e['presentacion']->producto_id]))
+            ->assertOk()->assertJsonCount(50, 'data')->assertJsonPath('total', 60)->assertJsonPath('last_page', 2);
+        $this->getJson(route('pedidos.unidades.catalogo', ['tipo' => 'skus', 'producto_id' => $e['presentacion']->producto_id, 'page' => 2]))
+            ->assertOk()->assertJsonCount(10, 'data');
+        DB::enableQueryLog();
+        $inicio = hrtime(true);
+        $formulario = $this->get(route('pedidos.create'))->assertOk()->assertDontSee('SKU-PAG-001');
+        $consultas = count(DB::getQueryLog());
+        DB::disableQueryLog();
+        $this->assertLessThan(20, $consultas);
+        $this->assertLessThan(60000, strlen($formulario->getContent()));
+        fwrite(STDERR, json_encode(['medicion' => 'formulario_unidades', 'skus' => 60, 'consultas' => $consultas,
+            'milisegundos' => round((hrtime(true) - $inicio) / 1000000, 2), 'bytes_html' => strlen($formulario->getContent()),
+            'memoria_pico_bytes' => memory_get_peak_usage(true)]).PHP_EOL);
     }
 
     public function test_sin_permiso_comercial_no_puede_guardar_aunque_manipule_el_formulario(): void

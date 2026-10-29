@@ -1,225 +1,225 @@
-# Rediseño de ventas por unidades físicas
+# PR44: ventas por unidades, históricos y atención física parcial
 
-> Continuación autorizada: se conserva el modelo y precio de pedidos históricos.
-> La decisión comercial anterior está resuelta. Se implementan ajustes auditados
-> sin conversión automática y un importe revisado explícito cuando no se puede
-> valorar una cantidad física con la tarifa histórica. El corte anterior de 42
-> fallos que figura abajo ya fue superado: la compatibilidad histórica aprobó
-> 650 escenarios Laravel completos. La integración logística posterior tiene
-> 26 escenarios focalizados aprobados y 45 JavaScript; falta su validación final
-> completa, MySQL y visual antes de declarar terminado el rediseño.
->
-> El diseño final incorpora **dos migraciones propuestas y siete tablas nuevas**:
-> la séptima, `pedido_despacho_agrupaciones`, permite imponer una clave única
-> NOT NULL por pedido e identidad de paquete, junto con claves compuestas que
-> impiden asociarlo a otra orden. Esperado en una instalación nueva de ensayo:
-> 47 migraciones / 51 tablas empresariales, sin contar marcadores de laboratorio.
-> No se ha aplicado este esquema a las bases protegidas.
->
-> `symfony/mime` se actualizó exclusivamente de 7.4.19 a 7.4.22, compatible con
-> PHP 8.3 y las restricciones instaladas de Laravel y Mailer. Composer audit
-> dejó de reportar vulnerabilidades. No cambiaron otras dependencias ni scripts
-> de instalación, y no se ejecutaron scripts de Composer contra el entorno real.
+Estado del corte del 29/10/2026: **borrador; no fusionar ni aplicar a Laragon**.
+Las regresiones automatizadas están corregidas. La ejecución de Selenium, la
+revisión visual y la comprobación de las páginas impresas todavía están pendientes.
+No se considera terminado el rediseño mientras falten esas evidencias.
 
-## Estado de implementación
+## Modelo comercial y precios
 
-Trabajo incremental desde `origin/develop` (`6f17cb3`), en la rama
-`feature/redisenio-ventas-unidad-pedidos-envasado`. No aplicar esta rama a la
-base operativa hasta completar las pruebas y autorizar sus migraciones.
+Los pedidos nuevos se identifican con `modelo_comercial = unidades`. Cada línea
+vende un SKU físico y una cantidad entera positiva, sin múltiplos comerciales.
+Se conservan hasta 18 líneas y el tope de S/999 999,99 por línea; existen límites
+técnicos de almacenamiento y hasta 1000 agrupaciones por versión. El servidor
+calcula el importe desde el precio unitario del catálogo y guarda la fotografía.
+Una edición del mismo SKU conserva el precio pactado. Un SKU añadido toma su
+precio unitario actual; si falta, no se inventa ni se deduce de un precio por caja.
 
-## Diagnóstico inicial
+Los paquetes son instrucciones logísticas opcionales, sin otro precio ni otro
+inventario. Se define cada composición dentro del pedido, se copia con identidad
+nueva y se edita individualmente. Se permiten paquetes homogéneos, mezclas de
+variantes compatibles y paquetes expresamente incompletos. No se mezclan productos,
+contenidos, unidades de medida o envases incompatibles. Las cantidades asignadas
+no superan las vendidas; el resto es suelto. El editor pagina de a un paquete y el
+catálogo se consulta por páginas, sin descargar todos los SKU en cada formulario.
 
-- `PedidoController` calcula líneas normales por unidad o por empaque. La
-  edición solo admite registrados u observados y puede borrar detalles normales.
-- `GestionarSurtidos` conserva composiciones versionadas y genera proyecciones
-  físicas. Es necesario conservarlo para pedidos anteriores, no convertirlos.
-- `SurtidosController::index` carga todos los formatos y todos los SKU. Blade
-  repite todos los SKU dentro de cada formulario: el HTML crece como formatos
-  multiplicados por SKU. Ocultar opciones con JavaScript no reduce ese trabajo.
-- `RegistrarEnvasado` ya registra consumo e ingreso dentro de una transacción;
-  la lista general ya permite invocarlo en un formulario integrado. Se reutiliza.
-- `DescontarInventarioPorDespacho` descuenta el pedido completo. Sus referencias
-  y las restricciones de origen presuponen un despacho por pedido y SKU.
-- `ControlEntregaPedido` fotografía el despacho y alimenta entregas, rechazos,
-  recepciones y aprobaciones. Esos hechos no deben reconstruirse con detalles
-  comerciales que luego fueron modificados.
-- Los indicadores separan precios comerciales y cantidades físicas; todos los
-  cambios deben mantener esa separación y actualizar demanda residual.
+## Históricos: decisión aprobada
 
-## Diseño de coexistencia
+`modelo_comercial = NULL` conserva las reglas anteriores. Las migraciones no
+convierten las líneas, sus modalidades, tamaños, precios, importes ni movimientos.
+Se mantienen los surtidos históricos y sus fotografías individuales del PR38.
+No existe un endpoint de alta comercial por empaque para pedidos nuevos.
 
-Los pedidos existentes mantienen su interpretación original. Los nuevos tendrán
-una identificación explícita del modelo de unidades. Cada detalle comercial
-representará un SKU, una cantidad física positiva y su precio unitario histórico.
-Agrupar no crea otra venta ni otro producto de inventario.
+La edición histórica pendiente utiliza el precio pactado por unidad o empaque,
+incluso si cambió o se desactivó el catálogo. Antes del primer ajuste se guarda
+una versión original 0. Cada ajuste conserva autor, fecha, motivo, cantidades,
+composiciones e importes. Retirar es lógico, no borrar detalles.
 
-Las versiones del pedido conservarán cabecera, líneas y agrupaciones completas,
-autor, fecha y motivo. Retirar no significa borrar. Las agrupaciones referencian
-líneas de esa versión; el remanente no agrupado se identifica como suelto. La
-suma asignada nunca puede superar la cantidad vigente de una línea. No se
-mezclan producto, capacidad, unidad de medida o envase incompatibles.
+Si una cantidad física no puede valorarse con el modelo anterior, Administrador
+u Operaciones con permiso de edición deben introducir explícitamente las unidades
+físicas revisadas **y** el importe total revisado. Se conserva el precio original
+por empaque, sin dividirlo. El ajuste no cambia pagos ni comprobantes. Si el total
+histórico de cabecera tenía una diferencia respecto a sus líneas, se conserva esa
+diferencia; no se corrige silenciosamente. Los detalles ya despachados conservan
+sus cantidades físicas; las observaciones o revisiones comerciales se auditan.
 
-El aumento de una línea conserva su precio pactado; un SKU nuevo utiliza el
-precio unitario vigente del catálogo y guarda su fotografía. Los SKU sin precio
-unitario válido necesitan corrección comercial del catálogo, no precios
-deducidos de empaques antiguos.
+Las pruebas antiguas de empaques y surtidos ahora construyen pedidos anteriores
+al rediseño y ejercitan su edición real. Se conservan los escenarios de tamaños,
+precios, stock, impresión, respaldo de tamaños NULL, permisos e idempotencia.
+Las aserciones no se desactivan para fingir compatibilidad mediante altas nuevas
+que ya no corresponden al modelo aprobado.
 
-## Atención parcial e inventario
+## Preparación y envasado
 
-Preparación registra hechos, cantidades e incidencias. Envasar no reserva ni
-duplica existencias y nunca supone que hay líquido disponible. El trabajador
-confirma la producción física y elige una configuración de materiales existente.
+Registrar o confirmar no comprueba líquido ni descuenta stock. Preparación declara
+unidades realmente listas o incidencias de líquido, envases, etiquetas/tapas,
+insumos químicos, tiempo u otra causa. Declarar preparación no genera producción,
+no consume materiales y no reserva existencias para un cliente.
 
-Cada despacho parcial necesita identidad propia, detalle físico inmutable,
-precio histórico y movimiento único por operación y SKU. Los resultados de
-entrega y retorno deben referirse a ese hecho físico, no a una versión comercial
-mutable. Una edición posterior no altera salidas, entregas ni consumos.
+El formulario integrado reutiliza `RegistrarEnvasado`: consulta materiales
+configurados y solo consume e ingresa producto terminado cuando el trabajador
+confirma producción real. Se conservan el módulo independiente, los envasados
+anticipados y los excedentes reales. No se controlan litros preparados, mezclas
+ni materiales adicionales por agrupar paquetes; las mangas no se descuentan aquí.
 
-Reducir retira obligación comercial; dejar en espera conserva obligación
-pendiente sin inventar una fecha de reposición. No se marca completa una atención
-que conserva cantidades sin resolver. Las sustituciones conservan su origen y
-generan una instrucción visible para reparto; no exigen aprobación digital del
-cliente ni generan comunicaciones.
+La lista general conserva filtros, orden por producto y capacidad, impresión y
+separación entre SKU. Muestra demanda aún no despachada, espera motivada, demanda
+activa, preparación física vigente, stock y producción neta del período. La espera
+no desaparece ni se interpreta como producción urgente. El faltante activo es
+`max(0, pendientes - espera - stock)`; producir no se suma de nuevo al stock.
+Las agrupaciones pendientes son un desglose informativo incluido en la demanda,
+no otra necesidad adicional. Un paquete mixto puede aparecer en varios SKU.
 
-## Orden de trabajo
+Reducir 54 a 32 cambia la obligación vigente y conserva la solicitud original.
+Dejar 22 en espera mantiene esa obligación sin prometer reposición. Las ediciones
+no alteran producción ni salidas anteriores. Un cambio de aroma se registra como
+reducción/retirada del SKU anterior y adición del nuevo, con motivo. Cumplimiento
+y Seguimiento muestran las diferencias acumuladas frente a la solicitud original,
+aunque una versión posterior solo modifique observaciones.
 
-1. Medir y limitar el renderizado del archivo histórico de surtidos.
-2. Incorporar esquema aditivo y pruebas de conservación sobre datos ficticios.
-3. Registro, edición versionada y agrupaciones en un mismo formulario.
-4. Preparación, incidencias, espera y reutilización del envasado transaccional.
-5. Despachos parciales y su integración con entregas y retornos existentes.
-6. Impresión, indicadores, CSV, permisos y regresiones de todos los módulos.
-7. Suites Laravel, MySQL independiente, JavaScript, Larastan, Pint, Vite y
-   auditorías; evidencias y Pull Request sin merge automático.
+## Despachos, entregas y retornos
 
-## Límites de seguridad
+Cada salida necesita operación única, versión actual, cantidades físicamente
+preparadas, stock suficiente, paquetes seleccionados y unidades sueltas. Se
+conserva la composición y la capacidad de cada paquete efectivamente enviado.
+Un paquete ya despachado no se vuelve a enviar ni se modifica retrospectivamente.
+Para abrir o redistribuir un paquete pendiente se edita su agrupación con motivo.
 
-No se ejecutan migraciones, seeders ni pruebas de escritura en
-`software_gestion_web_microempresa` ni `ecolimp_respaldo_prueba`. El checkout
-independiente no recibe el `.env` operativo. PHPUnit y Artisan de desarrollo
-utilizan explícitamente `tests/bootstrap.php`, SQLite en memoria o una instancia
-MySQL identificada y permitida. No se eliminan índices ni restricciones para
-sortear la protección de despachos antiguos.
+Pedido, inventarios y referencias se bloquean dentro de una transacción. El
+movimiento es único por salida y SKU; reenviar la misma operación no vuelve a
+descontar, y reutilizarla con otro contenido se rechaza. La identidad de paquete
+es no nula y única por pedido en la tabla de pertenencia al despacho, con claves
+foráneas compuestas que verifican pedido y versión. Se permiten múltiples salidas
+legítimas. Stock insuficiente revierte la operación completa.
 
-No se implementan líquidos en bidones, mezclas químicas, mensajería, nuevos
-materiales de agrupación, descuentos o cobros automáticos. Los guiones de video
-anteriores describen el flujo previo y necesitarán actualización después del
-cierre del rediseño, no antes de verificarlo.
+Las entregas y retornos reutilizan el PR34 mediante líneas físicas inmutables de
+cada salida. Se aceptan/rechazan SKU concretos, sin reescribir la línea comercial.
+Rechazar y recibir no aumentan stock; una aprobación autorizada reincorpora solo
+lo apto físicamente recibido. No se devuelven materiales del envasado. Un pedido
+con obligación pendiente conserva `despacho_parcial`; no vuelve automáticamente
+a preparación ni se marca totalmente entregado por resolver la primera salida.
 
-## Corte de trabajo del 29 de octubre de 2026
+Después de hechos físicos se usan incidencias y rectificaciones autorizadas.
+Una atención cerrada no permite agregar arbitrariamente nuevas salidas. Roles,
+permisos de aprobación/rectificación e idempotencia anteriores permanecen.
 
-**Borrador incompleto: no fusionar ni aplicar sus migraciones.** El esquema y
-los servicios nuevos tienen pruebas focalizadas SQLite, pero todavía no cuentan
-con la validación MySQL, de concurrencia ni visual requerida para su aprobación.
-No se ha modificado ninguna de las dos bases protegidas.
+## Esquema propuesto, sin aplicar a las bases protegidas
 
-### Avance implementado
+Solo dos migraciones nuevas:
 
-- Archivo histórico de surtidos paginado, sin formularios repetidos por SKU.
-- Formulario nuevo con búsqueda paginada, venta por unidades, agrupaciones
-  logísticas opcionales y precio unitario validado por el servidor.
-- Dos migraciones aditivas propuestas: seis tablas para versiones comerciales,
-  agrupaciones, preparación real y despachos parciales. Conservan los índices
-  anteriores y agregan una referencia independiente por despacho y SKU.
-- Versiones comerciales inmutables, retirada lógica, motivo y bloqueo de
-  versiones para los pedidos nuevos. No se adoptan ni convierten históricos.
-- Preparación parcial, reutilización del formulario de envasado existente y
-  despachos por operaciones distintas, sin retorno automático de inventario.
-- Adaptación inicial de entregas, recepciones, aprobaciones e indicadores para
-  consultar los hechos físicos de cada despacho y la demanda residual.
+1. `2026_10_29_033324_create_versiones_y_agrupaciones_pedidos.php`: modelo comercial
+   nullable, espera, ajuste físico explícito y tres tablas de versiones y grupos.
+2. `2026_10_29_033326_create_despachos_parciales_pedido.php`: preparación física,
+   salidas, líneas físicas y pertenencia única de paquetes al despacho. Nueva FK
+   nullable e índice por salida/SKU en movimientos. Conserva restricciones antiguas.
 
-Estas capacidades no equivalen al cierre de todos los requisitos del rediseño.
+Siete tablas nuevas: `pedido_versiones`, `pedido_agrupaciones`,
+`pedido_agrupacion_detalles`, `pedido_preparaciones`, `pedido_despachos`,
+`pedido_despacho_lineas` y `pedido_despacho_agrupaciones`. El resultado esperado en
+una instalación aislada es **47 migraciones y 51 tablas empresariales**, sin contar
+marcadores de laboratorio. No se crean permisos ni seeders de aplicación nuevos.
 
-### Decisión comercial pendiente
+Triggers conservan versiones, paquetes enviados, líneas físicas y movimientos
+inmutables. Las nuevas columnas admiten el estado histórico sin reinterpretarlo.
+El origen de salida nueva no altera la referencia única de despacho histórico.
+La migración SQLite preserva los triggers originales al reconstruir la tabla.
+El `down` se detiene antes de borrar historia; no hay recuperación destructiva
+automática. Una actualización real requerirá autorización, respaldo restaurado,
+comparación histórica y control de escrituras en un procedimiento separado.
 
-Para editar pedidos históricos todavía no despachados, es necesario decidir
-entre mantener su modelo y precio pactados por empaque o permitir una adopción
-explícita del modelo por unidades con revisión de cantidades y precios. No se
-puede deducir silenciosamente un precio unitario de un paquete histórico.
-La interfaz histórica de edición conserva por ahora sus restricciones previas;
-no satisface todavía la edición durante todo el ciclo de vida.
+## Indicadores, CSV y presentación
 
-### Resultados ejecutados
+La línea comercial cuenta su precio una vez. El desglose de grupos no añade
+importes ni demanda. Los reportes físicos usan obligación residual por SKU,
+separan unidades en espera y activas y reconocen ajustes históricos explícitos.
+Los movimientos de salidas parciales conservan la referencia al pedido. Estados,
+entregas, aprobaciones y consumo mantienen sus períodos y trazabilidad anteriores.
+Los filtros incluyen `despacho_parcial`. UTF-8, separador y protección CSV se
+conservan. El catálogo distingue precio unitario de referencia de empaque histórica.
 
-Comandos ejecutados en el checkout independiente, sin `.env` operativo:
+Se conserva la maquetación de dos notas por A4 horizontal, con anexos adicionales
+de agrupaciones y composiciones históricas. El aviso de impresión distingue hojas
+de notas y anexos. **La legibilidad, los móviles y el número real de páginas no
+se dan por validados hasta ejecutar el navegador y revisar sus evidencias.**
+
+## Resultados reales del corte
+
+- Laravel completo: **663/663**, **4110 aserciones**, 51,777 s. Descubrimiento:
+  33 escenarios Unit, 619 Feature y 11 Security, estas últimas incluidas una vez.
+- JavaScript: **45/45**, sin omitidas ni fallos.
+- Larastan nivel 5: **0 errores**, sin exclusiones generales nuevas.
+- Pint: aprobado sobre los PHP modificados.
+- Vite 8.3.4: compilación aprobada. Conserva el aviso opcional preexistente de
+  `fontaine` para optimización de fuentes; no se instala otra dependencia a ciegas.
+- Composer audit y npm audit: sin vulnerabilidades. `composer validate --strict
+  --no-check-publish`: aprobado. Solo `symfony/mime` cambió de 7.4.19 a 7.4.22 en
+  el lockfile; corrección compatible de CVE-2026-45070, sin actualizar otros paquetes
+  ni ejecutar scripts contra el entorno operativo.
+- MySQL 8.4.3 independiente: repetición final **70/70**, **1165 aserciones**,
+  177,284 s, sobre `dhacer_eco_limp_test_r44f_1029a`, nueva y vacía al comenzar.
+  Incluye los índices únicos, datos históricos, parciales y concurrencia.
+  El servidor escucha en 3347 y no contiene ninguna base protegida.
+- Selenium 4.52.0 / pytest 9.2.0: cinco escenarios descubiertos, **PENDIENTES DE
+  EJECUCIÓN**. Entorno virtual privado y Chrome/ChromeDriver compatibles preparados.
+- Revisión visual e impresión: **PENDIENTES DE EJECUCIÓN**. La revisión automática
+  rechazó iniciar el servidor PHP aislado. Se solicitó arranque manual y no se
+  intentó eludirlo. No se han generado capturas ni resultados ficticios de navegador.
+- GitHub: las ejecuciones del último commit se enlazan y actualizan en el PR44.
+  Aprobar CI no sustituye Selenium ni la validación visual pendiente.
+
+La repetición MySQL detectó errores de preparación del laboratorio: reutilización
+de una base que debía ser nueva, referencias repetidas, límite de conexiones y
+nombre demasiado largo al añadir sufijos internos de pruebas. Se conservan esos
+logs; se elige otra base vacía de nombre corto y no se limpia ninguna base ni se
+relajan los guardas. Las operaciones nuevas de pruebas incorporan el ID de su
+pedido para no colisionar entre escenarios. No se omiten los escenarios afectados.
+
+## Reproducción y evidencia
 
 ```powershell
 php -d auto_prepend_file=tests/bootstrap.php artisan test --compact
-php -d auto_prepend_file=tests/bootstrap.php artisan test --compact --filter='PedidoUnidadesTest|ArchivoSurtidosTest|MejoraBuscadorPedidosTest|EstadoPedidoTest'
-php -d auto_prepend_file=tests/bootstrap.php vendor/bin/phpstan analyse --memory-limit=1G --no-progress
+php -d auto_prepend_file=tests/bootstrap.php vendor/bin/phpstan analyse --no-progress --memory-limit=1G
 php -d auto_prepend_file=tests/bootstrap.php vendor/bin/pint --dirty --format agent
 node --test tests/js/*.test.cjs
 npm run build
-composer audit --locked --no-interaction
-npm audit --json
+composer audit --locked
+npm audit --package-lock-only --audit-level=low
 ```
 
-- Laravel completo: 645 escenarios, 603 aprobados, 42 fallidos en el último
-  corte completo registrado. No se eliminan, omiten ni silencian esos fallos.
-- Fallos agrupados: EmpaqueVariablePorLineaTest (22), SurtidosTest (19) y
-  RegistroPedidosTest (1). Incluyen contratos antiguos de registro por
-  empaque/surtido. Requieren revisar
-  cada escenario y preservar su cobertura histórica con fixtures apropiados;
-  no se consideran resueltos por cambiar la regla comercial de altas nuevas.
-- Focalizadas: 35 aprobadas, 312 aserciones. El archivo nuevo PedidoUnidadesTest
-  aporta 21 escenarios; la cobertura focalizada no reemplaza la suite completa.
-- FlujosEnvasadoCompletoTest, ProcesarPedidosTest y ValidacionPedidosTest:
-  26 aprobadas y 282 aserciones después de adaptar sus solicitudes a preparación
-  física explícita, identidad de despacho, motivo y control de versión.
-  Se conservan las aserciones de saldos, insumos, estados e historial. El tope
-  económico por línea sigue probado sin imponer un máximo comercial de 10 000.
-- JavaScript: 37 aprobadas, incluidas nueve del formulario nuevo.
-- Larastan nivel 5: cero errores; Pint: aprobado sobre los PHP modificados.
-- Vite: compilación aprobada. npm audit: cero vulnerabilidades reportadas.
-- Composer audit: falla por symfony/mime 7.4.19, aviso de gravedad media
-  CVE-2026-45070 / PKSA-wtxr-p26d-nn42. No se modificaron dependencias. Se
-  requiere analizar y autorizar una actualización mínima por separado conforme
-  a las reglas del proyecto; no se excluye el aviso para conseguir verde.
-- Primer intento MySQL 8.4.3 en GitHub: 68 errores al preparar el esquema.
-  El nombre automático del índice de agrupación/detalle superaba el límite de
-  MySQL. Se reemplazó por `agrupacion_detalle_unico` en la migración nueva,
-  sin modificar migraciones históricas. El segundo intento descubrió una mezcla
-  de collations al comparar el identificador textual de origen con su conversión
-  numérica. Se usa comparación binaria exacta en el CHECK MySQL sin alterar el
-  charset de las columnas existentes. Se agregan dos escenarios MySQL para
-  duplicación concurrente de identidad y parciales con bloqueo de versión.
-  La tercera ejecución (`89311e4`, GitHub Actions 40851653310) realizó 70 pruebas,
-  con 68 aprobadas y dos fallidas. Las dos pruebas nuevas de concurrencia
-  aprobaron; fallaron el alta histórica por empaque/surtido y una expectativa
-  fija de 45 migraciones. Esta última se adapta para comprobar separadamente
-  41 → 45 → 47 migraciones, conservando todas sus aserciones y verificando que
-  las seis tablas nuevas no generen datos retroactivos. Su repetición queda
-  **PENDIENTE DE EJECUCIÓN**. No equivale a una validación integral del rediseño.
-- Selenium, revisión visual móvil y paginación de impresión: **PENDIENTE DE
-  EJECUCIÓN**. Los cambios locales Selenium del checkout original se conservan.
-- GitHub Actions: consultar los trabajos del último commit del borrador; no
-  trasladar resultados de PR anteriores ni considerar aprobada esta rama.
+MySQL exige `MYSQL_TEST_ENABLE=1`, credenciales privadas y una base independiente
+**nueva y de nombre corto** con prefijo `dhacer_eco_limp_test_`; ejecutar PHPUnit
+con `phpunit.mysql.xml` y el bootstrap seguro. La suite crea también bases
+auxiliares con ese prefijo y comprueba que no contengan tablas ajenas. No usar
+`migrate:fresh`, borrados ni restauraciones sobre bases protegidas.
 
-Medición focalizada del archivo de surtidos con datos ficticios SQLite: seis
-consultas, 12 301 bytes de HTML, aproximadamente 108 ms y 56 MiB de pico PHP.
-No existe una medición previa comparable ni un ensayo MySQL de carga de esta
-pantalla; estos datos no demuestran todavía una mejora porcentual.
+El laboratorio de esta revisión escucha únicamente en 127.0.0.1:3347, con directorio
+de datos fuera de Laragon operativo y UUID comprobado. No contiene las bases
+protegidas. La base visual separada quedó con 47 migraciones, datos ficticios y
+cuenta HTTP DML limitada a esa base. Manifiesto, credenciales, logs y evidencias
+quedan fuera del repositorio. Ver [instrucciones Selenium](../tests/Selenium/README_redisenio.md).
 
-### Integraciones y verificaciones todavía pendientes
+## Límites y cierre pendiente
 
-1. Resolver y probar el tratamiento de edición histórica sin conversiones
-   silenciosas ni borrado de detalles normales existentes.
-2. Completar las 46 situaciones exigidas, especialmente rectificaciones,
-   espera motivada, faltantes e incidencias, agrupaciones afectadas por cambios
-   y protección de todas las operaciones físicas previas.
-3. Conservar la distribución logística exacta de paquetes y unidades sueltas
-   por despacho parcial; la referencia de versión comercial no basta para
-   identificar qué agrupaciones salieron físicamente en cada operación.
-4. Mostrar las sustituciones a reparto, completar seguimiento, catálogo,
-   desglose logístico de preparación y referencias de despachos en movimientos.
-5. Completar la presentación y filtros de indicadores/CSV, distinguir claramente
-   históricos, agrupaciones y hechos físicos, sin duplicaciones económicas.
-6. Validar las dos migraciones con datos históricos ficticios sobre MySQL
-   independiente, incluidos triggers, restricciones, valores NULL, concurrencia
-   y fallos atómicos. No proponer su ejecución sobre Laragon antes de ello.
-7. Corregir las regresiones, ejecutar todas las suites, revisar impresión y
-   móviles, actualizar la evidencia y los guiones tras el cierre funcional.
+El archivo histórico de surtidos usa paginación de 20 formatos. La medición inicial
+SQLite con 46 formatos fue de 6 consultas, 12 301 bytes HTML, aproximadamente 108 ms
+y 56 MiB de pico PHP. No hay una medición anterior comparable: no se afirma una
+mejora porcentual ni capacidad bajo carga por esos datos. La lista general conserva
+la consolidación en memoria y el verificador acumula su informe; no certifican
+volúmenes ilimitados. Las pruebas de indicadores tienen su propio escenario grande;
+no equivalen a un ensayo integral de carga del formulario nuevo. La medición
+focalizada SQLite del formulario autenticado con 60 SKU fue de 2 consultas,
+11 512 bytes, 13,4 ms y 64 MiB de pico del proceso. La paginación devuelve 50 + 10
+sin incrustar todos los SKU en HTML. Es una prueba autenticada con relaciones
+preparadas, no una medición fría de producción ni un ensayo de estrés. Las
+mediciones generales previas hasta 300 registros conservan su limitación.
 
-No se agregaron permisos ni seeders, no se cambiaron credenciales ni se aplicó
-ninguna migración sobre la base real. El borrador no está listo para uso
-empresarial ni para reemplazar los videos del flujo anterior.
+Pendientes para cerrar el PR: ejecutar los cinco casos Selenium en el servidor
+verificado, corregir cualquier defecto encontrado, revisar capturas de escritorio,
+360/390 px y PDF, y verificar los cinco trabajos sobre el último commit. Los guiones
+de videos previos describen el flujo anterior y requieren actualización después
+de completar esta validación. No se declara el sistema listo para sustituirlos.
+
+Las bases `software_gestion_web_microempresa` y `ecolimp_respaldo_prueba`, el `.env`
+operativo, las migraciones históricas y los cambios locales del checkout original
+permanecen fuera de estas operaciones. No hubo merge ni despliegue. El PR44 sigue
+independiente y en borrador; no se inicia otro alcance.
