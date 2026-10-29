@@ -14,6 +14,7 @@ use App\Services\FiltrosIndicadores;
 use App\Services\GestionarPedidoUnidades;
 use App\Services\RegistrarResultadoEntrega;
 use App\Services\RegistrarRetornoPedido;
+use App\Services\TokenOperacion;
 use App\Services\TransicionesPedido;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -285,6 +286,11 @@ class PedidoUnidadesTest extends TestCase
         $this->assertSame(1600, array_sum(array_column($comerciales, 'importe_centimos')));
         $this->assertSame(8, array_sum(array_column($grupos, 'unidades_fisicas')));
         $this->assertSame(['unidades'], array_values(array_unique(array_column($grupos, 'modelo_comercial'))));
+        $datos['detalles'] = $pedido->detalles()->get()->map(fn ($linea): array => ['id' => $linea->id, 'presentacion_producto_id' => $linea->presentacion_producto_id, 'cantidad' => $linea->cantidad])->all();
+        $datos['_version'] = $pedido->version;
+        $datos['motivo'] = 'Se redistribuyen tres unidades sueltas para esta salida parcial.';
+        $datos['agrupaciones'] = [['capacidad' => 5, 'componentes' => [['sku_id' => $e['skus'][0]->id, 'cantidad' => 2], ['sku_id' => $e['skus'][1]->id, 'cantidad' => 3]]]];
+        $pedido = app(GestionarPedidoUnidades::class)->guardar($datos, $e['usuario'], $pedido);
         $d = $pedido->detalles()->orderBy('id')->first();
         $atencion = app(AtenderPedidoUnidades::class);
         $atencion->preparar($pedido, ['version_pedido' => $pedido->version, 'pedido_detalle_id' => $d->id, 'cantidad' => 3, 'motivo' => 'Preparación parcial físicamente comprobada.'], $e['usuario']);
@@ -321,5 +327,176 @@ class PedidoUnidadesTest extends TestCase
         $pedido = app(GestionarPedidoUnidades::class)->guardar($this->entrada($e), $e['usuario']);
         $this->expectException(QueryException::class);
         DB::table('pedido_versiones')->where('pedido_id', $pedido->id)->update(['datos' => '{}']);
+    }
+
+    public function test_dos_parciales_identifican_paquetes_concretos_y_sueltas_sin_repetirlos(): void
+    {
+        $e = $this->escenarioSurtido(10);
+        $datos = $this->entrada($e, 6);
+        $datos['agrupaciones'] = array_fill(0, 2, ['capacidad' => 4, 'componentes' => [['sku_id' => $e['presentacion']->id, 'cantidad' => 2]]]);
+        $pedido = app(GestionarPedidoUnidades::class)->guardar($datos, $e['usuario']);
+        $foto = app(GestionarPedidoUnidades::class)->fotografiasActuales(collect([$pedido]))[$pedido->id];
+        $pedido->update(['estado' => 'en_preparacion']);
+        $pedido->refresh();
+        $detalle = $pedido->detalles()->sole();
+        $servicio = app(AtenderPedidoUnidades::class);
+        $servicio->preparar($pedido, ['version_pedido' => $pedido->version, 'pedido_detalle_id' => $detalle->id, 'cantidad' => 6, 'motivo' => 'Se verificaron seis unidades físicamente preparadas.'], $e['usuario']);
+        $pedido->refresh();
+        $salida = ['version_pedido' => $pedido->version, 'operacion' => 'paquete_y_suelta_00001', 'motivo' => 'Un paquete declarado y una unidad suelta salen juntos.',
+            'paquetes' => [$foto['agrupaciones'][0]['identidad']], 'detalles' => [['id' => $detalle->id, 'cantidad' => 3]]];
+        $id = $servicio->despachar($pedido, $salida, $e['usuario']);
+        $this->assertSame($id, $servicio->despachar($pedido, $salida, $e['usuario']));
+        $distribucion = json_decode(DB::table('pedido_despachos')->where('id', $id)->value('distribucion'), true);
+        $this->assertSame($foto['agrupaciones'][0]['identidad'], $distribucion['paquetes'][0]['identidad']);
+        $this->assertSame(1, $distribucion['sueltas'][$e['presentacion']->id]);
+        $enlace = (array) DB::table('pedido_despacho_agrupaciones')->where('despacho_id', $id)->sole();
+        unset($enlace['id']);
+        try {
+            DB::table('pedido_despacho_agrupaciones')->insert($enlace);
+            $this->fail('El índice único debe rechazar un segundo ingreso del mismo paquete físico.');
+        } catch (QueryException $excepcion) {
+            $this->assertSame('23000', (string) $excepcion->getCode());
+        }
+        $this->assertDatabaseCount('pedido_despacho_agrupaciones', 1);
+        try {
+            DB::table('movimientos_inventario')->insert(['despacho_unidades_id' => $id, 'presentacion_producto_id' => $e['skus'][1]->id, 'usuario_id' => $e['usuario']->id,
+                'origen_tipo' => null, 'origen_id' => null, 'tipo' => 'salida', 'cantidad' => 1, 'stock_anterior' => 10, 'stock_nuevo' => 9, 'motivo' => 'Intento inválido con origen NULL.', 'created_at' => now(), 'updated_at' => now()]);
+            $this->fail('NULL no debe eludir la integridad del origen del despacho.');
+        } catch (QueryException $excepcion) {
+            $this->assertStringContainsString('origen', $excepcion->getMessage());
+        }
+        $pedido->refresh();
+        $salida['version_pedido'] = $pedido->version;
+        $salida['operacion'] = 'paquete_repetido_00002';
+        try {
+            $servicio->despachar($pedido, $salida, $e['usuario']);
+            $this->fail('Un paquete físico no sale dos veces.');
+        } catch (ValidationException $excepcion) {
+            $this->assertArrayHasKey('paquetes', $excepcion->errors());
+        }
+        $this->assertDatabaseCount('pedido_despachos', 1);
+        $this->assertDatabaseHas('inventarios', ['presentacion_producto_id' => $e['presentacion']->id, 'cantidad_actual' => 7]);
+        $salida['operacion'] = 'segundo_paquete_00003';
+        $salida['paquetes'] = [$foto['agrupaciones'][1]['identidad']];
+        $servicio->despachar($pedido, $salida, $e['usuario']);
+        $this->assertDatabaseHas('inventarios', ['presentacion_producto_id' => $e['presentacion']->id, 'cantidad_actual' => 4]);
+        $this->assertSame('despachado', $pedido->fresh()->estado);
+        $this->get(route('cumplimiento.show', $pedido))->assertOk()->assertSee('Salidas físicas registradas');
+    }
+
+    public function test_un_paquete_despachado_no_se_recompone_mediante_edicion_comercial(): void
+    {
+        $e = $this->escenarioSurtido(10);
+        $datos = $this->entrada($e, 6);
+        $datos['agrupaciones'] = [['capacidad' => 4, 'componentes' => [['sku_id' => $e['presentacion']->id, 'cantidad' => 2]]]];
+        $pedido = app(GestionarPedidoUnidades::class)->guardar($datos, $e['usuario']);
+        $foto = app(GestionarPedidoUnidades::class)->fotografiasActuales(collect([$pedido]))[$pedido->id];
+        $detalle = $pedido->detalles()->sole();
+        $pedido->update(['estado' => 'en_preparacion']);
+        $pedido->refresh();
+        $servicio = app(AtenderPedidoUnidades::class);
+        $servicio->preparar($pedido, ['version_pedido' => $pedido->version, 'pedido_detalle_id' => $detalle->id, 'cantidad' => 6, 'motivo' => 'Preparación real de seis unidades para el pedido.'], $e['usuario']);
+        $pedido->refresh();
+        $servicio->despachar($pedido, ['version_pedido' => $pedido->version, 'operacion' => 'paquete_inmutable_0001', 'motivo' => 'Se despacha el paquete expresamente incompleto.', 'paquetes' => [$foto['agrupaciones'][0]['identidad']], 'detalles' => [['id' => $detalle->id, 'cantidad' => 2]]], $e['usuario']);
+        $datos['detalles'][0]['id'] = $detalle->id;
+        $datos['_version'] = $pedido->fresh()->version;
+        $datos['motivo'] = 'Intento de modificar la capacidad de un paquete que ya salió.';
+        $datos['agrupaciones'] = $foto['agrupaciones'];
+        $datos['agrupaciones'][0]['capacidad'] = 5;
+        try {
+            app(GestionarPedidoUnidades::class)->guardar($datos, $e['usuario'], $pedido);
+            $this->fail('No debe reescribir el paquete físico.');
+        } catch (ValidationException $excepcion) {
+            $this->assertArrayHasKey('agrupaciones', $excepcion->errors());
+        }
+        $this->assertDatabaseCount('pedido_versiones', 1);
+        $this->assertDatabaseHas('inventarios', ['presentacion_producto_id' => $e['presentacion']->id, 'cantidad_actual' => 8]);
+    }
+
+    public function test_sueltas_despachadas_no_pueden_reaparecer_dentro_de_otro_paquete(): void
+    {
+        $e = $this->escenarioSurtido(6);
+        $datos = $this->entrada($e, 6);
+        $pedido = app(GestionarPedidoUnidades::class)->guardar($datos, $e['usuario']);
+        $detalle = $pedido->detalles()->sole();
+        $pedido->update(['estado' => 'en_preparacion']);
+        $pedido->refresh();
+        $servicio = app(AtenderPedidoUnidades::class);
+        $servicio->preparar($pedido, ['version_pedido' => $pedido->version, 'pedido_detalle_id' => $detalle->id, 'cantidad' => 6, 'motivo' => 'Se confirman las unidades físicamente preparadas.'], $e['usuario']);
+        $pedido->refresh();
+        $servicio->despachar($pedido, ['version_pedido' => $pedido->version, 'operacion' => 'sueltas_previas_00001', 'motivo' => 'Salen tres unidades sueltas del pedido.', 'detalles' => [['id' => $detalle->id, 'cantidad' => 3]]], $e['usuario']);
+        $datos['detalles'][0]['id'] = $detalle->id;
+        $datos['_version'] = $pedido->fresh()->version;
+        $datos['motivo'] = 'Intento de reagrupar unidades que ya salieron sueltas.';
+        $datos['agrupaciones'] = [['capacidad' => 6, 'componentes' => [['sku_id' => $e['presentacion']->id, 'cantidad' => 6]]]];
+        try {
+            app(GestionarPedidoUnidades::class)->guardar($datos, $e['usuario'], $pedido);
+            $this->fail('No se reutilizan físicamente unidades ya despachadas.');
+        } catch (ValidationException $excepcion) {
+            $this->assertArrayHasKey('agrupaciones', $excepcion->errors());
+        }
+        $this->assertDatabaseCount('pedido_versiones', 1);
+    }
+
+    public function test_espera_se_registra_con_motivo_y_la_produccion_posterior_no_se_inventa(): void
+    {
+        $e = $this->escenarioSurtido(32);
+        $datos = $this->entrada($e);
+        $datos['detalles'][0]['cantidad_espera'] = 22;
+        try {
+            app(GestionarPedidoUnidades::class)->guardar($datos, $e['usuario']);
+            $this->fail('La espera requiere una decisión motivada.');
+        } catch (ValidationException $excepcion) {
+            $this->assertArrayHasKey('motivo', $excepcion->errors());
+        }
+        $datos['motivo'] = 'Se dejan veintidós unidades en espera sin prometer reposición.';
+        $pedido = app(GestionarPedidoUnidades::class)->guardar($datos, $e['usuario']);
+        $detalle = $pedido->detalles()->sole();
+        $pedido->update(['estado' => 'en_preparacion']);
+        $pedido->refresh();
+        $servicio = app(AtenderPedidoUnidades::class);
+        $servicio->preparar($pedido, ['version_pedido' => $pedido->version, 'pedido_detalle_id' => $detalle->id, 'cantidad' => 32, 'incidencia' => 'insumos_quimicos', 'motivo' => 'Se agotaron insumos químicos; solo existen treinta y dos unidades.'], $e['usuario']);
+        $pedido->refresh();
+        $servicio->despachar($pedido, ['version_pedido' => $pedido->version, 'operacion' => 'parcial_con_espera_001', 'motivo' => 'Salen treinta y dos; las otras veintidós siguen en espera.', 'detalles' => [['id' => $detalle->id, 'cantidad' => 32]]], $e['usuario']);
+        $this->assertSame('despacho_parcial', $pedido->fresh()->estado);
+        $this->assertSame(22, $servicio->pendientes($pedido));
+        $this->assertDatabaseCount('envasados', 0);
+        $datos['_version'] = $pedido->fresh()->version;
+        $datos['detalles'][0]['id'] = $detalle->id;
+        $datos['detalles'][0]['cantidad_espera'] = 0;
+        $datos['motivo'] = 'El personal confirmó que ahora puede producir el resto; se retira la espera.';
+        $pedido = app(GestionarPedidoUnidades::class)->guardar($datos, $e['usuario'], $pedido);
+        $envasar = ['presentacion_producto_id' => $e['presentacion']->id, 'configuracion_envasado_id' => $e['configuracion']->id, 'version_configuracion' => $e['configuracion']->version, 'pedido_id' => $pedido->id, 'cantidad' => 22, '_token_operacion' => TokenOperacion::emitir($e['usuario']->id)];
+        $this->post(route('envasado.previsualizar'), $envasar)->assertOk();
+        $this->assertDatabaseHas('inventarios', ['presentacion_producto_id' => $e['presentacion']->id, 'cantidad_actual' => 0]);
+        $this->post(route('envasado.store'), $envasar)->assertSessionHasNoErrors()->assertRedirect();
+        $this->post(route('envasado.store'), $envasar)->assertRedirect();
+        $this->assertDatabaseCount('envasados', 1);
+        $this->assertSame('78.000', $e['insumo']->fresh()->cantidad_actual);
+        $pedido->refresh();
+        $servicio->preparar($pedido, ['version_pedido' => $pedido->version, 'pedido_detalle_id' => $detalle->id, 'cantidad' => 22, 'motivo' => 'Se verificó el envasado físico del remanente de veintidós unidades.'], $e['usuario']);
+        $pedido->refresh();
+        $servicio->despachar($pedido, ['version_pedido' => $pedido->version, 'operacion' => 'resto_confirmado_0002', 'motivo' => 'Salida del remanente realmente producido y preparado.', 'detalles' => [['id' => $detalle->id, 'cantidad' => 22]]], $e['usuario']);
+        $this->assertDatabaseHas('inventarios', ['presentacion_producto_id' => $e['presentacion']->id, 'cantidad_actual' => 0]);
+        $this->assertSame('78.000', $e['insumo']->fresh()->cantidad_actual);
+        $this->post(route('cumplimiento.entregar', $pedido))->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertSame('entregado', $pedido->fresh()->estado);
+    }
+
+    public function test_la_base_rechaza_componentes_que_pertenecen_a_otro_pedido(): void
+    {
+        $e = $this->escenarioSurtido(10);
+        $datos = $this->entrada($e, 4);
+        $datos['agrupaciones'] = [['capacidad' => 4, 'componentes' => [['sku_id' => $e['presentacion']->id, 'cantidad' => 4]]]];
+        $primero = app(GestionarPedidoUnidades::class)->guardar($datos, $e['usuario']);
+        $segundo = app(GestionarPedidoUnidades::class)->guardar($datos, $e['usuario']);
+        $grupo = DB::table('pedido_agrupaciones')->where('pedido_id', $segundo->id)->sole();
+        try {
+            DB::table('pedido_agrupacion_detalles')->insert(['agrupacion_id' => $grupo->id, 'pedido_detalle_id' => $primero->detalles()->sole()->id, 'cantidad' => 1]);
+            $this->fail('Los componentes no pueden cruzar pedidos aunque ambos identificadores existan.');
+        } catch (QueryException $excepcion) {
+            $this->assertStringContainsString('componente no pertenece', $excepcion->getMessage());
+        }
+        $this->assertDatabaseCount('pedido_agrupacion_detalles', 2);
     }
 }

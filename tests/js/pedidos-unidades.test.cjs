@@ -18,3 +18,7 @@ test('rechaza cantidades fraccionarias',()=>{const l=lineas();l[0].cantidad=1.5;
 test('rechaza componentes que no pertenecen al pedido',()=>assert.throws(()=>resumir(lineas(),[{capacidad:30,componentes:[{sku_id:99,cantidad:2}]}]),/SKU/));
 test('rechaza un paquete sin componentes',()=>assert.throws(()=>resumir(lineas(),[{capacidad:24,componentes:[]}]),/composición/));
 test('copiar un paquete permite cambiarlo sin alterar el original',()=>{const a={capacidad:12,componentes:[{sku_id:1,cantidad:5}]};const b=copiar(a);b.componentes[0].cantidad=2;assert.equal(a.componentes[0].cantidad,5);assert.equal(b.componentes[0].cantidad,2);});
+
+test('copiar conserva composición pero no reutiliza la identidad del paquete físico',()=>{const a={identidad:'identidad-anterior',capacidad:12,componentes:[{sku_id:1,cantidad:5}]};const b=copiar(a);assert.equal(b.identidad,undefined);assert.equal(a.identidad,'identidad-anterior');assert.equal(b.capacidad,12);});
+
+test('el tope económico se valida sin imponer múltiplos ni un máximo de diez mil unidades',()=>{assert.equal(resumir([{presentacion_producto_id:1,cantidad:10001,precio_unitario:'2.00'}],[]).unidades,10001);assert.throws(()=>resumir([{presentacion_producto_id:1,cantidad:500000,precio_unitario:'2.00'}],[]),/importe/);});

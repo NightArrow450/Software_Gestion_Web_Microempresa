@@ -8,6 +8,7 @@ use App\Models\PresentacionProducto;
 use App\Models\Producto;
 use App\Services\AtenderPedidoUnidades;
 use App\Services\GestionarPedidoUnidades;
+use App\Services\GestionarSurtidos;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -23,7 +24,24 @@ class PedidoUnidadesController extends Controller
         $cliente = $clienteId ? Cliente::find((int) $clienteId) : null;
         $version = $pedido ? DB::table('pedido_versiones')->where('pedido_id', $pedido->id)->orderByDesc('numero')->first() : null;
         $foto = $version ? json_decode($version->datos, true, 512, JSON_THROW_ON_ERROR) : [];
-        $lineas = $pedido ? $pedido->detalles->map(fn ($d): array => ['id' => $d->id, 'presentacion_producto_id' => $d->presentacion_producto_id, 'nombre' => $d->descripcion_producto, 'sku' => $d->codigo_sku, 'precio_unitario' => $d->precio_unitario, 'cantidad' => $d->cantidad, 'cantidad_espera' => $d->cantidad_espera])->values()->all() : [];
+        $lineas = $pedido ? $pedido->detalles->map(fn ($d): array => ['id' => $d->id, 'presentacion_producto_id' => $d->presentacion_producto_id, 'nombre' => $d->descripcion_producto, 'sku' => $d->codigo_sku, 'precio_unitario' => $d->precio_unitario, 'cantidad' => $d->cantidad, 'cantidad_espera' => $d->cantidad_espera,
+            'compatibilidad' => [$d->presentacion->producto_id, (string) $d->presentacion->contenido, $d->presentacion->unidad_medida, $d->presentacion->tipo_envase]])->values()->all() : [];
+        if (is_array(old('detalles'))) {
+            $previas = array_slice(old('detalles'), 0, 18);
+            $skusPrevios = PresentacionProducto::with(['producto', 'variante'])->whereIn('id', array_column($previas, 'presentacion_producto_id'))->get()->keyBy('id');
+            $lineas = array_map(function (array $fila) use ($skusPrevios, $pedido): array {
+                $sku = $skusPrevios->get((int) ($fila['presentacion_producto_id'] ?? 0));
+                $historica = $pedido?->detalles->firstWhere('id', (int) ($fila['id'] ?? 0));
+                if ($sku) {
+                    $fila['precio_unitario'] = $historica && $historica->presentacion_producto_id === $sku->id ? $historica->precio_unitario : $sku->precio_unitario;
+                    $fila['nombre'] = $historica->descripcion_producto ?? app(GestionarSurtidos::class)->nombre($sku);
+                    $fila['sku'] = $sku->codigo_sku;
+                    $fila['compatibilidad'] = [$sku->producto_id, (string) $sku->contenido, $sku->unidad_medida, $sku->tipo_envase];
+                }
+
+                return $fila;
+            }, $previas);
+        }
 
         return view('orders.units-form', compact('pedido', 'cliente', 'lineas', 'foto'));
     }
@@ -46,7 +64,8 @@ class PedidoUnidadesController extends Controller
             ->whereHas('producto', fn ($q) => $q->where('estado', true))->where(fn ($q) => $q->whereNull('variante_producto_id')->orWhereHas('variante', fn ($v) => $v->where('estado', true)))
             ->orderBy('codigo_sku')->paginate(50);
         $skus->through(fn ($s): array => ['id' => $s->id, 'sku' => $s->codigo_sku, 'producto' => $s->producto->nombre, 'variante_id' => $s->variante_producto_id,
-            'variante' => $s->variante?->valor, 'presentacion' => $s->contenido.' '.$s->unidad_medida.' · '.$s->tipo_envase, 'precio_unitario' => $s->precio_unitario]);
+            'variante' => $s->variante?->valor, 'presentacion' => $s->contenido.' '.$s->unidad_medida.' · '.$s->tipo_envase, 'precio_unitario' => $s->precio_unitario,
+            'compatibilidad' => [$s->producto_id, (string) $s->contenido, $s->unidad_medida, $s->tipo_envase]]);
 
         return response()->json($skus);
     }

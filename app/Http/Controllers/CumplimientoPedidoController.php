@@ -8,6 +8,8 @@ use App\Models\Inventario;
 use App\Models\Pedido;
 use App\Services\AtenderPedidoUnidades;
 use App\Services\ControlEntregaPedido;
+use App\Services\DistribuirDespachoUnidades;
+use App\Services\GestionarPedidoUnidades;
 use App\Services\GestionarSurtidos;
 use App\Services\RegistrarResultadoEntrega;
 use App\Services\TransicionesPedido;
@@ -190,6 +192,9 @@ class CumplimientoPedidoController extends Controller
         if ($pedido->modelo_comercial === 'unidades') {
             $ids = $pedido->detalles->pluck('presentacion_producto_id');
             $atencionUnidades = [
+                'foto' => app(GestionarPedidoUnidades::class)->fotografiasActuales(collect([$pedido]))[$pedido->id] ?? [],
+                'distribucion' => app(DistribuirDespachoUnidades::class)->anteriores($pedido->id),
+                'salidas' => DB::table('pedido_despachos')->where('pedido_id', $pedido->id)->orderBy('id')->get(),
                 'despachadas' => app(AtenderPedidoUnidades::class)->despachadas($pedido->id),
                 'stock' => Inventario::whereIn('presentacion_producto_id', $ids)->pluck('cantidad_actual', 'presentacion_producto_id'),
                 'preparadas' => DB::table('pedido_preparaciones')->where('pedido_id', $pedido->id)->orderBy('id')->get()->keyBy('pedido_detalle_id'),

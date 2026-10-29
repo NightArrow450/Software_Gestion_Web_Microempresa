@@ -10,6 +10,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -36,10 +37,14 @@ class GestionarPedidoUnidades
             'detalles.*.tipo_linea' => ['sometimes', 'in:normal'],
             'agrupaciones' => ['sometimes', 'array', 'max:1000'],
             'agrupaciones.*.capacidad' => ['required', 'integer', 'min:1', 'max:4294967295'],
+            'agrupaciones.*.identidad' => ['nullable', 'uuid', 'distinct'],
             'agrupaciones.*.componentes' => ['required', 'array', 'min:1', 'max:18'],
             'agrupaciones.*.componentes.*.sku_id' => ['required', 'integer', 'min:1'],
             'agrupaciones.*.componentes.*.cantidad' => ['required', 'integer', 'min:1', 'max:4294967295'],
         ], ['detalles.*.modalidad.in' => 'Los pedidos nuevos se venden únicamente por unidades físicas.', 'detalles.*.presentacion_producto_id.distinct' => 'Agrupa la cantidad del mismo SKU en una sola línea comercial.'])->validate();
+        if (collect($datos['detalles'])->contains(fn (array $fila): bool => (int) ($fila['cantidad_espera'] ?? 0) > 0) && empty($datos['motivo'])) {
+            throw ValidationException::withMessages(['motivo' => 'Registra el motivo de la decisión de dejar unidades en espera; no implica una aceptación automática del cliente.']);
+        }
         if (CarbonImmutable::parse($datos['fecha_entrega'])->greaterThan(CarbonImmutable::parse($datos['fecha_pedido'])->addDays(90))) {
             throw ValidationException::withMessages(['fecha_entrega' => 'La entrega no puede superar los 90 días desde la fecha del pedido.']);
         }
@@ -49,8 +54,8 @@ class GestionarPedidoUnidades
             if ($pedido && ($pedido->modelo_comercial !== 'unidades' || (int) $pedido->version !== (int) $datos['_version'])) {
                 throw ValidationException::withMessages(['version' => 'El pedido es histórico o cambió. No se convierte su modalidad ni se sobrescribe una versión anterior.']);
             }
-            $cliente = Cliente::whereKey($datos['cliente_id'])->where('estado', true)->first();
-            if (! $cliente) {
+            $cliente = Cliente::whereKey($datos['cliente_id'])->first();
+            if (! $cliente || (! $cliente->estado && (! $pedido || $pedido->cliente_id !== $cliente->id))) {
                 throw ValidationException::withMessages(['cliente_id' => 'Selecciona un cliente activo.']);
             }
             $anteriores = $pedido ? $pedido->detalles()->lockForUpdate()->get()->keyBy('id') : collect();
@@ -67,7 +72,7 @@ class GestionarPedidoUnidades
                 $ids[$id] = $id > 0;
                 $sku = $skus->get((int) $fila['presentacion_producto_id']);
                 $cantidad = (int) $fila['cantidad'];
-                if (! $sku || ($cantidad > 0 && (! $sku->estado || ! $sku->producto->estado || ($sku->variante && ! $sku->variante->estado)))) {
+                if (! $sku || (($anterior === null || $cantidad > (int) $anterior->cantidad) && $cantidad > 0 && (! $sku->estado || ! $sku->producto->estado || ($sku->variante && ! $sku->variante->estado)))) {
                     throw ValidationException::withMessages(['detalles.'.$indice.'.presentacion_producto_id' => 'Selecciona un SKU activo y compatible.']);
                 }
                 $misma = $anterior && (int) $anterior->presentacion_producto_id === (int) $sku->id;
@@ -93,6 +98,9 @@ class GestionarPedidoUnidades
                     'precio_unitario' => $precio, 'importe' => $importe];
             }
             $despachadas = $pedido ? app(AtenderPedidoUnidades::class)->despachadas($pedido->id) : collect();
+            if ($pedido && $despachadas->isNotEmpty() && ($pedido->cliente_id !== $cliente->id || $pedido->fecha_pedido->toDateString() !== $datos['fecha_pedido'])) {
+                throw ValidationException::withMessages(['cliente_id' => 'La identidad comercial del despacho se conserva. Registra una incidencia para rectificarla sin reescribir los hechos.']);
+            }
             foreach ($anteriores as $id => $anterior) {
                 $nueva = collect($lineas)->firstWhere('id', $id);
                 $cantidad = $nueva['cantidad'] ?? 0;
@@ -115,6 +123,11 @@ class GestionarPedidoUnidades
                 'observaciones' => $datos['observaciones'] ?? null, 'total' => number_format($total / 100, 2, '.', ''), 'cliente_nombre' => $cliente->nombre,
                 'cliente_documento' => $cliente->documento, 'cliente_telefono' => $cliente->telefono, 'cliente_mercado' => $cliente->mercado,
                 'cliente_puesto_referencia' => $cliente->puesto_referencia, 'cliente_distrito' => $cliente->distrito, 'cliente_direccion' => $cliente->direccion];
+            if ($pedido && $pedido->cliente_id === $cliente->id) {
+                foreach (['cliente_nombre', 'cliente_documento', 'cliente_telefono', 'cliente_mercado', 'cliente_puesto_referencia', 'cliente_distrito', 'cliente_direccion'] as $campoCliente) {
+                    $cabecera[$campoCliente] = $pedido->{$campoCliente};
+                }
+            }
             if ($pedido) {
                 if ($pedido->estado === 'listo_despacho') {
                     $cabecera['estado'] = 'en_preparacion';
@@ -145,13 +158,25 @@ class GestionarPedidoUnidades
             }
             $numero = (int) DB::table('pedido_versiones')->where('pedido_id', $pedido->id)->max('numero') + 1;
             $grupos = $this->validarAgrupaciones($datos['agrupaciones'] ?? [], $vigentes, $skus);
+            app(DistribuirDespachoUnidades::class)->comprobarEdicion($pedido->id, $grupos, $vigentes);
             $version = DB::table('pedido_versiones')->insertGetId(['pedido_id' => $pedido->id, 'usuario_id' => $usuario->id, 'numero' => $numero,
                 'motivo' => $datos['motivo'] ?? 'Registro inicial por unidades físicas.', 'datos' => json_encode(['cabecera' => $cabecera, 'lineas' => array_map(fn ($d): array => $d->getAttributes(), array_values($vigentes)), 'agrupaciones' => $grupos], JSON_THROW_ON_ERROR), 'created_at' => now()]);
+            $cabecerasGrupos = [];
             foreach ($grupos as $i => $grupo) {
-                $id = DB::table('pedido_agrupaciones')->insertGetId(['pedido_version_id' => $version, 'numero' => $i + 1, 'capacidad' => $grupo['capacidad']]);
+                $cabecerasGrupos[] = ['pedido_version_id' => $version, 'pedido_id' => $pedido->id, 'numero' => $i + 1, 'capacidad' => $grupo['capacidad'], 'identidad' => $grupo['identidad']];
+            }
+            foreach (array_chunk($cabecerasGrupos, 100) as $bloque) {
+                DB::table('pedido_agrupaciones')->insert($bloque);
+            }
+            $idsGrupos = $grupos === [] ? collect() : DB::table('pedido_agrupaciones')->where('pedido_version_id', $version)->pluck('id', 'identidad');
+            $componentesGrupos = [];
+            foreach ($grupos as $grupo) {
                 foreach ($grupo['componentes'] as $componente) {
-                    DB::table('pedido_agrupacion_detalles')->insert(['agrupacion_id' => $id, 'pedido_detalle_id' => $componente['detalle_id'], 'cantidad' => $componente['cantidad']]);
+                    $componentesGrupos[] = ['agrupacion_id' => $idsGrupos[$grupo['identidad']], 'pedido_detalle_id' => $componente['detalle_id'], 'cantidad' => $componente['cantidad']];
                 }
+            }
+            foreach (array_chunk($componentesGrupos, 200) as $bloque) {
+                DB::table('pedido_agrupacion_detalles')->insert($bloque);
             }
             RegistroAuditoria::registrar('pedido_unidades_versionado', 'pedido', $pedido->id, ['version_anterior' => $numero - 1, 'version_nueva' => $numero, 'motivo' => $datos['motivo'] ?? 'Registro inicial', 'campos' => ['cantidades', 'SKU', 'precios históricos', 'agrupaciones', 'espera']]);
             app(AtenderPedidoUnidades::class)->reconciliarEstado($pedido, $usuario, $datos['motivo'] ?? 'Conciliación con las cantidades vigentes.');
@@ -177,7 +202,13 @@ class GestionarPedidoUnidades
         $porSku = collect($detalles)->keyBy('presentacion_producto_id');
         $asignadas = [];
         $salida = [];
+        $identidades = [];
         foreach ($grupos as $grupo) {
+            $identidad = strtolower($grupo['identidad'] ?? (string) Str::uuid());
+            if (isset($identidades[$identidad])) {
+                throw ValidationException::withMessages(['agrupaciones' => 'Cada paquete tiene una identidad propia. Copiar composición crea otro paquete.']);
+            }
+            $identidades[$identidad] = true;
             $componentes = [];
             $compatibilidad = null;
             $total = 0;
@@ -206,7 +237,7 @@ class GestionarPedidoUnidades
             if ($total > (int) $grupo['capacidad']) {
                 throw ValidationException::withMessages(['agrupaciones' => 'El contenido del paquete supera su capacidad declarada.']);
             }
-            $salida[] = ['capacidad' => (int) $grupo['capacidad'], 'unidades' => $total, 'componentes' => $componentes];
+            $salida[] = ['identidad' => $identidad, 'capacidad' => (int) $grupo['capacidad'], 'unidades' => $total, 'componentes' => $componentes];
         }
 
         return $salida;

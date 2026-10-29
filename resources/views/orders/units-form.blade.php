@@ -22,7 +22,7 @@
 <label>Fecha de entrega<input class="form-control" type="date" name="fecha_entrega" required value="{{ old('fecha_entrega', $pedido?->fecha_entrega?->format('Y-m-d') ?? today('America/Lima')->toDateString()) }}"></label>
 <label>Condición de pago<select class="form-control" name="condicion_pago"><option value="contado" @selected(old('condicion_pago', $pedido?->condicion_pago)==='contado')>Al contado</option><option value="credito" @selected(old('condicion_pago', $pedido?->condicion_pago)==='credito')>Crédito</option></select></label>
 <label>Observaciones<textarea class="form-control" name="observaciones" maxlength="2000">{{ old('observaciones', $pedido?->observaciones) }}</textarea></label>
-@if(isset($pedido))<label>Motivo de la modificación<textarea class="form-control" name="motivo" required minlength="10" maxlength="1000">{{ old('motivo') }}</textarea></label>@endif
+<label>Motivo (obligatorio al editar o dejar unidades en espera)<textarea class="form-control" name="motivo" @required(isset($pedido)) minlength="10" maxlength="1000">{{ old('motivo') }}</textarea></label>
 </div></section>
 <section class="form-section"><h2>Seleccionar unidades</h2><div class="form-grid">
 <label>Buscar producto<input class="form-control" type="search" data-buscar-producto autocomplete="off" placeholder="Escribe el nombre del producto"></label>
@@ -46,7 +46,7 @@
 <button type="submit" class="btn btn-primary">Guardar pedido por unidades</button></section>
 </form>
 @php
-    $datosUnidadesIniciales = ['lineas'=>old('detalles', $lineas), 'agrupaciones'=>old('agrupaciones_json') ? json_decode(old('agrupaciones_json'), true) : ($foto['agrupaciones'] ?? [])];
+    $datosUnidadesIniciales = ['lineas'=>$lineas, 'agrupaciones'=>old('agrupaciones_json') ? json_decode(old('agrupaciones_json'), true) : ($foto['agrupaciones'] ?? []), 'bloqueadas' => isset($pedido) ? array_keys(app(\App\Services\DistribuirDespachoUnidades::class)->anteriores($pedido->id)['paquetes']) : []];
 @endphp
 <script type="application/json" id="pedido-unidades-inicial">@json($datosUnidadesIniciales)</script>
 @endsection

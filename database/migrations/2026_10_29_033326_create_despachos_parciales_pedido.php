@@ -33,9 +33,11 @@ return new class extends Migration
             $table->unsignedInteger('version_comercial');
             $table->string('operacion', 64)->unique();
             $table->string('huella', 64);
+            $table->json('distribucion');
             $table->string('motivo', 1000);
             $table->timestamp('created_at');
             $table->foreign(['pedido_id', 'version_comercial'], 'despacho_version_comercial_fk')->references(['pedido_id', 'numero'])->on('pedido_versiones')->restrictOnDelete();
+            $table->unique(['id', 'pedido_id'], 'despacho_pedido_identidad_unica');
         });
         Schema::create('pedido_despacho_lineas', function (Blueprint $table): void {
             $table->id();
@@ -47,6 +49,24 @@ return new class extends Migration
             $table->decimal('precio_unitario', 10, 2);
             $table->unique(['despacho_id', 'detalle_comercial_id']);
         });
+        Schema::create('pedido_despacho_agrupaciones', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('despacho_id');
+            $table->unsignedBigInteger('pedido_id');
+            $table->unsignedBigInteger('pedido_agrupacion_id');
+            $table->uuid('identidad');
+            $table->unique(['pedido_id', 'identidad'], 'pedido_paquete_despachado_unico');
+            $table->foreign(['despacho_id', 'pedido_id'], 'paquete_despacho_pedido_fk')->references(['id', 'pedido_id'])->on('pedido_despachos')->restrictOnDelete();
+            $table->foreign(['pedido_agrupacion_id', 'pedido_id', 'identidad'], 'paquete_despacho_agrupacion_fk')->references(['id', 'pedido_id', 'identidad'])->on('pedido_agrupaciones')->restrictOnDelete();
+        });
+        $versionCorrecta = 'EXISTS (SELECT 1 FROM pedido_despachos s JOIN pedido_agrupaciones g ON g.pedido_id = s.pedido_id JOIN pedido_versiones v ON v.id = g.pedido_version_id WHERE s.id = NEW.despacho_id AND g.id = NEW.pedido_agrupacion_id AND s.version_comercial = v.numero)';
+        DB::unprepared(DB::getDriverName() === 'sqlite'
+            ? "CREATE TRIGGER paquete_despacho_version_coherente BEFORE INSERT ON pedido_despacho_agrupaciones WHEN NOT ($versionCorrecta) BEGIN SELECT RAISE(ABORT, 'El paquete no corresponde a la versión de la salida'); END"
+            : "CREATE TRIGGER paquete_despacho_version_coherente BEFORE INSERT ON pedido_despacho_agrupaciones FOR EACH ROW BEGIN IF NOT ($versionCorrecta) THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El paquete no corresponde a la versión de la salida'; END IF; END");
+        $lineaCorrecta = "NEW.cantidad > 0 AND NEW.precio_unitario > 0 AND EXISTS (SELECT 1 FROM pedido_despachos s JOIN pedidos p ON p.id = s.pedido_id JOIN pedido_detalles d ON d.pedido_id = s.pedido_id JOIN pedido_detalles f ON f.pedido_id = s.pedido_id WHERE s.id = NEW.despacho_id AND p.modelo_comercial = 'unidades' AND d.id = NEW.detalle_comercial_id AND f.id = NEW.detalle_fisico_id AND d.modalidad = 'unidad' AND f.modalidad = 'unidad' AND f.retirado_en IS NOT NULL AND d.presentacion_producto_id = NEW.presentacion_producto_id AND f.presentacion_producto_id = NEW.presentacion_producto_id AND f.cantidad = NEW.cantidad AND f.precio_unitario = NEW.precio_unitario)";
+        DB::unprepared(DB::getDriverName() === 'sqlite'
+            ? "CREATE TRIGGER despacho_linea_coherente BEFORE INSERT ON pedido_despacho_lineas WHEN NOT ($lineaCorrecta) BEGIN SELECT RAISE(ABORT, 'La línea física no corresponde al pedido o SKU del despacho'); END"
+            : "CREATE TRIGGER despacho_linea_coherente BEFORE INSERT ON pedido_despacho_lineas FOR EACH ROW BEGIN IF NOT ($lineaCorrecta) THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'La línea física no corresponde al pedido o SKU del despacho'; END IF; END");
         $triggers = DB::getDriverName() === 'sqlite' ? DB::select("SELECT name, sql FROM sqlite_master WHERE type = 'trigger' AND tbl_name = 'movimientos_inventario'") : [];
         Schema::table('movimientos_inventario', function (Blueprint $table): void {
             $table->foreignId('despacho_unidades_id')->nullable()->constrained('pedido_despachos')->restrictOnDelete();
@@ -69,7 +89,7 @@ return new class extends Migration
                 DB::unprepared("CREATE TRIGGER $nombre BEFORE $evento ON movimientos_inventario WHEN NOT ($expresion) BEGIN SELECT RAISE(ABORT, 'El origen no corresponde al despacho físico'); END");
             }
         }
-        foreach (['pedido_preparaciones', 'pedido_despachos', 'pedido_despacho_lineas'] as $tabla) {
+        foreach (['pedido_preparaciones', 'pedido_despachos', 'pedido_despacho_lineas', 'pedido_despacho_agrupaciones'] as $tabla) {
             foreach (['UPDATE', 'DELETE'] as $evento) {
                 $nombre = $tabla.'_inmutable_'.strtolower($evento);
                 DB::unprepared(DB::getDriverName() === 'sqlite'

@@ -242,7 +242,7 @@ class SurtidosMySqlTest extends PruebaInventarioMySql
         $this->assertSame(0, DB::table('pedido_paquetes_surtidos')->count());
         $this->assertNull(DB::table('pedidos')->where('id', $pedido->id)->value('modelo_comercial'));
         $this->assertSame(0, (int) DB::table('pedido_detalles')->where('pedido_id', $pedido->id)->value('cantidad_espera'));
-        foreach (['pedido_versiones', 'pedido_agrupaciones', 'pedido_agrupacion_detalles', 'pedido_preparaciones', 'pedido_despachos', 'pedido_despacho_lineas'] as $tabla) {
+        foreach (['pedido_versiones', 'pedido_agrupaciones', 'pedido_agrupacion_detalles', 'pedido_preparaciones', 'pedido_despachos', 'pedido_despacho_lineas', 'pedido_despacho_agrupaciones'] as $tabla) {
             $this->assertSame(0, DB::table($tabla)->count(), $tabla.' no debe generar datos retroactivos.');
         }
         $this->assertTrue(app(ControlEntregaPedido::class)->resumen($pedido->fresh())['historico_sin_desglose']);

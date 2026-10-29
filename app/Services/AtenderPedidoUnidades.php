@@ -100,7 +100,7 @@ class AtenderPedidoUnidades
     {
         abort_unless($usuario->status && $usuario->role?->tienePermiso('cumplimiento.despachar'), 403);
         $datos = Validator::make($entrada, ['version_pedido' => ['required', 'integer', 'min:0'], 'operacion' => ['required', 'string', 'max:64', 'regex:/^[A-Za-z0-9_-]{16,64}$/'],
-            'motivo' => ['required', 'string', 'min:10', 'max:1000'], 'detalles' => ['required', 'array', 'min:1', 'max:18'],
+            'motivo' => ['required', 'string', 'min:10', 'max:1000'], 'paquetes' => ['sometimes', 'array', 'max:1000'], 'paquetes.*' => ['required', 'uuid', 'distinct'], 'detalles' => ['required', 'array', 'min:1', 'max:18'],
             'detalles.*.id' => ['required', 'integer', 'distinct'], 'detalles.*.cantidad' => ['required', 'integer', 'min:0', 'max:4294967295']])->validate();
         $huella = hash('sha256', json_encode($datos, JSON_THROW_ON_ERROR));
 
@@ -146,14 +146,27 @@ class AtenderPedidoUnidades
             if ($lineas === []) {
                 throw ValidationException::withMessages(['detalles' => 'Indica al menos una unidad realmente preparada.']);
             }
+            $distribucion = app(DistribuirDespachoUnidades::class)->preparar($actual, $datos['paquetes'] ?? [], $cantidades);
             $stock = Inventario::whereIn('presentacion_producto_id', array_keys($cantidades))->orderBy('presentacion_producto_id')->lockForUpdate()->get()->keyBy('presentacion_producto_id');
             foreach ($cantidades as $id => $cantidad) {
                 if (! $stock->has($id) || (int) $stock->get($id)->cantidad_actual < $cantidad) {
                     throw ValidationException::withMessages(['inventario' => 'Stock insuficiente. Otra operación pudo utilizar las existencias; no se realizó ningún descuento.']);
                 }
             }
-            $despacho = DB::table('pedido_despachos')->insertGetId(['pedido_id' => $actual->id, 'usuario_id' => $usuario->id, 'version_comercial' => (int) DB::table('pedido_versiones')->where('pedido_id', $actual->id)->max('numero'),
-                'operacion' => $datos['operacion'], 'huella' => $huella, 'motivo' => $datos['motivo'], 'created_at' => now()]);
+            $version = DB::table('pedido_versiones')->where('pedido_id', $actual->id)->orderByDesc('numero')->first();
+            if ($version === null) {
+                throw ValidationException::withMessages(['pedido' => 'Falta la versión comercial verificable del pedido. No se registró la salida.']);
+            }
+            $despacho = DB::table('pedido_despachos')->insertGetId(['pedido_id' => $actual->id, 'usuario_id' => $usuario->id, 'version_comercial' => $version->numero,
+                'operacion' => $datos['operacion'], 'huella' => $huella, 'distribucion' => json_encode($distribucion, JSON_THROW_ON_ERROR), 'motivo' => $datos['motivo'], 'created_at' => now()]);
+            $idsGrupos = $distribucion['paquetes'] === [] ? collect() : DB::table('pedido_agrupaciones')->where('pedido_version_id', $version->id)->pluck('id', 'identidad');
+            $enlacesGrupos = [];
+            foreach ($distribucion['paquetes'] as $paquete) {
+                $enlacesGrupos[] = ['despacho_id' => $despacho, 'pedido_id' => $actual->id, 'pedido_agrupacion_id' => $idsGrupos[$paquete['identidad']], 'identidad' => $paquete['identidad']];
+            }
+            foreach (array_chunk($enlacesGrupos, 100) as $bloque) {
+                DB::table('pedido_despacho_agrupaciones')->insert($bloque);
+            }
             foreach ($cantidades as $id => $cantidad) {
                 $inventario = $stock->get($id);
                 $antes = (int) $inventario->cantidad_actual;

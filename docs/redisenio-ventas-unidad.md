@@ -1,5 +1,26 @@
 # Rediseño de ventas por unidades físicas
 
+> Continuación autorizada: se conserva el modelo y precio de pedidos históricos.
+> La decisión comercial anterior está resuelta. Se implementan ajustes auditados
+> sin conversión automática y un importe revisado explícito cuando no se puede
+> valorar una cantidad física con la tarifa histórica. El corte anterior de 42
+> fallos que figura abajo ya fue superado: la compatibilidad histórica aprobó
+> 650 escenarios Laravel completos. La integración logística posterior tiene
+> 26 escenarios focalizados aprobados y 45 JavaScript; falta su validación final
+> completa, MySQL y visual antes de declarar terminado el rediseño.
+>
+> El diseño final incorpora **dos migraciones propuestas y siete tablas nuevas**:
+> la séptima, `pedido_despacho_agrupaciones`, permite imponer una clave única
+> NOT NULL por pedido e identidad de paquete, junto con claves compuestas que
+> impiden asociarlo a otra orden. Esperado en una instalación nueva de ensayo:
+> 47 migraciones / 51 tablas empresariales, sin contar marcadores de laboratorio.
+> No se ha aplicado este esquema a las bases protegidas.
+>
+> `symfony/mime` se actualizó exclusivamente de 7.4.19 a 7.4.22, compatible con
+> PHP 8.3 y las restricciones instaladas de Laravel y Mailer. Composer audit
+> dejó de reportar vulnerabilidades. No cambiaron otras dependencias ni scripts
+> de instalación, y no se ejecutaron scripts de Composer contra el entorno real.
+
 ## Estado de implementación
 
 Trabajo incremental desde `origin/develop` (`6f17cb3`), en la rama
