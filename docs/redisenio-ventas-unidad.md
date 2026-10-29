@@ -84,3 +84,103 @@ No se implementan líquidos en bidones, mezclas químicas, mensajería, nuevos
 materiales de agrupación, descuentos o cobros automáticos. Los guiones de video
 anteriores describen el flujo previo y necesitarán actualización después del
 cierre del rediseño, no antes de verificarlo.
+
+## Corte de trabajo del 29 de octubre de 2026
+
+**Borrador incompleto: no fusionar ni aplicar sus migraciones.** El esquema y
+los servicios nuevos tienen pruebas focalizadas SQLite, pero todavía no cuentan
+con la validación MySQL, de concurrencia ni visual requerida para su aprobación.
+No se ha modificado ninguna de las dos bases protegidas.
+
+### Avance implementado
+
+- Archivo histórico de surtidos paginado, sin formularios repetidos por SKU.
+- Formulario nuevo con búsqueda paginada, venta por unidades, agrupaciones
+  logísticas opcionales y precio unitario validado por el servidor.
+- Dos migraciones aditivas propuestas: seis tablas para versiones comerciales,
+  agrupaciones, preparación real y despachos parciales. Conservan los índices
+  anteriores y agregan una referencia independiente por despacho y SKU.
+- Versiones comerciales inmutables, retirada lógica, motivo y bloqueo de
+  versiones para los pedidos nuevos. No se adoptan ni convierten históricos.
+- Preparación parcial, reutilización del formulario de envasado existente y
+  despachos por operaciones distintas, sin retorno automático de inventario.
+- Adaptación inicial de entregas, recepciones, aprobaciones e indicadores para
+  consultar los hechos físicos de cada despacho y la demanda residual.
+
+Estas capacidades no equivalen al cierre de todos los requisitos del rediseño.
+
+### Decisión comercial pendiente
+
+Para editar pedidos históricos todavía no despachados, es necesario decidir
+entre mantener su modelo y precio pactados por empaque o permitir una adopción
+explícita del modelo por unidades con revisión de cantidades y precios. No se
+puede deducir silenciosamente un precio unitario de un paquete histórico.
+La interfaz histórica de edición conserva por ahora sus restricciones previas;
+no satisface todavía la edición durante todo el ciclo de vida.
+
+### Resultados ejecutados
+
+Comandos ejecutados en el checkout independiente, sin `.env` operativo:
+
+```powershell
+php -d auto_prepend_file=tests/bootstrap.php artisan test --compact
+php -d auto_prepend_file=tests/bootstrap.php artisan test --compact --filter='PedidoUnidadesTest|ArchivoSurtidosTest|MejoraBuscadorPedidosTest|EstadoPedidoTest'
+php -d auto_prepend_file=tests/bootstrap.php vendor/bin/phpstan analyse --memory-limit=1G --no-progress
+php -d auto_prepend_file=tests/bootstrap.php vendor/bin/pint --dirty --format agent
+node --test tests/js/*.test.cjs
+npm run build
+composer audit --locked --no-interaction
+npm audit --json
+```
+
+- Laravel completo: 645 escenarios, 597 aprobados, 48 fallidos en el último
+  corte completo registrado. No se eliminan, omiten ni silencian esos fallos.
+- Fallos agrupados: EmpaqueVariablePorLineaTest (22), SurtidosTest (19),
+  FlujosEnvasadoCompletoTest (3), ProcesarPedidosTest (1), RegistroPedidosTest
+  (1) y ValidacionPedidosTest (2). Incluyen contratos antiguos de registro por
+  empaque/surtido, despacho total y validaciones de edición. Requieren revisar
+  cada escenario y preservar su cobertura histórica con fixtures apropiados;
+  no se consideran resueltos por cambiar la regla comercial de altas nuevas.
+- Focalizadas: 35 aprobadas, 312 aserciones. El archivo nuevo PedidoUnidadesTest
+  aporta 21 escenarios; la cobertura focalizada no reemplaza la suite completa.
+- JavaScript: 37 aprobadas, incluidas nueve del formulario nuevo.
+- Larastan nivel 5: cero errores; Pint: aprobado sobre los PHP modificados.
+- Vite: compilación aprobada. npm audit: cero vulnerabilidades reportadas.
+- Composer audit: falla por symfony/mime 7.4.19, aviso de gravedad media
+  CVE-2026-45070 / PKSA-wtxr-p26d-nn42. No se modificaron dependencias. Se
+  requiere analizar y autorizar una actualización mínima por separado conforme
+  a las reglas del proyecto; no se excluye el aviso para conseguir verde.
+- MySQL 8.4.3 y concurrencia del rediseño: **PENDIENTE DE EJECUCIÓN**.
+- Selenium, revisión visual móvil y paginación de impresión: **PENDIENTE DE
+  EJECUCIÓN**. Los cambios locales Selenium del checkout original se conservan.
+- GitHub Actions: consultar los trabajos del último commit del borrador; no
+  trasladar resultados de PR anteriores ni considerar aprobada esta rama.
+
+Medición focalizada del archivo de surtidos con datos ficticios SQLite: seis
+consultas, 12 301 bytes de HTML, aproximadamente 108 ms y 56 MiB de pico PHP.
+No existe una medición previa comparable ni un ensayo MySQL de carga de esta
+pantalla; estos datos no demuestran todavía una mejora porcentual.
+
+### Integraciones y verificaciones todavía pendientes
+
+1. Resolver y probar el tratamiento de edición histórica sin conversiones
+   silenciosas ni borrado de detalles normales existentes.
+2. Completar las 46 situaciones exigidas, especialmente rectificaciones,
+   espera motivada, faltantes e incidencias, agrupaciones afectadas por cambios
+   y protección de todas las operaciones físicas previas.
+3. Conservar la distribución logística exacta de paquetes y unidades sueltas
+   por despacho parcial; la referencia de versión comercial no basta para
+   identificar qué agrupaciones salieron físicamente en cada operación.
+4. Mostrar las sustituciones a reparto, completar seguimiento, catálogo,
+   desglose logístico de preparación y referencias de despachos en movimientos.
+5. Completar la presentación y filtros de indicadores/CSV, distinguir claramente
+   históricos, agrupaciones y hechos físicos, sin duplicaciones económicas.
+6. Validar las dos migraciones con datos históricos ficticios sobre MySQL
+   independiente, incluidos triggers, restricciones, valores NULL, concurrencia
+   y fallos atómicos. No proponer su ejecución sobre Laragon antes de ello.
+7. Corregir las regresiones, ejecutar todas las suites, revisar impresión y
+   móviles, actualizar la evidencia y los guiones tras el cierre funcional.
+
+No se agregaron permisos ni seeders, no se cambiaron credenciales ni se aplicó
+ninguna migración sobre la base real. El borrador no está listo para uso
+empresarial ni para reemplazar los videos del flujo anterior.
