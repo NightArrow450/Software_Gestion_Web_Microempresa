@@ -121,3 +121,9 @@ Conservar las **agrupaciones opcionales** del pedido y todas las funciones del n
 - Dos regresiones nuevas comprueban lecturas sin las seis tablas antiguas y la conservación completa de cuentas, autorizaciones, cantidades y movimientos. Suite posterior: 665 pruebas, 4122 aserciones (79,650 s).
 - La prueba de compatibilidad elimina tablas únicamente en SQLite en memoria; no se ha conectado ni escrito en la base local del proyecto.
 - **Pendiente:** sustituir los consumidores y escrituras antiguos restantes; retirar rutas e interfaz; adaptar indicadores; preparar y ensayar las migraciones y el saneamiento final. Este avance no acredita todavía el retiro completo ni autoriza marcar listo el PR.
+
+### Regresión integral 54 → 32
+
+`FlujoVentaUnidadesPr45Test` ejecuta las tres variantes: 32 aceptadas, 30 aceptadas/2 rechazadas y 32 rechazadas. Confirma envasado real de 32, reenvío idempotente del mismo formulario, consumo de envases 100 → 68, edición sin movimientos, fotografía original 54, vigente 32 e importe S/ 64,00, despacho único de 32 y retorno físico sin entrada hasta aprobar exclusivamente lo apto. Las cuatro tablas de cuentas y autorizaciones conservan todas sus columnas y filas.
+
+Suite ejecutada tras esta ampliación: **668 pruebas, 4209 aserciones**, SQLite en memoria, 69,729 s. No es todavía el resultado final del PR: sigue pendiente el retiro integral de la modalidad anterior.
