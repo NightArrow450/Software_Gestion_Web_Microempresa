@@ -53,6 +53,16 @@ class RetiroSurtidosMySqlTest extends PruebaInventarioMySql
         }
         putenv('DHACER_RETIRO_SURTIDOS_AUTORIZADO=RETIRAR_SOLO_ESTRUCTURAS_SURTIDOS_VACIAS');
         try {
+            DB::unprepared('CREATE TRIGGER dependencia_sql_prueba BEFORE UPDATE ON clientes FOR EACH ROW BEGIN IF EXISTS (SELECT 1 FROM formatos_surtidos) THEN SIGNAL SQLSTATE \'45000\' SET MESSAGE_TEXT = \'Dependencia ficticia\'; END IF; END');
+            try {
+                (require database_path('migrations/retiro_controlado/2026_10_30_003639_retirar_estructuras_surtidos_vacias.php'))->up();
+                $this->fail('El trigger externo debe bloquear el retiro antes del primer DDL.');
+            } catch (\RuntimeException $error) {
+                $this->assertStringContainsString('No se ha iniciado DDL', $error->getMessage());
+            }
+            $this->assertTrue(Schema::hasTable('formatos_surtidos'));
+            $this->assertTrue(Schema::hasColumn('pedido_detalles', 'formato_surtido_id'));
+            DB::unprepared('DROP TRIGGER dependencia_sql_prueba');
             $this->assertSame(0, Artisan::call('migrate', ['--database' => 'mysql_concurrencia', '--path' => ['database/migrations/retiro_controlado/2026_10_30_003639_retirar_estructuras_surtidos_vacias.php'], '--force' => true, '--no-interaction' => true]));
         } finally {
             putenv('DHACER_RETIRO_SURTIDOS_AUTORIZADO');

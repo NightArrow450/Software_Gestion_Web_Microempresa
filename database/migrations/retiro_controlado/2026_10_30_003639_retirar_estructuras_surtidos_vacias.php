@@ -45,6 +45,18 @@ return new class extends Migration
                 }
             }
         }
+        $triggers = DB::getDriverName() === 'sqlite'
+            ? DB::table('sqlite_master')->where('type', 'trigger')->get(['tbl_name as tabla', 'sql'])
+            : DB::table('information_schema.triggers')->where('TRIGGER_SCHEMA', $base)->get(['EVENT_OBJECT_TABLE as tabla', 'ACTION_STATEMENT as sql']);
+        $vistas = DB::getDriverName() === 'sqlite'
+            ? DB::table('sqlite_master')->where('type', 'view')->get(['sql'])
+            : DB::table('information_schema.views')->where('TABLE_SCHEMA', $base)->get(['VIEW_DEFINITION as sql']);
+        $patron = '/\b('.implode('|', [...self::TABLAS, 'formato_surtido_id']).')\b/i';
+        foreach ($triggers->reject(fn ($t): bool => in_array($t->tabla, self::TABLAS, true))->concat($vistas) as $objeto) {
+            if (! is_string($objeto->sql) || preg_match($patron, $objeto->sql)) {
+                throw new RuntimeException('Trigger o vista externa depende de las estructuras retiradas o no puede inspeccionarse. No se ha iniciado DDL.');
+            }
+        }
         $externos = DB::getDriverName() === 'sqlite'
             ? DB::table('sqlite_master')->where('type', 'trigger')->whereRaw("instr(lower(sql), 'pedido_detalles') > 0")->get(['name', 'sql'])
             : collect();
