@@ -47,35 +47,38 @@ Eliminar las antiguas rutas/servicios de configuración y composición de surtid
 
 **Conservar** el mecanismo nuevo de agrupaciones opcionales del pedido (`pedido_agrupaciones`, `pedido_agrupacion_detalles`, `pedido_despacho_agrupaciones`) y la impresión de dos notas numeradas por hoja horizontal. No tratar agrupaciones como modalidades de venta ni generar consumo de mangas o materiales por la agrupación comercial.
 
-## Estrategia de BD: misma BD de PRUEBAS, entrega sin datos operativos
+## Estrategia de BD: mismo proyecto y usuarios INTACTOS
 
-**Decisión definitiva para este proyecto:** continuar usando **`software_gestion_web_microempresa`**, la misma base de pruebas del proyecto actual. **No crear ni migrar a `ecolimp_v2`**, y **no rehacer** el proyecto Laravel.
+**Decisión vigente:** se mantiene la base de pruebas **`software_gestion_web_microempresa`** y el proyecto Laravel existente; no crear una base nueva ni reconstruir el proyecto.
 
-La empresa **todavía no utiliza el software**, por lo que los clientes, productos, pedidos, movimientos, inventario y demás registros presentes son **datos de prueba**. El usuario ha indicado expresamente que **no necesita conservar ni respaldar esos datos**. No convertir el respaldo de esos registros de prueba en requisito para ejecutar la limpieza al final de las etapas.
+### PROHIBICIONES EXPRESAS
 
-### Datos que SÍ deben existir cuando se entregue el sistema
+- **NO tocar, modificar, fusionar, eliminar, renombrar, rebasar ni publicar cambios en la rama `JM_DEVELOP`**. Esta prohibición incluye operaciones directas y automáticas. No utilizarla como destino de PR, origen de cambios ni rama de pruebas.
+- **NO borrar ni modificar ningún usuario existente**, sea administrador u otro rol, aunque se haya creado para pruebas.
+- **NO cambiar datos de usuario**: identificadores, nombres, correos, teléfonos, hashes de contraseña, estados, roles, permisos asignados, preferencias, sesiones, tokens y demás información vinculada a sus cuentas. Conservar las relaciones de autorización y el acceso actual. No ejecutar seeders de usuarios, roles o permisos que alteren estos registros.
+- **NO limpiar, vaciar, truncar ni reconstruir tablas de autenticación/autorización** (`users`, `roles`, `permisos`, `rol_permiso` y cualquier otra relación necesaria). Antes de cualquier limpieza de tablas comerciales, identificar dependencias con usuarios y protegerlas.
+- **NO modificar `main`**; este PR está dirigido exclusivamente a `develop`.
 
-1. **Un único usuario real inicial:** el **Administrador principal** que ya existe en `users`, manteniendo su ID, contraseña cifrada/hash, nombre, estado activo y asociación con el rol Administrador. **Identificarlo inequívocamente antes de limpiar**; no adivinarlo si hay varios administradores.
-2. **Todos los roles del sistema** en `roles` (con relaciones válidas al administrador y permisos).
-3. **Todos los permisos vigentes del sistema** en `permisos`, excepto los permisos exclusivos de la modalidad antigua de surtidos, que deben retirarse del modelo definitivo.
-4. **Relaciones de acceso `rol_permiso`** coherentes y completas. Mantener únicamente las tablas pivote/estructurales que requiere el modelo de autorización.
-5. **La estructura completa funcional de las demás tablas**, pero sin registros operativos: se crearán clientes, productos, inventarios y pedidos desde cero durante el uso real. No preinsertar clientes, catálogos, pedidos ficticios ni usuarios adicionales.
+### Datos operativos de PRUEBA
 
-### Datos que se deben eliminar en el saneamiento final
+La empresa todavía no usa el sistema. Los datos **comerciales ficticios** (clientes, catálogo de prueba, precios, pedidos, inventarios, materiales, envasado, despachos, retornos y movimientos) se prepararán para ser eliminados **al terminar las etapas y antes de entregar el producto**, con una rutina que conserve las tablas funcionales vacías.
 
-- Todos los **usuarios de prueba** salvo el administrador principal, y sus sesiones/tokens/huellas relacionadas.
-- Todos los datos de prueba de **clientes, productos, variantes, precios, inventarios, insumos, envasado, pedidos, preparación, despachos, entregas, retornos, movimientos, auditorías, reportes persistidos** y relaciones dependientes.
-- Las **tablas, columnas, rutas, controladores, servicios, vistas y migraciones exclusivamente antiguas de surtidos**; sin romper las agrupaciones logísticas opcionales por pedido.
+El usuario no requiere respaldo de esos datos ficticios. **La limpieza no se ejecutará mientras se desarrolla el PR #45.** No eliminar datos de cuentas de usuarios ni sus relaciones, aun si están en tablas dependientes. Cualquier registro que no pueda clasificarse con seguridad como dato comercial de prueba deberá permanecer hasta determinarlo.
 
-### Procedimiento técnico
+### Retiro del surtido obsoleto
 
-- Preparar una **rutina de saneamiento del entorno de pruebas** que respete claves foráneas y dependencia de tablas, preserve el administrador principal y las configuraciones de autorización, y no deje referencias huérfanas.
-- No borrar las tablas operativas que necesita la aplicación: **quedan creadas, pero vacías**. Solo eliminar las estructuras del surtido obsoleto y crear las del nuevo flujo de ventas.
-- Verificar la persistencia del administrador principal: su contraseña previa debe funcionar después del saneamiento, igual que los roles y permisos requeridos para registrar usuarios reales posteriormente.
-- El saneamiento es **irreversible respecto a los datos de prueba eliminados**. El usuario conoce esta consecuencia y **no desea respaldo de ellos**. Al ejecutar, exigir que la conexión apunte exactamente a `software_gestion_web_microempresa` y que el administrador principal esté identificado. No afectar otras bases o repositorios.
-- **No ejecutar aún el borrado** mientras se implementa y valida el PR #45; hacerlo **al finalizar las etapas y antes de la entrega**, sobre la misma BD de pruebas. Si surge información real de la empresa durante el desarrollo, detener la limpieza y reevaluar esta condición.
-- En el repositorio **no subir** `.env`, `APP_KEY`, hashes, contraseñas, tokens ni volcados de la BD.
-- Mantener `SESSION_DRIVER=file`, `CACHE_STORE=file` y `QUEUE_CONNECTION=sync` durante las etapas; revisar sus valores al finalizar, según la decisión del usuario.
+Eliminar código, consultas y tablas de la antigua modalidad comercial de surtidos, sin eliminar información de usuarios ni alterar sus permisos asignados. Los permisos antiguos que no se utilicen pueden quedar registrados hasta tener una decisión específica de depuración; retirar sus usos en rutas/interfaz no autoriza a borrar registros de autorización.
+
+Conservar las **agrupaciones opcionales** del pedido y todas las funciones del nuevo flujo por unidades, preparación, envasado físico, despachos parciales, incidencias y retornos.
+
+### Verificaciones de entrega
+
+- Conteo y datos de **todos los usuarios** antes y después de pruebas y saneamiento: idénticos; hashes y asignaciones de roles/permisos preservados.
+- Ninguna operación Git afecta `JM_DEVELOP` ni `main`.
+- La estructura operacional queda disponible y sin datos comerciales ficticios cuando se autorice la limpieza final.
+- La migración/limpieza se ensaya en un entorno aislado sin escribir en las tablas de cuentas de usuario.
+- No subir a Git ningún `.env`, `APP_KEY`, credenciales, datos de usuarios ni volcados MySQL.
+- Mantener `SESSION_DRIVER=file`, `CACHE_STORE=file` y `QUEUE_CONNECTION=sync` mientras continúan las etapas.
 
 ## Arquitectura / controles obligatorios
 
@@ -96,7 +99,7 @@ La empresa **todavía no utiliza el software**, por lo que los clientes, product
 5. Ajuste después de despacho o entrega crea incidencia sin reescritura de operaciones físicas.
 6. Todos los productos vendidos por unidades sin múltiplos, aromas solo cuando correspondan, agrupaciones opcionales mixtas o homogéneas sin facturación extra.
 7. No existen referencias SQL a seis tablas de surtidos en migraciones ejecutables ni aplicación; esquema limpio MySQL/SQLite instala de cero.
-8. Saneamiento final deja solo el Administrador principal con su contraseña anterior, roles y permisos vigentes, y sus relaciones; los datos operativos y usuarios de prueba quedan vacíos/eliminados.
+8. Todos los usuarios existentes, sus datos de cuenta, credenciales, relaciones y autorizaciones permanecen idénticos; la limpieza final afecta únicamente datos comerciales ficticios verificables.
 9. Autorización por roles, auditoría, cancelación, notas numeradas, doble impresión y tests existentes continúan aprobados.
 10. GitHub CI, PHPUnit, pruebas MySQL, JS y validación estática sin omitir pruebas ni modificar bases originales.
 
@@ -105,7 +108,7 @@ La empresa **todavía no utiliza el software**, por lo que los clientes, product
 1. PR #44: cerrado **sin merge**. Rama de PR #45: partir exactamente de su último commit para conservar avances.
 2. Abrir PR #45 como **borrador** hacia `develop`, especificar este contrato funcional y plan de limpieza.
 3. Sustituir dependencias antiguas de surtidos e implementar pruebas del flujo.
-4. Preparar y probar la rutina de saneamiento final de la base de pruebas `software_gestion_web_microempresa`, preservando solo al Administrador principal, roles y permisos. Ejecutar la limpieza al final de las etapas, antes de entregar el sistema, cuando esté identificado el administrador y verificadas las dependencias.
+4. Preparar y probar la rutina de saneamiento de registros comerciales de prueba en `software_gestion_web_microempresa`, conservando **TODOS los usuarios y sus datos**, roles y permisos. Ejecutarla únicamente al final de las etapas, sin alterar las tablas de cuentas ni la rama `JM_DEVELOP`.
 5. Revisar CI y comprobaciones en entornos aislados. Pasar de borrador a listo y fusionar **solo a develop** después de aprobación técnica; **no tocar main**.
 
 **Estado de este documento:** especificación funcional y criterios de aceptación. No acredita por sí mismo que todas las correcciones estén implementadas ni aprobadas.
