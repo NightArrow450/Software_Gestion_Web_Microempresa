@@ -235,6 +235,9 @@ class SurtidosMySqlTest extends PruebaInventarioMySql
         ]);
         $this->assertSame(0, Artisan::call('migrate', ['--database' => 'mysql_concurrencia', '--path' => $migracionesUnidades, '--realpath' => true, '--force' => true, '--no-interaction' => true]));
         $this->assertSame(47, DB::table('migrations')->count());
+        $this->assertSame(0, Artisan::call('migrate', ['--database' => 'mysql_concurrencia', '--path' => [database_path('migrations/2026_10_30_002816_create_pedido_referencias_fisicas_table.php')], '--realpath' => true, '--force' => true, '--no-interaction' => true]));
+        $this->assertSame(48, DB::table('migrations')->count());
+        $this->assertSame(0, DB::table('pedido_referencias_fisicas')->count());
         foreach ($antes as $tabla => [$columnas, $filas]) {
             $this->assertSame($filas, DB::table($tabla)->select($columnas)->get()->map(fn ($r): string => json_encode($r))->sort()->values()->all(), $tabla.' cambió registros históricos.');
         }

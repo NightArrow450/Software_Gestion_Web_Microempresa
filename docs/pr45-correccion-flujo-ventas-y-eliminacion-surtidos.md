@@ -127,3 +127,9 @@ Conservar las **agrupaciones opcionales** del pedido y todas las funciones del n
 `FlujoVentaUnidadesPr45Test` ejecuta las tres variantes: 32 aceptadas, 30 aceptadas/2 rechazadas y 32 rechazadas. Confirma envasado real de 32, reenvío idempotente del mismo formulario, consumo de envases 100 → 68, edición sin movimientos, fotografía original 54, vigente 32 e importe S/ 64,00, despacho único de 32 y retorno físico sin entrada hasta aprobar exclusivamente lo apto. Las cuatro tablas de cuentas y autorizaciones conservan todas sus columnas y filas.
 
 Suite ejecutada tras esta ampliación: **668 pruebas, 4209 aserciones**, SQLite en memoria, 69,729 s. No es todavía el resultado final del PR: sigue pendiente el retiro integral de la modalidad anterior.
+
+### Puente físico histórico, sin retirar tablas
+
+La migración nueva `2026_10_30_002816_create_pedido_referencias_fisicas_table.php` conserva los identificadores, SKU, cantidades, valoración informativa y fechas de los componentes ya fotografiados al despachar. La tabla `pedido_referencias_fisicas` no crea una modalidad comercial, no genera existencias ni convierte precios. Es el puente para desacoplar entregas y retornos; el retiro de las seis estructuras anteriores seguirá separado y no se ejecuta en la base local.
+
+`MigracionReferenciasFisicasTest` compara todas las tablas y columnas anteriores, incluidas cuentas y autorizaciones, y prueba la inmutabilidad de la copia. Resultado: 669 pruebas Laravel / 4264 aserciones / 81,397 s. MySQL 8.4.3 independiente en 127.0.0.1:3347: 70 pruebas / 1168 aserciones / 164,068 s. La comprobación de identidad verifica ejecutable, proceso, archivo de configuración, datadir, UUID y ausencia de las bases protegidas. Se utilizó una base nueva con prefijo exclusivo de pruebas. En el ensayo escalonado se conservan las 41 migraciones iniciales, después 45, 47 y 48; ninguna se ejecutó sobre la base local del proyecto.
