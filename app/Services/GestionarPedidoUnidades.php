@@ -133,6 +133,7 @@ class GestionarPedidoUnidades
                 if ($pedido->estado === 'listo_despacho') {
                     $cabecera['estado'] = 'en_preparacion';
                 }
+                $pedido->setAttribute('version', DB::raw('version + 1'));
                 $pedido->update($cabecera);
             } else {
                 $pedido = Pedido::create($cabecera + ['usuario_id' => $usuario->id, 'estado' => 'registrado', 'modelo_comercial' => 'unidades']);
