@@ -47,17 +47,20 @@ Eliminar las antiguas rutas/servicios de configuración y composición de surtid
 
 **Conservar** el mecanismo nuevo de agrupaciones opcionales del pedido (`pedido_agrupaciones`, `pedido_agrupacion_detalles`, `pedido_despacho_agrupaciones`) y la impresión de dos notas numeradas por hoja horizontal. No tratar agrupaciones como modalidades de venta ni generar consumo de mangas o materiales por la agrupación comercial.
 
-## Estrategia de BD: limpia, pero sin perder accesos
+## Estrategia de BD: MISMA BD operativa, sin perder accesos
 
-Usar una base de instalación separada **`ecolimp_v2`**, ya creada vacía en Laragon. Aunque se corrige el **repositorio existente**, no se elimina ni modifica automáticamente la base MySQL original de la empresa.
+**Decisión actual del usuario:** se conserva el nombre y conexión a la **base existente `software_gestion_web_microempresa`**. **NO** utilizar `ecolimp_v2` ni reconstruir el proyecto Laravel en otro repositorio.
 
-- Crear el **esquema definitivo** de la aplicación con migraciones coherentes, sin tablas/columnas de surtidos.
-- **No importar** clientes, productos, inventarios, pedidos, envasados, movimientos, despachos, entregas, retornos, reportes, auditorías u otros datos operativos antiguos.
-- **Sí importar exclusivamente** los registros y relaciones necesarios para el acceso: `roles`, `users`, `permisos`, `rol_permiso`. Mantener IDs, hashes de contraseña y asociaciones válidas; excluir permisos exclusivos de surtidos. No importar sesiones ni tokens activos.
-- No ejecutar seeders que dupliquen o sobrescriban esos usuarios, roles o permisos.
-- Transferir desde el origen mediante lectura (`SELECT`), con validaciones de origen y destino, transacción donde corresponda, claves foráneas y verificación final de conteos. Respaldar y comprobar restauración **antes** de cualquier operación destructiva.
-- No hacer `DROP DATABASE`, `migrate:fresh`, `db:wipe` ni ejecutar SQL destructivo contra el origen operativo.
-- Mantener `SESSION_DRIVER=file`, `CACHE_STORE=file`, `QUEUE_CONNECTION=sync` hasta finalizar todas las etapas. No guardar `.env` ni `APP_KEY` en Git.
+**ADVERTENCIA CRÍTICA:** limpiar datos comerciales de esa misma base implica borrar registros reales (clientes, inventarios, pedidos, movimientos, etc.). Hasta que exista un respaldo íntegro **y se haya comprobado su restauración en un entorno aislado**, la base original es de **solo lectura** para cualquier acción de saneamiento o rediseño. No ejecutar limpieza directa ni migraciones destructivas en la BD original durante el desarrollo del PR.
+
+- Continuar implementando el código en este mismo repositorio y rama de PR, evitando tocar `main`.
+- Diseñar y probar en una **copia de ensayo** temporal el procedimiento idempotente de saneamiento/esquema compatible, preservando la BD de operación durante desarrollo. El uso de copia temporal para pruebas **no cambia** la decisión de utilizar `software_gestion_web_microempresa` como base final.
+- El objetivo del saneamiento, **solo tras respaldo verificado y autorización explícita para ejecutar eliminación irreversible**, será conservar registros de acceso de `roles`, `users`, `permisos` y `rol_permiso` (IDs, asociaciones y hashes); cualquier tabla de soporte de autenticación/estructural se recreará vacía si es necesaria.
+- Vaciar los datos operativos de clientes, productos, existencias, inventarios, insumos, pedidos, envasados, movimientos, despachos, entregas, retornos, reportes y auditorías según dependencias y políticas aplicables; nunca borrar sin documentar efectos y validación de integridad referencial.
+- Retirar todas las tablas y dependencias del modelo antiguo de surtidos; mantener las nuevas agrupaciones logísticas como estructuras **vacías** en el esquema resultante.
+- No dejar información sensible en Git: sin `.env`, `APP_KEY`, volcados completos de MySQL, hashes exportados ni credenciales. Evitar seeders que reemplacen usuarios/roles/permisos preservados.
+- No ejecutar `DROP DATABASE`, `migrate:fresh`, `db:wipe`, `TRUNCATE` o `DELETE` masivos directamente en `software_gestion_web_microempresa` durante la preparación. El eventual saneamiento deberá ser planificado, con copia restaurable y aprobación específica, una vez que todo esté validado.
+- Mantener `SESSION_DRIVER=file`, `CACHE_STORE=file`, `QUEUE_CONNECTION=sync` hasta finalizar todas las etapas.
 
 ## Arquitectura / controles obligatorios
 
@@ -87,7 +90,7 @@ Usar una base de instalación separada **`ecolimp_v2`**, ya creada vacía en Lar
 1. PR #44: cerrado **sin merge**. Rama de PR #45: partir exactamente de su último commit para conservar avances.
 2. Abrir PR #45 como **borrador** hacia `develop`, especificar este contrato funcional y plan de limpieza.
 3. Sustituir dependencias antiguas de surtidos e implementar pruebas del flujo.
-4. Rehacer **solo las migraciones incompatibles del esquema limpio** y preparar transferencia selectiva en `ecolimp_v2`.
+4. Preparar y verificar el saneamiento controlado de la base existente `software_gestion_web_microempresa` en una copia de ensayo, conservando datos de acceso. No ejecutarlo sobre la base real durante el desarrollo.
 5. Revisar CI y comprobaciones en entornos aislados. Pasar de borrador a listo y fusionar **solo a develop** después de aprobación técnica; **no tocar main**.
 
 **Estado de este documento:** especificación funcional y criterios de aceptación. No acredita por sí mismo que todas las correcciones estén implementadas ni aprobadas.
