@@ -8,6 +8,7 @@ use App\Models\Permiso;
 use App\Services\AprobarRetornoPedido;
 use App\Services\AtenderPedidoUnidades;
 use App\Services\ControlEntregaPedido;
+use App\Services\FilasIndicadores;
 use App\Services\GestionarPedidoUnidades;
 use App\Services\RegistrarResultadoEntrega;
 use App\Services\RegistrarRetornoPedido;
@@ -25,15 +26,24 @@ class FlujoVentaUnidadesPr45Test extends TestCase
 
     public static function resultados(): array
     {
-        return ['aceptación completa' => [32, 0], 'rechazo parcial' => [30, 2], 'rechazo completo' => [0, 32]];
+        return ['aceptación completa' => [32, 0], 'rechazo parcial' => [30, 2], 'rechazo completo' => [0, 32], 'flujo completo sin estructuras retiradas' => [30, 2, true]];
     }
 
     #[DataProvider('resultados')]
-    public function test_54_a_32_con_produccion_real_edicion_auditada_y_retorno_solo_aprobado(int $aceptadas, int $rechazadas): void
+    public function test_54_a_32_con_produccion_real_edicion_auditada_y_retorno_solo_aprobado(int $aceptadas, int $rechazadas, bool $retirarEstructuras = false): void
     {
         $this->freezeTime();
+        if ($retirarEstructuras) {
+            putenv('DHACER_RETIRO_SURTIDOS_AUTORIZADO=RETIRAR_SOLO_ESTRUCTURAS_SURTIDOS_VACIAS');
+            try {
+                (require database_path('migrations/retiro_controlado/2026_10_30_003639_retirar_estructuras_surtidos_vacias.php'))->up();
+            } finally {
+                putenv('DHACER_RETIRO_SURTIDOS_AUTORIZADO');
+            }
+            DB::enableQueryLog();
+        }
         $e = $this->escenarioEnvasado(100, 0);
-        foreach (['pedidos.crear', 'pedidos.editar', 'cumplimiento.preparar', 'cumplimiento.entregar', 'cumplimiento.retornos.registrar', 'cumplimiento.retornos.aprobar'] as $permiso) {
+        foreach (['pedidos.crear', 'pedidos.editar', 'cumplimiento.preparar', 'cumplimiento.entregar', 'cumplimiento.retornos.registrar', 'cumplimiento.retornos.aprobar', 'indicadores.ver', 'indicadores.economicos.ver', 'indicadores.exportar', 'seguimiento.ver'] as $permiso) {
             $e['usuario']->role->permisos()->attach(Permiso::firstOrCreate(['nombre' => $permiso], ['descripcion' => $permiso])->id);
         }
         $e['usuario']->unsetRelation('role');
@@ -98,6 +108,19 @@ class FlujoVentaUnidadesPr45Test extends TestCase
                 'cantidad' => $rechazadas - 1, 'motivo' => 'Se aprueban únicamente las unidades físicamente recuperadas y aptas.'], $e['usuario']);
             $this->assertSame($rechazadas - 1, (int) Inventario::sole()->cantidad_actual);
             $this->assertDatabaseCount('movimientos_inventario', 4);
+        }
+        if ($retirarEstructuras) {
+            foreach (array_keys(FilasIndicadores::REPORTES) as $reporte) {
+                $filtros = ['reporte' => $reporte, 'economico' => 1];
+                $this->get(route('indicadores.index', $filtros))->assertOk();
+                $csv = $this->get(route('indicadores.exportar', $filtros))->assertOk()->streamedContent();
+                $this->assertStringStartsWith("\xEF\xBB\xBF", $csv);
+            }
+            $consultas = DB::getQueryLog();
+            DB::disableQueryLog();
+            foreach ($consultas as $consulta) {
+                $this->assertDoesNotMatchRegularExpression('/\b(formatos_surtidos|formato_surtido_skus|pedido_paquetes_surtidos|paquete_surtido_composiciones|paquete_surtido_componentes|pedido_despacho_componentes)\b/i', $consulta['query']);
+            }
         }
         foreach ($cuentas as $tabla => $filas) {
             $this->assertEquals($filas, DB::table($tabla)->get()->toArray(), $tabla);

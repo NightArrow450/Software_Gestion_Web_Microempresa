@@ -40,34 +40,18 @@ return new class extends Migration
         foreach (Schema::getTableListing(null, false) as $tabla) {
             foreach (Schema::getForeignKeys($tabla) as $foreign) {
                 if (in_array($foreign['foreign_table'], self::TABLAS, true)
-                    && ! in_array($tabla, [...self::TABLAS, 'pedido_detalles', 'entrega_pedido_detalles', 'retorno_pedido_detalles'], true)) {
+                    && ! in_array($tabla, [...self::TABLAS, 'pedido_detalles'], true)) {
                     throw new RuntimeException('Dependencia no prevista desde '.$tabla.'. No se ha iniciado el retiro.');
                 }
             }
         }
-        foreach (['entrega_pedido_detalles' => 'entrega_id', 'retorno_pedido_detalles' => 'retorno_id'] as $tabla => $operacion) {
-            foreach (['insert', 'update'] as $evento) {
-                DB::unprepared('DROP TRIGGER IF EXISTS '.$operacion.'_componente_'.$evento);
-            }
-            foreach (Schema::getForeignKeys($tabla) as $foreign) {
-                if ($foreign['foreign_table'] === 'pedido_despacho_componentes') {
-                    Schema::table($tabla, fn (Blueprint $t) => $t->dropForeign($foreign['name'] ?? $foreign['columns']));
-                }
-            }
-            Schema::table($tabla, fn (Blueprint $t) => $t->foreign(['despacho_componente_id', 'pedido_detalle_id'], $operacion.'_referencia_fk')
-                ->references(['id', 'pedido_detalle_id'])->on('pedido_referencias_fisicas')->restrictOnDelete());
-            $valida = 'EXISTS (SELECT 1 FROM pedido_detalles d WHERE d.id = NEW.pedido_detalle_id AND ((NEW.despacho_componente_id IS NULL AND d.presentacion_producto_id IS NOT NULL) OR EXISTS (SELECT 1 FROM pedido_referencias_fisicas r WHERE r.id = NEW.despacho_componente_id AND r.pedido_detalle_id = d.id)))';
-            foreach (['INSERT', 'UPDATE'] as $evento) {
-                $nombre = $operacion.'_referencia_'.strtolower($evento);
-                DB::unprepared(DB::getDriverName() === 'mysql'
-                    ? "CREATE TRIGGER $nombre BEFORE $evento ON $tabla FOR EACH ROW BEGIN IF NOT ($valida) THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Referencia fisica ajena o ausente'; END IF; END"
-                    : "CREATE TRIGGER $nombre BEFORE $evento ON $tabla WHEN NOT ($valida) BEGIN SELECT RAISE(ABORT, 'Referencia física ajena o ausente'); END");
-            }
-        }
         $externos = DB::getDriverName() === 'sqlite'
-            ? DB::table('sqlite_master')->where('type', 'trigger')->where('tbl_name', '<>', 'pedido_detalles')->whereRaw("instr(lower(sql), 'pedido_detalles') > 0")->get(['name', 'sql'])
+            ? DB::table('sqlite_master')->where('type', 'trigger')->whereRaw("instr(lower(sql), 'pedido_detalles') > 0")->get(['name', 'sql'])
             : collect();
         foreach ($externos as $trigger) {
+            if (str_contains(strtolower($trigger->sql ?? ''), 'formato_surtido_id')) {
+                throw new RuntimeException('Un trigger depende de la columna retirada; requiere revisión antes de modificar el esquema.');
+            }
             if (! is_string($trigger->sql) || ! str_starts_with($trigger->sql, 'CREATE TRIGGER') || ! preg_match('/\A[a-zA-Z0-9_]+\z/', $trigger->name)) {
                 throw new RuntimeException('Nombre de trigger inesperado; detener el retiro.');
             }

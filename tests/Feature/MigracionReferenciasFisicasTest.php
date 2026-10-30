@@ -19,8 +19,9 @@ class MigracionReferenciasFisicasTest extends TestCase
         $pedido = $this->pedidoEnvasado($e);
         $formato = DB::table('formatos_surtidos')->insertGetId(['producto_id' => $e['presentacion']->producto_id, 'nombre' => 'Fotografía anterior ficticia',
             'tipo_envase' => 'Botella', 'contenido' => 1, 'unidad_medida' => 'L', 'unidades_por_empaque' => 12, 'precio_empaque' => 24, 'estado' => true]);
-        $detalle = $pedido->detalles()->create(['tipo_linea' => 'surtido', 'formato_surtido_id' => $formato, 'codigo_sku' => '', 'descripcion_producto' => 'Línea anterior',
+        $detalle = $pedido->detalles()->create(['tipo_linea' => 'surtido', 'codigo_sku' => '', 'descripcion_producto' => 'Línea anterior',
             'modalidad' => 'empaque', 'unidades_por_empaque' => 12, 'cantidad' => 1, 'precio_unitario' => 24, 'importe' => 24]);
+        DB::table('pedido_detalles')->where('id', $detalle->id)->update(['formato_surtido_id' => $formato]);
         $paquete = DB::table('pedido_paquetes_surtidos')->insertGetId(['pedido_detalle_id' => $detalle->id, 'numero' => 1, 'version' => 1, 'activo' => true]);
         $revision = DB::table('paquete_surtido_composiciones')->insertGetId(['paquete_surtido_id' => $paquete, 'version' => 1, 'estado' => 'definida',
             'usuario_id' => $e['usuario']->id, 'motivo' => 'Dato histórico ficticio para ensayar la migración.', 'created_at' => now()]);
