@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use Closure;
+use Illuminate\Database\DeadlockException;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +20,9 @@ class TransaccionAccionesSensibles
         try {
             return DB::transaction(function () use ($request, $next): Response {
                 $respuesta = $next($request);
+                if (($respuesta->exception ?? null) instanceof DeadlockException) {
+                    throw $respuesta->exception;
+                }
                 if (($respuesta->exception ?? null) !== null || $respuesta->getStatusCode() >= 400) {
                     throw new HttpResponseException($respuesta);
                 }
