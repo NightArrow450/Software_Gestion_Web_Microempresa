@@ -113,4 +113,3 @@ window.configuracionSprint2 = {
 <script src="{{ asset('js/pedidos-busqueda-utils.js') }}"></script>
 <script src="{{ asset('js/sprint2-orders.js') }}"></script>
 @endpush
-

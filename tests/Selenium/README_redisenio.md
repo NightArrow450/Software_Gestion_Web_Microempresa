@@ -1,4 +1,4 @@
-# Revisión integral del PR44 con Selenium
+# Revisión integral del rediseño con Selenium (PR44 / PR45)
 
 Esta revisión es independiente de los archivos Selenium locales de la Fase 9C.
 No sustituye ni sobrescribe `test_flujos_webdriver.py` ni su lanzador.
@@ -92,3 +92,7 @@ guion y se conservó su log. El usuario inició manualmente el servidor autoriza
 PDF: dos páginas A4 horizontales, dos notas y un anexo, sin hojas vacías. Véase
 [la evidencia seleccionada](../../docs/pruebas/evidencias/redisenio_pr44/README.md).
 No equivale a UAT real, pruebas de estrés ni revisión en dispositivos físicos.
+
+## Repetición PR45
+
+El manifiesto admite `evidencia_visual` para guardar otra campaña en una carpeta nueva y conservar los ID y capturas anteriores. Preparar siempre una base vacía nueva; no reutilizar una campaña ya ejecutada. El seeder de surtidos ya no se ejecuta. Los nombres `@pr44.test` y `/_pr44/identidad` son identificadores ficticios del arnés existente, no accesos al sistema operativo. Los resultados actuales se registran en el informe del PR45.

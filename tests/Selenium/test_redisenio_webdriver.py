@@ -49,7 +49,7 @@ class Escenario:
         options.add_experimental_option("prefs", {"credentials_enable_service": False, "profile.password_manager_enabled": False})
         self.driver = webdriver.Chrome(service=Service(os.environ["DHACER_CHROMEDRIVER"]), options=options)
         self.wait = WebDriverWait(self.driver, 15)
-        self.evidence = self.lab / "evidencia"
+        self.evidence = self.lab / self.manifest.get("evidencia_visual", "evidencia")
         saved_ids = self.evidence / "escenario-ids.json"
         self.ids = json.loads(saved_ids.read_text("utf-8")) if saved_ids.exists() else {}
 

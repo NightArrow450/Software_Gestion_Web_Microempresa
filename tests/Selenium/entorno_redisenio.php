@@ -38,6 +38,6 @@ if ($administrar && DB::selectOne("SELECT COUNT(*) n FROM information_schema.sch
 }
 config(['app.url' => 'http://127.0.0.1:8026', 'session.driver' => 'file', 'session.files' => $directorio.'/sesiones',
     'session.cookie' => 'dhacer_pr44_aislado', 'session.secure' => false, 'logging.default' => 'single',
-    'logging.channels.single.path' => $directorio.'/evidencia/laravel.log']);
+    'logging.channels.single.path' => $directorio.'/'.($manifiesto['evidencia_visual'] ?? 'evidencia').'/laravel.log']);
 
 return compact('app', 'directorio', 'manifiesto', 'privadas', 'identidad');

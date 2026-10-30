@@ -17,7 +17,6 @@ use Database\Seeders\IndicadoresPermisoSeeder;
 use Database\Seeders\PermisoSeeder;
 use Database\Seeders\RoleSeeder;
 use Database\Seeders\RolPermisoSeeder;
-use Database\Seeders\SurtidosPermisoSeeder;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 
@@ -34,7 +33,7 @@ if (($argv[1] ?? '') === 'preparar') {
     }
     foreach ([RoleSeeder::class, PermisoSeeder::class, RolPermisoSeeder::class,
         EnvasadoPermisoSeeder::class, EntregaRetornoPermisoSeeder::class,
-        SurtidosPermisoSeeder::class, IndicadoresPermisoSeeder::class] as $seeder) {
+        IndicadoresPermisoSeeder::class] as $seeder) {
         (new $seeder)->run();
     }
     foreach (['Administrador' => 'admin', 'Operaciones Comerciales' => 'operaciones', 'Producción/Reparto' => 'reparto'] as $rol => $alias) {
