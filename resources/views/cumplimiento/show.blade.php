@@ -32,7 +32,11 @@
 
     <section class="cumplimiento-tarjeta">
         <h2 class="form-section-title">Acciones de cumplimiento</h2>
-        @include('cumplimiento.partials.acciones')
+        @if($pedido->modelo_comercial !== 'unidades')
+            @include('cumplimiento.partials.acciones')
+        @else
+            <p>Registra la preparación y cada salida en las secciones por unidades.</p>
+        @endif
     </section>
 
     <section class="cumplimiento-tarjeta">
@@ -74,11 +78,17 @@
         </div>
     </section>
 
+@if($atencionUnidades !== null)
+    @include('cumplimiento.partials.unidades')
+@endif
 @if($resumenEntrega !== null && in_array($pedido->estado, \App\Services\ControlEntregaPedido::ESTADOS, true))
     @include('cumplimiento.partials.incidencia-resumen')
     @include('cumplimiento.partials.incidencia-acciones')
 @endif
-@include('orders.partials.composiciones', ['soloLectura' => true])
+@include('orders.partials.versiones')
 @endsection
 
 @push('styles')<link rel="stylesheet" href="{{ asset('css/entregas.css') }}">@endpush
+@push('scripts')
+@if($pedido->modelo_comercial === 'unidades')<script src="{{ asset('js/lista-preparacion-envasado.js') }}" defer></script>@endif
+@endpush

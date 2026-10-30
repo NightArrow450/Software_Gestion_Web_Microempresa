@@ -16,7 +16,7 @@ class MovimientoInventario extends Model
 
     protected $fillable = [
         'presentacion_producto_id', 'insumo_id', 'pedido_id', 'usuario_id',
-        'origen_tipo', 'origen_id', 'tipo', 'cantidad', 'stock_anterior', 'stock_nuevo', 'motivo',
+        'origen_tipo', 'origen_id', 'tipo', 'cantidad', 'stock_anterior', 'stock_nuevo', 'motivo', 'despacho_unidades_id',
     ];
 
     protected $casts = [

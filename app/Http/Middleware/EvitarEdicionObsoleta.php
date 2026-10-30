@@ -6,6 +6,7 @@ use App\Models\Cliente;
 use App\Models\Pedido;
 use App\Models\Producto;
 use Closure;
+use Illuminate\Database\DeadlockException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
@@ -34,6 +35,9 @@ class EvitarEdicionObsoleta
                 }
                 $request->route()->setParameter($parametro, $modelo);
                 $respuesta = $next($request);
+                if (($respuesta->exception ?? null) instanceof DeadlockException) {
+                    throw $respuesta->exception;
+                }
                 if (($respuesta->exception ?? null) !== null || $respuesta->getStatusCode() >= 400) {
                     throw new HttpResponseException($respuesta);
                 }

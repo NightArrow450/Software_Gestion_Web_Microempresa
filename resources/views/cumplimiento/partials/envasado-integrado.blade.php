@@ -16,6 +16,7 @@
     <form method="POST" action="{{ route('envasado.previsualizar') }}" data-consultar-envasado>
         @csrf
         <input type="hidden" name="desde_lista" value="1">
+        @if(isset($volverPedidoId))<input type="hidden" name="volver_pedido_id" value="{{ $volverPedidoId }}">@endif
         <input type="hidden" name="presentacion_producto_id" value="{{ old('presentacion_producto_id') }}">
         <input type="hidden" name="version_configuracion" value="">
         @foreach(['fecha_desde' => $fechaDesde, 'fecha_hasta' => $fechaHasta, 'produccion_desde' => $produccionDesde, 'produccion_hasta' => $produccionHasta] as $campo => $valor)

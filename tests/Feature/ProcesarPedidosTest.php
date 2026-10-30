@@ -76,7 +76,11 @@ class ProcesarPedidosTest extends TestCase
         ])->assertRedirect();
         $this->assertDatabaseHas('pedidos', ['id' => $pedido->id, 'estado' => 'observado']);
         $datos['detalles'][0]['cantidad'] = 3;
-        $this->put(route('pedidos.update', $pedido), $datos)->assertRedirect();
+        $datos['detalles'][0]['id'] = $pedido->detalles()->sole()->id;
+        $datos['_version'] = $pedido->fresh()->version;
+        $datos['_updated_at'] = (string) $pedido->fresh()->getRawOriginal('updated_at');
+        $datos['motivo'] = 'Se corrige la cantidad observada de dos a tres unidades.';
+        $this->put(route('pedidos.update', $pedido), $datos)->assertRedirect()->assertSessionHasNoErrors();
         $this->assertDatabaseHas('pedidos', ['id' => $pedido->id, 'total' => '13.50']);
         $this->assertDatabaseCount('pedidos', 1);
     }

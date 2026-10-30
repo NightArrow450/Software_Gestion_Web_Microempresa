@@ -10,18 +10,20 @@ class PedidoDetalle extends Model
     protected $table = 'pedido_detalles';
 
     protected $fillable = [
-        'tipo_linea', 'formato_surtido_id', 'retirado_en',
+        'tipo_linea', 'retirado_en',
         'presentacion_producto_id',
         'codigo_sku',
         'descripcion_producto',
         'modalidad',
         'unidades_por_empaque',
-        'cantidad',
+        'cantidad', 'cantidad_espera', 'cantidad_fisica_ajustada',
         'precio_unitario',
         'importe',
     ];
 
     protected $casts = [
+        'cantidad_espera' => 'integer',
+        'cantidad_fisica_ajustada' => 'integer',
         'unidades_por_empaque' => 'integer',
         'precio_unitario' => 'decimal:2',
         'importe' => 'decimal:2',

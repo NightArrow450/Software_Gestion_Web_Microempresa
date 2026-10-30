@@ -11,7 +11,7 @@ use App\Models\PresentacionProducto;
 use App\Models\Producto;
 use App\Models\Role;
 use App\Models\User;
-use App\Services\GestionarSurtidos;
+use App\Services\LecturaPedido;
 use App\Services\TokenOperacion;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -58,7 +58,7 @@ abstract class PruebaInventarioMySql extends TestCase
             foreach ($instantaneas as $tabla => [$columnas, $contenido]) {
                 $this->assertSame($contenido, DB::table($tabla)->select($columnas)->orderBy('id')->get()->toJson(), 'La migración alteró datos existentes de '.$tabla);
             }
-            app()->forgetInstance(GestionarSurtidos::class);
+            app()->forgetInstance(LecturaPedido::class);
             self::$preparado = true;
         }
     }

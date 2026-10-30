@@ -31,11 +31,7 @@
         true
     );
 
-    $editable = in_array(
-        $pedido->estado,
-        ['registrado', 'observado'],
-        true
-    );
+    $editable = true;
 @endphp
 
 <div class="page-heading">
@@ -156,6 +152,7 @@
 
                         <td>
                             {{ $detalle->descripcion_producto }}
+                            @if($detalle->cantidad_fisica_ajustada !== null)<p>Ajuste comercial explícito: {{ $detalle->cantidad_fisica_ajustada }} unidades físicas · importe revisado S/ {{ $detalle->importe }}</p>@endif
                         </td>
 
                         <td>
@@ -190,7 +187,7 @@
     </div>
 </section>
 
-@if($puedeEditar && $editable)
+@if($puedeEditar && in_array($pedido->estado, ['registrado', 'observado'], true))
     <section class="form-section">
         <h2 class="form-section-title">
             Procesar pedido (HU-02)
@@ -311,7 +308,7 @@
     </section>
 @endif
 
-@include('orders.partials.composiciones')
+
 <section class="form-section">
     <h2 class="form-section-title">Historial de estados</h2>
 
@@ -381,6 +378,8 @@
         en hoja A4 horizontal.
     </p>
 </section>
+@include('orders.partials.agrupaciones')
+@include('orders.partials.versiones')
 @endsection
 
 @push('scripts')
@@ -397,7 +396,7 @@
         'total' => number_format((float) $pedido->total, 2, '.', ''),
         'productos' => $pedido->detalles->map(fn($detalle) => [
             'descripcion' => $detalle->descripcion_producto,
-            'paquetes' => $detalle->tipo_linea === 'surtido' ? app(\App\Services\GestionarSurtidos::class)->paquetes($detalle) : [],
+            'paquetes' => [],
             'modalidad' => $detalle->modalidad,
             'empaque' => $detalle->descripcionModalidad(),
             'cantidad' => $detalle->cantidad,

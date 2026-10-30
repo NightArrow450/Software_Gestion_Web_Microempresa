@@ -13,10 +13,10 @@ use App\Models\Role;
 use App\Models\User;
 use App\Models\VarianteProducto;
 use App\Services\AprobarRetornoPedido;
-use App\Services\ConfigurarFormatoSurtido;
+use App\Services\AtenderPedidoUnidades;
 use App\Services\ConfigurarMaterialesEnvasado;
 use App\Services\ControlEntregaPedido;
-use App\Services\GestionarSurtidos;
+use App\Services\GestionarPedidoUnidades;
 use App\Services\RegistrarEnvasado;
 use App\Services\RegistrarResultadoEntrega;
 use App\Services\RegistrarRetornoPedido;
@@ -26,6 +26,7 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use RuntimeException;
 use Tests\Performance\AutorizacionRendimiento;
 
@@ -39,8 +40,9 @@ class CargaSeeder extends Seeder
             throw new RuntimeException('Falta contraseña ficticia privada válida para las cuentas de carga.');
         }
         $tablas = Schema::getTableListing(DB::getDatabaseName(), false);
-        if (count($tablas) !== 44 || DB::table('migrations')->count() !== 45) {
-            throw new RuntimeException('El esquema no coincide con las 45 migraciones y 44 tablas autorizadas.');
+        $migraciones = DB::table('migrations')->count();
+        if (! (($migraciones === 48 && count($tablas) === 52) || ($migraciones === 49 && count($tablas) === 46))) {
+            throw new RuntimeException('El esquema no coincide con el modelo de unidades autorizado; no se cargará ningún dato.');
         }
         foreach ($tablas as $tabla) {
             if ($tabla !== 'migrations' && DB::table($tabla)->exists()) {
@@ -60,7 +62,7 @@ class CargaSeeder extends Seeder
         fwrite($archivo, json_encode(['autorizacion' => $m['autorizacion'], 'estado' => 'iniciada'], JSON_THROW_ON_ERROR));
         fclose($archivo);
         $this->call([RoleSeeder::class, PermisoSeeder::class, RolPermisoSeeder::class, AuditoriaPermisoSeeder::class,
-            EnvasadoPermisoSeeder::class, EntregaRetornoPermisoSeeder::class, SurtidosPermisoSeeder::class, IndicadoresPermisoSeeder::class]);
+            EnvasadoPermisoSeeder::class, EntregaRetornoPermisoSeeder::class, IndicadoresPermisoSeeder::class]);
         $roles = Role::whereIn('nombre', ['Administrador', 'Operaciones Comerciales', 'Producción/Reparto'])->pluck('id', 'nombre');
         $administrador = User::create(['first_name' => 'Administración', 'last_name' => 'Sintética', 'email' => 'admin@carga.invalid', 'password' => $clave, 'status' => true, 'debe_cambiar_password' => false, 'role_id' => $roles['Administrador']]);
         Auth::login($administrador);
@@ -80,20 +82,18 @@ class CargaSeeder extends Seeder
             }
             $skus = [];
             $configuraciones = [];
-            $formatos = [];
             for ($n = 0; $n < 150; $n++) {
                 $producto = Producto::create(['codigo' => 'CARGA_P'.$n, 'nombre' => 'Producto sintético '.$n, 'categoria_id' => $categoria->id, 'estado' => true]);
                 $grupo = [];
                 foreach (['Alfa', 'Beta', 'Gamma'] as $aroma) {
                     $variante = VarianteProducto::create(['producto_id' => $producto->id, 'tipo' => 'Aroma', 'valor' => $aroma, 'estado' => true]);
-                    $sku = PresentacionProducto::create(['producto_id' => $producto->id, 'variante_producto_id' => $variante->id, 'codigo_sku' => 'CARGA_'.$n.'_'.strtoupper($aroma), 'contenido' => 1, 'unidad_medida' => 'L', 'tipo_envase' => 'Botella', 'unidades_por_empaque' => 12, 'venta_por_unidad' => true, 'venta_por_empaque' => true, 'precio_unitario' => 2, 'precio_empaque' => 24, 'estado' => true]);
+                    $sku = PresentacionProducto::create(['producto_id' => $producto->id, 'variante_producto_id' => $variante->id, 'codigo_sku' => 'CARGA_'.$n.'_'.strtoupper($aroma), 'contenido' => 1, 'unidad_medida' => 'L', 'tipo_envase' => 'Botella', 'venta_por_unidad' => true, 'venta_por_empaque' => false, 'precio_unitario' => 2, 'estado' => true]);
                     Inventario::create(['presentacion_producto_id' => $sku->id, 'cantidad_actual' => 10000]);
                     $grupo[] = $sku;
                 }
                 $skus[] = $grupo;
                 $config = app(ConfigurarMaterialesEnvasado::class)->guardar($grupo[0], ['nombre' => 'Alternativa sintética', 'estado' => true, 'version' => 0, 'materiales' => array_map(static fn ($insumo, $funcion): array => ['insumo_id' => $insumo->id, 'funcion' => $funcion, 'base_consumo' => 'unidad', 'cantidad_por_unidad' => 1], $materiales, ['envase', 'etiqueta', 'contratapa'])]);
                 $configuraciones[] = $config;
-                $formatos[] = app(ConfigurarFormatoSurtido::class)->guardar(['producto_id' => $producto->id, 'nombre' => 'Surtido sintético de doce', 'unidades_por_empaque' => 12, 'precio_empaque' => '24.00', 'estado' => true, 'skus' => array_column($grupo, 'id')], $administrador);
                 app(RegistrarEnvasado::class)->ejecutar(['presentacion_producto_id' => $grupo[0]->id, 'configuracion_envasado_id' => $config->id, 'version_configuracion' => 0, 'cantidad' => 10, 'observaciones' => 'Envasado anticipado exclusivamente sintético.'], $administrador);
             }
             $transiciones = app(TransicionesPedido::class);
@@ -104,23 +104,25 @@ class CargaSeeder extends Seeder
                 $indice = $n % 150;
                 $cliente = $clientes[$n % 300];
                 $sku = $skus[$indice][0];
-                $surtido = $n % 5 === 0;
-                $empaque = $surtido || $n % 4 === 0;
-                $factor = $surtido ? 12 : ($n % 8 === 0 ? 15 : 12);
-                $precio = $empaque ? $factor * 2 : 2;
-                $cantidad = $empaque ? 2 : 5;
-                $pedido = Pedido::create(['cliente_id' => $cliente->id, 'usuario_id' => $administrador->id, 'cliente_nombre' => $cliente->nombre, 'estado' => 'registrado', 'fecha_pedido' => today()->subDays($n % 30), 'fecha_entrega' => today()->addDays($n % 15), 'condicion_pago' => 'contado', 'total' => $cantidad * $precio, 'observaciones' => 'Datos sintéticos de rendimiento, sin valor comercial.']);
-                $pedido->historialEstados()->create(['usuario_id' => $administrador->id, 'estado_nuevo' => 'registrado', 'motivo' => 'Registro sintético autorizado.']);
-                $detalle = $pedido->detalles()->create(['presentacion_producto_id' => $sku->id, 'codigo_sku' => $sku->codigo_sku, 'descripcion_producto' => 'Presentación sintética', 'tipo_linea' => $surtido ? 'surtido' : 'normal', 'formato_surtido_id' => $surtido ? $formatos[$indice] : null, 'modalidad' => $empaque ? 'empaque' : 'unidad', 'unidades_por_empaque' => $empaque ? $factor : null, 'cantidad' => $cantidad, 'precio_unitario' => $precio, 'importe' => $cantidad * $precio]);
-                if ($surtido) {
-                    $paquetes = array_map(fn (array $cantidades): array => ['estado' => 'definida', 'componentes' => array_map(fn (int $i): array => ['presentacion_producto_id' => $skus[$indice][$i]->id, 'cantidad' => $cantidades[$i]], [0, 1, 2])], [[5, 4, 3], [2, 7, 3]]);
-                    if ($n % 20 === 0) {
-                        $paquetes[1] = ['estado' => 'pendiente', 'componentes' => []];
+                $agrupado = $n % 5 === 0;
+                $capacidad = $n % 8 === 0 ? 15 : 12;
+                $grupos = [];
+                if ($agrupado) {
+                    $cantidades = [7, 11, 6];
+                    $grupos = array_map(fn (array $composicion): array => ['capacidad' => 12, 'componentes' => array_map(fn (int $i): array => ['sku_id' => $skus[$indice][$i]->id, 'cantidad' => $composicion[$i]], [0, 1, 2])], [[5, 4, 3], [2, 7, 3]]);
+                    $detalles = array_map(fn (int $i): array => ['presentacion_producto_id' => $skus[$indice][$i]->id, 'cantidad' => $cantidades[$i], 'cantidad_espera' => $n % 20 === 0 && $i === 0 ? 2 : 0], [0, 1, 2]);
+                } else {
+                    $cantidad = $n % 4 === 0 ? 2 * $capacidad : 5;
+                    $detalles = [['presentacion_producto_id' => $sku->id, 'cantidad' => $cantidad]];
+                    if ($n % 4 === 0) {
+                        $grupos = array_fill(0, 2, ['capacidad' => $capacidad, 'componentes' => [['sku_id' => $sku->id, 'cantidad' => $capacidad]]]);
                     }
-                    app(GestionarSurtidos::class)->guardar($detalle, $paquetes, $administrador, 'Composición exclusivamente sintética de carga.');
                 }
-                $etapa = $surtido ? ($n % 20 === 0 ? 2 : 3) : $n % 10;
-                if ($surtido && $n % 50 === 5) {
+                $pedido = app(GestionarPedidoUnidades::class)->guardar(['cliente_id' => $cliente->id, 'fecha_pedido' => today()->subDays($n % 30)->toDateString(),
+                    'fecha_entrega' => today()->addDays($n % 15)->toDateString(), 'condicion_pago' => 'contado', 'detalles' => $detalles, 'agrupaciones' => $grupos,
+                    'motivo' => 'Datos sintéticos autorizados; la espera no supone producción ni reserva.', 'observaciones' => 'Datos sintéticos de rendimiento, sin valor comercial.'], $administrador);
+                $etapa = $agrupado ? ($n % 20 === 0 ? 2 : 3) : $n % 10;
+                if ($agrupado && $n % 50 === 5) {
                     $etapa = 9;
                 }
                 if ($etapa === 0) {
@@ -135,24 +137,37 @@ class CargaSeeder extends Seeder
                 if ($n % 100 === 2) {
                     app(RegistrarEnvasado::class)->ejecutar(['presentacion_producto_id' => $sku->id, 'configuracion_envasado_id' => $configuraciones[$indice]->id, 'version_configuracion' => 0, 'pedido_id' => $pedido->id, 'cantidad' => 3], $administrador);
                 }
-                foreach (['en_preparacion', 'listo_despacho', 'despachado'] as $paso => $estado) {
-                    if ($etapa < $paso + 3) {
-                        break;
+                if ($etapa >= 3) {
+                    $transiciones->registrar($pedido, null, 'en_preparacion', $administrador->id, [], 'Inicio sintético de preparación.');
+                    $pedido->refresh();
+                    foreach ($pedido->detalles()->get() as $linea) {
+                        app(AtenderPedidoUnidades::class)->preparar($pedido, ['version_pedido' => $pedido->version, 'pedido_detalle_id' => $linea->id, 'cantidad' => $linea->cantidad,
+                            'motivo' => 'Unidades físicamente preparadas exclusivamente en datos sintéticos.'], $administrador);
+                        $pedido->refresh();
                     }
-                    $transiciones->registrar($pedido, null, $estado, $administrador->id, [], 'Transición sintética de carga.');
+                }
+                if ($etapa >= 4) {
+                    $transiciones->registrar($pedido, null, 'listo_despacho', $administrador->id, [], 'Preparación sintética finalizada.');
+                }
+                if ($etapa >= 5) {
+                    $pedido->refresh();
+                    $foto = app(GestionarPedidoUnidades::class)->fotografiasActuales(collect([$pedido]))[$pedido->id];
+                    app(AtenderPedidoUnidades::class)->despachar($pedido, ['version_pedido' => $pedido->version, 'operacion' => (string) Str::ulid(),
+                        'motivo' => 'Despacho físico exclusivamente sintético.', 'paquetes' => array_column($foto['agrupaciones'], 'identidad'),
+                        'detalles' => $pedido->detalles()->get()->map(fn ($linea): array => ['id' => $linea->id, 'cantidad' => $linea->cantidad])->all()], $administrador);
                 }
                 if ($etapa >= 6) {
                     $lineas = app(ControlEntregaPedido::class)->fotografia($pedido->fresh());
                     $resultados = array_map(static fn (array $linea): array => ['pedido_detalle_id' => $linea['id'], 'despacho_componente_id' => $linea['componente_id'] ?? null, 'aceptadas' => $linea['despachadas'] - ($etapa === 6 ? 0 : 2), 'rechazadas' => $etapa === 6 ? 0 : 2, 'motivo' => 'Resultado exclusivamente sintético.'], array_values($lineas));
-                    app(RegistrarResultadoEntrega::class)->ejecutar($pedido, ['version' => 0, 'detalles' => $resultados], $administrador);
+                    app(RegistrarResultadoEntrega::class)->ejecutar($pedido, ['version' => app(ControlEntregaPedido::class)->resumen($pedido->fresh())['version'], 'detalles' => $resultados], $administrador);
                 }
                 if ($etapa >= 8) {
                     $primera = array_values($lineas)[0];
-                    app(RegistrarRetornoPedido::class)->ejecutar($pedido, ['version' => 1, 'observaciones' => 'Retorno exclusivamente sintético.', 'detalles' => [['pedido_detalle_id' => $detalle->id, 'despacho_componente_id' => $primera['componente_id'] ?? null, 'aptas' => 1, 'danadas' => 1, 'en_revision' => 0, 'no_recuperadas' => 0]]], $administrador);
+                    app(RegistrarRetornoPedido::class)->ejecutar($pedido, ['version' => app(ControlEntregaPedido::class)->resumen($pedido->fresh())['version'], 'observaciones' => 'Retorno exclusivamente sintético.', 'detalles' => [['pedido_detalle_id' => $primera['id'], 'aptas' => 1, 'danadas' => 1, 'en_revision' => 0, 'no_recuperadas' => 0]]], $administrador);
                 }
                 if ($etapa === 9) {
-                    $retorno = DB::table('retorno_pedido_detalles')->where('pedido_detalle_id', $detalle->id)->value('id');
-                    app(AprobarRetornoPedido::class)->ejecutar($pedido, ['version' => 2, 'retorno_detalle_id' => $retorno, 'cantidad' => 1, 'motivo' => 'Reincorporación exclusivamente sintética.'], $administrador);
+                    $retorno = DB::table('retorno_pedido_detalles')->where('pedido_detalle_id', $primera['id'])->value('id');
+                    app(AprobarRetornoPedido::class)->ejecutar($pedido, ['version' => app(ControlEntregaPedido::class)->resumen($pedido->fresh())['version'], 'retorno_detalle_id' => $retorno, 'cantidad' => 1, 'motivo' => 'Reincorporación exclusivamente sintética.'], $administrador);
                 }
             }
             if (! app(VerificadorInventario::class)->revisar()['correcto']) {

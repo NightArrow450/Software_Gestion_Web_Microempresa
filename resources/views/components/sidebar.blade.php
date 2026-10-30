@@ -101,9 +101,7 @@
                 </a>
             @endif
 
-            @if(auth()->user()->role?->tienePermiso('surtidos.configurar'))
-                <a href="{{ route('surtidos.index') }}" class="menu-link {{ request()->routeIs('surtidos.*') ? 'active' : '' }}"><span class="material-symbols-outlined">inventory_2</span>Modalidades surtidas</a>
-            @endif
+
 
             @if($puedeVerClientesSidebar)
                 <a

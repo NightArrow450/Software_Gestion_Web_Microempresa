@@ -15,7 +15,7 @@ class RegistrarResultadoEntrega
     public function ejecutar(Pedido $pedido, array $entrada, User $usuario, bool $completa = false, bool $rectificar = false): void
     {
         $this->control->autorizar($usuario, $rectificar ? 'cumplimiento.incidencias.corregir' : 'cumplimiento.entregar');
-        $limiteLineas = collect($entrada['detalles'] ?? [])->contains(fn ($linea): bool => is_array($linea) && ! empty($linea['despacho_componente_id'])) ? 10000 : 18;
+        $limiteLineas = $pedido->modelo_comercial === 'unidades' || collect($entrada['detalles'] ?? [])->contains(fn ($linea): bool => is_array($linea) && ! empty($linea['despacho_componente_id'])) ? 10000 : 18;
         $datos = Validator::make($entrada, [
             'version' => [$completa ? 'nullable' : 'required', 'integer', 'min:0'],
             'ocurrido_en' => ['nullable', 'date', 'before_or_equal:now'],
@@ -36,7 +36,7 @@ class RegistrarResultadoEntrega
         }
         DB::transaction(function () use ($pedido, $datos, $usuario, $completa, $rectificar): void {
             $actual = Pedido::whereKey($pedido->id)->lockForUpdate()->firstOrFail();
-            if (! in_array($actual->estado, $rectificar ? ControlEntregaPedido::ESTADOS : ['despachado', 'entrega_pendiente'], true) || ($completa && $actual->estado !== 'despachado')) {
+            if (! in_array($actual->estado, $rectificar ? ControlEntregaPedido::ESTADOS : ['despachado', 'entrega_pendiente', 'despacho_parcial'], true) || ($completa && $actual->estado !== 'despachado')) {
                 throw ValidationException::withMessages(['estado' => 'El pedido no admite este resultado de entrega.']);
             }
             $incidencia = $this->control->bloquear($actual, isset($datos['version']) ? (int) $datos['version'] : null);
@@ -86,6 +86,9 @@ class RegistrarResultadoEntrega
             $rechazadas = array_sum(array_column($final, 'rechazadas'));
             $aceptadas = array_sum(array_column($final, 'aceptadas'));
             $estado = $pendientes > 0 ? 'entrega_pendiente' : ($rechazadas === 0 ? 'entregado' : ($aceptadas === 0 ? 'rechazado' : 'entrega_parcial'));
+            if ($actual->modelo_comercial === 'unidades' && app(AtenderPedidoUnidades::class)->pendientes($actual) > 0) {
+                $estado = 'despacho_parcial';
+            }
             $adicionales = $estado === 'entregado' ? ['entregado_por_id' => $actual->entregado_por_id ?? $usuario->id, 'entregado_en' => $actual->entregado_en ?? now(), 'observacion_entrega' => $datos['observaciones'] ?? null] : [];
             $this->transiciones->registrar($actual, $actual->estado, $estado, $usuario->id, $adicionales, $datos['observaciones'] ?? ($rectificar ? 'Rectificación autorizada de entrega.' : 'Resultado de entrega por líneas.'));
             $this->control->evento($incidencia->id, $usuario->id, $rectificar ? 'rectificacion_entrega' : 'resultado_entrega', $datos['observaciones'] ?? 'Registro del resultado; no modifica existencias.', ['entrega_id' => $id, 'detalles' => $cambios, 'ocurrido_en' => $ocurridoEn]);

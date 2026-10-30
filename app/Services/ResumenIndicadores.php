@@ -17,10 +17,10 @@ class ResumenIndicadores
         $importesComerciales = ['importe_activo_centimos' => 0, 'importe_cancelado_centimos' => 0];
         $sumables = match ($f['reporte']) {
             'situacion_entregas' => ['despachadas', 'aceptadas', 'rechazadas', 'pendientes', 'recibidas', 'aptas', 'danadas', 'por_revisar', 'no_recuperadas', 'reincorporadas', 'por_retornar', 'por_aprobar', 'aceptado_centimos', 'rechazado_centimos', 'pendiente_centimos'],
-            'comercial' => ['importe_centimos', 'paquetes_definidos', 'paquetes_pendientes'],
+            'comercial' => ['importe_centimos'],
             'preparacion' => ['solicitadas', 'faltante_conocido'],
             'fisicas' => ['unidades_fisicas'],
-            'pendientes' => ['paquetes_pendientes', 'unidades_sin_composicion', 'unidades_sin_distribuir'],
+            'pendientes' => ['unidades_en_espera'],
             'entregas' => ['aceptadas', 'rechazadas', 'aceptado_centimos', 'rechazado_centimos'],
             'retornos' => ['recibidas', 'aptas', 'danadas', 'en_revision', 'no_recuperadas'],
             'aprobaciones' => ['reincorporadas'],
@@ -59,7 +59,7 @@ class ResumenIndicadores
             if ($f['economico']) {
                 $comercial += $importesComerciales;
             }
-            $cantidades = $this->pedidos->consultaComercial($f)->where('pe.estado', '<>', 'cancelado')->select([])->selectRaw("COALESCE(SUM(CASE WHEN d.tipo_linea='normal' AND d.modalidad='unidad' THEN d.cantidad ELSE 0 END),0) unidades_comerciales, COALESCE(SUM(CASE WHEN d.tipo_linea='normal' AND d.modalidad='empaque' THEN d.cantidad ELSE 0 END),0) paquetes_normales, COALESCE(SUM(CASE WHEN d.tipo_linea='surtido' THEN d.cantidad ELSE 0 END),0) paquetes_surtidos")->first();
+            $cantidades = $this->pedidos->consultaComercial($f)->where('pe.estado', '<>', 'cancelado')->select([])->selectRaw("COALESCE(SUM(CASE WHEN d.presentacion_producto_id IS NOT NULL AND d.modalidad='unidad' THEN d.cantidad ELSE 0 END),0) unidades_comerciales, COALESCE(SUM(CASE WHEN d.presentacion_producto_id IS NULL THEN 1 ELSE 0 END),0) lineas_sin_sku_verificable")->first();
             $comercial += (array) $cantidades;
         }
 

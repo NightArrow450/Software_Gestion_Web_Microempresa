@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -21,6 +22,18 @@ $conexion = DB::selectOne('SELECT CONNECTION_ID() AS id')->id;
 fwrite(STDOUT, 'LISTO:'.$conexion.PHP_EOL);
 fflush(STDOUT);
 $request->headers->set('Accept', 'application/json');
+$ultimoError = null;
+$handler = app(ExceptionHandler::class);
+$handler->renderable(function (Throwable $error) use (&$ultimoError): void {
+    $mensaje = $error->getMessage();
+    foreach (['MYSQL_TEST_PASSWORD', 'APP_KEY'] as $nombre) {
+        $secreto = getenv($nombre);
+        if (is_string($secreto) && $secreto !== '') {
+            $mensaje = str_replace($secreto, '[PROTEGIDO]', $mensaje);
+        }
+    }
+    $ultimoError = ['tipo' => $error::class, 'codigo' => $error->getCode(), 'mensaje' => $mensaje];
+});
 $response = $kernel->handle($request);
-fwrite(STDOUT, json_encode(['estado' => $response->getStatusCode(), 'contenido' => $response->getContent()], JSON_THROW_ON_ERROR).PHP_EOL);
+fwrite(STDOUT, json_encode(['estado' => $response->getStatusCode(), 'contenido' => $response->getContent(), ...($response->getStatusCode() >= 500 ? ['diagnostico' => $ultimoError] : [])], JSON_THROW_ON_ERROR).PHP_EOL);
 $kernel->terminate($request, $response);

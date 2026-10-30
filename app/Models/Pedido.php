@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Services\GestionarSurtidos;
+use App\Services\LecturaPedido;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -17,7 +17,7 @@ class Pedido extends Model
         'condicion_pago', 'estado', 'total', 'observaciones',
         'cliente_nombre', 'cliente_documento', 'cliente_telefono',
         'cliente_mercado', 'cliente_puesto_referencia',
-        'cliente_distrito', 'cliente_direccion', 'procesado_por_id', 'procesado_en',
+        'cliente_distrito', 'cliente_direccion', 'procesado_por_id', 'procesado_en', 'modelo_comercial',
     ];
 
     protected $casts = [
@@ -52,7 +52,7 @@ class Pedido extends Model
     public function detalles(): HasMany
     {
         $relacion = $this->hasMany(PedidoDetalle::class, 'pedido_id');
-        if (app(GestionarSurtidos::class)->disponible()) {
+        if (app(LecturaPedido::class)->admiteRetiroLogico()) {
             $relacion->whereNull('retirado_en');
         }
 

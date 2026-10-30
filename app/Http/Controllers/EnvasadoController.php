@@ -7,7 +7,7 @@ use App\Models\Envasado;
 use App\Models\Inventario;
 use App\Models\Pedido;
 use App\Models\PresentacionProducto;
-use App\Services\GestionarSurtidos;
+use App\Services\LecturaPedido;
 use App\Services\RegistrarEnvasado;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
@@ -58,6 +58,10 @@ class EnvasadoController extends Controller
         $envasado = $servicio->ejecutar($request->all(), $request->user());
 
         if ($filtrosLista !== null) {
+            if (! empty($filtrosLista['volver_pedido_id'])) {
+                return redirect()->route('cumplimiento.show', $filtrosLista['volver_pedido_id'])->with('success', 'Producción física registrada una sola vez. El stock ya incluye estas unidades.');
+            }
+
             return redirect()->route('cumplimiento.lista-preparacion', $filtrosLista)->with('success', 'Envasado registrado. Materiales descontados y stock actualizado; no registres otra entrada por esta producción.');
         }
 
@@ -74,20 +78,21 @@ class EnvasadoController extends Controller
         abort_unless($request->user()->loadMissing('role.permisos')->role?->permisos->contains('nombre', 'pedidos.ver'), 403);
 
         $filtros = $request->validate([
+            'volver_pedido_id' => ['nullable', 'integer', 'exists:pedidos,id'],
             'fecha_desde' => ['nullable', 'date_format:Y-m-d'],
             'fecha_hasta' => ['nullable', 'date_format:Y-m-d', ...($request->filled('fecha_desde') ? ['after_or_equal:fecha_desde'] : [])],
             'produccion_desde' => ['required', 'date_format:Y-m-d'],
             'produccion_hasta' => ['required', 'date_format:Y-m-d', 'after_or_equal:produccion_desde'],
         ]);
 
-        return array_map(fn (?string $valor): string => $valor ?? '', $filtros);
+        return array_map(fn ($valor): string => (string) ($valor ?? ''), $filtros);
     }
 
     public function show(Envasado $envasado): View
     {
         $envasado->load(['usuario', 'pedido', 'consumos', 'correcciones.materiales', 'correcciones.usuario', 'reportes.usuario']);
         $stock = Inventario::where('presentacion_producto_id', $envasado->presentacion_producto_id)->value('cantidad_actual') ?? 0;
-        $solicitadas = $envasado->pedido ? app(GestionarSurtidos::class)->lineasFisicas($envasado->pedido)->where('presentacion_producto_id', $envasado->presentacion_producto_id)->sum(fn ($d) => $d->cantidad * ($d->modalidad === 'empaque' ? $d->unidadesPorEmpaqueEfectivas($d->presentacion) : 1)) : null;
+        $solicitadas = $envasado->pedido ? app(LecturaPedido::class)->lineasFisicas($envasado->pedido)->where('presentacion_producto_id', $envasado->presentacion_producto_id)->sum(fn ($d) => $d->cantidad * ($d->modalidad === 'empaque' ? $d->unidadesPorEmpaqueEfectivas($d->presentacion) : 1)) : null;
 
         $netoAcumulado = $envasado->pedido_id === null ? null : (int) Envasado::query()
             ->where('pedido_id', $envasado->pedido_id)

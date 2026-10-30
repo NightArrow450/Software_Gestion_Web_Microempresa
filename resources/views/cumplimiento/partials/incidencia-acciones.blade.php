@@ -1,7 +1,7 @@
 @php
     $rolEntrega = auth()->user()->role;
     $cerradaEntrega = $resumenEntrega['incidencia']?->resuelto_en !== null;
-    $puedeResultado = !$cerradaEntrega && !$resumenEntrega['historico_sin_desglose'] && in_array($pedido->estado, ['despachado', 'entrega_pendiente'], true) && $rolEntrega?->tienePermiso('cumplimiento.entregar');
+    $puedeResultado = !$cerradaEntrega && !$resumenEntrega['historico_sin_desglose'] && in_array($pedido->estado, ['despachado', 'entrega_pendiente', 'despacho_parcial'], true) && $rolEntrega?->tienePermiso('cumplimiento.entregar');
 @endphp
 <section class="entrega-panel" aria-label="Registrar entrega o retorno">
     @if($puedeResultado)

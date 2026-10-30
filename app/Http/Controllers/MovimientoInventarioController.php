@@ -50,7 +50,9 @@ class MovimientoInventarioController extends Controller
         $permisos = $request->user()->role?->permisos?->pluck('nombre')->all() ?? [];
         $puedeRegistrar = count(array_intersect(array_values(self::PERMISOS), $permisos)) > 0;
 
-        return view('inventory.movements.index', compact('movimientos', 'puedeRegistrar'));
+        $pedidosPorDespacho = DB::table('pedido_despachos')->whereIn('id', $movimientos->pluck('despacho_unidades_id')->filter())->pluck('pedido_id', 'id');
+
+        return view('inventory.movements.index', compact('movimientos', 'puedeRegistrar', 'pedidosPorDespacho'));
     }
 
     public function create(Request $request): View

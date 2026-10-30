@@ -47,6 +47,8 @@
                 @else
                     N.º {{ str_pad((string) $m->pedido_id, 6, '0', STR_PAD_LEFT) }}
                 @endif
+            @elseif($m->despacho_unidades_id)
+                Despacho parcial #{{ $m->despacho_unidades_id }} · Pedido N.º {{ $pedidosPorDespacho[$m->despacho_unidades_id] ?? 'No disponible' }}
             @elseif($m->origen_tipo === 'envasado')
                 @if(auth()->user()->role?->tienePermiso('envasado.ver'))<a href="{{ route('envasado.show', $m->origen_id) }}">Envasado #{{ $m->origen_id }}</a>@else Envasado #{{ $m->origen_id }} @endif
             @elseif($m->origen_tipo === 'correccion_envasado')

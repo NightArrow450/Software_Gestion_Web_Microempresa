@@ -16,8 +16,8 @@ Por decisión de la empresa no se controla el volumen de mezclas preparadas ni l
 | --- | --- |
 | Acceso y administración | Autenticación, cuentas activas, contraseña inicial, usuarios, roles y permisos. |
 | Catálogo y clientes | Clientes, productos, categorías, aromas, presentaciones, unidades y empaques. |
-| Pedidos | Registro, edición permitida, confirmación, observación, cancelación y notas imprimibles. |
-| Surtidos | Composición individual por paquete, versiones, pendientes y SKU compatibles. |
+| Pedidos | Ventas nuevas por unidades, agrupaciones opcionales, edición auditada, históricos conservados, confirmación y notas. |
+| Agrupaciones logísticas | Unidades por SKU, agrupación opcional dentro del pedido y versiones auditadas, sin facturación adicional. |
 | Preparación | Consolidación por producto, presentación y aroma; demanda, stock y producción diferenciados. |
 | Inventarios | Productos terminados e insumos físicos, movimientos, ajustes, mínimos e historial. |
 | Envasados | Materiales configurables, anticipados o vinculados, consumo y entrada atómicos, correcciones. |
@@ -31,6 +31,7 @@ Los importes comerciales no son dinero efectivamente cobrado. Las referencias hi
 
 - [Instalación, mantenimiento y recuperación](docs/operacion-local.md).
 - [Módulos, navegación y permisos](docs/modulos.md).
+- [Rediseño por unidades e históricos (antecedente PR44; cierre en PR45)](docs/redisenio-ventas-unidad.md).
 - [Envasados y materiales](docs/envasados.md).
 - [Auditoría y trazabilidad](docs/auditoria.md).
 - [Demostración aislada y controles previos](docs/demostracion.md).
@@ -57,3 +58,5 @@ npm audit --package-lock-only --audit-level=low
 ```
 
 MySQL requiere habilitación y servidor independiente conforme a la guía de CI. Pint se aplica al alcance modificado; existe deuda anterior documentada. No publicar contraseñas, sesiones, archivos privados, SQL ni evidencia empresarial.
+
+El cierre vigente del rediseño y el retiro operativo de surtidos se documentan en [el informe del PR45](docs/pr45-correccion-flujo-ventas-y-eliminacion-surtidos.md). El PR44 se cerró sin fusionar.

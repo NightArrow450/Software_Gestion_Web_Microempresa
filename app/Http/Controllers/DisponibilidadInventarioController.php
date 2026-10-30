@@ -6,7 +6,7 @@ use App\Models\Insumo;
 use App\Models\Inventario;
 use App\Models\Pedido;
 use App\Models\PresentacionProducto;
-use App\Services\GestionarSurtidos;
+use App\Services\LecturaPedido;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -53,11 +53,11 @@ class DisponibilidadInventarioController extends Controller
                 ->findOrFail($datos['pedido_id']);
 
             $solicitado = [];
-            $surtidos = app(GestionarSurtidos::class);
-            foreach ($surtidos->pendientes($pedidoConsulta) as $pendiente) {
-                $solicitado['pendiente-'.$pendiente['detalle_id']] = ['sku' => '—', 'nombre' => $pendiente['descripcion'], 'necesario' => $pendiente['unidades'], 'presentacion_id' => null, 'error' => 'Composición pendiente: no se asignan aromas ni se declara cobertura completa.'];
+            $lecturaPedido = app(LecturaPedido::class);
+            foreach ($lecturaPedido->pendientes($pedidoConsulta) as $pendiente) {
+                $solicitado['pendiente-'.$pendiente['detalle_id']] = ['sku' => '—', 'nombre' => $pendiente['descripcion'], 'necesario' => $pendiente['unidades'], 'presentacion_id' => null, 'error' => 'Línea anterior sin SKU verificable: requiere revisión comercial; no se declara cobertura completa.'];
             }
-            foreach ($surtidos->lineasFisicas($pedidoConsulta) as $detalle) {
+            foreach ($lecturaPedido->lineasFisicas($pedidoConsulta) as $detalle) {
                 $id = $detalle->presentacion_producto_id;
                 $presentacion = $detalle->presentacion;
                 if (! $id || ! $presentacion) {

@@ -5,16 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\Cliente;
 use App\Models\Pedido;
 use App\Models\PresentacionProducto;
-use App\Services\CalculadoraPedido;
-use App\Services\GestionarSurtidos;
-use App\Services\RegistroAuditoria;
+use App\Services\AjustarPedidoHistorico;
+use App\Services\GestionarPedidoUnidades;
 use App\Services\TransicionesPedido;
-use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class PedidoController extends Controller
@@ -74,65 +70,12 @@ class PedidoController extends Controller
 
     public function create(): View
     {
-        return view(
-            'orders.create',
-            $this->opcionesFormulario()
-        );
+        return app(PedidoUnidadesController::class)->formulario();
     }
 
-    public function store(
-        Request $request,
-        CalculadoraPedido $calculadora
-    ): RedirectResponse {
-        $data = $this->validarPedido($request);
-
-        $pedido = DB::transaction(function () use (
-            $data,
-            $request,
-            $calculadora
-        ) {
-            $cliente = Cliente::whereKey($data['cliente_id'])
-                ->where('estado', true)
-                ->first();
-
-            if (! $cliente) {
-                throw ValidationException::withMessages([
-                    'cliente_id' => 'Selecciona un cliente activo.',
-                ]);
-            }
-
-            [$detalles, $total] = $this->prepararDetalles(
-                $data['detalles'],
-                $calculadora
-            );
-
-            $pedido = Pedido::create(array_merge(
-                $this->cabecera($data, $cliente),
-                [
-                    'usuario_id' => $request->user()->id,
-                    'estado' => 'registrado',
-                    'total' => $total,
-                ]
-            ));
-
-            $this->persistirDetalles($pedido, $detalles, $data['detalles']);
-
-            $pedido->historialEstados()->create([
-                'usuario_id' => $request->user()->id,
-                'estado_anterior' => null,
-                'estado_nuevo' => 'registrado',
-                'motivo' => 'Pedido registrado.',
-            ]);
-
-            return $pedido;
-        });
-
-        return redirect()
-            ->route('pedidos.show', $pedido)
-            ->with(
-                'success',
-                'Pedido N.º '.$pedido->numero.' registrado correctamente.'
-            );
+    public function store(Request $request): RedirectResponse
+    {
+        return app(PedidoUnidadesController::class)->guardar($request);
     }
 
     public function show(Pedido $pedido): View
@@ -147,21 +90,18 @@ class PedidoController extends Controller
                 ->orderBy('id'),
         ]);
 
-        return view('orders.show', compact('pedido'));
+        $versionesPedido = app(GestionarPedidoUnidades::class)->historial($pedido);
+        $cambiosOriginales = app(GestionarPedidoUnidades::class)->cambiosOriginales($pedido);
+        $fotosUnidades = app(GestionarPedidoUnidades::class)->fotografiasActuales(collect([$pedido]));
+
+        return view('orders.show', compact('pedido', 'versionesPedido', 'fotosUnidades', 'cambiosOriginales'));
     }
 
     public function edit(Pedido $pedido): View
     {
-        abort_unless(
-            in_array(
-                $pedido->estado,
-                ['registrado', 'observado'],
-                true
-            ),
-            403,
-            'Solo pueden editarse pedidos registrados u observados.'
-        );
-
+        if ($pedido->modelo_comercial === 'unidades') {
+            return app(PedidoUnidadesController::class)->formulario($pedido);
+        }
         $pedido->load('detalles.presentacion');
 
         return view(
@@ -175,53 +115,12 @@ class PedidoController extends Controller
 
     public function update(
         Request $request,
-        Pedido $pedido,
-        CalculadoraPedido $calculadora
+        Pedido $pedido
     ): RedirectResponse {
-        $data = $this->validarPedido($request);
-
-        DB::transaction(function () use (
-            $pedido,
-            $data,
-            $calculadora
-        ) {
-            $pedido = Pedido::whereKey($pedido->id)
-                ->lockForUpdate()
-                ->firstOrFail();
-
-            if (! in_array(
-                $pedido->estado,
-                ['registrado', 'observado'],
-                true
-            )) {
-                throw ValidationException::withMessages([
-                    'pedido' => 'Ya no se puede editar un pedido procesado.',
-                ]);
-            }
-
-            $cliente = Cliente::whereKey($data['cliente_id'])
-                ->where('estado', true)
-                ->first();
-
-            if (! $cliente) {
-                throw ValidationException::withMessages([
-                    'cliente_id' => 'Selecciona un cliente activo.',
-                ]);
-            }
-
-            [$detalles, $total] = $this->prepararDetalles(
-                $data['detalles'],
-                $calculadora,
-                $pedido
-            );
-
-            $pedido->update(array_merge(
-                $this->cabecera($data, $cliente),
-                ['total' => $total]
-            ));
-
-            $this->persistirDetalles($pedido, $detalles, $data['detalles'], true);
-        });
+        if ($pedido->modelo_comercial === 'unidades') {
+            return app(PedidoUnidadesController::class)->guardar($request, $pedido);
+        }
+        app(AjustarPedidoHistorico::class)->guardar($pedido, $request->all(), $request->user());
 
         return redirect()
             ->route('pedidos.show', $pedido)
@@ -352,313 +251,10 @@ class PedidoController extends Controller
         );
     }
 
-    private function validarPedido(Request $request): array
-    {
-        $hoy = CarbonImmutable::today('America/Lima');
-        $datos = $request->validate([
-            'cliente_id' => [
-                'required',
-                'integer',
-                'exists:clientes,id',
-            ],
-            'fecha_pedido' => [
-                'required',
-                'date_format:Y-m-d',
-                'after_or_equal:'.$hoy->subDays(30)->toDateString(),
-                'before_or_equal:'.$hoy->toDateString(),
-            ],
-            'fecha_entrega' => [
-                'required',
-                'date_format:Y-m-d',
-                'after_or_equal:fecha_pedido',
-            ],
-            'condicion_pago' => [
-                'required',
-                Rule::in(['contado', 'credito']),
-            ],
-            'observaciones' => [
-                'nullable',
-                'string',
-                'max:2000',
-            ],
-            'detalles' => [
-                'required',
-                'array',
-                'min:1',
-                'max:18',
-            ],
-            'detalles.*.tipo_linea' => ['sometimes', 'in:normal,surtido'],
-            'detalles.*.formato_surtido_id' => ['nullable', 'integer'],
-            'detalles.*.id' => ['nullable', 'integer'],
-            'detalles.*.paquetes_json' => ['nullable', 'string', 'max:3000000'],
-            'detalles.*.presentacion_producto_id' => [
-                'required_unless:detalles.*.tipo_linea,surtido',
-                'nullable',
-                'integer',
-                'exists:presentaciones_producto,id',
-            ],
-            'detalles.*.modalidad' => [
-                'required',
-                Rule::in(['unidad', 'empaque']),
-            ],
-            'detalles.*.cantidad' => [
-                'required',
-                'integer',
-                'min:1',
-                'max:10000',
-            ],
-            'detalles.*.unidades_por_empaque' => [
-                'exclude_unless:detalles.*.modalidad,empaque',
-                'nullable', 'integer', 'min:2', 'max:1000',
-            ],
-        ], [
-            'detalles.*.unidades_por_empaque.integer' => 'Las unidades por empaque deben ser un número entero entre 2 y 1000.',
-            'detalles.*.unidades_por_empaque.min' => 'El empaque debe contener entre 2 y 1000 unidades.',
-            'detalles.*.unidades_por_empaque.max' => 'El empaque debe contener entre 2 y 1000 unidades.',
-            'detalles.max' => 'La nota física admite hasta 18 líneas de productos por pedido.',
-            'fecha_entrega.after_or_equal' => 'La fecha de entrega no puede ser anterior a la fecha del pedido.',
-        ]);
-
-        $datos['detalles'] = array_values($datos['detalles']);
-        $limiteEntrega = CarbonImmutable::parse($datos['fecha_pedido'], 'America/Lima')->addDays(90);
-        if (CarbonImmutable::parse($datos['fecha_entrega'], 'America/Lima')->greaterThan($limiteEntrega)) {
-            throw ValidationException::withMessages([
-                'fecha_entrega' => 'La fecha de entrega no puede superar los 90 días desde la fecha del pedido.',
-            ]);
-        }
-
-        return $datos;
-    }
-
-    private function prepararDetalles(
-        array $filas,
-        CalculadoraPedido $calculadora,
-        ?Pedido $pedido = null
-    ): array {
-        $presentaciones = PresentacionProducto::with([
-            'producto',
-            'variante',
-        ])
-            ->whereIn(
-                'id',
-                array_column($filas, 'presentacion_producto_id')
-            )
-            ->get()
-            ->keyBy('id');
-
-        $detalles = [];
-        $combinaciones = [];
-        $totalCentimos = 0;
-
-        foreach ($filas as $i => $fila) {
-            if (($fila['tipo_linea'] ?? 'normal') === 'surtido') {
-                $actual = $pedido?->detalles->firstWhere('id', (int) ($fila['id'] ?? 0));
-                $linea = app(GestionarSurtidos::class)->prepararLinea($fila, request()->user(), $actual);
-                $clave = 'surtido|'.$linea['formato_surtido_id'].'|'.$linea['unidades_por_empaque'];
-                if (isset($combinaciones[$clave])) {
-                    throw ValidationException::withMessages(['detalles' => 'Agrupa los paquetes del mismo formato y tamaño en una línea, conservando sus composiciones individuales.']);
-                }
-                $combinaciones[$clave] = true;
-                $detalles[] = $linea;
-                $totalCentimos += (int) round((float) $linea['importe'] * 100);
-
-                continue;
-            }
-            $presentacion = $presentaciones->get(
-                (int) $fila['presentacion_producto_id']
-            );
-
-            if (
-                ! $presentacion ||
-                ! $presentacion->estado ||
-                ! $presentacion->producto?->estado ||
-                (
-                    $presentacion->variante &&
-                    ! $presentacion->variante->estado
-                )
-            ) {
-                throw ValidationException::withMessages([
-                    "detalles.{$i}.presentacion_producto_id" => 'Esta presentación está inactiva.',
-                ]);
-            }
-
-            $empaque = $fila['modalidad'] === 'empaque';
-            $tamanoEmpaque = $empaque ? ($fila['unidades_por_empaque'] ?? $presentacion->unidades_por_empaque) : null;
-
-            if ($empaque && (filter_var($tamanoEmpaque, FILTER_VALIDATE_INT) === false || $tamanoEmpaque < 2 || $tamanoEmpaque > 1000)) {
-                throw ValidationException::withMessages([
-                    "detalles.{$i}.unidades_por_empaque" => 'El empaque debe contener entre 2 y 1000 unidades. Indica un tamaño válido.',
-                ]);
-            }
-
-            $clave = $presentacion->id.'|'.$fila['modalidad'].'|'.($empaque ? (int) $tamanoEmpaque : '');
-            if (isset($combinaciones[$clave])) {
-                throw ValidationException::withMessages([
-                    "detalles.{$i}.presentacion_producto_id" => 'Esta presentación, modalidad y tamaño de empaque ya están registrados en otra fila.',
-                ]);
-            }
-            $combinaciones[$clave] = true;
-
-            if (
-                (
-                    $empaque &&
-                    (
-                        ! $presentacion->venta_por_empaque
-                    )
-                ) ||
-                (
-                    ! $empaque &&
-                    ! $presentacion->venta_por_unidad
-                )
-            ) {
-                throw ValidationException::withMessages([
-                    "detalles.{$i}.modalidad" => 'Forma de venta no habilitada.',
-                ]);
-            }
-
-            $precio = $empaque
-                ? $presentacion->precio_empaque
-                : $presentacion->precio_unitario;
-
-            if ($empaque) {
-                if ($presentacion->precio_unitario === null) {
-                    throw ValidationException::withMessages([
-                        "detalles.{$i}.modalidad" => 'Registra el precio unitario de la presentación para calcular el precio del empaque.',
-                    ]);
-                }
-                if ((int) $tamanoEmpaque !== (int) $presentacion->unidades_por_empaque) {
-                    $precio = $calculadora->calcularImporte((int) $tamanoEmpaque, $presentacion->precio_unitario);
-                }
-            }
-
-            if ($precio === null) {
-                throw ValidationException::withMessages([
-                    "detalles.{$i}.modalidad" => 'Debes registrar primero el precio en el catálogo.',
-                ]);
-            }
-
-            $importe = $calculadora->calcularImporte(
-                (int) $fila['cantidad'],
-                (string) $precio
-            );
-
-            if ((float) $importe > 999999.99) {
-                throw ValidationException::withMessages([
-                    "detalles.{$i}.cantidad" => 'El importe de una línea no puede superar S/ 999 999,99.',
-                ]);
-            }
-
-            $totalCentimos += (int) round(
-                (float) $importe * 100
-            );
-
-            $descripcion = $presentacion->producto->nombre;
-
-            if ($presentacion->variante) {
-                $descripcion .= ' · '.$presentacion->variante->valor;
-            }
-
-            $descripcion .= ' · '
-                .$presentacion->contenido.' '
-                .$presentacion->unidad_medida;
-
-            if ($empaque) {
-                $descripcion .= ' · '
-                    .($presentacion->tipo_empaque ?: 'Empaque')
-                    .' de '.$tamanoEmpaque;
-            }
-
-            $detalles[] = [
-                'presentacion_producto_id' => $presentacion->id,
-                'descripcion_producto' => mb_substr(
-                    $descripcion,
-                    0,
-                    255
-                ),
-                'codigo_sku' => $presentacion->codigo_sku,
-                'modalidad' => $fila['modalidad'],
-                'unidades_por_empaque' => $empaque ? (int) $tamanoEmpaque : null,
-                'cantidad' => $fila['cantidad'],
-                'precio_unitario' => $precio,
-                'importe' => $importe,
-            ];
-        }
-
-        return [
-            $detalles,
-            number_format($totalCentimos / 100, 2, '.', ''),
-        ];
-    }
-
-    private function cabecera(
-        array $data,
-        Cliente $cliente
-    ): array {
-        return [
-            'cliente_id' => $cliente->id,
-            'fecha_pedido' => $data['fecha_pedido'],
-            'fecha_entrega' => $data['fecha_entrega'],
-            'condicion_pago' => $data['condicion_pago'],
-            'observaciones' => $data['observaciones'] ?? null,
-            'cliente_nombre' => $cliente->nombre,
-            'cliente_documento' => $cliente->documento,
-            'cliente_telefono' => $cliente->telefono,
-            'cliente_mercado' => $cliente->mercado,
-            'cliente_puesto_referencia' => $cliente->puesto_referencia,
-            'cliente_distrito' => $cliente->distrito,
-            'cliente_direccion' => $cliente->direccion,
-        ];
-    }
-
-    private function persistirDetalles(Pedido $pedido, array $detalles, array $filas, bool $editar = false): void
-    {
-        $anteriores = $editar ? $pedido->detalles->keyBy('id') : collect();
-        $haySurtidos = $anteriores->contains(fn ($d): bool => $d->tipo_linea === 'surtido') || collect($detalles)->contains(fn (array $d): bool => ($d['tipo_linea'] ?? 'normal') === 'surtido');
-        if (! $haySurtidos) {
-            if ($editar) {
-                $pedido->detalles()->delete();
-            }
-            $pedido->detalles()->createMany($detalles);
-
-            return;
-        }
-        $servicio = app(GestionarSurtidos::class);
-        $servicio->autorizar(request()->user());
-        $vistos = [];
-        foreach ($detalles as $i => $datos) {
-            $id = (int) ($filas[$i]['id'] ?? 0);
-            $actual = $id > 0 ? $anteriores->get($id) : null;
-            if ($id > 0 && (! $actual || isset($vistos[$id]))) {
-                throw ValidationException::withMessages(['detalles' => 'Una línea está repetida o no pertenece a este pedido.']);
-            }
-            $mismoTipo = $actual && ($actual->tipo_linea ?? 'normal') === ($datos['tipo_linea'] ?? 'normal') && $actual->formato_surtido_id === ($datos['formato_surtido_id'] ?? null);
-            if ($mismoTipo) {
-                $actual->update($datos);
-                $detalle = $actual;
-                $vistos[$id] = true;
-            } else {
-                $detalle = $pedido->detalles()->create($datos);
-            }
-            if ($detalle->tipo_linea === 'surtido') {
-                $servicio->guardar($detalle, $servicio->leerPaquetes($filas[$i]['paquetes_json'] ?? null), request()->user(), $editar ? 'Composición actualizada en la edición comercial del pedido.' : 'Composición seleccionada durante el registro del pedido.');
-            }
-        }
-        foreach ($anteriores as $id => $anterior) {
-            if (! isset($vistos[$id])) {
-                if ($anterior->tipo_linea === 'surtido') {
-                    $anterior->update(['retirado_en' => now()]);
-                    DB::table('pedido_paquetes_surtidos')->where('pedido_detalle_id', $id)->update(['activo' => false]);
-                    RegistroAuditoria::registrar('linea_surtida_retirada', 'pedido_detalle', $id, ['pedido_id' => $pedido->id, 'motivo' => 'Retirada durante edición comercial; se conserva el historial.']);
-                } else {
-                    $anterior->delete();
-                }
-            }
-        }
-    }
-
     private function opcionesFormulario(): array
     {
         $clientes = Cliente::where('estado', true)
+            ->orWhere('id', request()->route('pedido')?->cliente_id)
             ->orderBy('nombre')
             ->get();
 
@@ -687,6 +283,7 @@ class PedidoController extends Controller
                         fn ($q) => $q->where('estado', true)
                     );
             })
+            ->orWhereIn('id', request()->route('pedido')?->detalles->pluck('presentacion_producto_id')->filter()->all() ?? [])
             ->orderBy('codigo_sku')
             ->get()
             ->map(function ($p) {
@@ -710,8 +307,6 @@ class PedidoController extends Controller
             ->values()
             ->all();
 
-        $formatosSurtidos = request()->user()?->role?->tienePermiso('pedidos.surtidos.componer') ? app(GestionarSurtidos::class)->formatos(request()->route('pedido') instanceof Pedido ? request()->route('pedido')->detalles->pluck('formato_surtido_id')->filter()->all() : []) : [];
-
-        return compact('clientes', 'presentaciones', 'formatosSurtidos');
+        return compact('clientes', 'presentaciones');
     }
 }

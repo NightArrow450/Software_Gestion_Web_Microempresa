@@ -2,12 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Models\PedidoDetalle;
 use App\Models\Permiso;
 use App\Services\ActividadIndicadores;
+use App\Services\ControlEntregaPedido;
 use App\Services\CorregirEnvasado;
 use App\Services\FilasIndicadores;
 use App\Services\FiltrosIndicadores;
-use App\Services\GestionarSurtidos;
 use App\Services\RegistrarEnvasado;
 use App\Services\ResumenIndicadores;
 use Carbon\CarbonImmutable;
@@ -15,29 +16,31 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use PHPUnit\Framework\Attributes\DataProvider;
-use Tests\SurtidosEscenario;
 use Tests\TestCase;
+use Tests\VentaUnidadesEscenario;
 
 class IndicadoresOperacionesTest extends TestCase
 {
-    use RefreshDatabase, SurtidosEscenario;
+    use RefreshDatabase, VentaUnidadesEscenario;
 
-    private function escenario(bool $surtido = false): array
+    private function escenario(bool $agrupado = false): array
     {
         $this->travelTo(CarbonImmutable::parse('2026-10-20 10:00:00', 'America/Lima'));
-        $e = $this->escenarioSurtido();
+        $e = $this->escenarioUnidades();
         foreach (['cumplimiento.incidencias.revisar', 'cumplimiento.incidencias.resolver'] as $n) {
             $e['usuario']->role->permisos()->syncWithoutDetaching(Permiso::firstOrCreate(['nombre' => $n], ['descripcion' => $n])->id);
         }
-        $p = $this->pedidoEnvasado($e, $surtido ? 'confirmado' : 'listo_despacho');
-        $d = $p->detalles()->firstOrFail();
-        if ($surtido) {
-            $d->update(['tipo_linea' => 'surtido', 'formato_surtido_id' => $e['formato'], 'modalidad' => 'empaque', 'unidades_por_empaque' => 12, 'cantidad' => 2, 'precio_unitario' => 24, 'importe' => 48]);
-            app(GestionarSurtidos::class)->guardar($d, $this->paquetesSurtidos($e), $e['usuario'], 'Composición ficticia para validar reportes de entregas.');
-            $p->update(['total' => 48, 'estado' => 'listo_despacho']);
+        if ($agrupado) {
+            $p = $this->registrarUnidades($e);
+            $this->despacharUnidades($p, $e);
+            $fisica = collect(app(ControlEntregaPedido::class)->resumen($p->fresh())['lineas'])->firstWhere('presentacion_id', $e['skus'][0]->id);
+            $d = PedidoDetalle::findOrFail($fisica['id']);
+        } else {
+            $p = $this->pedidoEnvasado($e, 'listo_despacho');
+            $d = $p->detalles()->firstOrFail();
+            $this->post(route('cumplimiento.despachar', $p))->assertSessionHasNoErrors();
         }
-        $this->post(route('cumplimiento.despachar', $p))->assertSessionHasNoErrors();
-        $dc = $surtido ? DB::table('pedido_despacho_componentes')->orderBy('id')->first()->id : null;
+        $dc = null;
 
         return $e + ['pedido' => $p->fresh(), 'detalle' => $d->fresh(), 'componente' => $dc];
     }
@@ -127,7 +130,7 @@ class IndicadoresOperacionesTest extends TestCase
 
     public function test_historicos_entregados_sin_desglose_no_se_convierten_en_aceptados(): void
     {
-        $e = $this->escenarioSurtido();
+        $e = $this->escenarioUnidades();
         $this->pedidoEnvasado($e, 'entregado');
 
         $filas = $this->filas('situacion_entregas');

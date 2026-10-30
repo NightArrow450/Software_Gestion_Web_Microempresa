@@ -51,7 +51,7 @@ class RegistrarEnvasado
     {
         $datos = Validator::make($entrada, ['presentacion_producto_id' => ['required', 'integer', 'exists:presentaciones_producto,id'], 'configuracion_envasado_id' => ['required', 'integer', 'exists:configuraciones_envasado,id'], 'version_configuracion' => ['required', 'integer', 'min:0'], 'cantidad' => ['required', 'integer', 'min:1', 'max:1000000'], 'pedido_id' => ['nullable', 'integer', 'exists:pedidos,id'], 'observaciones' => ['nullable', 'string', 'max:1000']])->validate();
         $pedido = ! empty($datos['pedido_id']) ? Pedido::whereKey($datos['pedido_id'])->lockForUpdate()->firstOrFail() : null;
-        if ($pedido && (! in_array($pedido->estado, ['confirmado', 'en_preparacion'], true) || ! app(GestionarSurtidos::class)->lineasFisicas($pedido)->contains('presentacion_producto_id', (int) $datos['presentacion_producto_id']))) {
+        if ($pedido && (! in_array($pedido->estado, $pedido->modelo_comercial === 'unidades' ? ['confirmado', 'en_preparacion', 'despacho_parcial'] : ['confirmado', 'en_preparacion'], true) || ! app(LecturaPedido::class)->lineasFisicas($pedido)->contains('presentacion_producto_id', (int) $datos['presentacion_producto_id']))) {
             throw ValidationException::withMessages(['pedido_id' => 'El pedido debe estar confirmado o en preparación y contener la presentación seleccionada.']);
         }
         $presentacion = PresentacionProducto::with(['producto', 'variante'])->whereKey($datos['presentacion_producto_id'])->lockForUpdate()->firstOrFail();

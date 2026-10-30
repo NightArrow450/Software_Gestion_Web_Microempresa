@@ -36,6 +36,9 @@ class GestionarIncidenciaEntrega
                 }
                 DB::table('retorno_pedido_detalles')->where('id', $retorno->id)->update(['revisadas_aptas' => $retorno->revisadas_aptas + (int) $datos['aptas'], 'revisadas_danadas' => $retorno->revisadas_danadas + (int) $datos['danadas']]);
             } elseif ($accion === 'resolver') {
+                if ($actual->modelo_comercial === 'unidades' && app(AtenderPedidoUnidades::class)->pendientes($actual) > 0) {
+                    throw ValidationException::withMessages(['resolucion' => 'El pedido conserva unidades por atender o en espera. No se cierra su expediente como completado.']);
+                }
                 foreach ($resumen['lineas'] as $linea) {
                     if ($linea['pendientes'] !== 0 || $linea['por_retornar'] !== 0 || $linea['por_revisar'] !== 0 || $linea['por_aprobar'] !== 0) {
                         throw ValidationException::withMessages(['resolucion' => 'Quedan cantidades de entrega, retorno, revisión o aprobación pendientes.']);
