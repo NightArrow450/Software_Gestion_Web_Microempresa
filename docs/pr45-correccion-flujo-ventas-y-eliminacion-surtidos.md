@@ -112,3 +112,12 @@ Conservar las **agrupaciones opcionales** del pedido y todas las funciones del n
 5. Revisar CI y comprobaciones en entornos aislados. Pasar de borrador a listo y fusionar **solo a develop** después de aprobación técnica; **no tocar main**.
 
 **Estado de este documento:** especificación funcional y criterios de aceptación. No acredita por sí mismo que todas las correcciones estén implementadas ni aprobadas.
+
+## Avance verificado del 30/10/2026 — desacoplamiento de lecturas
+
+- Rama existente del PR #45, sin modificar el checkout que contiene los cambios locales de Selenium.
+- Línea base ejecutada: 663 pruebas Laravel, 4110 aserciones (128,399 s), SQLite en memoria.
+- Se extrae `LecturaPedido`: nombres de SKU, agregado de despachos por línea y proyección física normal compartida. La relación `Pedido::detalles()` comprueba su columna de retiro lógico, no la existencia de una tabla de surtidos.
+- Dos regresiones nuevas comprueban lecturas sin las seis tablas antiguas y la conservación completa de cuentas, autorizaciones, cantidades y movimientos. Suite posterior: 665 pruebas, 4122 aserciones (79,650 s).
+- La prueba de compatibilidad elimina tablas únicamente en SQLite en memoria; no se ha conectado ni escrito en la base local del proyecto.
+- **Pendiente:** sustituir los consumidores y escrituras antiguos restantes; retirar rutas e interfaz; adaptar indicadores; preparar y ensayar las migraciones y el saneamiento final. Este avance no acredita todavía el retiro completo ni autoriza marcar listo el PR.

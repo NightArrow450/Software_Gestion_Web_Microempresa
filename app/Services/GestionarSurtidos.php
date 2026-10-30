@@ -195,10 +195,7 @@ class GestionarSurtidos
      */
     public function precargarLectura(Collection $pedidos): array
     {
-        $nuevos = $pedidos->where('modelo_comercial', 'unidades')->pluck('id')->all();
-        $despachadas = $nuevos === [] ? [] : DB::table('pedido_despacho_lineas as l')->join('pedido_despachos as s', 's.id', '=', 'l.despacho_id')
-            ->whereIn('s.pedido_id', $nuevos)->groupBy('l.detalle_comercial_id')->select('l.detalle_comercial_id')
-            ->selectRaw('SUM(l.cantidad) cantidad')->pluck('cantidad', 'detalle_comercial_id')->map(fn ($n): int => (int) $n)->all();
+        $despachadas = app(LecturaPedido::class)->despachadas($pedidos);
         $ids = $pedidos->flatMap(fn (Pedido $pedido) => $pedido->detalles)
             ->where('tipo_linea', 'surtido')->pluck('id');
         if ($ids->isEmpty() || ! $this->disponible()) {
@@ -279,36 +276,16 @@ class GestionarSurtidos
     public function lineasFisicas(Pedido $pedido, ?array $lectura = null): Collection
     {
         $pedido->loadMissing('detalles');
-        if ($pedido->modelo_comercial === 'unidades') {
-            $salidas = $lectura['despachadas'] ?? app(AtenderPedidoUnidades::class)->despachadas($pedido->id)->all();
-
-            return $pedido->detalles->map(function (PedidoDetalle $detalle) use ($salidas): PedidoDetalle {
-                $restante = clone $detalle;
-                $restante->cantidad = max(0, (int) $detalle->cantidad - (int) ($salidas[$detalle->id] ?? 0));
-
-                return $restante;
-            })->filter(fn (PedidoDetalle $detalle): bool => $detalle->cantidad > 0)->values();
-        }
-        $historicas = $pedido->detalles->map(function (PedidoDetalle $detalle): PedidoDetalle {
-            if ($detalle->cantidad_fisica_ajustada === null) {
-                return $detalle;
-            }
-            $proyeccion = clone $detalle;
-            $proyeccion->modalidad = 'unidad';
-            $proyeccion->cantidad = $detalle->cantidad_fisica_ajustada;
-            $proyeccion->descripcion_producto .= ' · Ajuste físico explícito';
-
-            return $proyeccion;
-        });
+        $historicas = app(LecturaPedido::class)->lineasNormales($pedido, $lectura['despachadas'] ?? null);
         if (! $pedido->detalles->contains('tipo_linea', 'surtido')) {
             return $historicas;
         }
         $pedido->loadMissing('detalles.presentacion.producto', 'detalles.presentacion.variante');
         $salida = collect();
         $componentes = [];
-        foreach ($historicas as $d) {
+        foreach ($pedido->detalles as $d) {
             if ($d->tipo_linea !== 'surtido') {
-                $salida->push($d);
+                $salida->push($historicas->firstWhere('id', $d->id) ?? $d);
 
                 continue;
             }
