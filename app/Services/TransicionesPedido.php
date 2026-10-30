@@ -52,7 +52,7 @@ class TransicionesPedido
                 if ($actual->modelo_comercial === 'unidades') {
                     app(AtenderPedidoUnidades::class)->validarCierre($actual);
                 }
-                app(GestionarSurtidos::class)->validarCierre($actual);
+                app(LecturaPedido::class)->validarCierre($actual);
             }
             if ($estadoNuevo === 'despachado') {
                 if ($actual->modelo_comercial === 'unidades') {

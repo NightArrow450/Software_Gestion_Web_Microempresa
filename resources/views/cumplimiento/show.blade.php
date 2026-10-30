@@ -85,7 +85,6 @@
     @include('cumplimiento.partials.incidencia-resumen')
     @include('cumplimiento.partials.incidencia-acciones')
 @endif
-@include('orders.partials.composiciones', ['soloLectura' => true])
 @include('orders.partials.versiones')
 @endsection
 

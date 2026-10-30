@@ -1,9 +1,9 @@
 @php
     $editando = isset($pedido);
     $filasPrevias = old('detalles', $editando
-        ? $pedido->detalles->map(fn($d) => ['id' => $d->id, 'tipo_linea' => $d->tipo_linea ?? 'normal', 'formato_surtido_id' => $d->formato_surtido_id, 'paquetes_json' => json_encode(app(\App\Services\GestionarSurtidos::class)->paquetes($d)), 'precio_unitario' => $d->precio_unitario, 'importe' => $d->importe, 'presentacion_producto_id' => $d->presentacion_producto_id, 'modalidad' => $d->modalidad, 'cantidad' => $d->cantidad, 'unidades_por_empaque' => $d->unidades_por_empaque ?? $d->presentacion?->unidades_por_empaque])->all()
+        ? $pedido->detalles->where('tipo_linea', 'normal')->map(fn($d) => ['id' => $d->id, 'tipo_linea' => $d->tipo_linea ?? 'normal', 'precio_unitario' => $d->precio_unitario, 'importe' => $d->importe, 'presentacion_producto_id' => $d->presentacion_producto_id, 'modalidad' => $d->modalidad, 'cantidad' => $d->cantidad, 'unidades_por_empaque' => $d->unidades_por_empaque ?? $d->presentacion?->unidades_por_empaque])->all()
         : [['presentacion_producto_id'=>'', 'modalidad'=>'unidad','cantidad'=>1]]);
-    $filasPrevias = array_values($filasPrevias);
+    $filasPrevias = array_values(array_filter($filasPrevias, fn($fila) => is_array($fila) && ($fila['tipo_linea'] ?? 'normal') === 'normal'));
     foreach ($filasPrevias as &$filaHistoricaPrevia) {
         $fuenteHistorica = $pedido->detalles->firstWhere('id', (int) ($filaHistoricaPrevia['id'] ?? 0));
         if ($fuenteHistorica) {
@@ -19,14 +19,20 @@
 <input type="hidden" name="_version" value="{{ $pedido->version }}">
 <input type="hidden" name="_updated_at" value="{{ $pedido->getRawOriginal('updated_at') }}">
 @endif @if($editando) @method('PUT') @endif
+@foreach($pedido->detalles->where('tipo_linea', '!=', 'normal') as $anteriorSinSku)
+<div class="form-section" role="note"><strong>{{ $anteriorSinSku->descripcion_producto }}</strong><p>Referencia anterior sin SKU físico: se conserva sin convertir precios ni habilitar su modalidad retirada.</p>
+@foreach(['id','tipo_linea','presentacion_producto_id','modalidad','cantidad','unidades_por_empaque'] as $campo)
+<input type="hidden" name="detalles[anterior_{{ $anteriorSinSku->id }}][{{ $campo }}]" value="{{ $anteriorSinSku->$campo }}">
+@endforeach</div>
+@endforeach
 <section class="form-section">
     <h2>Ajuste de pedido histórico</h2>
     <p>Se conservan la modalidad, el tamaño y el precio pactados. El importe revisado es una decisión comercial explícita; no modifica pagos ni movimientos anteriores. Las unidades físicas revisadas solo se admiten antes del despacho y junto con un importe revisado.</p>
     <label for="motivo-historico">Motivo del ajuste *</label><textarea id="motivo-historico" name="motivo" class="form-control" required minlength="10" maxlength="1000">{{ old('motivo') }}</textarea>
-    @foreach($pedido->detalles as $historica)
+    @foreach($pedido->detalles->where('tipo_linea', 'normal') as $historica)
     <details><summary>Ajuste explícito: {{ $historica->descripcion_producto }} · {{ $historica->descripcionModalidad() }} · importe vigente S/ {{ $historica->importe }}</summary>
         <label for="importe-historico-{{ $historica->id }}">Importe total revisado de esta línea (opcional)</label><input class="form-control" id="importe-historico-{{ $historica->id }}" name="ajustes_historicos[{{ $historica->id }}][importe_revisado]" type="number" min="0" max="999999.99" step="0.01" value="{{ old('ajustes_historicos.'.$historica->id.'.importe_revisado') }}">
-        @if($historica->tipo_linea !== 'surtido')<label for="fisica-historica-{{ $historica->id }}">Unidades físicas revisadas (opcional; no convierte el precio)</label><input class="form-control" id="fisica-historica-{{ $historica->id }}" name="ajustes_historicos[{{ $historica->id }}][cantidad_fisica_revisada]" type="number" min="1" step="1" value="{{ old('ajustes_historicos.'.$historica->id.'.cantidad_fisica_revisada') }}">@endif
+        @if($historica->presentacion_producto_id !== null)<label for="fisica-historica-{{ $historica->id }}">Unidades físicas revisadas (opcional; no convierte el precio)</label><input class="form-control" id="fisica-historica-{{ $historica->id }}" name="ajustes_historicos[{{ $historica->id }}][cantidad_fisica_revisada]" type="number" min="1" step="1" value="{{ old('ajustes_historicos.'.$historica->id.'.cantidad_fisica_revisada') }}">@endif
     </details>
     @endforeach
 </section>
@@ -59,16 +65,14 @@
     <div class="page-heading" style="margin-bottom:14px"><div><h2 class="form-section-title" style="margin-bottom:4px">Productos solicitados</h2>
         <div class="s2-note">En líneas existentes se conserva el precio histórico. No cambies su modalidad ni tamaño. Las adiciones se venden por unidades. El servidor valida los ajustes explícitos.</div></div>
         <button type="button" class="btn btn-secondary" id="agregar-fila"><span class="material-symbols-outlined">search</span> Buscar producto</button></div>
-    @if(count($presentaciones) === 0 && count($formatosSurtidos ?? []) === 0)<div class="s2-error">No existen presentaciones activas. Crea presentaciones y registra precios en Catálogo de Productos antes de agregar un pedido.</div>@endif
+    @if(count($presentaciones) === 0)<div class="s2-error">No existen presentaciones activas. Crea presentaciones y registra precios en Catálogo de Productos antes de agregar un pedido.</div>@endif
     <div class="form-group s2-busqueda" id="busqueda-productos">
         <label class="form-label" for="buscar-presentacion">Buscar producto por nombre o SKU</label>
         <input class="form-control" type="search" id="buscar-presentacion" placeholder="Ej.: Quita, lejía o código SKU" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="resultados-presentaciones">
         <div class="s2-sugerencias" id="resultados-presentaciones" role="listbox" hidden></div>
         <p class="s2-note" id="aviso-buscador" aria-live="polite">Escribe para buscar. Selecciona la presentación y modalidad de venta.</p>
     </div>
-    @if(count($formatosSurtidos ?? []) > 0)
-    <div class="form-group"><h3>Composiciones históricas</h3><p class="s2-note">Las líneas surtidas existentes conservan sus paquetes y tarifas. Puedes revisar su composición antes del despacho; las nuevas adiciones se registran por unidades físicas.</p></div>
-    @endif
+
     <div id="filas-pedido"></div>
     <template id="plantilla-fila">
         <div class="s2-product-row">
@@ -89,12 +93,11 @@
     <div class="s2-resumen">Total del pedido: <span id="s2-total">S/ 0.00</span></div>
     <p class="s2-note">El servidor recalcula todos los importes al guardar; no depende de los valores mostrados en el navegador.</p>
 </section>
-<div class="form-actions"><a class="btn btn-secondary" href="{{ route('pedidos.index') }}">Cancelar</a><button class="btn btn-primary" type="submit" @disabled(count($presentaciones)===0 && count($formatosSurtidos ?? [])===0)><span class="material-symbols-outlined">save</span> {{ $editando ? 'Guardar cambios' : 'Registrar pedido' }}</button></div>
+<div class="form-actions"><a class="btn btn-secondary" href="{{ route('pedidos.index') }}">Cancelar</a><button class="btn btn-primary" type="submit" @disabled(count($presentaciones)===0)><span class="material-symbols-outlined">save</span> {{ $editando ? 'Guardar cambios' : 'Registrar pedido' }}</button></div>
 </form>
 @push('scripts')
 <script>
 window.configuracionSprint2 = {
-    formatosSurtidos: {{ Illuminate\Support\Js::from($formatosSurtidos ?? []) }},
     presentaciones: {{ Illuminate\Support\Js::from($presentaciones) }},
     clientes: {{ Illuminate\Support\Js::from($clientes->map(fn($cliente) => [
         'id' => $cliente->id,
@@ -108,9 +111,6 @@ window.configuracionSprint2 = {
 };
 </script>
 <script src="{{ asset('js/pedidos-busqueda-utils.js') }}"></script>
-<script src="{{ asset('js/surtidos-utils.js') }}"></script>
-<script src="{{ asset('js/surtidos.js') }}"></script>
 <script src="{{ asset('js/sprint2-orders.js') }}"></script>
 @endpush
 
-@push('styles')<link rel="stylesheet" href="{{ asset('css/surtidos.css') }}">@endpush

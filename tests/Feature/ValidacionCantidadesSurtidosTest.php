@@ -3,8 +3,9 @@
 namespace Tests\Feature;
 
 use App\Services\CantidadesEnvasado;
-use App\Services\GestionarSurtidos;
+use App\Services\LeerAgrupaciones;
 use Illuminate\Validation\ValidationException;
+use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
@@ -35,10 +36,10 @@ class ValidacionCantidadesSurtidosTest extends TestCase
     public function test_estructura_de_paquetes_invalida_no_se_interpreta_como_composicion(mixed $valor): void
     {
         try {
-            (new GestionarSurtidos)->leerPaquetes($valor);
+            LeerAgrupaciones::leer($valor);
             $this->fail('Debió rechazar la estructura de composición.');
-        } catch (ValidationException $error) {
-            $this->assertArrayHasKey('paquetes', $error->errors());
+        } catch (InvalidArgumentException $error) {
+            $this->assertNotSame('', $error->getMessage());
         }
     }
 }

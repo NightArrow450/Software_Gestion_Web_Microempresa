@@ -56,6 +56,9 @@ class AjustarPedidoHistorico
                 if ($actual) {
                     $vistos[$actual->id] = true;
                     $cantidadAnterior = (int) $actual->cantidad;
+                    if ($actual->presentacion_producto_id === null && ($cantidad !== $cantidadAnterior || isset($entrada['detalles'][$i]['paquetes_json']))) {
+                        throw ValidationException::withMessages(['detalles' => 'La línea anterior sin SKU queda solo como referencia histórica. No se modifica su composición ni se convierte el precio.']);
+                    }
                     if ($actual->modalidad !== $fila['modalidad'] || (int) $actual->presentacion_producto_id !== (int) ($fila['presentacion_producto_id'] ?? 0)
                         || ($actual->modalidad === 'empaque' && isset($entrada['detalles'][$i]['unidades_por_empaque']) && (int) $entrada['detalles'][$i]['unidades_por_empaque'] !== (int) $actual->unidadesPorEmpaqueEfectivas())) {
                         throw ValidationException::withMessages(['detalles' => 'La modalidad, el SKU y el tamaño históricos se conservan. Retira la línea pendiente y añade otra, o registra un ajuste físico e importe revisado.']);
@@ -66,9 +69,9 @@ class AjustarPedidoHistorico
                     if ($fisico && ($cantidad !== $cantidadAnterior || $unidadesRevisadas !== null)) {
                         throw ValidationException::withMessages(['detalles' => 'Existen hechos físicos: registra una incidencia o retorno sin cambiar las cantidades que salieron.']);
                     }
-                    if (($unidadesRevisadas !== null && ($actual->tipo_linea === 'surtido' || $importeRevisado === null))
+                    if (($unidadesRevisadas !== null && ($actual->presentacion_producto_id === null || $importeRevisado === null))
                         || ($cantidad !== $cantidadAnterior && $actual->cantidad_fisica_ajustada !== null && $importeRevisado === null)) {
-                        throw ValidationException::withMessages(['ajustes_historicos' => 'El ajuste físico requiere importe revisado explícito; los surtidos conservan sus componentes individuales.']);
+                        throw ValidationException::withMessages(['ajustes_historicos' => 'El ajuste físico requiere un SKU verificable e importe revisado explícito; no se convierten tarifas anteriores.']);
                     }
                     if ($cantidad > 0 && $cantidad !== $cantidadAnterior && $importeRevisado === null
                         && app(CalculadoraPedido::class)->calcularImporte($cantidadAnterior, $actual->precio_unitario) !== $actual->importe) {
@@ -88,25 +91,6 @@ class AjustarPedidoHistorico
                     $cambio = $cambio || $cantidad !== $cantidadAnterior || (string) $importe !== (string) $actual->importe || $unidadesRevisadas !== null;
                     $actual->update(['cantidad' => $cantidad, 'importe' => $importe, 'cantidad_fisica_ajustada' => $unidadesRevisadas ?? $actual->cantidad_fisica_ajustada,
                         'retirado_en' => $cantidad === 0 ? now() : null]);
-                    if ($actual->tipo_linea === 'surtido') {
-                        $paquetes = app(GestionarSurtidos::class);
-                        $enviados = $entrada['detalles'][$i]['paquetes_json'] ?? null;
-                        if ($cantidad === 0) {
-                            DB::table('pedido_paquetes_surtidos')->where('pedido_detalle_id', $actual->id)->update(['activo' => false]);
-                        } elseif ($enviados !== null) {
-                            $normalizar = static fn (array $lista): array => array_map(static fn (array $p): array => ['estado' => $p['estado'], 'componentes' => collect($p['componentes'])->map(fn ($c): array => ['presentacion_producto_id' => (int) $c['presentacion_producto_id'], 'cantidad' => (int) $c['cantidad']])->sortBy('presentacion_producto_id')->values()->all()], $lista);
-                            if ($normalizar($paquetes->leerPaquetes($enviados)) !== $normalizar($paquetes->paquetes($actual)) || $cantidad !== $cantidadAnterior) {
-                                if ($fisico) {
-                                    throw ValidationException::withMessages(['detalles' => 'Las composiciones despachadas se rectifican mediante incidencias, no en la edición comercial.']);
-                                }
-                                if ($pedido->estado === 'listo_despacho') {
-                                    $pedido->update(['estado' => 'en_preparacion']);
-                                }
-                                $paquetes->guardar($actual, $paquetes->leerPaquetes($enviados), $usuario, $datos['motivo']);
-                                $cambio = true;
-                            }
-                        }
-                    }
                 } else {
                     if ($fisico || $fila['modalidad'] !== 'unidad' || $cantidad < 1 || ($entrada['detalles'][$i]['tipo_linea'] ?? 'normal') !== 'normal') {
                         throw ValidationException::withMessages(['detalles' => 'Solo se añaden SKU por unidades a históricos pendientes; no se crean nuevas líneas comerciales por empaque.']);
@@ -120,7 +104,7 @@ class AjustarPedidoHistorico
                         throw ValidationException::withMessages(['detalles' => 'El importe supera S/ 999 999,99.']);
                     }
                     $pedido->detalles()->create(['presentacion_producto_id' => $sku->id, 'tipo_linea' => 'normal', 'modalidad' => 'unidad', 'cantidad' => $cantidad,
-                        'codigo_sku' => $sku->codigo_sku, 'descripcion_producto' => app(GestionarSurtidos::class)->nombre($sku), 'precio_unitario' => $sku->precio_unitario, 'importe' => $importe]);
+                        'codigo_sku' => $sku->codigo_sku, 'descripcion_producto' => app(LecturaPedido::class)->nombre($sku), 'precio_unitario' => $sku->precio_unitario, 'importe' => $importe]);
                     $cambio = true;
                 }
                 if ($cantidad > 0) {
@@ -133,7 +117,9 @@ class AjustarPedidoHistorico
                         throw ValidationException::withMessages(['detalles' => 'No se retiran líneas con hechos físicos registrados.']);
                     }
                     $anterior->update(['retirado_en' => now()]);
-                    DB::table('pedido_paquetes_surtidos')->where('pedido_detalle_id', $id)->update(['activo' => false]);
+                    if ($anterior->presentacion_producto_id === null) {
+                        throw ValidationException::withMessages(['detalles' => 'No se elimina una línea histórica sin SKU durante la edición.']);
+                    }
                     $cambio = true;
                 }
             }
@@ -141,6 +127,7 @@ class AjustarPedidoHistorico
             if ($totalRevisado < 0) {
                 throw ValidationException::withMessages(['ajustes_historicos' => 'El ajuste dejaría un total negativo. Revisa la diferencia económica histórica.']);
             }
+            $pedido->setAttribute('version', DB::raw('version + 1'));
             $pedido->update(['observaciones' => $datos['observaciones'] ?? $pedido->observaciones, 'total' => number_format($totalRevisado / 100, 2, '.', '')]);
             if ($cambio && $pedido->estado === 'listo_despacho' && ! $fisico) {
                 $pedido->update(['estado' => 'en_preparacion']);
@@ -154,7 +141,9 @@ class AjustarPedidoHistorico
 
     private function fotografiar(Pedido $pedido, User $usuario, int $numero, string $motivo): void
     {
-        $lineas = $pedido->detalles()->get()->map(fn ($d): array => $d->getAttributes() + ['paquetes' => $d->tipo_linea === 'surtido' ? app(GestionarSurtidos::class)->paquetes($d) : []])->all();
+        $detalles = $pedido->detalles()->get();
+        $referencias = DB::table('pedido_referencias_fisicas')->whereIn('pedido_detalle_id', $detalles->modelKeys())->get()->groupBy('pedido_detalle_id');
+        $lineas = $detalles->map(fn ($d): array => $d->getAttributes() + ['referencias_fisicas' => $referencias->get($d->id, collect())->all()])->all();
         DB::table('pedido_versiones')->insert(['pedido_id' => $pedido->id, 'usuario_id' => $usuario->id, 'numero' => $numero, 'motivo' => $motivo,
             'datos' => json_encode(['modelo_comercial' => 'historico', 'cabecera' => $pedido->getAttributes(), 'lineas' => $lineas, 'agrupaciones' => []], JSON_THROW_ON_ERROR), 'created_at' => now()]);
     }

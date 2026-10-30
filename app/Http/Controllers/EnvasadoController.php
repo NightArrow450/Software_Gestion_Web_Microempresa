@@ -7,7 +7,7 @@ use App\Models\Envasado;
 use App\Models\Inventario;
 use App\Models\Pedido;
 use App\Models\PresentacionProducto;
-use App\Services\GestionarSurtidos;
+use App\Services\LecturaPedido;
 use App\Services\RegistrarEnvasado;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
@@ -92,7 +92,7 @@ class EnvasadoController extends Controller
     {
         $envasado->load(['usuario', 'pedido', 'consumos', 'correcciones.materiales', 'correcciones.usuario', 'reportes.usuario']);
         $stock = Inventario::where('presentacion_producto_id', $envasado->presentacion_producto_id)->value('cantidad_actual') ?? 0;
-        $solicitadas = $envasado->pedido ? app(GestionarSurtidos::class)->lineasFisicas($envasado->pedido)->where('presentacion_producto_id', $envasado->presentacion_producto_id)->sum(fn ($d) => $d->cantidad * ($d->modalidad === 'empaque' ? $d->unidadesPorEmpaqueEfectivas($d->presentacion) : 1)) : null;
+        $solicitadas = $envasado->pedido ? app(LecturaPedido::class)->lineasFisicas($envasado->pedido)->where('presentacion_producto_id', $envasado->presentacion_producto_id)->sum(fn ($d) => $d->cantidad * ($d->modalidad === 'empaque' ? $d->unidadesPorEmpaqueEfectivas($d->presentacion) : 1)) : null;
 
         $netoAcumulado = $envasado->pedido_id === null ? null : (int) Envasado::query()
             ->where('pedido_id', $envasado->pedido_id)

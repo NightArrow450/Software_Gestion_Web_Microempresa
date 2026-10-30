@@ -8,6 +8,7 @@ use App\Models\PresentacionProducto;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\ValidationException;
 
 /** Lecturas físicas compartidas; no consulta configuraciones ni composiciones comerciales. */
 class LecturaPedido
@@ -48,7 +49,7 @@ class LecturaPedido
         $pedido->loadMissing('detalles');
         $salidas = $pedido->modelo_comercial === 'unidades' ? ($despachadas ?? $this->despachadas(collect([$pedido]))) : [];
 
-        return $pedido->detalles->filter(fn (PedidoDetalle $detalle): bool => $detalle->tipo_linea !== 'surtido')->map(function (PedidoDetalle $detalle) use ($pedido, $salidas): PedidoDetalle {
+        return $pedido->detalles->filter(fn (PedidoDetalle $detalle): bool => in_array($detalle->tipo_linea, [null, 'normal'], true))->map(function (PedidoDetalle $detalle) use ($pedido, $salidas): PedidoDetalle {
             $proyeccion = clone $detalle;
             if ($pedido->modelo_comercial === 'unidades') {
                 $proyeccion->cantidad = max(0, (int) $detalle->cantidad - ($salidas[$detalle->id] ?? 0));
@@ -60,5 +61,36 @@ class LecturaPedido
 
             return $proyeccion;
         })->filter(fn (PedidoDetalle $detalle): bool => $detalle->cantidad > 0)->values();
+    }
+
+    /** @param Collection<int, Pedido> $pedidos
+     * @return array{despachadas: array<int, int>}
+     */
+    public function precargarLectura(Collection $pedidos): array
+    {
+        return ['despachadas' => $this->despachadas($pedidos)];
+    }
+
+    /** Las líneas anteriores sin SKU no se convierten ni crean demanda ficticia. */
+    public function pendientes(Pedido $pedido, ?array $lectura = null): array
+    {
+        $pedido->loadMissing('detalles');
+
+        return $pedido->detalles->filter(fn (PedidoDetalle $detalle): bool => $detalle->presentacion_producto_id === null)
+            ->map(fn (PedidoDetalle $detalle): array => ['pedido' => $pedido->numero, 'detalle_id' => $detalle->id, 'descripcion' => $detalle->descripcion_producto, 'unidades' => null])->values()->all();
+    }
+
+    public function validarCierre(Pedido $pedido): void
+    {
+        $pedido->loadMissing('detalles');
+        if (($pedido->modelo_comercial === 'unidades' || $pedido->detalles->contains(fn (PedidoDetalle $d): bool => $d->tipo_linea !== 'normal')) && $this->pendientes($pedido) !== []) {
+            throw ValidationException::withMessages(['inventario' => 'Hay líneas anteriores sin SKU físico verificable. Solicita revisión comercial; no se inventan unidades ni se convierte su precio.']);
+        }
+    }
+
+    /** @return Collection<int, PedidoDetalle> */
+    public function lineasFisicas(Pedido $pedido, ?array $lectura = null): Collection
+    {
+        return $this->lineasNormales($pedido, $lectura['despachadas'] ?? null);
     }
 }

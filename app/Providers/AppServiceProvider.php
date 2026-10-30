@@ -6,7 +6,6 @@ use App\Models\Cliente;
 use App\Models\Pedido;
 use App\Models\Producto;
 use App\Models\User;
-use App\Services\GestionarSurtidos;
 use App\Services\LecturaPedido;
 use App\Services\RegistroAuditoria;
 use Illuminate\Support\Facades\DB;
@@ -20,7 +19,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->scoped(GestionarSurtidos::class);
         $this->app->scoped(LecturaPedido::class);
     }
 

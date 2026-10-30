@@ -10,7 +10,7 @@ class PedidoDetalle extends Model
     protected $table = 'pedido_detalles';
 
     protected $fillable = [
-        'tipo_linea', 'formato_surtido_id', 'retirado_en',
+        'tipo_linea', 'retirado_en',
         'presentacion_producto_id',
         'codigo_sku',
         'descripcion_producto',

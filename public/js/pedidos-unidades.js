@@ -78,7 +78,7 @@
             }
             const label = document.createElement('label'); label.textContent = `Paquete a editar (de ${grupos.length})`;
             const numero = document.createElement('input'); numero.type = 'number'; numero.min = '1'; numero.max = String(grupos.length); numero.step = '1'; numero.value = String(grupoActual + 1); numero.className = 'form-control';
-            numero.addEventListener('change', () => { if (Number.isInteger(Number(numero.value)) && Number(numero.value) >= 1 && Number(numero.value) <= grupos.length) { grupoActual = Number(numero.value) - 1; renderGrupos(); } });
+            numero.addEventListener('change', () => { if (Number.isInteger(Number(numero.value)) && Number(numero.value) >= 1 && Number(numero.value) <= grupos.length) { grupoActual = Number(numero.value) - 1; renderGrupos(); } else { numero.value = String(grupoActual + 1); } });
             label.append(numero); controles.append(label); buscar('[data-grupos]').append(controles);
         }
         grupos.slice(grupoActual, grupoActual + 1).forEach((g)=>{
@@ -89,7 +89,7 @@
             g.componentes.forEach((c,j)=>{
                 const fila=document.createElement('div');fila.className='unidades-campos';const select=document.createElement('select');select.className='form-control';select.setAttribute('aria-label','SKU del paquete');opcion(select,'Selecciona un SKU','');
                 const referencia = lineas.find(l=>Number(l.presentacion_producto_id)===Number(g.componentes.find(x=>Number(x.sku_id)>0)?.sku_id));
-                lineas.filter(l=>l.cantidad>0 && (!referencia?.compatibilidad || JSON.stringify(l.compatibilidad)===JSON.stringify(referencia.compatibilidad))).forEach(l=>opcion(select,l.nombre || l.sku || `SKU ${l.presentacion_producto_id}`,l.presentacion_producto_id));select.value=c.sku_id || '';select.addEventListener('change',()=>{c.sku_id=Number(select.value);renderGrupos();resumen();});fila.append(select);
+                lineas.filter(l=>l.cantidad>0 && (!referencia?.compatibilidad || JSON.stringify(l.compatibilidad)===JSON.stringify(referencia.compatibilidad))).forEach(l=>opcion(select,[l.nombre,l.sku].filter(Boolean).join(' · ') || `SKU ${l.presentacion_producto_id}`,l.presentacion_producto_id));select.value=c.sku_id || '';select.addEventListener('change',()=>{c.sku_id=Number(select.value);renderGrupos();resumen();});fila.append(select);
                 const n=document.createElement('input');n.type='number';n.min='1';n.step='1';n.className='form-control';n.value=c.cantidad;n.setAttribute('aria-label','Unidades dentro del paquete');n.addEventListener('input',()=>{c.cantidad=Number(n.value);resumen();});fila.append(n);
                 const quitar=document.createElement('button');quitar.type='button';quitar.className='btn btn-secondary';quitar.textContent='Quitar componente';quitar.addEventListener('click',()=>{g.componentes.splice(j,1);renderGrupos();resumen();});fila.append(quitar);card.append(fila);
             });

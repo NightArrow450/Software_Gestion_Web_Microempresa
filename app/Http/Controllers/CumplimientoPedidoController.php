@@ -10,7 +10,7 @@ use App\Services\AtenderPedidoUnidades;
 use App\Services\ControlEntregaPedido;
 use App\Services\DistribuirDespachoUnidades;
 use App\Services\GestionarPedidoUnidades;
-use App\Services\GestionarSurtidos;
+use App\Services\LecturaPedido;
 use App\Services\RegistrarResultadoEntrega;
 use App\Services\TransicionesPedido;
 use Carbon\CarbonImmutable;
@@ -66,16 +66,16 @@ class CumplimientoPedidoController extends Controller
             ->orderBy('id')
             ->get();
 
-        $surtidos = app(GestionarSurtidos::class);
-        $lecturaSurtidos = $surtidos->precargarLectura($pedidos);
-        $surtidosPendientes = $pedidos->flatMap(fn (Pedido $pedido): array => $surtidos->pendientes($pedido, $lecturaSurtidos))->values();
-        $productosPendientes = $surtidosPendientes->isEmpty() ? [] : DB::table('formatos_surtidos')->whereIn('id', $surtidosPendientes->pluck('formato_surtido_id'))->pluck('producto_id')->mapWithKeys(fn ($id): array => ['producto:'.$id => true])->all();
+        $lecturaPedido = app(LecturaPedido::class);
+        $lecturaFisica = $lecturaPedido->precargarLectura($pedidos);
+        $lecturaPedidoPendientes = $pedidos->flatMap(fn (Pedido $pedido): array => $lecturaPedido->pendientes($pedido, $lecturaFisica))->values();
+
         $ultimasPreparaciones = DB::table('pedido_preparaciones')->whereIn('pedido_id', $pedidos->modelKeys())
             ->groupBy('pedido_detalle_id')->selectRaw('MAX(id) id');
         $preparadas = DB::table('pedido_preparaciones')->whereIn('id', $ultimasPreparaciones)->get()->keyBy('pedido_detalle_id');
         $agrupados = [];
         foreach ($pedidos as $pedido) {
-            foreach ($surtidos->lineasFisicas($pedido, $lecturaSurtidos) as $detalle) {
+            foreach ($lecturaPedido->lineasFisicas($pedido, $lecturaFisica) as $detalle) {
                 $presentacion = $detalle->presentacion;
                 $cantidad = (int) $detalle->cantidad;
                 $porEmpaque = (int) $detalle->unidadesPorEmpaqueEfectivas();
@@ -122,7 +122,7 @@ class CumplimientoPedidoController extends Controller
                     if ($pedido->modelo_comercial === 'unidades') {
                         $espera = min($cantidad, (int) $detalle->cantidad_espera);
                         $preparacion = $preparadas->get($detalle->id);
-                        $salidas = (int) ($lecturaSurtidos['despachadas'][$detalle->id] ?? 0);
+                        $salidas = (int) ($lecturaFisica['despachadas'][$detalle->id] ?? 0);
                         $disponibles = $preparacion ? max(0, (int) $preparacion->cantidad - $salidas + (int) $preparacion->despachadas_base) : 0;
                         $agrupados[$clave]['presentaciones'][$id]['en_espera'] += $espera;
                         $agrupados[$clave]['presentaciones'][$id]['preparadas'] += min($cantidad - $espera, $disponibles);
@@ -168,7 +168,7 @@ class CumplimientoPedidoController extends Controller
             ->leftJoin('pedido_despacho_agrupaciones as s', fn ($q) => $q->on('s.pedido_id', '=', 'g.pedido_id')->on('s.identidad', '=', 'g.identidad'))
             ->whereNull('s.id')->groupBy('d.presentacion_producto_id')->select('d.presentacion_producto_id')
             ->selectRaw('SUM(c.cantidad) unidades, COUNT(DISTINCT g.id) paquetes')->get()->keyBy('presentacion_producto_id');
-        $filas = collect(array_values($agrupados))->map(function (array $fila) use ($stock, $porPresentacion, $pedidosIds, $productosPendientes, $agrupaciones): array {
+        $filas = collect(array_values($agrupados))->map(function (array $fila) use ($stock, $porPresentacion, $pedidosIds, $agrupaciones): array {
             foreach ($fila['presentaciones'] as &$presentacion) {
                 $registros = $porPresentacion->get($presentacion['id'], collect());
                 $presentacion['stock'] = (int) ($stock[$presentacion['id']] ?? 0);
@@ -191,10 +191,6 @@ class CumplimientoPedidoController extends Controller
                 $fila['cobertura'] .= ' · Hay unidades en espera; la atención no está completa';
             }
 
-            if (isset($productosPendientes[$fila['producto_clave']])) {
-                $fila['cobertura'] = 'Pendiente de composición surtida';
-            }
-
             return $fila;
         })->groupBy('producto_clave')->flatMap(fn ($grupo) => $grupo->sortBy([['dimension', 'asc'], ['capacidad', 'asc']]))->values();
 
@@ -202,7 +198,7 @@ class CumplimientoPedidoController extends Controller
         $puedeRegistrar = $permisos?->contains('nombre', 'envasado.ver') && $permisos->contains('nombre', 'envasado.registrar');
         $configuraciones = $puedeRegistrar ? ConfiguracionEnvasado::whereIn('presentacion_producto_id', $ids)->where('estado', true)->orderBy('nombre')->get() : collect();
 
-        return view('cumplimiento.lista-preparacion', compact('filas', 'fechaDesde', 'fechaHasta', 'produccionDesde', 'produccionHasta', 'puedeRegistrar', 'configuraciones', 'pedidos', 'surtidosPendientes'));
+        return view('cumplimiento.lista-preparacion', compact('filas', 'fechaDesde', 'fechaHasta', 'produccionDesde', 'produccionHasta', 'puedeRegistrar', 'configuraciones', 'pedidos', 'lecturaPedidoPendientes'));
     }
 
     public function show(Pedido $pedido): View

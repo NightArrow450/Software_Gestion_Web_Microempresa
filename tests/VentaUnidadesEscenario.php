@@ -40,6 +40,11 @@ trait VentaUnidadesEscenario
         return $e;
     }
 
+    protected function agrupacionesUnidades(array $e): array
+    {
+        return array_map(fn (array $cantidades): array => ['capacidad' => 12, 'componentes' => array_map(fn (int $i): array => ['sku_id' => $e['skus'][$i]->id, 'cantidad' => $cantidades[$i]], [0, 1, 2])], [[5, 4, 3], [2, 7, 3]]);
+    }
+
     protected function entradaUnidades(array $e, array $cantidades = [7, 11, 6], array $grupos = []): array
     {
         $cliente = Cliente::create(['nombre' => 'Cliente ficticio por unidades', 'estado' => true]);
@@ -64,7 +69,9 @@ trait VentaUnidadesEscenario
             $pedido->refresh();
         }
 
-        return $servicio->despachar($pedido, ['version_pedido' => $pedido->version, 'operacion' => (string) Str::ulid(),
+        $foto = app(GestionarPedidoUnidades::class)->fotografiasActuales(collect([$pedido]))[$pedido->id] ?? [];
+
+        return $servicio->despachar($pedido, ['paquetes' => array_column($foto['agrupaciones'] ?? [], 'identidad'), 'version_pedido' => $pedido->version, 'operacion' => (string) Str::ulid(),
             'motivo' => 'Despacho físico en el entorno independiente de pruebas.',
             'detalles' => $pedido->detalles()->get()->map(fn ($d): array => ['id' => $d->id, 'cantidad' => $d->cantidad])->all()], $e['usuario']);
     }

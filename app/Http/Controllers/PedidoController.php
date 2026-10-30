@@ -7,7 +7,6 @@ use App\Models\Pedido;
 use App\Models\PresentacionProducto;
 use App\Services\AjustarPedidoHistorico;
 use App\Services\GestionarPedidoUnidades;
-use App\Services\GestionarSurtidos;
 use App\Services\TransicionesPedido;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -308,8 +307,6 @@ class PedidoController extends Controller
             ->values()
             ->all();
 
-        $formatosSurtidos = request()->user()?->role?->tienePermiso('pedidos.surtidos.componer') ? app(GestionarSurtidos::class)->formatos(request()->route('pedido') instanceof Pedido ? request()->route('pedido')->detalles->pluck('formato_surtido_id')->filter()->all() : []) : [];
-
-        return compact('clientes', 'presentaciones', 'formatosSurtidos');
+        return compact('clientes', 'presentaciones');
     }
 }

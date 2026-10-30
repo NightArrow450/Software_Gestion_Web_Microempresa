@@ -8,11 +8,13 @@ use App\Models\PresentacionProducto;
 use App\Models\Producto;
 use App\Services\AtenderPedidoUnidades;
 use App\Services\GestionarPedidoUnidades;
-use App\Services\GestionarSurtidos;
+use App\Services\LecturaPedido;
+use App\Services\LeerAgrupaciones;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class PedidoUnidadesController extends Controller
@@ -34,7 +36,7 @@ class PedidoUnidadesController extends Controller
                 $historica = $pedido?->detalles->firstWhere('id', (int) ($fila['id'] ?? 0));
                 if ($sku) {
                     $fila['precio_unitario'] = $historica && $historica->presentacion_producto_id === $sku->id ? $historica->precio_unitario : $sku->precio_unitario;
-                    $fila['nombre'] = $historica->descripcion_producto ?? app(GestionarSurtidos::class)->nombre($sku);
+                    $fila['nombre'] = $historica->descripcion_producto ?? app(LecturaPedido::class)->nombre($sku);
                     $fila['sku'] = $sku->codigo_sku;
                     $fila['compatibilidad'] = [$sku->producto_id, (string) $sku->contenido, $sku->unidad_medida, $sku->tipo_envase];
                 }
@@ -81,7 +83,11 @@ class PedidoUnidadesController extends Controller
     {
         $request->validate(['agrupaciones_json' => ['nullable', 'json', 'max:1000000']]);
         $entrada = $request->all();
-        $entrada['agrupaciones'] = json_decode($request->input('agrupaciones_json', '[]') ?: '[]', true, 512, JSON_THROW_ON_ERROR);
+        try {
+            $entrada['agrupaciones'] = LeerAgrupaciones::leer($request->input('agrupaciones_json'));
+        } catch (\InvalidArgumentException $error) {
+            throw ValidationException::withMessages(['agrupaciones' => $error->getMessage()]);
+        }
         $guardado = app(GestionarPedidoUnidades::class)->guardar($entrada, $request->user(), $pedido);
 
         return redirect()->route('pedidos.show', $guardado)->with('success', 'Pedido por unidades guardado con su agrupación e historial. No se comprobó líquido ni se descontó inventario.');

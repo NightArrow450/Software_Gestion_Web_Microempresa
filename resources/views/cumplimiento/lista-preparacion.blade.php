@@ -48,9 +48,9 @@
         Vista diaria predeterminada: atrasados y entregas de hoy. Amplía «Entrega hasta» para incluir futuros; borra ambos límites para consultar todos los pendientes.
     </p>
 
-    @if($surtidosPendientes->isNotEmpty())
-    <section class="cumplimiento-nota" role="alert"><h2>Preparación pendiente de composición surtida</h2><p>No se puede declarar cobertura completa: hay unidades comerciales sin distribuir por aroma. Las filas por SKU incluyen únicamente composiciones definidas.</p>
-    <ul>@foreach($surtidosPendientes as $pendiente)<li>Pedido {{ $pendiente['pedido'] }} · {{ $pendiente['descripcion'] }} · {{ $pendiente['paquetes'] }} paquete(s), {{ $pendiente['por_distribuir'] }} unidades pendientes de distribuir. {{ $pendiente['unidades'] }} unidades sin composición definitiva.</li>@endforeach</ul></section>
+    @if($lecturaPedidoPendientes->isNotEmpty())
+    <section class="cumplimiento-nota" role="alert"><h2>Líneas anteriores pendientes de revisión</h2><p>No se puede declarar completa su atención: estas líneas no identifican un SKU físico verificable. No se asignan aromas, unidades ni precios por conversión automática.</p>
+    <ul>@foreach($lecturaPedidoPendientes as $pendiente)<li>Pedido {{ $pendiente['pedido'] }} · {{ $pendiente['descripcion'] }} · Requiere revisión comercial.</li>@endforeach</ul></section>
     @endif
     <div class="cumplimiento-nota" role="note">
         Esta lista usa las <strong>cantidades solicitadas</strong> de los pedidos pendientes.

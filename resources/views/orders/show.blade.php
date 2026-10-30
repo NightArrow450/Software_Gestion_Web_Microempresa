@@ -308,7 +308,7 @@
     </section>
 @endif
 
-@include('orders.partials.composiciones')
+
 <section class="form-section">
     <h2 class="form-section-title">Historial de estados</h2>
 
@@ -396,7 +396,7 @@
         'total' => number_format((float) $pedido->total, 2, '.', ''),
         'productos' => $pedido->detalles->map(fn($detalle) => [
             'descripcion' => $detalle->descripcion_producto,
-            'paquetes' => $detalle->tipo_linea === 'surtido' ? app(\App\Services\GestionarSurtidos::class)->paquetes($detalle) : [],
+            'paquetes' => [],
             'modalidad' => $detalle->modalidad,
             'empaque' => $detalle->descripcionModalidad(),
             'cantidad' => $detalle->cantidad,

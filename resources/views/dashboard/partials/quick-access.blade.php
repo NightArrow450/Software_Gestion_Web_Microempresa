@@ -4,9 +4,8 @@
         'Gestión comercial' => [
             ['clientes.ver', 'clientes.index', 'groups', 'Clientes', 'Consulta y gestión de clientes.'],
             ['productos.ver', 'productos.index', 'inventory_2', 'Catálogo', 'Productos, aromas y presentaciones.'],
-            ['pedidos.ver', 'pedidos.index', 'receipt_long', 'Pedidos', 'Pedidos normales, surtidos y notas de pedido.'],
-            ['pedidos.crear', 'pedidos.create', 'add_shopping_cart', 'Registrar pedido', 'Unidades y empaques con su composición comercial.'],
-            ['surtidos.configurar', 'surtidos.index', 'view_module', 'Modalidades surtidas', 'Formatos habilitados y SKU compatibles.'],
+            ['pedidos.ver', 'pedidos.index', 'receipt_long', 'Pedidos', 'Ventas por unidades físicas y notas de pedido.'],
+            ['pedidos.crear', 'pedidos.create', 'add_shopping_cart', 'Registrar pedido', 'Unidades físicas y agrupaciones logísticas opcionales.'],
         ],
         'Preparación y distribución' => [
             ['pedidos.ver', 'cumplimiento.lista-preparacion', 'checklist', 'Lista General de Preparación', 'Demanda por producto, presentación y aroma.'],

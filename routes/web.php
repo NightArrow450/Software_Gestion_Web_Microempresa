@@ -364,5 +364,3 @@ Route::get('/auditoria', [AuditoriaController::class, 'index'])->middleware(['au
 
 require __DIR__.'/envasado.php';
 require __DIR__.'/entregas.php';
-
-require __DIR__.'/surtidos.php';

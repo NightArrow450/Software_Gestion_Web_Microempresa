@@ -50,7 +50,6 @@
 @if($resumenEntrega !== null && in_array($pedido->estado, \App\Services\ControlEntregaPedido::ESTADOS, true))
     @include('cumplimiento.partials.incidencia-resumen')
 @endif
-@include('orders.partials.composiciones', ['soloLectura' => true])
 @include('orders.partials.versiones')
 @endsection
 

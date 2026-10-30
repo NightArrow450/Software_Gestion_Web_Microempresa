@@ -118,7 +118,6 @@
             fila.querySelector('.js-cantidad').setCustomValidity(importe > 99999999 ? 'El importe de una línea no puede superar S/ 999 999,99.' : '');
             totalCentimos += importe;
         });
-        contenedor.querySelectorAll('.s2-surtido-row').forEach(fila => { totalCentimos += Number(fila.dataset.importeCentimos) || 0; });
         totalElemento.textContent = 'S/ ' + (totalCentimos / 100).toFixed(2);
         const cantidadLineas = contenedor.children.length;
         if (cantidadLineas > 0 && cantidadLineas < 18) {
@@ -308,9 +307,8 @@
         if (!document.getElementById('busqueda-productos').contains(event.target)) cerrarResultados();
     });
     document.getElementById('agregar-fila').addEventListener('click', () => buscar.focus());
-    document.addEventListener('pedido:surtido-cambio', recalcular);
     document.querySelectorAll('[id^="importe-historico-"]').forEach(campo => campo.addEventListener('input', recalcular));
-    (Array.isArray(config.filas) ? config.filas : []).forEach(datos => datos.tipo_linea === 'surtido' ? window.PedidosSurtidos.agregar(datos) : agregarFila(datos));
+    (Array.isArray(config.filas) ? config.filas : []).forEach(datos => agregarFila(datos));
     recalcular();
     document.getElementById('form-pedido').addEventListener('submit', event => {
         if (contenedor.children.length) return;

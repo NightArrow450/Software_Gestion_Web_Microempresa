@@ -61,10 +61,8 @@ class ControlEntregaPedido
         $salidas = DB::table('movimientos_inventario')->where('pedido_id', $pedido->id)->where('tipo', 'salida')->when($actual, fn ($q) => $q->lockForUpdate())->get()->keyBy('presentacion_producto_id');
         $lineas = [];
         foreach ($detalles as $detalle) {
-            if ($detalle->tipo_linea === 'surtido') {
-                $componentes = $actual && $pedido->estado === 'listo_despacho'
-                    ? app(GestionarSurtidos::class)->fotografiar($detalle)
-                    : DB::table('pedido_despacho_componentes')->where('pedido_detalle_id', $detalle->id)->orderBy('id')->get()->all();
+            if ($detalle->presentacion_producto_id === null && ! in_array($detalle->tipo_linea, [null, 'normal'], true)) {
+                $componentes = DB::table('pedido_referencias_fisicas')->where('pedido_detalle_id', $detalle->id)->orderBy('id')->get()->all();
                 if ($componentes === []) {
                     $lineas[$detalle->id] = ['id' => $detalle->id, 'presentacion_id' => null, 'sku' => '', 'descripcion' => $detalle->descripcion_producto, 'modalidad' => 'empaque', 'cantidad_original' => (int) $detalle->cantidad, 'factor' => $detalle->unidades_por_empaque, 'despachadas' => null, 'importe_centimos' => (int) round((float) $detalle->importe * 100), 'verificada' => false];
                 }
@@ -127,6 +125,7 @@ class ControlEntregaPedido
         return ['historico_sin_desglose' => $pedido->estado === 'entregado' && $resultados->isEmpty(), 'incidencia' => $incidencia, 'version' => (int) ($incidencia->version ?? 0), 'lineas' => $lineas, 'retornos' => $retornos, 'eventos' => $eventos];
     }
 
+    /** Conserva las claves ya escritas en fotografías históricas; no crea modalidades comerciales. */
     public static function claveFisica(int $detalleId, ?int $componenteId = null): int|string
     {
         return $componenteId === null ? $detalleId : 'surtido:'.$componenteId;
