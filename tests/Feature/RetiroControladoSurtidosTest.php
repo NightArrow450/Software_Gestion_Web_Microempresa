@@ -1,0 +1,104 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Cliente;
+use App\Models\Permiso;
+use App\Services\GestionarPedidoUnidades;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use RuntimeException;
+use Tests\EnvasadoEscenario;
+use Tests\TestCase;
+
+class RetiroControladoSurtidosTest extends TestCase
+{
+    use EnvasadoEscenario, RefreshDatabase;
+
+    private function migracion(): object
+    {
+        return require database_path('migrations/retiro_controlado/2026_10_30_003639_retirar_estructuras_surtidos_vacias.php');
+    }
+
+    public function test_el_retiro_no_se_ejecuta_con_migraciones_ordinarias_y_exige_autorizacion(): void
+    {
+        $this->assertDatabaseCount('migrations', 48);
+        $this->assertTrue(Schema::hasTable('formatos_surtidos'));
+        try {
+            $this->migracion()->up();
+            $this->fail('La migración manual no debe actuar sin autorización específica.');
+        } catch (RuntimeException $error) {
+            $this->assertStringContainsString('Retiro bloqueado', $error->getMessage());
+        }
+        $this->assertTrue(Schema::hasColumn('pedido_detalles', 'formato_surtido_id'));
+    }
+
+    public function test_retiro_solo_de_tablas_vacias_conserva_cuentas_y_permite_registrar_unidades(): void
+    {
+        $e = $this->escenarioEnvasado();
+        $e['usuario']->role->permisos()->attach(Permiso::firstOrCreate(['nombre' => 'pedidos.crear'])->id);
+        $cuentas = [];
+        foreach (['users', 'roles', 'permisos', 'rol_permiso'] as $tabla) {
+            $cuentas[$tabla] = DB::table($tabla)->get()->toArray();
+        }
+        putenv('DHACER_RETIRO_SURTIDOS_AUTORIZADO=RETIRAR_SOLO_ESTRUCTURAS_SURTIDOS_VACIAS');
+        try {
+            $this->migracion()->up();
+        } finally {
+            putenv('DHACER_RETIRO_SURTIDOS_AUTORIZADO');
+        }
+        foreach (['formatos_surtidos', 'formato_surtido_skus', 'pedido_paquetes_surtidos', 'paquete_surtido_composiciones', 'paquete_surtido_componentes', 'pedido_despacho_componentes'] as $tabla) {
+            $this->assertFalse(Schema::hasTable($tabla));
+        }
+        $cliente = Cliente::create(['nombre' => 'Cliente de unidades', 'estado' => true]);
+        $pedido = app(GestionarPedidoUnidades::class)->guardar(['cliente_id' => $cliente->id, 'fecha_pedido' => today()->toDateString(), 'fecha_entrega' => today()->toDateString(),
+            'condicion_pago' => 'contado', 'detalles' => [['presentacion_producto_id' => $e['presentacion']->id, 'cantidad' => 7]]], $e['usuario']);
+        $this->assertSame('14.00', $pedido->total);
+        $this->assertSame(7, (int) $pedido->detalles()->sole()->cantidad);
+        $this->assertDatabaseCount('movimientos_inventario', 0);
+        foreach ($cuentas as $tabla => $filas) {
+            $this->assertEquals($filas, DB::table($tabla)->get()->toArray(), $tabla);
+        }
+    }
+
+    public function test_si_hay_datos_obsoletos_no_retira_ninguna_tabla_ni_modifica_filas(): void
+    {
+        $e = $this->escenarioEnvasado();
+        DB::table('formatos_surtidos')->insert(['producto_id' => $e['presentacion']->producto_id, 'nombre' => 'Dato conservado', 'tipo_envase' => 'Botella',
+            'contenido' => 1, 'unidad_medida' => 'L', 'unidades_por_empaque' => 12, 'precio_empaque' => 24, 'estado' => true]);
+        putenv('DHACER_RETIRO_SURTIDOS_AUTORIZADO=RETIRAR_SOLO_ESTRUCTURAS_SURTIDOS_VACIAS');
+        try {
+            $this->migracion()->up();
+            $this->fail('La precomprobación debe fallar antes del primer cambio DDL.');
+        } catch (RuntimeException $error) {
+            $this->assertStringContainsString('debe existir y estar vacía', $error->getMessage());
+        } finally {
+            putenv('DHACER_RETIRO_SURTIDOS_AUTORIZADO');
+        }
+        $this->assertDatabaseCount('formatos_surtidos', 1);
+        $this->assertTrue(Schema::hasTable('pedido_despacho_componentes'));
+        $this->assertTrue(Schema::hasColumn('pedido_detalles', 'formato_surtido_id'));
+    }
+
+    public function test_dependencia_no_prevista_detiene_el_retiro_antes_de_modificar_el_esquema(): void
+    {
+        Schema::create('dependencia_no_prevista', function (Blueprint $tabla): void {
+            $tabla->id();
+            $tabla->foreignId('formato_id')->constrained('formatos_surtidos');
+        });
+        putenv('DHACER_RETIRO_SURTIDOS_AUTORIZADO=RETIRAR_SOLO_ESTRUCTURAS_SURTIDOS_VACIAS');
+        try {
+            $this->migracion()->up();
+            $this->fail('Debe detectar dependencias no contempladas antes de cualquier cambio.');
+        } catch (RuntimeException $error) {
+            $this->assertStringContainsString('Dependencia no prevista', $error->getMessage());
+        } finally {
+            putenv('DHACER_RETIRO_SURTIDOS_AUTORIZADO');
+        }
+        $this->assertTrue(Schema::hasTable('formatos_surtidos'));
+        $this->assertTrue(Schema::hasColumn('pedido_detalles', 'formato_surtido_id'));
+        $this->assertDatabaseCount('migrations', 48);
+    }
+}

@@ -49,7 +49,7 @@ class FlujoVentaUnidadesPr45Test extends TestCase
         app(TransicionesPedido::class)->registrar($pedido, 'registrado', 'confirmado', $e['usuario']->id, [], 'Confirmación sin consultar disponibilidad.');
         $pedido->refresh();
         $this->assertDatabaseCount('movimientos_inventario', 0);
-        $this->assertSame(0, (int) Inventario::sole()->cantidad_actual);
+        $this->assertDatabaseHas('inventarios', ['presentacion_producto_id' => $e['presentacion']->id, 'cantidad_actual' => 0]);
         $confirmacion = ['presentacion_producto_id' => $e['presentacion']->id, 'configuracion_envasado_id' => $e['configuracion']->id,
             'version_configuracion' => $e['configuracion']->version, 'cantidad' => 32, 'pedido_id' => $pedido->id, '_token_operacion' => TokenOperacion::emitir($e['usuario']->id)];
         $this->post(route('envasado.store'), $confirmacion)->assertRedirect()->assertSessionHasNoErrors();
@@ -79,7 +79,7 @@ class FlujoVentaUnidadesPr45Test extends TestCase
         $servicio = app(AtenderPedidoUnidades::class);
         $id = $servicio->despachar($pedido, $despacho, $e['usuario']);
         $this->assertSame($id, $servicio->despachar($pedido, $despacho, $e['usuario']));
-        $this->assertSame(0, (int) Inventario::sole()->cantidad_actual);
+        $this->assertDatabaseHas('inventarios', ['presentacion_producto_id' => $e['presentacion']->id, 'cantidad_actual' => 0]);
         $this->assertDatabaseCount('pedido_despachos', 1);
         $this->assertDatabaseCount('movimientos_inventario', 3);
         $pedido->refresh();
@@ -88,11 +88,11 @@ class FlujoVentaUnidadesPr45Test extends TestCase
         app(RegistrarResultadoEntrega::class)->ejecutar($pedido, ['version' => $control->resumen($pedido)['version'],
             'observaciones' => 'Resultado registrado tras explicar al cliente el ajuste de producción.',
             'detalles' => [['pedido_detalle_id' => $fisica['id'], 'aceptadas' => $aceptadas, 'rechazadas' => $rechazadas, 'motivo' => 'El cliente no acepta estas unidades; se registra sin atribuir responsabilidades.']]], $e['usuario']);
-        $this->assertSame(0, (int) Inventario::sole()->cantidad_actual);
+        $this->assertDatabaseHas('inventarios', ['presentacion_producto_id' => $e['presentacion']->id, 'cantidad_actual' => 0]);
         if ($rechazadas > 0) {
             app(RegistrarRetornoPedido::class)->ejecutar($pedido->fresh(), ['version' => $control->resumen($pedido)['version'], 'observaciones' => 'Se reciben físicamente las unidades rechazadas; una está dañada.',
                 'detalles' => [['pedido_detalle_id' => $fisica['id'], 'aptas' => $rechazadas - 1, 'danadas' => 1, 'en_revision' => 0, 'no_recuperadas' => 0]]], $e['usuario']);
-            $this->assertSame(0, (int) Inventario::sole()->cantidad_actual);
+            $this->assertDatabaseHas('inventarios', ['presentacion_producto_id' => $e['presentacion']->id, 'cantidad_actual' => 0]);
             $retorno = DB::table('retorno_pedido_detalles')->sole();
             app(AprobarRetornoPedido::class)->ejecutar($pedido->fresh(), ['version' => $control->resumen($pedido)['version'], 'retorno_detalle_id' => $retorno->id,
                 'cantidad' => $rechazadas - 1, 'motivo' => 'Se aprueban únicamente las unidades físicamente recuperadas y aptas.'], $e['usuario']);
