@@ -8,22 +8,22 @@ use App\Models\Role;
 use App\Services\ExportarIndicadoresCsv;
 use App\Services\FilasIndicadores;
 use App\Services\FiltrosIndicadores;
-use App\Services\GestionarSurtidos;
+use App\Services\GestionarPedidoUnidades;
 use Carbon\CarbonImmutable;
 use Database\Seeders\IndicadoresPermisoSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
-use Tests\SurtidosEscenario;
 use Tests\TestCase;
+use Tests\VentaUnidadesEscenario;
 
 class IndicadoresTest extends TestCase
 {
-    use RefreshDatabase, SurtidosEscenario;
+    use RefreshDatabase, VentaUnidadesEscenario;
 
     private function escenario(): array
     {
         $this->travelTo(CarbonImmutable::parse('2026-10-24 10:00:00', 'America/Lima'));
-        $e = $this->escenarioSurtido();
+        $e = $this->escenarioUnidades();
         foreach (['indicadores.ver', 'indicadores.economicos.ver', 'indicadores.exportar'] as $n) {
             $e['usuario']->role->permisos()->syncWithoutDetaching(Permiso::firstOrCreate(['nombre' => $n], ['descripcion' => $n])->id);
         }
@@ -32,14 +32,10 @@ class IndicadoresTest extends TestCase
         return $e;
     }
 
-    private function pedidoSurtido(array $e, ?array $paquetes = null): Pedido
+    private function pedidoAgrupado(array $e): Pedido
     {
-        $p = $this->pedidoEnvasado($e);
-        $p->detalles()->delete();
-        $p->detalles()->create(['tipo_linea' => 'normal', 'presentacion_producto_id' => $e['skus'][0]->id, 'codigo_sku' => $e['skus'][0]->codigo_sku, 'descripcion_producto' => 'Normal', 'modalidad' => 'empaque', 'unidades_por_empaque' => 12, 'cantidad' => 1, 'precio_unitario' => 24, 'importe' => 24]);
-        $d = $p->detalles()->create(['tipo_linea' => 'surtido', 'formato_surtido_id' => $e['formato'], 'codigo_sku' => 'SURTIDO', 'descripcion_producto' => 'Surtido histórico', 'modalidad' => 'empaque', 'unidades_por_empaque' => 12, 'cantidad' => 2, 'precio_unitario' => 24, 'importe' => 48]);
-        app(GestionarSurtidos::class)->guardar($d, $paquetes ?? $this->paquetesSurtidos($e), $e['usuario'], 'Composición ficticia para pruebas de indicadores.');
-        $p->update(['total' => 72]);
+        $p = $this->registrarUnidades($e, [19, 11, 6], $this->agrupacionesUnidades($e));
+        $p->update(['estado' => 'confirmado']);
 
         return $p->fresh();
     }
@@ -52,7 +48,7 @@ class IndicadoresTest extends TestCase
     public function test_surtidos_normales_y_precios_no_se_multiplican_por_componentes(): void
     {
         $e = $this->escenario();
-        $p = $this->pedidoSurtido($e);
+        $p = $this->pedidoAgrupado($e);
 
         $r = $this->get(route('indicadores.index', ['economico' => 1]));
 
@@ -60,8 +56,8 @@ class IndicadoresTest extends TestCase
         $resumen = $r->viewData('resultado');
         $this->assertSame(7200, $resumen['totales']['importe_centimos']);
         $this->assertSame(1, (int) $resumen['comercial']['pedidos_registrados']);
-        $this->assertSame(1, (int) $resumen['comercial']['paquetes_normales']);
-        $this->assertSame(2, (int) $resumen['comercial']['paquetes_surtidos']);
+        $this->assertSame(36, (int) $resumen['comercial']['unidades_comerciales']);
+        $this->assertSame(0, (int) $resumen['comercial']['lineas_sin_sku_verificable']);
         $this->assertCount(6, $this->filas('composiciones'));
         $fisicas = collect($this->filas('fisicas'))->groupBy('sku')->map(fn ($g): int => $g->sum('unidades_fisicas'));
         $this->assertSame(19, $fisicas[$e['skus'][0]->codigo_sku]);
@@ -89,44 +85,49 @@ class IndicadoresTest extends TestCase
         $this->assertCount(2, $this->filas('fisicas'));
     }
 
-    public function test_pendientes_no_generan_demanda_ficticia_ni_suman_indicadores_superpuestos(): void
+    public function test_espera_no_inventa_demanda_y_no_suma_indicadores_superpuestos(): void
     {
         $e = $this->escenario();
-        $paquetes = $this->paquetesSurtidos($e);
-        $paquetes[1] = ['estado' => 'pendiente', 'componentes' => [['presentacion_producto_id' => $e['skus'][0]->id, 'cantidad' => 4]]];
-        $this->pedidoSurtido($e, $paquetes);
-
+        $entrada = $this->entradaUnidades($e, [19, 11, 6]);
+        $entrada['detalles'][0]['cantidad_espera'] = 8;
+        $entrada['motivo'] = 'Se dejan ocho unidades en espera por revisión operativa.';
+        $p = app(GestionarPedidoUnidades::class)->guardar($entrada, $e['usuario']);
+        $p->update(['estado' => 'confirmado']);
         $pendientes = $this->filas('pendientes');
-        $fisicas = $this->filas('fisicas');
-
-        $this->assertSame(12, $pendientes[0]['unidades_sin_composicion']);
-        $this->assertSame(8, $pendientes[0]['unidades_sin_distribuir']);
-        $this->assertSame(24, array_sum(array_column($fisicas, 'unidades_fisicas')));
-        $this->assertStringContainsString('pendientes', $this->filas('preparacion')[0]['cobertura']);
+        $this->assertSame(8, $pendientes[0]['unidades_en_espera']);
+        $this->assertSame('unidades_en_espera', $pendientes[0]['tipo_pendiente']);
+        $this->assertSame(36, array_sum(array_column($this->filas('fisicas'), 'unidades_fisicas')));
+        $this->assertSame(28, array_sum(array_column($this->filas('preparacion'), 'unidades_activas')));
+        $this->assertStringContainsString('espera', $this->filas('preparacion')[0]['cobertura']);
     }
 
     public function test_solo_version_vigente_suma_y_el_historial_sigue_exportable(): void
     {
         $e = $this->escenario();
-        $p = $this->pedidoSurtido($e);
-        $d = $p->detalles->firstWhere('tipo_linea', 'surtido');
-        $paquetes = $this->paquetesSurtidos($e);
-        $paquetes[0] = $paquetes[1];
-        app(GestionarSurtidos::class)->guardar($d, $paquetes, $e['usuario'], 'Cambio documentado de composición en pruebas.');
-
+        $p = $this->pedidoAgrupado($e);
+        $grupos = $this->agrupacionesUnidades($e);
+        $grupos[0] = $grupos[1];
+        $entrada = $this->entradaUnidades($e, [16, 14, 6], $grupos);
+        $entrada['cliente_id'] = $p->cliente_id;
+        foreach ($p->detalles()->get() as $i => $d) {
+            $entrada['detalles'][$i]['id'] = $d->id;
+        }
+        $entrada['_version'] = $p->version;
+        $entrada['motivo'] = 'Cambio auditado de unidades y agrupación sin nuevas salidas.';
+        app(GestionarPedidoUnidades::class)->guardar($entrada, $e['usuario'], $p);
         $actuales = $this->filas('composiciones');
         $historicas = $this->filas('composiciones', ['historial' => 1]);
-
         $this->assertCount(6, $actuales);
-        $this->assertCount(9, $historicas);
+        $this->assertCount(12, $historicas);
         $this->assertSame(24, array_sum(array_column($actuales, 'unidades_fisicas')));
-        $this->assertCount(3, array_filter($historicas, fn ($f): bool => $f['version_vigente'] === 'No'));
+        $this->assertCount(6, array_filter($historicas, fn ($f): bool => $f['version_vigente'] === 'No'));
+        $this->assertSame(36, array_sum(array_column($this->filas('fisicas'), 'unidades_fisicas')));
     }
 
     public function test_cancelados_se_cuentan_aparte_y_no_generan_preparacion(): void
     {
         $e = $this->escenario();
-        $p = $this->pedidoSurtido($e);
+        $p = $this->pedidoAgrupado($e);
         $p->update(['estado' => 'cancelado']);
 
         $r = $this->get(route('indicadores.index', ['economico' => 1]));
@@ -137,7 +138,7 @@ class IndicadoresTest extends TestCase
         $this->assertSame(0, $c['importe_activo_centimos']);
         $this->assertSame(7200, $c['importe_cancelado_centimos']);
         $this->assertSame([], $this->filas('preparacion'));
-        $this->assertSame(['No'], array_values(array_unique(array_column($this->filas('composiciones'), 'demanda_definitiva'))));
+        $this->assertSame(['No genera demanda adicional'], array_values(array_unique(array_column($this->filas('composiciones'), 'demanda_definitiva'))));
     }
 
     public function test_exportacion_completa_coincide_con_filas_y_no_con_la_pagina_visible(): void
@@ -164,7 +165,7 @@ class IndicadoresTest extends TestCase
     public function test_exportar_y_ver_importes_exigen_permisos_independientes(): void
     {
         $e = $this->escenario();
-        $this->pedidoSurtido($e);
+        $this->pedidoAgrupado($e);
         $e['usuario']->role->permisos()->detach(Permiso::whereIn('nombre', ['indicadores.economicos.ver', 'indicadores.exportar'])->pluck('id'));
         $e['usuario']->unsetRelation('role');
 
@@ -242,36 +243,35 @@ class IndicadoresTest extends TestCase
     public function test_historial_incluye_lineas_retiradas_sin_sumarlas_en_comercial(): void
     {
         $e = $this->escenario();
-        $p = $this->pedidoSurtido($e);
-        $d = $p->detalles->firstWhere('tipo_linea', 'surtido');
-        $d->update(['retirado_en' => now()]);
-        DB::table('pedido_paquetes_surtidos')->where('pedido_detalle_id', $d->id)->update(['activo' => false]);
-
-        $actual = $this->filas('composiciones');
+        $p = $this->pedidoAgrupado($e);
+        $entrada = $this->entradaUnidades($e, [19, 0, 6]);
+        $entrada['cliente_id'] = $p->cliente_id;
+        foreach ($p->detalles()->get() as $i => $d) {
+            $entrada['detalles'][$i]['id'] = $d->id;
+        }
+        $entrada['_version'] = $p->version;
+        $entrada['motivo'] = 'Retiro auditado de una línea manteniendo las agrupaciones anteriores.';
+        app(GestionarPedidoUnidades::class)->guardar($entrada, $e['usuario'], $p);
+        $this->assertSame([], $this->filas('composiciones'));
         $historial = $this->filas('composiciones', ['historial' => 1]);
-        $comercial = $this->filas('comercial');
-
-        $this->assertSame([], $actual);
         $this->assertCount(6, $historial);
-        $this->assertSame(['No'], array_values(array_unique(array_column($historial, 'demanda_definitiva'))));
-        $this->assertCount(1, $comercial);
+        $this->assertSame(['No genera demanda adicional'], array_values(array_unique(array_column($historial, 'demanda_definitiva'))));
+        $this->assertCount(2, $this->filas('comercial'));
+        $this->assertSame(25, array_sum(array_column($this->filas('fisicas'), 'unidades_fisicas')));
     }
 
-    public function test_filtro_composicion_aplica_tambien_a_los_totales_del_resumen_y_csv(): void
+    public function test_filtros_vigentes_coinciden_en_resumen_y_csv_y_rechazan_composicion_retirada(): void
     {
         $e = $this->escenario();
-        $this->pedidoSurtido($e);
-        $paquetes = $this->paquetesSurtidos($e);
-        $paquetes[1] = ['estado' => 'pendiente', 'componentes' => []];
-        $this->pedidoSurtido($e, $paquetes);
-
-        $r = $this->get(route('indicadores.index', ['composicion' => 'pendiente', 'economico' => 1]));
-        $csv = $this->get(route('indicadores.exportar', ['composicion' => 'pendiente', 'economico' => 1, 'resumen' => 1]));
-
-        $r->assertOk();
+        $p = $this->pedidoAgrupado($e);
+        $this->pedidoAgrupado($e);
+        $this->getJson(route('indicadores.index', ['composicion' => 'pendiente']))->assertUnprocessable()->assertJsonValidationErrors('composicion');
+        $this->getJson(route('indicadores.exportar', ['composicion' => 'pendiente']))->assertUnprocessable()->assertJsonValidationErrors('composicion');
+        $r = $this->get(route('indicadores.index', ['pedido_id' => $p->id, 'economico' => 1]))->assertOk();
+        $csv = $this->get(route('indicadores.exportar', ['pedido_id' => $p->id, 'economico' => 1, 'resumen' => 1]));
         $this->assertSame(1, (int) $r->viewData('resultado')['comercial']['pedidos_registrados']);
-        $this->assertSame(4800, $r->viewData('resultado')['totales']['importe_centimos']);
-        $this->assertStringContainsString('importe_centimos;4800;0;', $csv->streamedContent());
+        $this->assertSame(7200, $r->viewData('resultado')['totales']['importe_centimos']);
+        $this->assertStringContainsString('importe_centimos;7200;0;', $csv->streamedContent());
     }
 
     public function test_html_escapa_descripcion_y_csv_no_crea_columnas_con_separadores_inyectados(): void

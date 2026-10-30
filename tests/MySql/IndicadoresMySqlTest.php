@@ -2,11 +2,12 @@
 
 namespace Tests\MySql;
 
+use App\Models\PedidoDetalle;
+use App\Services\ControlEntregaPedido;
 use App\Services\CorregirEnvasado;
 use App\Services\ExportarIndicadoresCsv;
 use App\Services\FilasIndicadores;
 use App\Services\FiltrosIndicadores;
-use App\Services\GestionarSurtidos;
 use App\Services\PedidosIndicadores;
 use App\Services\RegistrarEnvasado;
 use App\Services\ResumenIndicadores;
@@ -15,30 +16,28 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use PHPUnit\Framework\Attributes\DataProvider;
-use Tests\SurtidosEscenario;
+use Tests\VentaUnidadesEscenario;
 
 class IndicadoresMySqlTest extends PruebaEntregaMySql
 {
-    use SurtidosEscenario;
+    use VentaUnidadesEscenario;
 
     public function test_todos_los_reportes_son_lecturas_compatibles_con_mysql_y_componentes_reales(): void
     {
         $this->travelTo(CarbonImmutable::parse('2026-10-24 12:00:00', 'America/Lima'));
-        $e = $this->escenarioSurtido();
-        $p = $this->pedidoEnvasado($e, 'confirmado');
-        $d = $p->detalles->sole();
-        $d->update(['tipo_linea' => 'surtido', 'formato_surtido_id' => $e['formato'], 'modalidad' => 'empaque', 'cantidad' => 2, 'unidades_por_empaque' => 12, 'precio_unitario' => 24, 'importe' => 48]);
-        app(GestionarSurtidos::class)->guardar($d, $this->paquetesSurtidos($e), $e['usuario'], 'Composición ficticia de validación MySQL independiente.');
-        $p->update(['estado' => 'listo_despacho', 'total' => 48]);
-        $this->post(route('cumplimiento.despachar', $p))->assertSessionHasNoErrors();
-        $c = DB::table('pedido_despacho_componentes')->where('pedido_detalle_id', $d->id)->orderBy('id')->first()->id;
-        $this->post(route('cumplimiento.resultado-entrega', $p), ['version' => 0, 'detalles' => [['pedido_detalle_id' => $d->id, 'despacho_componente_id' => $c, 'aceptadas' => 3, 'rechazadas' => 2, 'motivo' => 'Dos unidades rechazadas para esta prueba aislada.']]])->assertSessionHasNoErrors();
-        $this->post(route('cumplimiento.retornos', $p), ['version' => 1, 'observaciones' => 'Recepción física de dos unidades para revisión.', 'detalles' => [['pedido_detalle_id' => $d->id, 'despacho_componente_id' => $c, 'aptas' => 1, 'danadas' => 1, 'en_revision' => 0, 'no_recuperadas' => 0]]])->assertSessionHasNoErrors();
-        $rd = DB::table('retorno_pedido_detalles')->where('pedido_detalle_id', $d->id)->first()->id;
-        $this->post(route('cumplimiento.aprobar-retorno', $p), ['version' => 2, 'retorno_detalle_id' => $rd, 'cantidad' => 1, 'motivo' => 'Unidad apta aprobada en la base de prueba.'])->assertSessionHasNoErrors();
+        $e = $this->escenarioUnidades();
+        $p = $this->registrarUnidades($e, [7, 11, 6], $this->agrupacionesUnidades($e));
+        $this->despacharUnidades($p, $e);
+        $fisica = collect(app(ControlEntregaPedido::class)->resumen($p->fresh())['lineas'])->firstWhere('presentacion_id', $e['skus'][0]->id);
+        $d = PedidoDetalle::findOrFail($fisica['id']);
+        $version = fn (): int => app(ControlEntregaPedido::class)->resumen($p->fresh())['version'];
+        $this->post(route('cumplimiento.resultado-entrega', $p), ['version' => $version(), 'detalles' => [['pedido_detalle_id' => $d->id, 'aceptadas' => 3, 'rechazadas' => 2, 'motivo' => 'Dos unidades rechazadas para esta prueba aislada.']]])->assertSessionHasNoErrors();
+        $this->post(route('cumplimiento.retornos', $p), ['version' => $version(), 'observaciones' => 'Recepción física de dos unidades para revisión.', 'detalles' => [['pedido_detalle_id' => $d->id, 'aptas' => 1, 'danadas' => 1, 'en_revision' => 0, 'no_recuperadas' => 0]]])->assertSessionHasNoErrors();
+        $rd = DB::table('retorno_pedido_detalles')->where('pedido_detalle_id', $d->id)->sole()->id;
+        $this->post(route('cumplimiento.aprobar-retorno', $p), ['version' => $version(), 'retorno_detalle_id' => $rd, 'cantidad' => 1, 'motivo' => 'Unidad apta aprobada en la base de prueba.'])->assertSessionHasNoErrors();
         $antes = DB::table('movimientos_inventario')->count();
 
-        $esperados = ['comercial' => 1, 'composiciones' => 6, 'situacion_entregas' => 6, 'preparacion' => 0, 'fisicas' => 0, 'pendientes' => 0, 'entregas' => 1, 'retornos' => 1, 'aprobaciones' => 1, 'envasados' => 0, 'materiales' => 0, 'materiales_resumen' => 0, 'movimientos' => 4, 'saldos_periodo' => 3, 'inventario' => 4];
+        $esperados = ['comercial' => 3, 'composiciones' => 6, 'situacion_entregas' => 3, 'preparacion' => 0, 'fisicas' => 0, 'pendientes' => 0, 'entregas' => 1, 'retornos' => 1, 'aprobaciones' => 1, 'envasados' => 0, 'materiales' => 0, 'materiales_resumen' => 0, 'movimientos' => 4, 'saldos_periodo' => 3, 'inventario' => 4];
         foreach (array_keys(FilasIndicadores::REPORTES) as $reporte) {
             $f = FiltrosIndicadores::validar(['reporte' => $reporte, 'economico' => 1]);
             $filas = iterator_to_array(app(FilasIndicadores::class)->filas($f));
@@ -195,23 +194,23 @@ class IndicadoresMySqlTest extends PruebaEntregaMySql
         $this->assertSame($e['presentacion']->codigo_sku, $filas[0]['sku']);
     }
 
-    public function test_desglose_de_muchos_paquetes_tiene_orden_unico_y_trazabilidad_entre_lotes(): void
+    public function test_desglose_de_muchas_agrupaciones_tiene_orden_unico_sin_duplicar_demanda(): void
     {
-        $e = $this->escenarioSurtido();
-        $p = $this->pedidoEnvasado($e);
-        $d = $p->detalles->sole();
-        $d->update(['tipo_linea' => 'surtido', 'formato_surtido_id' => $e['formato'], 'modalidad' => 'empaque', 'cantidad' => 52, 'unidades_por_empaque' => 12, 'precio_unitario' => 24, 'importe' => 1248]);
-        app(GestionarSurtidos::class)->guardar($d, array_fill(0, 52, $this->paquetesSurtidos($e)[0]), $e['usuario'], 'Paquetes ficticios para comprobar orden y trazabilidad por lotes.');
-
-        $f = FiltrosIndicadores::validar(['reporte' => 'fisicas']);
+        $e = $this->escenarioUnidades();
+        $grupos = array_fill(0, 52, $this->agrupacionesUnidades($e)[0]);
+        $p = $this->registrarUnidades($e, [260, 208, 156], $grupos);
+        $p->update(['estado' => 'confirmado']);
+        $f = FiltrosIndicadores::validar(['reporte' => 'composiciones']);
         $filas = iterator_to_array(app(FilasIndicadores::class)->filas($f));
         $ids = array_column($filas, 'componente_id');
-        $esperados = DB::table('paquete_surtido_componentes')->orderBy('id')->pluck('id')->all();
-
+        $esperados = DB::table('pedido_agrupacion_detalles')->orderBy('id')->pluck('id')->all();
         $this->assertSame($esperados, $ids);
         $this->assertCount(156, $filas);
         $this->assertCount(52, array_unique(array_column($filas, 'paquete_id')));
         $this->assertSame(624, array_sum(array_column($filas, 'unidades_fisicas')));
+        $demanda = iterator_to_array(app(FilasIndicadores::class)->filas(FiltrosIndicadores::validar(['reporte' => 'fisicas'])));
+        $this->assertCount(3, $demanda);
+        $this->assertSame(624, array_sum(array_column($demanda, 'unidades_fisicas')));
     }
 
     public function test_exportacion_por_lotes_mantiene_una_fotografia_ante_una_escritura_concurrente(): void

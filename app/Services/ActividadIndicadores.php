@@ -178,7 +178,7 @@ class ActividadIndicadores
         $historial = DB::table('entrega_pedido_detalles as ed')->select('ed.*')->selectRaw('COALESCE(SUM(aceptadas) OVER (PARTITION BY pedido_detalle_id, referencia_fisica ORDER BY id ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING),0) a_antes, COALESCE(SUM(rechazadas) OVER (PARTITION BY pedido_detalle_id, referencia_fisica ORDER BY id ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING),0) r_antes');
         $foto = DB::table('incidencia_entrega_eventos')->where('tipo', 'despacho_base')->select('incidencia_id')->selectRaw('MAX(id) foto_id, COUNT(*) fotos')->groupBy('incidencia_id');
         $q = $this->referencias()->join('entregas_pedido as e', 'e.incidencia_id', '=', 'inc.id')->joinSub($historial, 'ed', 'ed.entrega_id', '=', 'e.id')
-            ->join('pedido_detalles as d', 'd.id', '=', 'ed.pedido_detalle_id')->leftJoin('pedido_despacho_componentes as dc', 'dc.id', '=', 'ed.despacho_componente_id')
+            ->join('pedido_detalles as d', 'd.id', '=', 'ed.pedido_detalle_id')->leftJoin('pedido_referencias_fisicas as dc', 'dc.id', '=', 'ed.despacho_componente_id')
             ->leftJoin('pedido_despacho_lineas as lu', 'lu.detalle_fisico_id', '=', 'd.id')
             ->leftJoin('movimientos_inventario as mu', function ($j): void {
                 $j->on('mu.despacho_unidades_id', '=', 'lu.despacho_id')->on('mu.presentacion_producto_id', '=', 'lu.presentacion_producto_id');
@@ -230,7 +230,7 @@ class ActividadIndicadores
     {
         foreach ([false, true] as $clasificar) {
             $q = $this->referencias()->join('retornos_pedido as r', 'r.incidencia_id', '=', 'inc.id')->join('retorno_pedido_detalles as rd', 'rd.retorno_id', '=', 'r.id')
-                ->join('pedido_detalles as d', 'd.id', '=', 'rd.pedido_detalle_id')->leftJoin('pedido_despacho_componentes as dc', 'dc.id', '=', 'rd.despacho_componente_id')
+                ->join('pedido_detalles as d', 'd.id', '=', 'rd.pedido_detalle_id')->leftJoin('pedido_referencias_fisicas as dc', 'dc.id', '=', 'rd.despacho_componente_id')
                 ->leftJoin('presentaciones_producto as p', 'p.id', '=', DB::raw('COALESCE(dc.presentacion_producto_id,d.presentacion_producto_id)'));
             if ($clasificar) {
                 $q->join('incidencia_entrega_eventos as ev', 'rd.id', '=', $this->jsonNumero('ev.datos', 'retorno_detalle_id'))->where('ev.tipo', 'incidencia_clasificar')->whereColumn('ev.incidencia_id', 'inc.id');
@@ -256,7 +256,7 @@ class ActividadIndicadores
         $q = $this->referencias()->join('incidencia_entrega_eventos as ev', 'ev.incidencia_id', '=', 'inc.id')->where('ev.tipo', 'retorno_aprobado')
             ->join('retorno_pedido_detalles as rd', 'rd.id', '=', $this->jsonNumero('ev.datos', 'retorno_detalle_id'))
             ->join('retornos_pedido as retorno', 'retorno.id', '=', 'rd.retorno_id')
-            ->join('pedido_detalles as d', 'd.id', '=', 'rd.pedido_detalle_id')->leftJoin('pedido_despacho_componentes as dc', 'dc.id', '=', 'rd.despacho_componente_id')
+            ->join('pedido_detalles as d', 'd.id', '=', 'rd.pedido_detalle_id')->leftJoin('pedido_referencias_fisicas as dc', 'dc.id', '=', 'rd.despacho_componente_id')
             ->leftJoinSub($movimientos, 'm', 'm.origen_id', '=', DB::raw('CAST(ev.id AS CHAR)'))->leftJoin('presentaciones_producto as p', 'p.id', '=', DB::raw('COALESCE(dc.presentacion_producto_id,d.presentacion_producto_id)'));
         FiltrosIndicadores::pedido($q, $f);
         $this->filtrar($q, $f, skuHistorico: 'COALESCE(dc.sku,d.codigo_sku)');

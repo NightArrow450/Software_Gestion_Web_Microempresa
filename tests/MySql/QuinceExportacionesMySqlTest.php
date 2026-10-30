@@ -6,34 +6,30 @@ use App\Models\Permiso;
 use App\Services\CorregirEnvasado;
 use App\Services\FilasIndicadores;
 use App\Services\FiltrosIndicadores;
-use App\Services\GestionarSurtidos;
+use App\Services\GestionarPedidoUnidades;
 use App\Services\RegistrarEnvasado;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
-use Tests\SurtidosEscenario;
+use Tests\VentaUnidadesEscenario;
 
 class QuinceExportacionesMySqlTest extends PruebaEntregaMySql
 {
-    use SurtidosEscenario;
+    use VentaUnidadesEscenario;
 
     public function test_quince_csv_con_datos_ficticios_operativos_y_filtros(): void
     {
         $this->travelTo(CarbonImmutable::parse('2026-10-24 12:00:00', 'America/Lima'));
-        $e = $this->escenarioSurtido();
+        $e = $this->escenarioUnidades();
         foreach (['indicadores.ver', 'indicadores.economicos.ver', 'indicadores.exportar', 'cumplimiento.incidencias.revisar'] as $n) {
             $e['usuario']->role->permisos()->syncWithoutDetaching(Permiso::firstOrCreate(['nombre' => $n], ['descripcion' => $n])->id);
         }$e['usuario']->unsetRelation('role');
         $normal = $this->pedidoEnvasado($e);
-        $sur = $this->pedidoEnvasado($e);
-        $d = $sur->detalles->sole();
-        $d->update(['tipo_linea' => 'surtido', 'formato_surtido_id' => $e['formato'], 'modalidad' => 'empaque', 'cantidad' => 2, 'unidades_por_empaque' => 12, 'precio_unitario' => 24, 'importe' => 48]);
-        app(GestionarSurtidos::class)->guardar($d, $this->paquetesSurtidos($e), $e['usuario'], 'Composición ficticia para revisión de los quince CSV.');
-        $sur->update(['total' => 48]);
-        $pend = $this->pedidoEnvasado($e);
-        $dp = $pend->detalles->sole();
-        $dp->update(['tipo_linea' => 'surtido', 'formato_surtido_id' => $e['formato'], 'modalidad' => 'empaque', 'cantidad' => 1, 'unidades_por_empaque' => 12, 'precio_unitario' => 24, 'importe' => 24]);
-        app(GestionarSurtidos::class)->guardar($dp, [['estado' => 'pendiente', 'componentes' => [['presentacion_producto_id' => $e['skus'][0]->id, 'cantidad' => 4]]]], $e['usuario'], 'Composición pendiente ficticia para revisión de CSV.');
-        $pend->update(['total' => 24]);
+        $agrupado = $this->registrarUnidades($e, [7, 11, 6], $this->agrupacionesUnidades($e));
+        $agrupado->update(['estado' => 'confirmado']);
+        $pendiente = app(GestionarPedidoUnidades::class)->guardar(['cliente_id' => $normal->cliente_id, 'fecha_pedido' => today()->toDateString(), 'fecha_entrega' => today()->toDateString(),
+            'condicion_pago' => 'contado', 'motivo' => 'Ocho unidades quedan en espera por una incidencia de producción.',
+            'detalles' => [['presentacion_producto_id' => $e['skus'][0]->id, 'cantidad' => 12, 'cantidad_espera' => 8]]], $e['usuario']);
+        $pendiente->update(['estado' => 'confirmado']);
         $this->pedidoEnvasado($e, 'cancelado');
         $env = app(RegistrarEnvasado::class)->ejecutar(['presentacion_producto_id' => $e['presentacion']->id, 'configuracion_envasado_id' => $e['configuracion']->id, 'version_configuracion' => 0, 'cantidad' => 10], $e['usuario']);
         app(CorregirEnvasado::class)->ejecutar($env, ['clasificacion' => 'error_administrativo', 'cantidad' => 2, 'revertidas_previas' => 0, 'motivo' => 'Dos unidades ficticias registradas por error.', 'devoluciones' => [$env->consumos->sole()->id => 2]], $e['usuario']);
