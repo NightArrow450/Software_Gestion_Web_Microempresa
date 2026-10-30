@@ -11,7 +11,7 @@ Selenium ejecutó los seis escenarios completos: **6 aprobados / 518,67 segundos
 - Modal en 360/390 px: vista previa, Escape y cierre sin producción ni movimientos nuevos. Agrupaciones ya despachadas conservan su fotografía y controles no editables.
 - PDF revisado mediante render: dos páginas A4 horizontales, primera con notas distintas 000002 y 000003; segunda con el anexo. No hay páginas en blanco. No sustituye impresión física.
 
-[Resultados y saldos por etapa](resultados.json), [registro Selenium](selenium-integral.log), [PDF](notas-y-agrupaciones-pr45.pdf).
+[Resultados y saldos por etapa](resultados.json), [registro Selenium](selenium-integral.txt), [PDF](notas-y-agrupaciones-pr45.pdf).
 
 ![Editor con SKU y agrupaciones](01-editor-dos-paquetes-escritorio.png)
 

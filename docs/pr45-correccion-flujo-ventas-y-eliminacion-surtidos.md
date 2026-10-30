@@ -166,8 +166,8 @@ Este apartado sustituye los pendientes de los cortes anteriores; aquellos result
 
 Todas las pruebas con escritura utilizan SQLite `:memory:` o el servidor independiente MySQL 8.4.3 en `127.0.0.1:3347`, con UUID, ejecutable, configuración, datadir y ausencia de bases protegidas comprobados antes de habilitar la conexión. Se utilizaron bases nuevas con prefijo `dhacer_eco_limp_test_`; no se limpiaron las bases del proyecto.
 
-- Laravel completo: **682 pruebas / 4.885 aserciones / 103,961 s**. Descubrimiento PHPUnit: 33 ejecuciones Unit, 638 Feature y 11 Security; los proveedores de datos cuentan como ejecuciones independientes. Seguridad se incluye una sola vez.
-- MySQL integral tras el ajuste de compatibilidad normal histórica: **71 pruebas / 1.350 aserciones / 242,687 s**. Ensayo adicional ampliado de retiro y flujo físico: **1 prueba / 191 aserciones / 75,169 s**, sin tablas antiguas, con despacho idempotente, rechazo, recepción y aprobación; compara cuentas y ejecuta el manifiesto de saneamiento de solo lectura. La repetición integral final incorpora esas aserciones y se registra debajo.
+- Laravel completo, después de la guarda final: **684 pruebas / 4.895 aserciones / 85,503 s**. Descubrimiento PHPUnit: 33 ejecuciones Unit, 640 Feature y 11 Security; los proveedores de datos cuentan como ejecuciones independientes. Seguridad se incluye una sola vez.
+- MySQL integral tras el ajuste de compatibilidad normal histórica: **71 pruebas / 1.350 aserciones / 242,687 s**. Ensayo adicional ampliado de retiro y flujo físico: **1 prueba / 191 aserciones / 75,169 s**, sin tablas antiguas, con despacho idempotente, rechazo, recepción y aprobación; compara cuentas y ejecuta el manifiesto de saneamiento de solo lectura. La repetición integral local con el ensayo ampliado pasó **71 pruebas / 1.358 aserciones / 222,966 s**. Después se añadió la guarda de dependencias SQL externas: su ensayo MySQL aislado final pasó **1 prueba / 194 aserciones / 54,567 s**. GitHub ejecuta de nuevo las 71 sobre el último commit antes de integrar.
 - Flujo 54 → 32: aceptación completa, rechazo parcial, rechazo total y repetición sin las seis tablas retiradas. Esta última ejecuta también las 15 pantallas/CSV y comprueba que las consultas no utilicen estructuras retiradas. Los cuatro escenarios pasaron, conservando las cuatro tablas de cuentas y autorizaciones.
 - JavaScript: **45 aprobadas, 0 fallidas, 0 omitidas**.
 - Larastan nivel 5: **0 errores**, sin supresiones nuevas. Pint aplicado a los PHP modificados; PHP lint sin errores.
@@ -207,3 +207,49 @@ La consolidación de preparación y el informe del verificador siguen acumulando
 ### Evidencia visual del PR45
 
 Selenium completo: **6/6 escenarios / 518,67 s**, Chrome 146, MySQL aislado. Escritorio y 360/390/768/1024 px comprobados; consola sin errores graves. El PDF tiene dos páginas A4 horizontales: dos notas diferentes en la primera y anexo de agrupaciones en la segunda, sin hojas en blanco. Capturas, saldos por etapa, PDF renderizado y SHA-256 en [la evidencia PR45](pruebas/evidencias/pr45_unidades/README.md). No se reutilizan cifras del PR44 como si fueran de esta campaña.
+
+### Guarda final y entrega del código
+
+El retiro manual inspecciona también vistas y triggers externos: si dependen de alguna estructura retirada o su definición no puede leerse, aborta antes del primer DDL. Las regresiones comprueban que las tablas, columnas y objetos originales permanecen cuando aborta. Pasaron SQLite y MySQL; no se modificaron migraciones históricas fusionadas.
+
+Los archivos principales son `LecturaPedido`, `LeerAgrupaciones`, `GestionarPedidoUnidades`, `AjustarPedidoHistorico`, `AtenderPedidoUnidades`, servicios de entrega/retorno e indicadores, controladores y vistas de pedidos/cumplimiento, editor JS, las tres migraciones ordinarias nuevas y el retiro manual. El detalle completo se consulta en Files changed del PR45.
+
+No se ha ejecutado saneamiento local. El manifiesto preparatorio es de solo lectura y el retiro de tablas exige que ya estén vacías; no se presenta como un borrado comercial ejecutado ni como un ejecutor destructivo listo para usar a ciegas. El paso destructivo final necesita resolver las dependencias e inmutabilidad sobre el estado que exista entonces, preservando todas las cuentas.
+
+La publicación de este informe no ejecuta migraciones al fusionar. El código nuevo necesita las tres migraciones ordinarias antes de utilizar sus módulos contra una base que aún tenga 45; la autorización actual no se usa para aplicarlas al proyecto local. Los cambios locales ajenos permanecen en el checkout original.
+
+### Commits del PR anteriores a esta actualización documental
+
+- `d7f0c04` docs(redisenio): registrar diagnostico y estrategia de coexistencia
+- `304aba8` perf(surtidos): paginar archivo sin multiplicar formularios por SKU
+- `b3eeb82` feat(pedidos): incorporar base versionada por unidades y despachos parciales
+- `cbf1bb9` docs(redisenio): registrar validaciones fallos y pendientes del borrador
+- `b082566` fix(migraciones): limitar nombre del indice de agrupaciones para MySQL
+- `89311e4` fix(integridad): comparar origenes sin colisiones de collation y probar concurrencia
+- `8cdd365` test(pedidos): adaptar atencion fisica y comprobar migraciones historicas por etapas
+- `9e10fc7` fix(security): actualizar symfony mime al parche compatible 7.4.22
+- `d5153f6` feat(pedidos): conservar tarifas historicas con ajustes versionados explicitos
+- `c609e3d` feat(despachos): trazar paquetes y sueltas por salida sin reutilizar agrupaciones
+- `6f292c6` fix(preparacion): separar espera y demanda activa y mostrar ajustes historicos
+- `3273fc8` test(web): preparar escenarios aislados y documentar validaciones reales del PR44
+- `b89be0b` test(selenium): usar rutas reales y comprobar anchos efectivos de captura
+- `2b67157` test(redisenio): validar Selenium movil y trazabilidad con evidencia de impresion
+- `0253980` docs: especificar PR45 de correccion integral ventas y retiro de surtidos
+- `bd006a0` docs(pr45): utilizar BD actual y exigir respaldo antes de limpieza irreversible
+- `3af9b3b` docs(pr45): fijar BD de pruebas y entrega con unico admin roles permisos
+- `f6cfe42` docs(pr45): proteger JM_DEVELOP y conservar todos los usuarios intactos
+- `e6e6fc4` refactor(pr45): desacoplar lecturas fisicas y detalles de surtidos
+- `f78ab18` test(pr45): verificar produccion real y flujo de 54 a 32 unidades
+- `92816a4` refactor(pr45): preparar referencias fisicas historicas independientes
+- `cb6ca66` refactor(pr45): preparar retiro controlado sin eliminar datos locales
+- `570591d` test(pr45): aislar escenarios de unidades del catalogo de surtidos
+- `ba9bb62` fix(pr45): reintentar interbloqueos sin duplicar operaciones
+- `bcc5f24` fix(pr45): incrementar version en ajustes exclusivamente logisticos
+- `6cc2dda` refactor(pr45): conservar integridad de referencias fisicas al retirar tablas
+- `654de80` refactor(pr45): retirar modalidad surtida y operar ventas por unidades
+- `6673f36` refactor(pr45): calcular indicadores y csv sin modalidades retiradas
+- `20c5760` feat(pr45): preparar manifiesto de saneamiento sin eliminar registros
+- `b49757a` test(pr45): validar despacho y retorno mysql sin tablas retiradas
+- `f0c932e` test(pr45): conservar evidencias al repetir la revision visual aislada
+- `49f3be0` docs(pr45): registrar validacion integral y procedimiento de saneamiento pendiente
+- `b5c907a` fix(pr45): bloquear retiro ante triggers o vistas externas
