@@ -1,0 +1,638 @@
+{
+  "datos": "Exclusivamente ficticios; MySQL independiente",
+  "selenium": {
+    "escenarios": 6,
+    "aprobados": 6,
+    "segundos": 518.67
+  },
+  "viewports": [
+    360,
+    390,
+    768,
+    1024,
+    1366
+  ],
+  "pdf": {
+    "paginas": 2,
+    "orientacion": "A4 horizontal",
+    "notas_distintas_primera_pagina": 2,
+    "anexo_paginas": 1,
+    "paginas_en_blanco": 0
+  },
+  "consola_errores_graves": [],
+  "etapas": {
+    "antes-ventas": {
+      "inventarios": {
+        "LIM-1": 100,
+        "LIM-2": 100,
+        "LIM-3": 100,
+        "LIM-4": 100,
+        "LIM-5": 100,
+        "QGR-1": 0,
+        "VID-1": 100,
+        "HIS-1": 60
+      },
+      "materiales": {
+        "ENVASE": "200.000",
+        "ETIQUETA": "200.000",
+        "CONTRATAPA": "200.000",
+        "MANGA": "100.000"
+      },
+      "pedidos": [
+        {
+          "id": 1,
+          "estado": "confirmado",
+          "total": "48.00",
+          "modelo_comercial": null
+        }
+      ],
+      "movimientos": 0,
+      "migraciones": 48,
+      "tablas": 52
+    },
+    "despues-ventas-sin-movimientos": {
+      "inventarios": {
+        "LIM-1": 100,
+        "LIM-2": 100,
+        "LIM-3": 100,
+        "LIM-4": 100,
+        "LIM-5": 100,
+        "QGR-1": 0,
+        "VID-1": 100,
+        "HIS-1": 60
+      },
+      "materiales": {
+        "ENVASE": "200.000",
+        "ETIQUETA": "200.000",
+        "CONTRATAPA": "200.000",
+        "MANGA": "100.000"
+      },
+      "pedidos": [
+        {
+          "id": 1,
+          "estado": "confirmado",
+          "total": "48.00",
+          "modelo_comercial": null
+        },
+        {
+          "id": 2,
+          "estado": "confirmado",
+          "total": "106.00",
+          "modelo_comercial": "unidades"
+        },
+        {
+          "id": 3,
+          "estado": "registrado",
+          "total": "21.00",
+          "modelo_comercial": "unidades"
+        },
+        {
+          "id": 4,
+          "estado": "confirmado",
+          "total": "324.00",
+          "modelo_comercial": "unidades"
+        }
+      ],
+      "movimientos": 0,
+      "migraciones": 48,
+      "tablas": 52
+    },
+    "salida-parcial-29": {
+      "inventarios": {
+        "LIM-1": 95,
+        "LIM-2": 76,
+        "LIM-3": 100,
+        "LIM-4": 100,
+        "LIM-5": 100,
+        "QGR-1": 0,
+        "VID-1": 100,
+        "HIS-1": 60
+      },
+      "materiales": {
+        "ENVASE": "200.000",
+        "ETIQUETA": "200.000",
+        "CONTRATAPA": "200.000",
+        "MANGA": "100.000"
+      },
+      "pedidos": [
+        {
+          "id": 1,
+          "estado": "confirmado",
+          "total": "48.00",
+          "modelo_comercial": null
+        },
+        {
+          "id": 2,
+          "estado": "despacho_parcial",
+          "total": "106.00",
+          "modelo_comercial": "unidades"
+        },
+        {
+          "id": 3,
+          "estado": "registrado",
+          "total": "21.00",
+          "modelo_comercial": "unidades"
+        },
+        {
+          "id": 4,
+          "estado": "confirmado",
+          "total": "324.00",
+          "modelo_comercial": "unidades"
+        }
+      ],
+      "movimientos": 2,
+      "migraciones": 48,
+      "tablas": 52
+    },
+    "salida-final-53": {
+      "inventarios": {
+        "LIM-1": 95,
+        "LIM-2": 76,
+        "LIM-3": 92,
+        "LIM-4": 92,
+        "LIM-5": 92,
+        "QGR-1": 0,
+        "VID-1": 100,
+        "HIS-1": 60
+      },
+      "materiales": {
+        "ENVASE": "200.000",
+        "ETIQUETA": "200.000",
+        "CONTRATAPA": "200.000",
+        "MANGA": "100.000"
+      },
+      "pedidos": [
+        {
+          "id": 1,
+          "estado": "confirmado",
+          "total": "48.00",
+          "modelo_comercial": null
+        },
+        {
+          "id": 2,
+          "estado": "despachado",
+          "total": "106.00",
+          "modelo_comercial": "unidades"
+        },
+        {
+          "id": 3,
+          "estado": "registrado",
+          "total": "21.00",
+          "modelo_comercial": "unidades"
+        },
+        {
+          "id": 4,
+          "estado": "confirmado",
+          "total": "324.00",
+          "modelo_comercial": "unidades"
+        }
+      ],
+      "movimientos": 5,
+      "migraciones": 48,
+      "tablas": 52
+    },
+    "rechazo-sin-entrada": {
+      "inventarios": {
+        "LIM-1": 95,
+        "LIM-2": 76,
+        "LIM-3": 92,
+        "LIM-4": 92,
+        "LIM-5": 92,
+        "QGR-1": 0,
+        "VID-1": 100,
+        "HIS-1": 60
+      },
+      "materiales": {
+        "ENVASE": "200.000",
+        "ETIQUETA": "200.000",
+        "CONTRATAPA": "200.000",
+        "MANGA": "100.000"
+      },
+      "pedidos": [
+        {
+          "id": 1,
+          "estado": "confirmado",
+          "total": "48.00",
+          "modelo_comercial": null
+        },
+        {
+          "id": 2,
+          "estado": "entrega_parcial",
+          "total": "106.00",
+          "modelo_comercial": "unidades"
+        },
+        {
+          "id": 3,
+          "estado": "registrado",
+          "total": "21.00",
+          "modelo_comercial": "unidades"
+        },
+        {
+          "id": 4,
+          "estado": "confirmado",
+          "total": "324.00",
+          "modelo_comercial": "unidades"
+        }
+      ],
+      "movimientos": 5,
+      "migraciones": 48,
+      "tablas": 52
+    },
+    "recepcion-sin-aprobacion": {
+      "inventarios": {
+        "LIM-1": 95,
+        "LIM-2": 76,
+        "LIM-3": 92,
+        "LIM-4": 92,
+        "LIM-5": 92,
+        "QGR-1": 0,
+        "VID-1": 100,
+        "HIS-1": 60
+      },
+      "materiales": {
+        "ENVASE": "200.000",
+        "ETIQUETA": "200.000",
+        "CONTRATAPA": "200.000",
+        "MANGA": "100.000"
+      },
+      "pedidos": [
+        {
+          "id": 1,
+          "estado": "confirmado",
+          "total": "48.00",
+          "modelo_comercial": null
+        },
+        {
+          "id": 2,
+          "estado": "entrega_parcial",
+          "total": "106.00",
+          "modelo_comercial": "unidades"
+        },
+        {
+          "id": 3,
+          "estado": "registrado",
+          "total": "21.00",
+          "modelo_comercial": "unidades"
+        },
+        {
+          "id": 4,
+          "estado": "confirmado",
+          "total": "324.00",
+          "modelo_comercial": "unidades"
+        }
+      ],
+      "movimientos": 5,
+      "migraciones": 48,
+      "tablas": 52
+    },
+    "retorno-aprobado-una-unidad": {
+      "inventarios": {
+        "LIM-1": 95,
+        "LIM-2": 76,
+        "LIM-3": 93,
+        "LIM-4": 92,
+        "LIM-5": 92,
+        "QGR-1": 0,
+        "VID-1": 100,
+        "HIS-1": 60
+      },
+      "materiales": {
+        "ENVASE": "200.000",
+        "ETIQUETA": "200.000",
+        "CONTRATAPA": "200.000",
+        "MANGA": "100.000"
+      },
+      "pedidos": [
+        {
+          "id": 1,
+          "estado": "confirmado",
+          "total": "48.00",
+          "modelo_comercial": null
+        },
+        {
+          "id": 2,
+          "estado": "entrega_parcial",
+          "total": "106.00",
+          "modelo_comercial": "unidades"
+        },
+        {
+          "id": 3,
+          "estado": "registrado",
+          "total": "21.00",
+          "modelo_comercial": "unidades"
+        },
+        {
+          "id": 4,
+          "estado": "confirmado",
+          "total": "324.00",
+          "modelo_comercial": "unidades"
+        }
+      ],
+      "movimientos": 6,
+      "migraciones": 48,
+      "tablas": 52
+    },
+    "envasado-32": {
+      "inventarios": {
+        "LIM-1": 95,
+        "LIM-2": 76,
+        "LIM-3": 93,
+        "LIM-4": 92,
+        "LIM-5": 92,
+        "QGR-1": 32,
+        "VID-1": 100,
+        "HIS-1": 60
+      },
+      "materiales": {
+        "ENVASE": "168.000",
+        "ETIQUETA": "168.000",
+        "CONTRATAPA": "168.000",
+        "MANGA": "100.000"
+      },
+      "pedidos": [
+        {
+          "id": 1,
+          "estado": "confirmado",
+          "total": "48.00",
+          "modelo_comercial": null
+        },
+        {
+          "id": 2,
+          "estado": "entrega_parcial",
+          "total": "106.00",
+          "modelo_comercial": "unidades"
+        },
+        {
+          "id": 3,
+          "estado": "registrado",
+          "total": "21.00",
+          "modelo_comercial": "unidades"
+        },
+        {
+          "id": 4,
+          "estado": "confirmado",
+          "total": "324.00",
+          "modelo_comercial": "unidades"
+        }
+      ],
+      "movimientos": 10,
+      "migraciones": 48,
+      "tablas": 52
+    },
+    "reduccion-comercial-sin-modificar-produccion": {
+      "inventarios": {
+        "LIM-1": 95,
+        "LIM-2": 76,
+        "LIM-3": 93,
+        "LIM-4": 92,
+        "LIM-5": 92,
+        "QGR-1": 32,
+        "VID-1": 100,
+        "HIS-1": 60
+      },
+      "materiales": {
+        "ENVASE": "168.000",
+        "ETIQUETA": "168.000",
+        "CONTRATAPA": "168.000",
+        "MANGA": "100.000"
+      },
+      "pedidos": [
+        {
+          "id": 1,
+          "estado": "confirmado",
+          "total": "48.00",
+          "modelo_comercial": null
+        },
+        {
+          "id": 2,
+          "estado": "entrega_parcial",
+          "total": "106.00",
+          "modelo_comercial": "unidades"
+        },
+        {
+          "id": 3,
+          "estado": "registrado",
+          "total": "21.00",
+          "modelo_comercial": "unidades"
+        },
+        {
+          "id": 4,
+          "estado": "en_preparacion",
+          "total": "192.00",
+          "modelo_comercial": "unidades"
+        }
+      ],
+      "movimientos": 10,
+      "migraciones": 48,
+      "tablas": 52
+    },
+    "quitagrasa-despachado": {
+      "inventarios": {
+        "LIM-1": 95,
+        "LIM-2": 76,
+        "LIM-3": 93,
+        "LIM-4": 92,
+        "LIM-5": 92,
+        "QGR-1": 0,
+        "VID-1": 100,
+        "HIS-1": 60
+      },
+      "materiales": {
+        "ENVASE": "168.000",
+        "ETIQUETA": "168.000",
+        "CONTRATAPA": "168.000",
+        "MANGA": "100.000"
+      },
+      "pedidos": [
+        {
+          "id": 1,
+          "estado": "confirmado",
+          "total": "48.00",
+          "modelo_comercial": null
+        },
+        {
+          "id": 2,
+          "estado": "entrega_parcial",
+          "total": "106.00",
+          "modelo_comercial": "unidades"
+        },
+        {
+          "id": 3,
+          "estado": "registrado",
+          "total": "21.00",
+          "modelo_comercial": "unidades"
+        },
+        {
+          "id": 4,
+          "estado": "despachado",
+          "total": "192.00",
+          "modelo_comercial": "unidades"
+        }
+      ],
+      "movimientos": 11,
+      "migraciones": 48,
+      "tablas": 52
+    },
+    "final-integral": {
+      "inventarios": {
+        "LIM-1": 95,
+        "LIM-2": 76,
+        "LIM-3": 93,
+        "LIM-4": 92,
+        "LIM-5": 92,
+        "QGR-1": 0,
+        "VID-1": 100,
+        "HIS-1": 60
+      },
+      "materiales": {
+        "ENVASE": "168.000",
+        "ETIQUETA": "168.000",
+        "CONTRATAPA": "168.000",
+        "MANGA": "100.000"
+      },
+      "pedidos": [
+        {
+          "id": 1,
+          "estado": "confirmado",
+          "total": "48.00",
+          "modelo_comercial": null
+        },
+        {
+          "id": 2,
+          "estado": "entrega_parcial",
+          "total": "106.00",
+          "modelo_comercial": "unidades"
+        },
+        {
+          "id": 3,
+          "estado": "registrado",
+          "total": "21.00",
+          "modelo_comercial": "unidades"
+        },
+        {
+          "id": 4,
+          "estado": "despachado",
+          "total": "192.00",
+          "modelo_comercial": "unidades"
+        }
+      ],
+      "movimientos": 11,
+      "migraciones": 48,
+      "tablas": 52
+    },
+    "antes-revision-modal-movil": {
+      "inventarios": {
+        "LIM-1": 95,
+        "LIM-2": 76,
+        "LIM-3": 93,
+        "LIM-4": 92,
+        "LIM-5": 92,
+        "QGR-1": 0,
+        "VID-1": 100,
+        "HIS-1": 60
+      },
+      "materiales": {
+        "ENVASE": "168.000",
+        "ETIQUETA": "168.000",
+        "CONTRATAPA": "168.000",
+        "MANGA": "100.000"
+      },
+      "pedidos": [
+        {
+          "id": 1,
+          "estado": "confirmado",
+          "total": "48.00",
+          "modelo_comercial": null
+        },
+        {
+          "id": 2,
+          "estado": "entrega_parcial",
+          "total": "106.00",
+          "modelo_comercial": "unidades"
+        },
+        {
+          "id": 3,
+          "estado": "registrado",
+          "total": "21.00",
+          "modelo_comercial": "unidades"
+        },
+        {
+          "id": 4,
+          "estado": "despachado",
+          "total": "192.00",
+          "modelo_comercial": "unidades"
+        }
+      ],
+      "movimientos": 11,
+      "migraciones": 48,
+      "tablas": 52
+    },
+    "despues-revision-modal-sin-confirmar": {
+      "inventarios": {
+        "LIM-1": 95,
+        "LIM-2": 76,
+        "LIM-3": 93,
+        "LIM-4": 92,
+        "LIM-5": 92,
+        "QGR-1": 0,
+        "VID-1": 100,
+        "HIS-1": 60
+      },
+      "materiales": {
+        "ENVASE": "168.000",
+        "ETIQUETA": "168.000",
+        "CONTRATAPA": "168.000",
+        "MANGA": "100.000"
+      },
+      "pedidos": [
+        {
+          "id": 1,
+          "estado": "confirmado",
+          "total": "48.00",
+          "modelo_comercial": null
+        },
+        {
+          "id": 2,
+          "estado": "entrega_parcial",
+          "total": "106.00",
+          "modelo_comercial": "unidades"
+        },
+        {
+          "id": 3,
+          "estado": "registrado",
+          "total": "21.00",
+          "modelo_comercial": "unidades"
+        },
+        {
+          "id": 4,
+          "estado": "despachado",
+          "total": "192.00",
+          "modelo_comercial": "unidades"
+        },
+        {
+          "id": 5,
+          "estado": "confirmado",
+          "total": "6.00",
+          "modelo_comercial": "unidades"
+        }
+      ],
+      "movimientos": 11,
+      "migraciones": 48,
+      "tablas": 52
+    }
+  },
+  "sha256": {
+    "01-editor-dos-paquetes-escritorio.png": "d3b6f87a798cf9a53ebdf1b24a3b7c816ab3c6ffd562268c88e2106a4fdde690",
+    "02-lista-general-escritorio.png": "70ccdac2e0f3392327252b49fa5e72deb1b8565ab208365a4d100ddc603d4bc7",
+    "09-ajuste-54-a-32-auditado.png": "91ef174c174408f5ef88912ead131a5f93a264b4806b4e09d07942d09d5c9b91",
+    "agrupaciones-editor-390px.png": "0cc6dc2218e01e475d316aa46a4680e90dd6d6e6ede1fe972c7abe120556de46",
+    "consola.json": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "impresion-1.png": "e84fde7de22d24d6c22067f60284c30ed9943c73f7b963cca96df8c972eb92b0",
+    "impresion-2.png": "dca136191abfae5df3a999c99958b6d68b68cab734535522f57e515725f31419",
+    "modal-consumos-360px.png": "b17aedf3ce94d47345b1cc60b6df556a30a2449830fa85c591cbace326889c80",
+    "modal-consumos-390px.png": "94d8acc5885ca3a1f0b143f3538504eeb33ea2f0939ad96be068832eb585aed4",
+    "notas-y-agrupaciones-pr45.pdf": "0ea644a8548a5489338011600a76c5a83b44736949b1b4147c2d6e845d8d7395",
+    "retornos-360px.png": "9c6635be426ca381f153f2ab58edee3e66121d090b151ba487be335b2eb3efc2",
+    "selenium-integral.log": "7999963c83e60f10667c21ae729ba75d899dd98ce3c29dac5b00e29735b7aa1d"
+  }
+}

@@ -12,13 +12,13 @@ El catálogo conserva categorías, productos, variantes/aromas y presentaciones 
 
 Las agrupaciones opcionales se definen en el formulario del pedido. No crean otro producto ni otro precio. Se pueden copiar y modificar individualmente, mezclar variantes compatibles del mismo producto y presentación física, indicar paquetes expresamente incompletos y dejar unidades sueltas. El editor muestra un paquete a la vez. No se crean combinaciones de aromas en el catálogo.
 
-Los pedidos anteriores conservan modalidad, cantidades, tamaños y precios pactados, incluidos los surtidos históricos del PR38. Su archivo conserva las composiciones versionadas y pendientes; una composición histórica sin definir sigue bloqueando la preparación definitiva y el despacho. No se reinterpretan automáticamente como pedidos nuevos.
+Los pedidos normales anteriores conservan modalidad, cantidades, tamaños y precios pactados. Las líneas antiguas sin un SKU verificable quedan para revisión histórica: no crean demanda ficticia ni se convierten automáticamente. La modalidad comercial surtida, sus rutas y su editor fueron retirados. Los hechos físicos ya registrados se conservan en referencias históricas independientes para entregas y retornos.
 
 Operaciones edita con motivo y control de versión durante la atención. Reducir retira obligación comercial; dejar unidades en espera mantiene una obligación pendiente. Cambiar aroma implica retirar o reducir el SKU anterior y añadir otro SKU autorizado, conservando ambas fotografías. Las unidades ya despachadas se rectifican mediante incidencias y retornos, sin reescribir su salida. Tras el cierre físico no se agregan arbitrariamente nuevas salidas al mismo pedido.
 
 En históricos pendientes, las cantidades comerciales se valoran con el precio pactado. Si una cantidad física no corresponde a ese modelo, la pantalla ofrece un ajuste explícito de unidades físicas e importe revisado a Administrador u Operaciones autorizados. Conserva el importe original, el nuevo, el autor y el motivo; no modifica pagos ni convierte automáticamente precios.
 
-Las notas mantienen dos pedidos por hoja A4 horizontal y anexos legibles de agrupaciones o composiciones históricas. La validación visual del PR44 y las dos páginas de impresión están comprobadas con datos ficticios; consultar [el informe del rediseño](redisenio-ventas-unidad.md).
+Las notas mantienen dos pedidos por hoja A4 horizontal y anexos legibles de agrupaciones logísticas. Los resultados actuales y evidencias de impresión se detallan en [el informe del PR45](pr45-correccion-flujo-ventas-y-eliminacion-surtidos.md).
 
 ## Preparación e inventario
 
@@ -34,7 +34,7 @@ Ver [documentación propia](envasados.md). Es producción física, distinta de l
 
 ## Distribución y retornos
 
-Cada despacho nuevo registra una salida parcial o completa con identidad propia, paquetes seleccionados y unidades sueltas. Sus líneas físicas, precios y distribución son inmutables; una agrupación ya enviada no se envía otra vez. Cada operación descuenta una vez los SKU físicos. Una insuficiencia revierte toda la operación transaccional. El despacho histórico conserva sus reglas y agrega normales y componentes surtidos sin duplicación.
+Cada despacho nuevo registra una salida parcial o completa con identidad propia, paquetes seleccionados y unidades sueltas. Sus líneas físicas, precios y distribución son inmutables; una agrupación ya enviada no se envía otra vez. Cada operación descuenta una vez los SKU físicos. Una insuficiencia revierte toda la operación transaccional. El despacho normal histórico conserva sus reglas; entregas y retornos consultan las referencias físicas verificables sin depender de las seis tablas retiradas.
 
 La entrega diferencia aceptadas, rechazadas y pendientes y admite resultados sucesivos dentro de lo despachado. Rechazar no devuelve stock. La recepción distingue aptas, dañadas, en revisión y no recuperadas. Solo una aprobación autorizada reincorpora aptas efectivamente recibidas. Se permiten retornos/aprobaciones parciales sin duplicar entradas. No se devuelven automáticamente materiales de envasado.
 

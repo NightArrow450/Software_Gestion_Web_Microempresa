@@ -143,3 +143,67 @@ Reasigna las referencias físicas de entregas y retornos al puente independiente
 Ensayo MySQL 8.4.3: una base auxiliar nueva y vacía, 48 migraciones ordinarias → 49 con el retiro explícito, 52 → 46 tablas. Se compararon las columnas anteriores y todas sus filas, claves foráneas y triggers. Después se registraron siete unidades por S/ 14,00 sin las seis estructuras anteriores, manteniendo idénticas las cuatro tablas de autorización. El ensayo individual pasó (183 aserciones); su repetición junto a los dos escenarios MySQL de unidades pasó: 3 pruebas, 213 aserciones, 37,481 s.
 
 Regresiones SQLite del retiro: falta de autorización, datos no vacíos, dependencia externa inesperada y retiro vacío con registro posterior por unidades. Todas pasaron. Suite Laravel completa de este punto: 673 pruebas, 4289 aserciones, 76,760 s. Larastan nivel 5: cero errores, sin supresiones nuevas. **No se ejecutó el retiro ni limpieza alguna en la base local existente.** El saneamiento comercial final y el retiro del código antiguo siguen pendientes en este borrador.
+
+
+## Estado de cierre técnico — PR45 (30/10/2026)
+
+Este apartado sustituye los pendientes de los cortes anteriores; aquellos resultados se conservan como evidencia de avance, no como resultados finales.
+
+### Correcciones implementadas
+
+- Se retiran controladores, servicios, rutas, vistas y JavaScript de la modalidad comercial surtida. No hay consultas a sus seis tablas en los módulos operativos. Las únicas referencias conservadas son las migraciones históricas, el puente de copia, el retiro controlado y la clasificación de solo lectura para el saneamiento.
+- Pedidos nuevos: SKU físicos y precios unitarios; las agrupaciones homogéneas o mixtas no añaden precio, demanda ni stock. El editor identifica nombre y SKU, permite copiar sin compartir referencias y no inventa cantidades.
+- Lecturas de preparación, disponibilidad, envasado e indicadores comparten `LecturaPedido`. Las líneas históricas no verificables se señalan para revisión; no generan demanda física ficticia. Los pedidos normales anteriores conservan sus reglas y valores originales.
+- Los resultados y retornos históricos utilizan `pedido_referencias_fisicas`. La copia conserva identificadores, cantidades, fechas y valor informativo originales. La clave textual histórica de eventos se conserva por compatibilidad; no habilita una modalidad comercial.
+- El puente ordinario traslada claves foráneas y triggers de entregas/retornos hacia la referencia independiente. El retiro manual solamente elimina estructuras vacías; en SQLite se preservan también los triggers externos durante las reconstrucciones.
+- Se corrige una edición exclusivamente logística que no incrementaba la versión del pedido cuando su cabecera no cambiaba. Cada ajuste auditado incrementa una vez la versión; una actualización concurrente obsoleta se rechaza.
+- Se corrige el tratamiento de interbloqueos MySQL: los middleware propagan la excepción original hasta la transacción con reintentos acotados. No se desactiva ningún bloqueo, movimiento único, control de permisos ni idempotencia. El ensayo real de dos pedidos que compiten por stock devuelve una aceptación y un rechazo por insuficiencia, sin salida parcial duplicada.
+- Los 15 CSV conservan BOM UTF-8, separador de punto y coma, filtros compartidos y neutralización de fórmulas. El reporte de composiciones muestra agrupaciones logísticas; no agrega otra demanda. El de pendientes distingue espera conocida y revisión histórica.
+- `SurtidosPermisoSeeder` queda como compatibilidad sin escrituras. No crea, asigna ni elimina permisos; los registros de autorización anteriores permanecen intactos.
+- La preparación de datos ficticios de rendimiento se adapta al modelo por unidades. No se ejecutaron `CargaSeeder`, k6 ni ZAP en esta campaña y no se extrapolan sus resultados anteriores al nuevo flujo.
+
+### Validación local reproducible
+
+Todas las pruebas con escritura utilizan SQLite `:memory:` o el servidor independiente MySQL 8.4.3 en `127.0.0.1:3347`, con UUID, ejecutable, configuración, datadir y ausencia de bases protegidas comprobados antes de habilitar la conexión. Se utilizaron bases nuevas con prefijo `dhacer_eco_limp_test_`; no se limpiaron las bases del proyecto.
+
+- Laravel completo: **682 pruebas / 4.885 aserciones / 103,961 s**. Descubrimiento PHPUnit: 33 ejecuciones Unit, 638 Feature y 11 Security; los proveedores de datos cuentan como ejecuciones independientes. Seguridad se incluye una sola vez.
+- MySQL integral tras el ajuste de compatibilidad normal histórica: **71 pruebas / 1.350 aserciones / 242,687 s**. Ensayo adicional ampliado de retiro y flujo físico: **1 prueba / 191 aserciones / 75,169 s**, sin tablas antiguas, con despacho idempotente, rechazo, recepción y aprobación; compara cuentas y ejecuta el manifiesto de saneamiento de solo lectura. La repetición integral final incorpora esas aserciones y se registra debajo.
+- Flujo 54 → 32: aceptación completa, rechazo parcial, rechazo total y repetición sin las seis tablas retiradas. Esta última ejecuta también las 15 pantallas/CSV y comprueba que las consultas no utilicen estructuras retiradas. Los cuatro escenarios pasaron, conservando las cuatro tablas de cuentas y autorizaciones.
+- JavaScript: **45 aprobadas, 0 fallidas, 0 omitidas**.
+- Larastan nivel 5: **0 errores**, sin supresiones nuevas. Pint aplicado a los PHP modificados; PHP lint sin errores.
+- Vite: compilación correcta. Composer audit y npm audit: **0 vulnerabilidades**.
+- Los escenarios con nombres históricos `Surtidos*` se conservan para trazabilidad y se adaptan al contrato legítimamente sustituto: unidades y agrupaciones. No se conservaron servicios productivos antiguos dentro de los tests para simular un resultado verde. El ensayo escalonado de migraciones mantiene sus datos históricos ficticios.
+
+### Migraciones pendientes para el proyecto local: no ejecutadas
+
+1. `database/migrations/2026_10_29_033324_create_versiones_y_agrupaciones_pedidos.php`.
+2. `database/migrations/2026_10_29_033326_create_despachos_parciales_pedido.php`.
+3. `database/migrations/2026_10_30_002816_create_pedido_referencias_fisicas_table.php`.
+
+Sobre el esquema previo de 45 migraciones / 44 tablas, las ordinarias dejan 48 / 52. No crean ni modifican usuarios, roles o permisos; no convierten precios ni generan movimientos.
+
+Separadamente, `database/migrations/retiro_controlado/2026_10_30_003639_retirar_estructuras_surtidos_vacias.php` no se descubre mediante el glob ordinario. Exige autorización explícita, identidad permitida, las seis tablas vacías, ausencia de referencias comerciales antiguas y dependencias conocidas. Su ensayo aislado alcanza 49 migraciones / 46 tablas. No se debe ejecutarla mientras conserve datos comerciales antiguos. Sus `down` no restauran ni borran historia automáticamente.
+
+No se ha ejecutado ninguna de estas operaciones sobre `software_gestion_web_microempresa` ni `ecolimp_respaldo_prueba`.
+
+### Procedimiento de saneamiento final preparado, NO ejecutado
+
+1. Detener escrituras y confirmar servidor, puerto, UUID, base exacta y directorio de datos. El contexto actual solo declara ficticios los registros comerciales: **todas las cuentas siguen protegidas**.
+2. Ejecutar primero, en una copia independiente verificada, `php artisan comercio:preparar-saneamiento --base=BASE_EXACTA --uuid=UUID_VERIFICADO`. El comando es exclusivamente de lectura: inventaría las tablas, cuenta registros, calcula SHA-256 de contenido sin mostrar filas o hashes de contraseñas, clasifica cuentas y calcula el orden de dependencias hijas antes que padres.
+3. Cualquier tabla sin clasificar, ciclo, identidad distinta o dependencia desde cuentas debe detener el procedimiento. Guardar el manifiesto fuera de Git y comparar de nuevo inmediatamente antes de la operación final, sin escritores concurrentes.
+4. El manifiesto **no es un comando de borrado ni una autorización para ejecutarlo**. Usuarios, roles, permisos, pivote, sesiones y datos asociados a cuentas se conservan íntegros. Auditoría e idempotencia quedan protegidas completas; sus entradas comerciales requieren clasificación explícita separada si se quiere retirarlas sin perder evidencia de cuentas.
+5. La ejecución futura debe preparar y ensayar las eliminaciones comerciales de acuerdo con el manifiesto y los triggers inmutables existentes. No desactivar claves foráneas de manera general ni desproteger triggers desde solicitudes web. El ejecutor destructivo queda deliberadamente fuera de este PR; no debe improvisarse una secuencia SQL contra la base local. Requiere el punto de control final solicitado por el usuario y la verificación previa de todas las dependencias.
+6. Solo cuando las seis tablas antiguas estén vacías y las referencias anteriores resueltas se podrá ejecutar el retiro manual con ruta exacta y variable `DHACER_RETIRO_SURTIDOS_AUTORIZADO=RETIRAR_SOLO_ESTRUCTURAS_SURTIDOS_VACIAS`, primero en la copia. No usar rollback automático ni restauraciones indiscriminadas.
+7. Verificar conteos comerciales vacíos, integridad de las estructuras operativas y huellas idénticas de todas las tablas protegidas. Cualquier diferencia detiene la entrega sin reparar cuentas ni datos automáticamente.
+
+El modo preparatorio está cubierto por cuatro pruebas: conservación de todas las filas, ausencia de datos de cuenta en la salida, base distinta, tabla desconocida y dependencia de cuentas. No se afirma que se haya eliminado ningún registro comercial en la base local.
+
+### Entorno y límites
+
+Se ajustaron únicamente las tres variables locales expresamente solicitadas: `SESSION_DRIVER=file`, `CACHE_STORE=file`, `QUEUE_CONNECTION=sync`. El resto de `.env` se comparó byte a byte tras normalizar esas tres líneas y quedó intacto; el archivo no se versiona. Las credenciales, usuarios y bases existentes no se modificaron. El checkout original conserva sus cambios locales de Selenium.
+
+La consolidación de preparación y el informe del verificador siguen acumulando resultados en memoria; las mediciones generales previas llegan a 300 registros y las mayores pruebas específicas de indicadores no certifican capacidad ilimitada. La repetición visual no equivale a UAT con trabajadores ni a impresión física. No se realizaron despliegues ni cambios de infraestructura operativa.
+
+### Evidencia visual del PR45
+
+Selenium completo: **6/6 escenarios / 518,67 s**, Chrome 146, MySQL aislado. Escritorio y 360/390/768/1024 px comprobados; consola sin errores graves. El PDF tiene dos páginas A4 horizontales: dos notas diferentes en la primera y anexo de agrupaciones en la segunda, sin hojas en blanco. Capturas, saldos por etapa, PDF renderizado y SHA-256 en [la evidencia PR45](pruebas/evidencias/pr45_unidades/README.md). No se reutilizan cifras del PR44 como si fueran de esta campaña.

@@ -1,3 +1,5 @@
+> **Antecedente del PR44 (29/10/2026), cerrado sin merge.** Este documento conserva la evidencia de aquella revisión; sus menciones de archivo de surtidos, esquema de 47 migraciones y estado de aprobación no describen la versión actual. El contrato, las migraciones y los resultados vigentes están en [el informe PR45](pr45-correccion-flujo-ventas-y-eliminacion-surtidos.md).
+
 # PR44: ventas por unidades, históricos y atención física parcial
 
 Estado del corte del 29/10/2026: **validación funcional y visual completada;
