@@ -21,12 +21,12 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use PHPUnit\Framework\Attributes\DataProvider;
-use Tests\SurtidosEscenario;
 use Tests\TestCase;
+use Tests\VentaUnidadesEscenario;
 
 class PedidoUnidadesTest extends TestCase
 {
-    use RefreshDatabase, SurtidosEscenario;
+    use RefreshDatabase, VentaUnidadesEscenario;
 
     private function entrada(array $e, int $cantidad = 54): array
     {
@@ -45,7 +45,7 @@ class PedidoUnidadesTest extends TestCase
     #[DataProvider('cantidades')]
     public function test_vende_unidades_sin_multiplo_y_sin_stock(int $cantidad): void
     {
-        $e = $this->escenarioSurtido(0);
+        $e = $this->escenarioUnidades(0);
         $entrada = $this->entrada($e, $cantidad);
         $pedido = app(GestionarPedidoUnidades::class)->guardar($entrada, $e['usuario']);
         app(TransicionesPedido::class)->registrar($pedido, 'registrado', 'confirmado', $e['usuario']->id, [], 'Confirmación sin disponibilidad.');
@@ -59,7 +59,7 @@ class PedidoUnidadesTest extends TestCase
 
     public function test_agrupa_variantes_sin_duplicar_precio_y_conserva_sueltas(): void
     {
-        $e = $this->escenarioSurtido();
+        $e = $this->escenarioUnidades();
         $entrada = $this->entrada($e, 5);
         $entrada['detalles'] = array_map(fn ($sku, $n): array => ['presentacion_producto_id' => $sku->id, 'cantidad' => $n], $e['skus'], [5, 24, 24]);
         $entrada['agrupaciones'] = [['capacidad' => 24, 'componentes' => [['sku_id' => $e['skus'][1]->id, 'cantidad' => 24]]],
@@ -75,7 +75,7 @@ class PedidoUnidadesTest extends TestCase
 
     public function test_reduccion_conserva_version_original_y_no_modifica_produccion(): void
     {
-        $e = $this->escenarioSurtido(32);
+        $e = $this->escenarioUnidades(32);
         $entrada = $this->entrada($e);
         $pedido = app(GestionarPedidoUnidades::class)->guardar($entrada, $e['usuario']);
         $pedido->update(['estado' => 'en_preparacion']);
@@ -105,7 +105,7 @@ class PedidoUnidadesTest extends TestCase
 
     public function test_despachos_parciales_no_duplican_stock_ni_marcan_entrega_total(): void
     {
-        $e = $this->escenarioSurtido(54);
+        $e = $this->escenarioUnidades(54);
         $pedido = app(GestionarPedidoUnidades::class)->guardar($this->entrada($e), $e['usuario']);
         $pedido->update(['estado' => 'en_preparacion']);
         $pedido->refresh();
@@ -136,7 +136,7 @@ class PedidoUnidadesTest extends TestCase
 
     public function test_rechaza_asignar_mas_unidades_de_las_vendidas_y_revierte_el_pedido_completo(): void
     {
-        $e = $this->escenarioSurtido();
+        $e = $this->escenarioUnidades();
         $entrada = $this->entrada($e, 5);
         $entrada['agrupaciones'] = [['capacidad' => 24, 'componentes' => [['sku_id' => $e['presentacion']->id, 'cantidad' => 6]]]];
         try {
@@ -151,7 +151,7 @@ class PedidoUnidadesTest extends TestCase
 
     public function test_formulario_nuevo_y_guardado_http_utilizan_unidades(): void
     {
-        $e = $this->escenarioSurtido();
+        $e = $this->escenarioUnidades();
         $this->get(route('pedidos.create'))->assertOk()->assertSee('Pedidos por unidades físicas')->assertDontSee('Añadir paquete surtido habilitado');
         $datos = $this->entrada($e, 7);
         $this->post(route('pedidos.store'), $datos)->assertRedirect()->assertSessionHasNoErrors();
@@ -166,7 +166,7 @@ class PedidoUnidadesTest extends TestCase
 
     public function test_servidor_no_permite_crear_un_nuevo_pedido_como_empaque(): void
     {
-        $e = $this->escenarioSurtido();
+        $e = $this->escenarioUnidades();
         $datos = $this->entrada($e, 5);
         $datos['detalles'][0]['modalidad'] = 'empaque';
         $datos['detalles'][0]['unidades_por_empaque'] = 12;
@@ -176,7 +176,7 @@ class PedidoUnidadesTest extends TestCase
 
     public function test_servidor_rechaza_precio_faltante_sin_inventarlo(): void
     {
-        $e = $this->escenarioSurtido();
+        $e = $this->escenarioUnidades();
         $e['presentacion']->update(['precio_unitario' => null]);
         $this->post(route('pedidos.store'), $this->entrada($e, 5))->assertSessionHasErrors('detalles.0.presentacion_producto_id');
         $this->assertDatabaseCount('pedidos', 0);
@@ -185,7 +185,7 @@ class PedidoUnidadesTest extends TestCase
 
     public function test_agrupaciones_rechazan_capacidades_fisicas_incompatibles(): void
     {
-        $e = $this->escenarioSurtido();
+        $e = $this->escenarioUnidades();
         $e['skus'][1]->update(['contenido' => 2]);
         $datos = $this->entrada($e, 5);
         $datos['detalles'][] = ['presentacion_producto_id' => $e['skus'][1]->id, 'cantidad' => 7];
@@ -197,7 +197,7 @@ class PedidoUnidadesTest extends TestCase
 
     public function test_edicion_conserva_precio_pactado_y_version_original_aunque_cambie_catalogo(): void
     {
-        $e = $this->escenarioSurtido();
+        $e = $this->escenarioUnidades();
         $datos = $this->entrada($e, 5);
         $pedido = app(GestionarPedidoUnidades::class)->guardar($datos, $e['usuario']);
         $e['presentacion']->update(['precio_unitario' => 7]);
@@ -213,7 +213,7 @@ class PedidoUnidadesTest extends TestCase
 
     public function test_dividir_y_reducir_aromas_conserva_original_y_aplica_precio_del_nuevo_sku(): void
     {
-        $e = $this->escenarioSurtido();
+        $e = $this->escenarioUnidades();
         $datos = $this->entrada($e, 24);
         $pedido = app(GestionarPedidoUnidades::class)->guardar($datos, $e['usuario']);
         $e['skus'][1]->update(['precio_unitario' => 3]);
@@ -232,7 +232,7 @@ class PedidoUnidadesTest extends TestCase
 
     public function test_retirar_linea_no_elimina_su_registro_ni_su_historial(): void
     {
-        $e = $this->escenarioSurtido();
+        $e = $this->escenarioUnidades();
         $datos = $this->entrada($e, 5);
         $pedido = app(GestionarPedidoUnidades::class)->guardar($datos, $e['usuario']);
         $id = $pedido->detalles()->sole()->id;
@@ -250,7 +250,7 @@ class PedidoUnidadesTest extends TestCase
 
     public function test_cierre_no_declara_completa_la_preparacion_de_32_si_siguen_solicitadas_54(): void
     {
-        $e = $this->escenarioSurtido(32);
+        $e = $this->escenarioUnidades(32);
         $pedido = app(GestionarPedidoUnidades::class)->guardar($this->entrada($e), $e['usuario']);
         $pedido->update(['estado' => 'en_preparacion']);
         $pedido->refresh();
@@ -262,7 +262,7 @@ class PedidoUnidadesTest extends TestCase
 
     public function test_catalogo_de_pedidos_consulta_paginas_sin_cargar_todos_los_sku_en_html(): void
     {
-        $e = $this->escenarioSurtido();
+        $e = $this->escenarioUnidades();
         $this->getJson(route('pedidos.unidades.catalogo', ['tipo' => 'skus', 'producto_id' => $e['presentacion']->producto_id]))
             ->assertOk()->assertJsonCount(3, 'data')->assertJsonPath('data.0.precio_unitario', '2.00');
         $this->get(route('pedidos.create'))->assertOk()->assertDontSee($e['presentacion']->codigo_sku);
@@ -290,7 +290,7 @@ class PedidoUnidadesTest extends TestCase
 
     public function test_sin_permiso_comercial_no_puede_guardar_aunque_manipule_el_formulario(): void
     {
-        $e = $this->escenarioSurtido();
+        $e = $this->escenarioUnidades();
         $e['usuario']->role->permisos()->detach(Permiso::where('nombre', 'pedidos.crear')->value('id'));
         $e['usuario']->unsetRelation('role');
         $this->post(route('pedidos.store'), $this->entrada($e, 5))->assertForbidden();
@@ -299,7 +299,7 @@ class PedidoUnidadesTest extends TestCase
 
     public function test_indicadores_y_retornos_utilizan_solo_las_unidades_realmente_despachadas(): void
     {
-        $e = $this->escenarioSurtido(100);
+        $e = $this->escenarioUnidades(100);
         $datos = $this->entrada($e, 5);
         $datos['detalles'][] = ['presentacion_producto_id' => $e['skus'][1]->id, 'cantidad' => 3];
         $datos['agrupaciones'] = [['capacidad' => 8, 'componentes' => [['sku_id' => $e['skus'][0]->id, 'cantidad' => 5], ['sku_id' => $e['skus'][1]->id, 'cantidad' => 3]]]];
@@ -350,7 +350,7 @@ class PedidoUnidadesTest extends TestCase
 
     public function test_versiones_comerciales_no_se_pueden_sobrescribir_por_sql(): void
     {
-        $e = $this->escenarioSurtido();
+        $e = $this->escenarioUnidades();
         $pedido = app(GestionarPedidoUnidades::class)->guardar($this->entrada($e), $e['usuario']);
         $this->expectException(QueryException::class);
         DB::table('pedido_versiones')->where('pedido_id', $pedido->id)->update(['datos' => '{}']);
@@ -358,7 +358,7 @@ class PedidoUnidadesTest extends TestCase
 
     public function test_dos_parciales_identifican_paquetes_concretos_y_sueltas_sin_repetirlos(): void
     {
-        $e = $this->escenarioSurtido(10);
+        $e = $this->escenarioUnidades(10);
         $datos = $this->entrada($e, 6);
         $datos['agrupaciones'] = array_fill(0, 2, ['capacidad' => 4, 'componentes' => [['sku_id' => $e['presentacion']->id, 'cantidad' => 2]]]);
         $pedido = app(GestionarPedidoUnidades::class)->guardar($datos, $e['usuario']);
@@ -413,7 +413,7 @@ class PedidoUnidadesTest extends TestCase
 
     public function test_un_paquete_despachado_no_se_recompone_mediante_edicion_comercial(): void
     {
-        $e = $this->escenarioSurtido(10);
+        $e = $this->escenarioUnidades(10);
         $datos = $this->entrada($e, 6);
         $datos['agrupaciones'] = [['capacidad' => 4, 'componentes' => [['sku_id' => $e['presentacion']->id, 'cantidad' => 2]]]];
         $pedido = app(GestionarPedidoUnidades::class)->guardar($datos, $e['usuario']);
@@ -442,7 +442,7 @@ class PedidoUnidadesTest extends TestCase
 
     public function test_sueltas_despachadas_no_pueden_reaparecer_dentro_de_otro_paquete(): void
     {
-        $e = $this->escenarioSurtido(6);
+        $e = $this->escenarioUnidades(6);
         $datos = $this->entrada($e, 6);
         $pedido = app(GestionarPedidoUnidades::class)->guardar($datos, $e['usuario']);
         $detalle = $pedido->detalles()->sole();
@@ -467,7 +467,7 @@ class PedidoUnidadesTest extends TestCase
 
     public function test_espera_se_registra_con_motivo_y_la_produccion_posterior_no_se_inventa(): void
     {
-        $e = $this->escenarioSurtido(32);
+        $e = $this->escenarioUnidades(32);
         $datos = $this->entrada($e);
         $datos['detalles'][0]['cantidad_espera'] = 22;
         try {
@@ -512,7 +512,7 @@ class PedidoUnidadesTest extends TestCase
 
     public function test_la_base_rechaza_componentes_que_pertenecen_a_otro_pedido(): void
     {
-        $e = $this->escenarioSurtido(10);
+        $e = $this->escenarioUnidades(10);
         $datos = $this->entrada($e, 4);
         $datos['agrupaciones'] = [['capacidad' => 4, 'componentes' => [['sku_id' => $e['presentacion']->id, 'cantidad' => 4]]]];
         $primero = app(GestionarPedidoUnidades::class)->guardar($datos, $e['usuario']);
@@ -529,7 +529,7 @@ class PedidoUnidadesTest extends TestCase
 
     public function test_lista_distingue_espera_preparacion_y_faltante_activo_sin_sumar_stock(): void
     {
-        $e = $this->escenarioSurtido(32);
+        $e = $this->escenarioUnidades(32);
         $datos = $this->entrada($e);
         $datos['detalles'][0]['cantidad_espera'] = 22;
         $datos['motivo'] = 'Se dejan veintidós unidades en espera por falta de insumos.';
@@ -557,7 +557,7 @@ class PedidoUnidadesTest extends TestCase
 
     public function test_agrupaciones_json_requiere_listas_en_lugar_de_claves_arbitrarias(): void
     {
-        $e = $this->escenarioSurtido();
+        $e = $this->escenarioUnidades();
         $datos = $this->entrada($e, 2);
         $datos['agrupaciones'] = ['nombre' => ['capacidad' => 2, 'componentes' => [['sku_id' => $e['presentacion']->id, 'cantidad' => 2]]]];
         try {
@@ -582,7 +582,7 @@ class PedidoUnidadesTest extends TestCase
     #[DataProvider('incidenciasFisicas')]
     public function test_incidencia_con_cero_preparado_no_inventa_liquido_ni_produccion(string $incidencia): void
     {
-        $e = $this->escenarioSurtido(0);
+        $e = $this->escenarioUnidades(0);
         $pedido = app(GestionarPedidoUnidades::class)->guardar($this->entrada($e), $e['usuario']);
         $pedido->update(['estado' => 'confirmado']);
         $pedido->refresh();

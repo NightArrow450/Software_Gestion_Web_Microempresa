@@ -8,15 +8,15 @@ use App\Services\AtenderPedidoUnidades;
 use App\Services\GestionarPedidoUnidades;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
-use Tests\SurtidosEscenario;
+use Tests\VentaUnidadesEscenario;
 
 class PedidoUnidadesMySqlTest extends PruebaInventarioMySql
 {
-    use SurtidosEscenario;
+    use VentaUnidadesEscenario;
 
     private function escenario(): array
     {
-        $e = $this->escenarioSurtido(6);
+        $e = $this->escenarioUnidades(6);
         $cliente = Cliente::create(['nombre' => 'Cliente ficticio por unidades', 'estado' => true]);
         $e['pedido'] = app(GestionarPedidoUnidades::class)->guardar([
             'cliente_id' => $cliente->id,
