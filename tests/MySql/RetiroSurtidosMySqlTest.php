@@ -4,8 +4,13 @@ namespace Tests\MySql;
 
 use App\Models\Cliente;
 use App\Models\Permiso;
+use App\Services\AprobarRetornoPedido;
+use App\Services\AtenderPedidoUnidades;
+use App\Services\ControlEntregaPedido;
 use App\Services\GestionarPedidoUnidades;
 use App\Services\LecturaPedido;
+use App\Services\RegistrarResultadoEntrega;
+use App\Services\RegistrarRetornoPedido;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -31,8 +36,11 @@ class RetiroSurtidosMySqlTest extends PruebaInventarioMySql
         $this->assertSame([], $tablasIniciales, 'Solo se ensaya en una base independiente nueva y vacía.');
         $this->assertSame(0, Artisan::call('migrate', ['--database' => 'mysql_concurrencia', '--force' => true, '--no-interaction' => true]));
         app()->forgetInstance(LecturaPedido::class);
-        $e = $this->escenarioEnvasado();
-        $e['usuario']->role->permisos()->attach(Permiso::firstOrCreate(['nombre' => 'pedidos.crear'])->id);
+        $e = $this->escenarioEnvasado(100, 100);
+        foreach (['pedidos.crear', 'cumplimiento.preparar', 'cumplimiento.entregar', 'cumplimiento.retornos.registrar', 'cumplimiento.retornos.aprobar'] as $permiso) {
+            $e['usuario']->role->permisos()->attach(Permiso::firstOrCreate(['nombre' => $permiso])->id);
+        }
+        $e['usuario']->unsetRelation('role');
         $originales = [];
         foreach (Schema::getTableListing($nombre, false) as $tabla) {
             if ($tabla !== 'migrations') {
@@ -67,11 +75,40 @@ class RetiroSurtidosMySqlTest extends PruebaInventarioMySql
         foreach ($triggers as $definicion) {
             $this->assertDoesNotMatchRegularExpression('/formatos_surtidos|formato_surtido_skus|pedido_paquetes_surtidos|paquete_surtido_composiciones|paquete_surtido_componentes|pedido_despacho_componentes/i', $definicion);
         }
+        $uuid = DB::selectOne('SELECT @@server_uuid uuid')->uuid;
+        $this->assertSame(0, Artisan::call('comercio:preparar-saneamiento', ['--base' => $nombre, '--uuid' => $uuid]));
+        $plan = json_decode(Artisan::output(), true, 512, JSON_THROW_ON_ERROR);
+        $this->assertSame('SOLO_LECTURA_NO_EJECUTA_LIMPIEZA', $plan['modo']);
+        $this->assertCount(46, $plan['tablas']);
         $cliente = Cliente::create(['nombre' => 'Cliente ficticio posterior al retiro', 'estado' => true]);
         $pedido = app(GestionarPedidoUnidades::class)->guardar(['cliente_id' => $cliente->id, 'fecha_pedido' => today()->toDateString(), 'fecha_entrega' => today()->toDateString(),
             'condicion_pago' => 'contado', 'detalles' => [['presentacion_producto_id' => $e['presentacion']->id, 'cantidad' => 7]]], $e['usuario']);
         $this->assertSame('14.00', $pedido->total);
         $this->assertSame(7, (int) $pedido->detalles()->sole()->cantidad);
+        $pedido->update(['estado' => 'confirmado']);
+        $pedido->refresh();
+        $detalle = $pedido->detalles()->sole();
+        $atencion = app(AtenderPedidoUnidades::class);
+        $atencion->preparar($pedido, ['version_pedido' => $pedido->version, 'pedido_detalle_id' => $detalle->id, 'cantidad' => 7,
+            'motivo' => 'Siete unidades verificadas en el ensayo sin tablas retiradas.'], $e['usuario']);
+        $pedido->refresh();
+        $salida = ['version_pedido' => $pedido->version, 'operacion' => 'retiro-mysql-salida-unica', 'motivo' => 'Salida física de siete unidades para el ensayo aislado.', 'detalles' => [['id' => $detalle->id, 'cantidad' => 7]]];
+        $id = $atencion->despachar($pedido, $salida, $e['usuario']);
+        $this->assertSame($id, $atencion->despachar($pedido, $salida, $e['usuario']));
+        $control = app(ControlEntregaPedido::class);
+        $pedido->refresh();
+        $fisica = array_values($control->resumen($pedido)['lineas'])[0];
+        app(RegistrarResultadoEntrega::class)->ejecutar($pedido, ['version' => $control->resumen($pedido)['version'],
+            'detalles' => [['pedido_detalle_id' => $fisica['id'], 'aceptadas' => 5, 'rechazadas' => 2, 'motivo' => 'Dos unidades rechazadas ficticias para verificar el retorno.']]], $e['usuario']);
+        $this->assertDatabaseHas('inventarios', ['presentacion_producto_id' => $e['presentacion']->id, 'cantidad_actual' => 93]);
+        app(RegistrarRetornoPedido::class)->ejecutar($pedido->fresh(), ['version' => $control->resumen($pedido)['version'], 'observaciones' => 'Se reciben una unidad apta y otra dañada físicamente.',
+            'detalles' => [['pedido_detalle_id' => $fisica['id'], 'aptas' => 1, 'danadas' => 1, 'en_revision' => 0, 'no_recuperadas' => 0]]], $e['usuario']);
+        $this->assertDatabaseHas('inventarios', ['presentacion_producto_id' => $e['presentacion']->id, 'cantidad_actual' => 93]);
+        $retorno = DB::table('retorno_pedido_detalles')->sole();
+        app(AprobarRetornoPedido::class)->ejecutar($pedido->fresh(), ['version' => $control->resumen($pedido)['version'], 'retorno_detalle_id' => $retorno->id,
+            'cantidad' => 1, 'motivo' => 'Se aprueba exclusivamente la unidad recuperada y apta.'], $e['usuario']);
+        $this->assertDatabaseHas('inventarios', ['presentacion_producto_id' => $e['presentacion']->id, 'cantidad_actual' => 94]);
+        $this->assertDatabaseCount('movimientos_inventario', 2);
         foreach (['users', 'roles', 'permisos', 'rol_permiso'] as $tabla) {
             $this->assertEquals($originales[$tabla][1], DB::table($tabla)->get()->toArray(), $tabla);
         }
