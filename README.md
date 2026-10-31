@@ -35,7 +35,6 @@ Los importes comerciales no son dinero efectivamente cobrado. Las referencias hi
 - [Envasados y materiales](docs/envasados.md).
 - [Auditoría y trazabilidad](docs/auditoria.md).
 - [Demostración aislada y controles previos](docs/demostracion.md).
-- [Dos guiones de video: funcionamiento y pruebas](docs/guiones-demostracion.md).
 - [Calidad, inventario de pruebas y pendientes](docs/calidad-y-pendientes.md).
 - [Integración continua](docs/integracion-continua.md).
 - [Preparación neutral para un despliegue futuro](docs/despliegue.md).
