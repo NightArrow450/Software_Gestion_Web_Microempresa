@@ -15,16 +15,23 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use PDO;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\EnvasadoEscenario;
 
 class RetiroSurtidosMySqlTest extends PruebaInventarioMySql
 {
     use EnvasadoEscenario;
 
-    public function test_retiro_mysql_aislado_conserva_cuentas_y_permite_unidades_sin_seis_tablas(): void
+    public static function retiros(): array
+    {
+        return ['retiro anterior vacío' => [false, false], 'retiro definitivo limpio' => [true, false], 'retiro definitivo con datos obsoletos' => [true, true]];
+    }
+
+    #[DataProvider('retiros')]
+    public function test_retiro_mysql_aislado_conserva_cuentas_y_permite_unidades_sin_seis_tablas(bool $definitivo, bool $datos): void
     {
         $conexion = EntornoMySql::proteger();
-        $conexion['database'] .= '_retiro';
+        $conexion['database'] .= $definitivo ? ($datos ? '_retiro_datos' : '_retiro_final') : '_retiro';
         $nombre = $conexion['database'];
         $this->assertLessThanOrEqual(64, strlen($nombre));
         config(['database.connections.mysql_concurrencia' => $conexion]);
@@ -41,6 +48,10 @@ class RetiroSurtidosMySqlTest extends PruebaInventarioMySql
             $e['usuario']->role->permisos()->attach(Permiso::firstOrCreate(['nombre' => $permiso])->id);
         }
         $e['usuario']->unsetRelation('role');
+        if ($datos) {
+            DB::table('formatos_surtidos')->insert(['producto_id' => $e['presentacion']->producto_id, 'nombre' => 'Formato obsoleto ficticio', 'tipo_envase' => 'Botella',
+                'contenido' => 1, 'unidad_medida' => 'L', 'unidades_por_empaque' => 12, 'precio_empaque' => 24, 'estado' => true]);
+        }
         $originales = [];
         foreach (Schema::getTableListing($nombre, false) as $tabla) {
             if ($tabla !== 'migrations') {
@@ -51,11 +62,12 @@ class RetiroSurtidosMySqlTest extends PruebaInventarioMySql
                 $originales[$tabla] = [$columnas, DB::table($tabla)->select($columnas)->get()->toArray()];
             }
         }
-        putenv('DHACER_RETIRO_SURTIDOS_AUTORIZADO=RETIRAR_SOLO_ESTRUCTURAS_SURTIDOS_VACIAS');
+        $migracion = 'database/migrations/retiro_controlado/'.($definitivo ? '2026_10_31_174658_retirar_definitivamente_surtidos_obsoletos.php' : '2026_10_30_003639_retirar_estructuras_surtidos_vacias.php');
+        putenv('DHACER_RETIRO_SURTIDOS_AUTORIZADO='.($definitivo ? 'RETIRAR_ESTRUCTURAS_SURTIDOS_OBSOLETAS' : 'RETIRAR_SOLO_ESTRUCTURAS_SURTIDOS_VACIAS'));
         try {
             DB::unprepared('CREATE TRIGGER dependencia_sql_prueba BEFORE UPDATE ON clientes FOR EACH ROW BEGIN IF EXISTS (SELECT 1 FROM formatos_surtidos) THEN SIGNAL SQLSTATE \'45000\' SET MESSAGE_TEXT = \'Dependencia ficticia\'; END IF; END');
             try {
-                (require database_path('migrations/retiro_controlado/2026_10_30_003639_retirar_estructuras_surtidos_vacias.php'))->up();
+                (require base_path($migracion))->up();
                 $this->fail('El trigger externo debe bloquear el retiro antes del primer DDL.');
             } catch (\RuntimeException $error) {
                 $this->assertStringContainsString('No se ha iniciado DDL', $error->getMessage());
@@ -63,7 +75,18 @@ class RetiroSurtidosMySqlTest extends PruebaInventarioMySql
             $this->assertTrue(Schema::hasTable('formatos_surtidos'));
             $this->assertTrue(Schema::hasColumn('pedido_detalles', 'formato_surtido_id'));
             DB::unprepared('DROP TRIGGER dependencia_sql_prueba');
-            $this->assertSame(0, Artisan::call('migrate', ['--database' => 'mysql_concurrencia', '--path' => ['database/migrations/retiro_controlado/2026_10_30_003639_retirar_estructuras_surtidos_vacias.php'], '--force' => true, '--no-interaction' => true]));
+            if ($definitivo) {
+                DB::unprepared('CREATE PROCEDURE dependencia_rutina_prueba() SELECT COUNT(*) FROM formatos_surtidos');
+                try {
+                    (require base_path($migracion))->up();
+                    $this->fail('La rutina externa debe impedir todo DDL.');
+                } catch (\RuntimeException $error) {
+                    $this->assertStringContainsString('No se ha iniciado DDL', $error->getMessage());
+                }
+                $this->assertTrue(Schema::hasColumn('pedido_detalles', 'formato_surtido_id'));
+                DB::unprepared('DROP PROCEDURE dependencia_rutina_prueba');
+            }
+            $this->assertSame(0, Artisan::call('migrate', ['--database' => 'mysql_concurrencia', '--path' => [$migracion], '--force' => true, '--no-interaction' => true]));
         } finally {
             putenv('DHACER_RETIRO_SURTIDOS_AUTORIZADO');
         }
@@ -73,7 +96,11 @@ class RetiroSurtidosMySqlTest extends PruebaInventarioMySql
         foreach ($originales as $tabla => [$columnas, $filas]) {
             if (in_array($tabla, $retiradas, true)) {
                 $this->assertFalse(Schema::hasTable($tabla));
-                $this->assertSame([], $filas);
+                if ($datos && $tabla === 'formatos_surtidos') {
+                    $this->assertCount(1, $filas);
+                } else {
+                    $this->assertSame([], $filas);
+                }
             } else {
                 $this->assertEquals($filas, DB::table($tabla)->select($columnas)->get()->toArray(), $tabla);
                 foreach (Schema::getForeignKeys($tabla) as $foreign) {

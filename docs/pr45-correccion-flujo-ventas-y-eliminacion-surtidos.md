@@ -1,5 +1,7 @@
 # PR #45 — Corrección mayor del flujo comercial y retiro de surtidos
 
+> Continuación del retiro físico: consultar [la migración definitiva controlada y el procedimiento separado de saneamiento](retiro-definitivo-surtidos.md). Este informe conserva las decisiones y resultados históricos del PR45; no implica que se haya ejecutado una limpieza comercial general.
+
 > **Repositorio existente**, no crear un proyecto Laravel nuevo. Esta rama procede del último commit del PR #44 (cerrado sin fusionar); el destino es `develop`, **nunca `main`**.
 
 ## Problema de negocio y decisión definitiva

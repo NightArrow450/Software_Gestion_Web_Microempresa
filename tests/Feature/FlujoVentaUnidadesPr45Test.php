@@ -26,17 +26,17 @@ class FlujoVentaUnidadesPr45Test extends TestCase
 
     public static function resultados(): array
     {
-        return ['aceptación completa' => [32, 0], 'rechazo parcial' => [30, 2], 'rechazo completo' => [0, 32], 'flujo completo sin estructuras retiradas' => [30, 2, true]];
+        return ['aceptación completa' => [32, 0], 'rechazo parcial' => [30, 2], 'rechazo completo' => [0, 32], 'flujo completo sin estructuras retiradas' => [30, 2, true], 'flujo completo tras retiro definitivo' => [30, 2, true, true]];
     }
 
     #[DataProvider('resultados')]
-    public function test_54_a_32_con_produccion_real_edicion_auditada_y_retorno_solo_aprobado(int $aceptadas, int $rechazadas, bool $retirarEstructuras = false): void
+    public function test_54_a_32_con_produccion_real_edicion_auditada_y_retorno_solo_aprobado(int $aceptadas, int $rechazadas, bool $retirarEstructuras = false, bool $definitivo = false): void
     {
         $this->freezeTime();
         if ($retirarEstructuras) {
-            putenv('DHACER_RETIRO_SURTIDOS_AUTORIZADO=RETIRAR_SOLO_ESTRUCTURAS_SURTIDOS_VACIAS');
+            putenv('DHACER_RETIRO_SURTIDOS_AUTORIZADO='.($definitivo ? 'RETIRAR_ESTRUCTURAS_SURTIDOS_OBSOLETAS' : 'RETIRAR_SOLO_ESTRUCTURAS_SURTIDOS_VACIAS'));
             try {
-                (require database_path('migrations/retiro_controlado/2026_10_30_003639_retirar_estructuras_surtidos_vacias.php'))->up();
+                (require database_path('migrations/retiro_controlado/'.($definitivo ? '2026_10_31_174658_retirar_definitivamente_surtidos_obsoletos.php' : '2026_10_30_003639_retirar_estructuras_surtidos_vacias.php')))->up();
             } finally {
                 putenv('DHACER_RETIRO_SURTIDOS_AUTORIZADO');
             }
