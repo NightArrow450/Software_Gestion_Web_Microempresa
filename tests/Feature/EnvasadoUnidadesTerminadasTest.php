@@ -52,6 +52,9 @@ class EnvasadoUnidadesTerminadasTest extends TestCase
         $envasado = Envasado::sole();
         $this->assertNull($envasado->configuracion_envasado_id);
         $this->assertNull($envasado->pedido_id);
+        $auditoria = \App\Models\Auditoria::where('accion', 'envasado_registrado')->sole();
+        $this->assertSame($e['usuario']->id, $auditoria->usuario_id);
+        $this->assertFalse($auditoria->detalle['control_materiales_exacto']);
         $this->assertSame(32, $envasado->cantidad);
         $this->assertSame($e['usuario']->id, $envasado->usuario_id);
         $this->assertSame($e['presentacion']->codigo_sku, $envasado->presentacion_historica['sku']);
@@ -128,7 +131,7 @@ class EnvasadoUnidadesTerminadasTest extends TestCase
     public function test_sin_control_numerico_no_se_generan_alertas_y_reportes_identifican_saldos_no_verificados(): void
     {
         $e = $this->escenarioHabitual();
-        $this->actingAs($e['usuario'])->get(route('inventario.stock'))->assertOk()->assertSee('Control numérico de materiales desactivado')->assertDontSee('Insumos, envases y materiales · mínimos');
+        $this->actingAs($e['usuario'])->get(route('inventario.stock'))->assertOk()->assertViewHas('resumen', ['agotado' => 1, 'bajo' => 0, 'normal' => 0])->assertSee('Control numérico de materiales desactivado')->assertDontSee('Insumos, envases y materiales · mínimos');
         $filtros = FiltrosIndicadores::validar(['reporte' => 'inventario']);
         $filas = iterator_to_array(app(ActividadIndicadores::class)->inventario($filtros));
         $insumos = array_values(array_filter($filas, fn ($fila): bool => $fila['tipo_item'] === 'Insumo'));

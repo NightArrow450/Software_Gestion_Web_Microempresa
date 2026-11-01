@@ -84,6 +84,7 @@ class ControlStockTest extends TestCase
 
     public function test_resumen_global_conserva_limites_y_no_se_recorta_por_busqueda_o_pagina(): void
     {
+        config(['envasado.control_materiales_exacto' => true]);
         $usuario = $this->usuario(['inventario.ver']);
         $this->actingAs($usuario)->get(route('inventario.stock'))->assertOk()->assertViewHas('resumen', ['agotado' => 0, 'bajo' => 0, 'normal' => 0]);
         $p = $this->presentacion();
