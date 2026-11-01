@@ -78,7 +78,7 @@ jobs:
           pdfinfo "$RUNNER_TEMP/evidencias-pr49/notas.pdf" > "$RUNNER_TEMP/evidencias-pr49/pdf-info.txt"
           pdftotext -layout "$RUNNER_TEMP/evidencias-pr49/notas.pdf" "$RUNNER_TEMP/evidencias-pr49/notas.txt"
           python3 - <<'PY'
-          import json, os, re
+          import json, os, re, sqlite3
           from pathlib import Path
           root = Path(os.environ['RUNNER_TEMP'])
           info = (root/'evidencias-pr49/pdf-info.txt').read_text()
@@ -89,6 +89,12 @@ jobs:
           assert tamano and abs(float(tamano[1])-841.89) < 2 and abs(float(tamano[2])-595.28) < 2, 'No es A4 horizontal'
           assert datos['nota1'] != datos['nota2']
           assert datos['nota1'] in texto and datos['nota2'] in texto, 'Falta una numeración independiente'
+          db = sqlite3.connect('file:' + os.environ['VISUAL_DATABASE'] + '?mode=ro', uri=True)
+          actual = db.execute('SELECT cantidad FROM pedido_detalles WHERE pedido_id=? AND retirado_en IS NULL', (datos['parcial'],)).fetchone()[0]
+          original = json.loads(db.execute('SELECT datos FROM pedido_versiones WHERE pedido_id=? ORDER BY numero LIMIT 1', (datos['parcial'],)).fetchone()[0])['lineas'][0]['cantidad']
+          assert actual == 32 and original == 54, 'Retiro comercial o conservación del original incorrectos'
+          (root/'evidencias-pr49/retiro-verificado.json').write_text(json.dumps({'original': original, 'vigente': actual, 'retiradas': original-actual}, indent=2))
+          db.close()
           print('PDF: una hoja A4 horizontal, dos notas distintas y numeración independiente comprobada.')
           PY
           pdftoppm -png -singlefile -scale-to 1600 "$RUNNER_TEMP/evidencias-pr49/notas.pdf" "$RUNNER_TEMP/evidencias-pr49/notas-a4-horizontal"
