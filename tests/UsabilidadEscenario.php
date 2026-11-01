@@ -30,8 +30,9 @@ trait UsabilidadEscenario
         $e = $this->escenarioUnidades();
         $marca = (string) Str::ulid();
         $e['presentacion']->producto->update(['nombre' => 'Quitásarro '.$marca]);
-        $cliente = Cliente::create(['nombre' => 'JOSÉ NÚÑEZ '.$marca, 'documento' => 'CE'.$marca, 'telefono' => '999666123', 'estado' => true]);
-        foreach (['jose nunez '.$marca, 'CE'.$marca, '999666123'] as $q) {
+        $documento = (string) random_int(10000000, 99999999);
+        $cliente = Cliente::create(['nombre' => 'JOSÉ NÚÑEZ '.$marca, 'documento' => $documento, 'telefono' => '999666123', 'estado' => true]);
+        foreach (['jose nunez '.$marca, $documento, '999666123'] as $q) {
             $respuesta = $this->getJson(route('pedidos.unidades.catalogo', ['tipo' => 'clientes', 'q' => $q]))->assertOk();
             $this->assertContains($cliente->id, array_column($respuesta->json('data'), 'id'));
             $respuesta->assertJsonMissingPath('data.0.telefono')->assertJsonMissingPath('data.0.documento');
@@ -66,7 +67,8 @@ trait UsabilidadEscenario
         $servicio->despachar($pedido, ['version_pedido' => $pedido->version, 'operacion' => (string) Str::ulid(), 'motivo' => 'Se despachan únicamente las treinta y dos unidades preparadas.', 'detalles' => [['id' => $detalle->id, 'cantidad' => 32]]], $e['usuario']);
         $pedido->refresh();
         $control = app(ControlEntregaPedido::class);
-        app(RegistrarResultadoEntrega::class)->ejecutar($pedido, ['version' => $control->resumen($pedido)['version'], 'detalles' => [['pedido_detalle_id' => $detalle->id, 'aceptadas' => 32, 'rechazadas' => 0]], 'observaciones' => 'El cliente acepta lo entregado y no desea recibir las otras unidades.'], $e['usuario']);
+        $fisica = array_values($control->resumen($pedido)['lineas'])[0];
+        app(RegistrarResultadoEntrega::class)->ejecutar($pedido, ['version' => $control->resumen($pedido)['version'], 'detalles' => [['pedido_detalle_id' => $fisica['id'], 'aceptadas' => 32, 'rechazadas' => 0]], 'observaciones' => 'El cliente acepta lo entregado y no desea recibir las otras unidades.'], $e['usuario']);
         $movimientos = DB::table('movimientos_inventario')->get()->toArray();
         $entregas = DB::table('entrega_pedido_detalles')->get()->toArray();
         $pedido->refresh();

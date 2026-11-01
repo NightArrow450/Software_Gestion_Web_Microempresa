@@ -375,7 +375,8 @@ class SurtidosTest extends TestCase
         $this->assertSame(24, $r->viewData('filas')->sum('total_unidades'));
         $this->assertSame(2, $r->viewData('filas')->sum('en_espera'));
         $this->assertCount(3, $r->viewData('filas'));
-        $this->get(route('inventario.index', ['pedido_id' => $pedido->id]))->assertOk()->assertViewHas('puedeAtender', true);
+        $this->get(route('inventario.index', ['pedido_id' => $pedido->id]))->assertOk()->assertViewHas('puedeAtender', false)
+            ->assertViewHas('revision', fn ($filas): bool => $filas->sum('en_espera') === 2 && $filas->sum('faltante_activo') === 0);
         $pedido->update(['estado' => 'despachado']);
         $this->get(route('cumplimiento.lista-preparacion'))->assertViewHas('filas', fn ($filas): bool => $filas->isEmpty());
     }

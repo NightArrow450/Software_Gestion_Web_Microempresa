@@ -36,7 +36,7 @@ function prepararEditor(grupos) {
     function elemento(tag='div') {
         return {tag, children:[], eventos:{}, dataset:{}, atributos:{}, value:'', textContent:'',
             append(...hijos) { this.children.push(...hijos); }, replaceChildren() {this.children=[];},
-            addEventListener(nombre,accion) {this.eventos[nombre]=accion;}, setAttribute(nombre,valor) {this.atributos[nombre]=valor;}, focus() {},
+            addEventListener(nombre,accion) {this.eventos[nombre]=accion;}, setAttribute(nombre,valor) {this.atributos[nombre]=valor;}, removeAttribute(nombre) {delete this.atributos[nombre];}, focus() {},
             get options() {return this.children;},
             querySelectorAll(selector) {return descendientes(this).filter(n => selector === '[data-total-grupo]' ? n.dataset.totalGrupo !== undefined : selector.split(',').map(x=>x.trim()).includes(n.tag));}
         };
@@ -44,7 +44,8 @@ function prepararEditor(grupos) {
     const form=elemento('form'), campos=new Map(); form.dataset.catalogo='/pedidos-unidades/catalogo';
     form.querySelector=selector=>{if(!campos.has(selector)){const nodo=elemento();campos.set(selector,nodo);form.append(nodo);}return campos.get(selector);};
     const document={createElement:elemento,querySelector:s=>s==='[data-pedido-unidades]'?form:null,getElementById:()=>({textContent:JSON.stringify({lineas:lineas(),agrupaciones:grupos})})};
-    const ctx={document,URL,location:{origin:'http://localhost'},fetch:async()=>({ok:true,json:async()=>({data:[],current_page:1,next_page_url:null})}),setTimeout,clearTimeout,confirm:()=>true};
+    const ctx={document,URL,AbortController,Event,location:{origin:'http://localhost'},fetch:async()=>({ok:true,json:async()=>({data:[],current_page:1,next_page_url:null})}),setTimeout,clearTimeout,confirm:()=>true};
+    vm.runInNewContext(fs.readFileSync(require('node:path').resolve(__dirname, '../../public/js/pedidos-autocompletar.js'), 'utf8'),ctx);
     vm.runInNewContext(script,ctx);
     const raiz=campos.get('[data-grupos]');
     return {raiz,campos,leer:()=>JSON.parse(campos.get('[data-agrupaciones-json]').value),nodos:()=>descendientes(raiz)};

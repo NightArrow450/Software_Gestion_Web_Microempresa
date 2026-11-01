@@ -128,7 +128,8 @@ class MejoraBuscadorPedidosTest extends TestCase
         $inactiva->save();
 
         $respuesta = $this->getJson(route('pedidos.unidades.catalogo', ['tipo' => 'skus', 'producto_id' => $producto->id]))->assertOk();
-        $respuesta->assertJsonCount(2, 'data')->assertJsonPath('data.0.id', $activa->id)->assertJsonPath('data.1.precio_unitario', null);
+        $respuesta->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $activa->id);
+        $respuesta->assertDontSee('SIN-PRECIO');
         $respuesta->assertDontSee('SKU-INACTIVO');
         $producto->update(['estado' => false]);
         $this->getJson(route('pedidos.unidades.catalogo', ['tipo' => 'skus', 'producto_id' => $producto->id]))->assertOk()->assertJsonCount(0, 'data');

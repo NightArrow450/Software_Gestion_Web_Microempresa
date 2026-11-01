@@ -51,7 +51,7 @@
                 <td>{{ $fila['necesario'] ?? 'No verificable' }}</td><td>{{ $fila['en_espera'] }}</td><td>{{ $fila['activo'] ?? 'No verificable' }}</td><td>{{ $fila['disponible'] }}</td><td>{{ $fila['faltante_activo'] ?? 'No verificable' }} / {{ $fila['faltante_total'] ?? 'No verificable' }}</td>
                 <td><span class="s3-status {{ $fila['alcanza'] ? 's3-ok' : 's3-danger' }}">{{ $fila['alcanza'] ? 'Suficiente' : ($fila['error'] ?: ($fila['en_espera'] > 0 ? 'Hay unidades en espera; atención pendiente' : 'Insuficiente')) }}</span></td>
             </tr>
-        @empty<tr><td colspan="5">Este pedido no tiene detalle.</td></tr>@endforelse</tbody>
+        @empty<tr><td colspan="8">Este pedido no tiene demanda pendiente.</td></tr>@endforelse</tbody>
     </table></div>
 </section>
 @endif
@@ -66,7 +66,7 @@
                 <td>{{ $p->contenido }} {{ $p->unidad_medida }}</td>
                 <td><strong>{{ $stock }}</strong></td>
             </tr>
-        @empty<tr><td colspan="5">No hay presentaciones activas que coincidan.</td></tr>@endforelse</tbody>
+        @empty<tr><td colspan="4">No hay presentaciones activas que coincidan.</td></tr>@endforelse</tbody>
     </table></div>
     <div class="s3-pagination">{{ $presentaciones->links() }}</div>
 </section>

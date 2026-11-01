@@ -6,6 +6,7 @@ use App\Models\Inventario;
 use App\Models\Permiso;
 use App\Services\AtenderPedidoUnidades;
 use App\Services\GestionarPedidoUnidades;
+use App\Services\RegistrarEnvasado;
 use App\Services\TokenOperacion;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -108,5 +109,54 @@ class UsabilidadComercialTest extends TestCase
         $this->assertDatabaseCount('pedido_preparaciones', 2);
         $this->assertDatabaseCount('movimientos_inventario', 0);
         $this->assertSame(32, (int) Inventario::where('presentacion_producto_id', $e['presentacion']->id)->value('cantidad_actual'));
+    }
+
+    public function test_retiro_no_reabre_pedidos_cerrados_ni_convierte_historicos(): void
+    {
+        $e = $this->escenarioUnidades();
+        $pedido = $this->pedidoUnico($e, 10);
+        $detalle = $pedido->detalles()->sole();
+        $datos = ['version' => $pedido->version, 'retirar' => [$detalle->id => 2], 'motivo' => 'Solicitud comercial de retirar unidades que siguen pendientes.'];
+        foreach (['entregado', 'rechazado', 'cancelado'] as $estado) {
+            $pedido->update(['estado' => $estado]);
+            $this->postJson(route('pedidos.retirar-faltantes', $pedido), $datos + ['_token_operacion' => TokenOperacion::emitir($e['usuario']->id)])->assertUnprocessable()->assertJsonValidationErrors('retiro');
+        }
+        $pedido->update(['estado' => 'registrado', 'modelo_comercial' => null]);
+        $this->postJson(route('pedidos.retirar-faltantes', $pedido), $datos + ['_token_operacion' => TokenOperacion::emitir($e['usuario']->id)])->assertUnprocessable();
+        $pedido->update(['modelo_comercial' => 'unidades']);
+        DB::table('incidencias_entrega')->insert(['pedido_id' => $pedido->id, 'version' => 0, 'estado_revision' => 'pendiente', 'resuelto_en' => now(), 'created_at' => now(), 'updated_at' => now()]);
+        $this->postJson(route('pedidos.retirar-faltantes', $pedido), $datos + ['_token_operacion' => TokenOperacion::emitir($e['usuario']->id)])->assertUnprocessable();
+        $this->assertSame(10, (int) $detalle->fresh()->cantidad);
+        $this->assertDatabaseCount('pedido_versiones', 1);
+        $this->assertDatabaseCount('movimientos_inventario', 0);
+    }
+
+    public function test_restaura_cliente_lineas_y_seleccion_pendiente_sin_cargar_el_catalogo_completo(): void
+    {
+        $e = $this->escenarioUnidades();
+        $entrada = $this->entradaUnidades($e);
+        $entrada += ['producto_seleccionado' => $e['presentacion']->producto_id, 'sku_seleccionado' => $e['skus'][1]->id, 'cantidad_nueva' => 7];
+        $this->withSession(['_old_input' => $entrada])->get(route('pedidos.create'))->assertOk()
+            ->assertViewHas('seleccionSku', fn ($s): bool => $s['id'] === $e['skus'][1]->id)
+            ->assertSee('coincidencias-clientes')->assertSee('coincidencias-productos')->assertSee('aria-autocomplete="list"', false);
+    }
+
+    public function test_exportaciones_identifican_saldos_y_consumos_historicos_sin_alterarlos(): void
+    {
+        $e = $this->escenarioUnidades();
+        foreach (['indicadores.ver', 'indicadores.exportar'] as $nombre) {
+            $e['usuario']->role->permisos()->syncWithoutDetaching(Permiso::firstOrCreate(['nombre' => $nombre], ['descripcion' => $nombre])->id);
+        }
+        $e['usuario']->unsetRelation('role');
+        app(RegistrarEnvasado::class)->ejecutar(['presentacion_producto_id' => $e['presentacion']->id, 'configuracion_envasado_id' => $e['configuracion']->id, 'version_configuracion' => 0, 'cantidad' => 2], $e['usuario']);
+        config(['envasado.control_materiales_exacto' => false]);
+        $movimientos = DB::table('movimientos_inventario')->get()->toArray();
+        foreach (['inventario', 'movimientos', 'saldos_periodo', 'materiales', 'materiales_resumen'] as $reporte) {
+            $csv = $this->get(route('indicadores.exportar', ['reporte' => $reporte]))->assertOk()->streamedContent();
+            $this->assertStringStartsWith("\xEF\xBB\xBF", $csv);
+            $this->assertStringContainsString('Control existencias', $csv);
+            $this->assertStringContainsString('Existencias físicas no verificadas', $csv);
+        }
+        $this->assertEquals($movimientos, DB::table('movimientos_inventario')->get()->toArray());
     }
 }

@@ -33,7 +33,7 @@
                 estado.textContent = resultados.length ? `${resultados.length} coincidencias visibles. Usa las flechas y Enter para seleccionar.${datos.next_page_url ? ' Hay más resultados.' : ''}` : 'No se encontraron coincidencias.';
             } catch (error) {
                 if (actual !== generacion || error.name === 'AbortError') return;
-                cerrar(); estado.textContent = error.message || 'No se pudo consultar. Vuelve a intentar.';
+                cerrar(); estado.textContent = 'No se pudo consultar. Revisa la conexión y tu sesión, y vuelve a intentar.';
             } finally {
                 if (actual === generacion) { cargando = false; mas.disabled = false; input.setAttribute('aria-busy', 'false'); }
             }
@@ -54,7 +54,7 @@
                 activo = (activo + (e.key === 'ArrowDown' ? 1 : -1) + resultados.length) % resultados.length;
                 Array.from(lista.children).forEach((opcion, i) => opcion.setAttribute('aria-selected', String(i === activo)));
                 input.setAttribute('aria-activedescendant', lista.children[activo].id); lista.children[activo].scrollIntoView?.({ block: 'nearest' });
-            } else if (e.key === 'Enter' && !lista.hidden && activo >= 0) { e.preventDefault(); seleccionar(resultados[activo]); }
+            } else if (e.key === 'Enter' && !lista.hidden) { e.preventDefault(); if (resultados.length) seleccionar(resultados[activo >= 0 ? activo : 0]); }
         });
         mas.addEventListener('mousedown', e => e.preventDefault()); mas.addEventListener('click', () => buscar(true));
         return { buscar, cerrar, cancelar };

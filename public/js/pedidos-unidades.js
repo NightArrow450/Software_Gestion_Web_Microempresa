@@ -118,7 +118,7 @@
             skus = mas ? skus.concat(data.data.filter(s => !skus.some(p => p.id === s.id))) : data.data; renderVariantes();
             paginas.skus = data.current_page + 1; boton.hidden = !data.next_page_url;
             estado.textContent = skus.length ? `${skus.length} presentaciones disponibles cargadas.${data.next_page_url ? ' Puedes consultar más.' : ''}` : 'Este producto no tiene presentaciones activas con precio válido.';
-        } catch (e) { if (generacion === generacionSku && e.name !== 'AbortError') estado.textContent = e.message; }
+        } catch (e) { if (generacion === generacionSku && e.name !== 'AbortError') estado.textContent = 'No se pudieron consultar las presentaciones. Revisa la conexión y tu sesión.'; }
         finally { if (generacion === generacionSku) { cargandoSku = false; boton.disabled = false; } }
     }
     function renderVariantes() {
