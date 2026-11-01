@@ -2,6 +2,7 @@
 
 use App\Models\Cliente;
 use App\Models\Permiso;
+use App\Models\Role;
 use App\Models\User;
 use App\Services\AtenderPedidoUnidades;
 use App\Services\ControlEntregaPedido;
@@ -10,6 +11,7 @@ use App\Services\RegistrarResultadoEntrega;
 use Database\Seeders\EntregaRetornoPermisoSeeder;
 use Database\Seeders\IndicadoresPermisoSeeder;
 use Database\Seeders\PermisoSeeder;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
@@ -41,14 +43,14 @@ $escenario = new class
     {
         $e = $this->escenarioUnidades(32);
         config(['envasado.control_materiales_exacto' => false]);
-        foreach ([PermisoSeeder::class, EntregaRetornoPermisoSeeder::class,
+        foreach ([RoleSeeder::class, PermisoSeeder::class, EntregaRetornoPermisoSeeder::class,
             IndicadoresPermisoSeeder::class] as $clase) {
             (new $clase)->run();
         }
-        $e['usuario']->role->update(['nombre' => 'Administrador']);
-        $e['usuario']->role->permisos()->syncWithoutDetaching(Permiso::pluck('id')->all());
+        $rol = Role::where('nombre', 'Administrador')->sole();
+        $rol->permisos()->syncWithoutDetaching(Permiso::pluck('id')->all());
         $e['usuario']->update(['email' => 'visual@example.test', 'first_name' => 'Ana', 'last_name' => 'Demostración',
-            'password' => getenv('VISUAL_PASSWORD'), 'debe_cambiar_password' => false]);
+            'password' => getenv('VISUAL_PASSWORD'), 'debe_cambiar_password' => false, 'role_id' => $rol->id]);
         $e['usuario']->unsetRelation('role');
         $e['presentacion']->producto->update(['nombre' => 'Quitásarro ficticio', 'codigo' => 'VISUAL-QTS']);
         Cliente::create(['nombre' => 'JOSÉ NÚÑEZ — cliente ficticio', 'estado' => true]);
