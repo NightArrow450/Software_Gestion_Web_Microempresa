@@ -109,6 +109,9 @@ async function comprobar(nombre, accion) {
             ['preparacion-despacho-incidencias', `/cumplimiento/${datos.preparacion}`],
             ['entrega-historial-acciones', `/cumplimiento/${datos.parcial}`],
             ['seguimiento', `/seguimiento/${datos.preparacion}`],
+            ['trazabilidad', `/seguimiento/${datos.preparacion}/trazabilidad`],
+            ['indicadores', '/indicadores'],
+            ['edicion-pedido', `/pedidos/${datos.preparacion}/editar`],
         ];
         for (const [nombre, ruta] of pantallas) {
             await comprobar(`${nombre} — ${ancho}px`, async () => {
