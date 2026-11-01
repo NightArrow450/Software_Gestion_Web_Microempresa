@@ -26,11 +26,11 @@ class FlujoVentaUnidadesPr45Test extends TestCase
 
     public static function resultados(): array
     {
-        return ['aceptación completa' => [32, 0], 'rechazo parcial' => [30, 2], 'rechazo completo' => [0, 32], 'flujo completo sin estructuras retiradas' => [30, 2, true], 'flujo completo tras retiro definitivo' => [30, 2, true, true]];
+        return ['aceptación completa' => [32, 0], 'rechazo parcial' => [30, 2], 'rechazo completo' => [0, 32], 'flujo completo sin estructuras retiradas' => [30, 2, true], 'flujo completo tras retiro definitivo' => [30, 2, true, true], 'operación habitual sin materiales' => [30, 2, true, true, true]];
     }
 
     #[DataProvider('resultados')]
-    public function test_54_a_32_con_produccion_real_edicion_auditada_y_retorno_solo_aprobado(int $aceptadas, int $rechazadas, bool $retirarEstructuras = false, bool $definitivo = false): void
+    public function test_54_a_32_con_produccion_real_edicion_auditada_y_retorno_solo_aprobado(int $aceptadas, int $rechazadas, bool $retirarEstructuras = false, bool $definitivo = false, bool $sinMateriales = false): void
     {
         $this->freezeTime();
         if ($retirarEstructuras) {
@@ -43,6 +43,9 @@ class FlujoVentaUnidadesPr45Test extends TestCase
             DB::enableQueryLog();
         }
         $e = $this->escenarioEnvasado(100, 0);
+        if ($sinMateriales) {
+            config(['envasado.control_materiales_exacto' => false]);
+        }
         foreach (['pedidos.crear', 'pedidos.editar', 'cumplimiento.preparar', 'cumplimiento.entregar', 'cumplimiento.retornos.registrar', 'cumplimiento.retornos.aprobar', 'indicadores.ver', 'indicadores.economicos.ver', 'indicadores.exportar', 'seguimiento.ver'] as $permiso) {
             $e['usuario']->role->permisos()->attach(Permiso::firstOrCreate(['nombre' => $permiso], ['descripcion' => $permiso])->id);
         }
@@ -62,11 +65,14 @@ class FlujoVentaUnidadesPr45Test extends TestCase
         $this->assertDatabaseHas('inventarios', ['presentacion_producto_id' => $e['presentacion']->id, 'cantidad_actual' => 0]);
         $confirmacion = ['presentacion_producto_id' => $e['presentacion']->id, 'configuracion_envasado_id' => $e['configuracion']->id,
             'version_configuracion' => $e['configuracion']->version, 'cantidad' => 32, 'pedido_id' => $pedido->id, '_token_operacion' => TokenOperacion::emitir($e['usuario']->id)];
+        if ($sinMateriales) {
+            unset($confirmacion['configuracion_envasado_id'], $confirmacion['version_configuracion']);
+        }
         $this->post(route('envasado.store'), $confirmacion)->assertRedirect()->assertSessionHasNoErrors();
         $this->post(route('envasado.store'), $confirmacion)->assertRedirect()->assertSessionHasNoErrors();
         $this->assertDatabaseCount('envasados', 1);
-        $this->assertDatabaseCount('movimientos_inventario', 2);
-        $this->assertSame('68.000', $e['insumo']->fresh()->cantidad_actual);
+        $this->assertDatabaseCount('movimientos_inventario', $sinMateriales ? 1 : 2);
+        $this->assertSame($sinMateriales ? '100.000' : '68.000', $e['insumo']->fresh()->cantidad_actual);
         $detalle = $pedido->detalles()->sole();
         app(AtenderPedidoUnidades::class)->preparar($pedido, ['version_pedido' => $pedido->version, 'pedido_detalle_id' => $detalle->id,
             'cantidad' => 32, 'incidencia' => 'insumos_quimicos', 'motivo' => 'Se agotó el insumo químico; no se pudieron envasar las otras 22 unidades.'], $e['usuario']);
@@ -91,7 +97,7 @@ class FlujoVentaUnidadesPr45Test extends TestCase
         $this->assertSame($id, $servicio->despachar($pedido, $despacho, $e['usuario']));
         $this->assertDatabaseHas('inventarios', ['presentacion_producto_id' => $e['presentacion']->id, 'cantidad_actual' => 0]);
         $this->assertDatabaseCount('pedido_despachos', 1);
-        $this->assertDatabaseCount('movimientos_inventario', 3);
+        $this->assertDatabaseCount('movimientos_inventario', $sinMateriales ? 2 : 3);
         $pedido->refresh();
         $control = app(ControlEntregaPedido::class);
         $fisica = array_values($control->resumen($pedido)['lineas'])[0];
@@ -107,7 +113,7 @@ class FlujoVentaUnidadesPr45Test extends TestCase
             app(AprobarRetornoPedido::class)->ejecutar($pedido->fresh(), ['version' => $control->resumen($pedido)['version'], 'retorno_detalle_id' => $retorno->id,
                 'cantidad' => $rechazadas - 1, 'motivo' => 'Se aprueban únicamente las unidades físicamente recuperadas y aptas.'], $e['usuario']);
             $this->assertSame($rechazadas - 1, (int) Inventario::sole()->cantidad_actual);
-            $this->assertDatabaseCount('movimientos_inventario', 4);
+            $this->assertDatabaseCount('movimientos_inventario', $sinMateriales ? 3 : 4);
         }
         if ($retirarEstructuras) {
             foreach (array_keys(FilasIndicadores::REPORTES) as $reporte) {
@@ -125,7 +131,7 @@ class FlujoVentaUnidadesPr45Test extends TestCase
         foreach ($cuentas as $tabla => $filas) {
             $this->assertEquals($filas, DB::table($tabla)->get()->toArray(), $tabla);
         }
-        $this->assertSame('68.000', $e['insumo']->fresh()->cantidad_actual);
+        $this->assertSame($sinMateriales ? '100.000' : '68.000', $e['insumo']->fresh()->cantidad_actual);
         $this->assertDatabaseCount('envasados', 1);
     }
 }

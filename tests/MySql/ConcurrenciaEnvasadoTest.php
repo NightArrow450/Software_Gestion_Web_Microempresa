@@ -124,4 +124,41 @@ class ConcurrenciaEnvasadoTest extends PruebaInventarioMySql
         $this->assertSame(1, Auditoria::where('entidad', 'configuracion_envasado')->where('entidad_id', $e['configuracion']->id)->where('accion', 'configuracion_envasado_modificada')->where('usuario_id', $e['usuario']->id)->count());
         $this->assertSame('100.000', $e['insumo']->fresh()->cantidad_actual);
     }
+
+    public function test_envasados_simultaneos_sin_materiales_suman_solo_unidades_confirmadas(): void
+    {
+        $e = $this->escenarioEnvasado(0, 0);
+        config(['envasado.control_materiales_exacto' => false]);
+        $datos = ['presentacion_producto_id' => $e['presentacion']->id, 'cantidad' => 8];
+        $ops = array_map(fn () => $this->operacion($e['usuario'], '/envasados', $datos), [1, 2]);
+        $res = $this->simultaneas('presentaciones_producto', $e['presentacion']->id, $ops);
+        $this->assertSame([302, 302], array_column($res, 'estado'));
+        $this->assertSame(16, (int) Inventario::where('presentacion_producto_id', $e['presentacion']->id)->value('cantidad_actual'));
+        $ids = Envasado::where('presentacion_producto_id', $e['presentacion']->id)->pluck('id');
+        $this->assertCount(2, $ids);
+        $this->assertSame(0, DB::table('envasado_consumos')->whereIn('envasado_id', $ids)->count());
+        $this->assertSame(2, DB::table('movimientos_inventario')->where('origen_tipo', 'envasado')->whereIn('origen_id', $ids)->count());
+        $this->assertSame('0.000', $e['insumo']->fresh()->cantidad_actual);
+    }
+
+    public function test_reenvio_y_correccion_simultaneos_sin_materiales_no_duplican_stock(): void
+    {
+        $e = $this->escenarioEnvasado(0, 0);
+        config(['envasado.control_materiales_exacto' => false]);
+        $op = $this->operacion($e['usuario'], '/envasados', ['presentacion_producto_id' => $e['presentacion']->id, 'cantidad' => 8]);
+        $res = $this->simultaneas('presentaciones_producto', $e['presentacion']->id, [$op, $op]);
+        $this->assertSame([302, 302], array_column($res, 'estado'));
+        $envasado = Envasado::where('presentacion_producto_id', $e['presentacion']->id)->sole();
+        $this->assertSame(8, (int) Inventario::where('presentacion_producto_id', $e['presentacion']->id)->value('cantidad_actual'));
+        $datos = ['clasificacion' => 'error_administrativo', 'cantidad' => 8, 'revertidas_previas' => 0, 'motivo' => 'Anulación administrativa de unidades mal registradas'];
+        $ops = array_map(fn () => $this->operacion($e['usuario'], '/envasados/'.$envasado->id.'/correcciones', $datos), [1, 2]);
+        $res = $this->simultaneas('envasados', $envasado->id, $ops);
+        $estados = array_column($res, 'estado');
+        sort($estados);
+        $this->assertSame([302, 422], $estados);
+        $this->assertSame(0, (int) Inventario::where('presentacion_producto_id', $e['presentacion']->id)->value('cantidad_actual'));
+        $this->assertSame(1, $envasado->correcciones()->count());
+        $this->assertSame(2, DB::table('movimientos_inventario')->where('presentacion_producto_id', $e['presentacion']->id)->count());
+        $this->assertSame('0.000', $e['insumo']->fresh()->cantidad_actual);
+    }
 }
