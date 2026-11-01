@@ -51,7 +51,7 @@ class RetirarFaltantesPedido
             $cambios = [];
             foreach ($datos['retirar'] as $id => $cantidad) {
                 $detalle = $detalles->firstWhere('id', (int) $id);
-                if (! $detalle || (int) $cantidad > (int) $detalle->cantidad - (int) $salidas->get($detalle->id, 0)) {
+                if (! ctype_digit((string) $id) || (string) (int) $id !== (string) $id || ! $detalle || (int) $cantidad > (int) $detalle->cantidad - (int) $salidas->get($detalle->id, 0)) {
                     throw ValidationException::withMessages(['retirar' => 'Solo puedes retirar unidades pendientes que pertenecen a este pedido y nunca fueron despachadas.']);
                 }
                 if ((int) $cantidad > 0) {
@@ -76,8 +76,7 @@ class RetirarFaltantesPedido
             })->all();
             $entrada = ['cliente_id' => $pedido->cliente_id, 'fecha_pedido' => $pedido->fecha_pedido->toDateString(), 'fecha_entrega' => $pedido->fecha_entrega->toDateString(),
                 'condicion_pago' => $pedido->condicion_pago, 'observaciones' => $pedido->observaciones, '_version' => $pedido->version,
-                'motivo' => 'Retiro definitivo de faltantes: '.$datos['motivo'], 'detalles' => $lineas, 'agrupaciones' => $grupos];
-            $entrada['motivo'] = mb_substr($entrada['motivo'], 0, 1000);
+                'motivo' => $datos['motivo'], 'detalles' => $lineas, 'agrupaciones' => $grupos];
             try {
                 $guardado = app(GestionarPedidoUnidades::class)->guardar($entrada, $usuario, $pedido);
             } catch (ValidationException $error) {

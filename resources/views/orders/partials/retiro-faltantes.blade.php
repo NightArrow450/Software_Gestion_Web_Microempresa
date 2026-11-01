@@ -1,7 +1,7 @@
 @if(!empty($resumenRetiro))
 <section class="form-section retiro-faltantes" aria-label="Decisión comercial sobre faltantes">
     <h2>Productos faltantes que el cliente ya no desea</h2>
-    <p>La espera temporal mantiene el compromiso. El retiro definitivo reduce únicamente lo no despachado. Un rechazo físico se registra en Entregas, solo para unidades que sí salieron.</p>
+    <p>La espera temporal mantiene el compromiso. Al retirar, la espera se conserva hasta el máximo pendiente restante. El retiro definitivo reduce únicamente lo no despachado. Un rechazo físico se registra en Entregas, solo para unidades que sí salieron.</p>
     <details><summary>Retirar productos faltantes</summary>
         <form method="POST" action="{{ route('pedidos.retirar-faltantes', $pedido) }}" data-retiro-faltantes data-total-centimos="{{ (int) round((float) $pedido->total * 100) }}">
             @csrf @include('components.token-operacion')
