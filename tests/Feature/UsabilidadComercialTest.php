@@ -154,7 +154,7 @@ class UsabilidadComercialTest extends TestCase
         foreach (['inventario', 'movimientos', 'saldos_periodo', 'materiales', 'materiales_resumen'] as $reporte) {
             $csv = $this->get(route('indicadores.exportar', ['reporte' => $reporte]))->assertOk()->streamedContent();
             $this->assertStringStartsWith("\xEF\xBB\xBF", $csv);
-            $this->assertStringContainsString('Control existencias', $csv);
+            $this->assertStringContainsString('control_existencias', $csv);
             $this->assertStringContainsString('Existencias físicas no verificadas', $csv);
         }
         $this->assertEquals($movimientos, DB::table('movimientos_inventario')->get()->toArray());
