@@ -17,6 +17,7 @@ let pagina;
 
 async function foto(nombre) {
     const archivo = `${nombre}.png`;
+    await pagina.evaluate(async () => { window.scrollTo(0, 0); await document.fonts.ready; });
     await pagina.screenshot({ path: path.join(salida, archivo), fullPage: true, animations: 'disabled' });
     capturas.push(archivo);
     const medidas = await pagina.evaluate(() => ({ ancho: innerWidth, cuerpo: document.body.scrollWidth, documento: document.documentElement.scrollWidth }));
