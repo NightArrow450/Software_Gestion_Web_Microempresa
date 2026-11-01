@@ -13,6 +13,7 @@
     .retiro-faltantes {border-inline-start:4px solid #af7b25}.aviso-contexto {padding:1rem;background:#f2f6f1;border-radius:.5rem}
     .retiro-faltantes details,.retiro-faltantes form,.retiro-faltantes .table-container {min-width:0;max-width:100%}
     .retiro-faltantes form {grid-template-columns:minmax(0,1fr)}
+    .retiro-faltantes .table-container {position:relative}
     .busqueda-comercial {position:relative;min-width:0}.busqueda-comercial > input {width:100%}.busqueda-comercial p,[data-estado-skus] {font-size:.875rem;color:#455b4e;overflow-wrap:anywhere}
     .coincidencias {max-height:18rem;overflow-y:auto;border:1px solid #9caf9f;border-radius:.5rem;background:#fff;box-shadow:0 6px 14px #142c1920;margin-top:.3rem}
     .coincidencias [role=option] {padding:.8rem;cursor:pointer;min-height:44px;overflow-wrap:anywhere}.coincidencias [aria-selected=true],.coincidencias [role=option]:hover {background:#e5f1e5;color:#173c25}

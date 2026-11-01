@@ -20,6 +20,13 @@ async function foto(nombre) {
     await pagina.screenshot({ path: path.join(salida, archivo), fullPage: true, animations: 'disabled' });
     capturas.push(archivo);
     const medidas = await pagina.evaluate(() => ({ ancho: innerWidth, cuerpo: document.body.scrollWidth, documento: document.documentElement.scrollWidth }));
+    if (Math.max(medidas.cuerpo, medidas.documento) > medidas.ancho + 1) {
+        const diagnostico = await pagina.evaluate(() => [...document.querySelectorAll('body *')].filter(e => {
+            const r = e.getBoundingClientRect(); return r.right > innerWidth + 1 && r.width > 0;
+        }).slice(-25).map(e => ({ etiqueta: e.tagName, clase: e.className, rect: e.getBoundingClientRect().toJSON(),
+            posicion: getComputedStyle(e).position, ancho: getComputedStyle(e).width, desbordamiento: getComputedStyle(e).overflowX })));
+        fs.writeFileSync(path.join(salida, `${nombre}-desbordamiento.json`), JSON.stringify(diagnostico, null, 2));
+    }
     assert.ok(Math.max(medidas.cuerpo, medidas.documento) <= medidas.ancho + 1, `Desbordamiento horizontal en ${nombre}: ${JSON.stringify(medidas)}`);
 }
 async function ir(ruta) {
