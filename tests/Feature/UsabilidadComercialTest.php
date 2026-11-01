@@ -34,7 +34,7 @@ class UsabilidadComercialTest extends TestCase
         $pedido = $this->pedidoUnico($e, 10);
         $detalle = $pedido->detalles()->sole();
         $datos = ['version' => $pedido->version, 'retirar' => [$detalle->id => 2], 'motivo' => 'El cliente ya no desea las unidades pendientes.'];
-        foreach ([['retirar' => [$detalle->id => 11]], ['version' => 999], ['motivo' => ''], ['retirar' => [999999 => 1]], ['retirar' => [$detalle->id => '1.5']], ['retirar' => [$detalle->id => 0]]] as $invalido) {
+        foreach ([['retirar' => [$detalle->id => 11]], ['version' => 999], ['motivo' => ''], ['retirar' => [999999 => 1]], ['retirar' => ['1e0' => 1]], ['retirar' => [$detalle->id => '1.5']], ['retirar' => [$detalle->id => 0]]] as $invalido) {
             $this->postJson(route('pedidos.retirar-faltantes', $pedido), array_replace($datos, $invalido, ['_token_operacion' => TokenOperacion::emitir($e['usuario']->id)]))->assertUnprocessable();
         }
         $e['usuario']->role->permisos()->detach(Permiso::where('nombre', 'pedidos.editar')->value('id'));

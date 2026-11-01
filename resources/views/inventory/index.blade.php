@@ -12,9 +12,10 @@
 </div>
 <section class="filters">
     <form action="{{ route('inventario.index') }}" method="GET">
+        @if($insumos)<input type="hidden" name="historico_materiales" value="1">@endif
         <div class="filters-grid">
             <div class="form-group">
-                <label class="form-label" for="buscar">Código o producto terminado</label>
+                <label class="form-label" for="buscar">{{ $insumos ? 'Código, producto o material histórico' : 'Código o producto terminado' }}</label>
                 <input class="form-control" name="buscar" id="buscar" value="{{ $buscar }}" placeholder="Buscar producto, SKU, galón, botella...">
             </div>
             <div class="form-group">
