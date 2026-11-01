@@ -25,7 +25,7 @@
                     @if($pedidoConsulta && !$pedidosDisponibles->contains('id', $pedidoConsulta->id))<option value="{{ $pedidoConsulta->id }}" selected>N.º {{ $pedidoConsulta->numero }} — {{ $pedidoConsulta->cliente_nombre }}</option>@endif
                     @foreach($pedidosDisponibles as $pedido)
                         <option value="{{ $pedido->id }}" @selected((int)request('pedido_id') === $pedido->id)>
-                            N.º {{ $pedido->numero }} — {{ $pedido->cliente_nombre }} ({{ $pedido->estado }})
+                            N.º {{ $pedido->numero }} — {{ $pedido->cliente_nombre }} ({{ \App\EstadoPedido::etiquetas()[$pedido->estado] ?? ucfirst(str_replace('_', ' ', $pedido->estado)) }})
                         </option>
                     @endforeach
                 </select>
@@ -45,12 +45,12 @@
         {{ $puedeAtender ? 'Disponible para atender con el stock actual' : 'Stock insuficiente o datos incompletos' }}
     </p>
     <p class="s3-muted">La consulta es informativa: no reserva ni descuenta stock. Se descuentan los despachos ya registrados de la demanda vigente. Las referencias históricas por empaque conservan su tamaño original.</p>
-    <div class="table-container"><table class="app-table">
+    <div class="table-container"><table class="app-table mobile-cards disponibilidad-tabla">
         <thead><tr><th>SKU</th><th>Producto</th><th>Pendiente total</th><th>En espera</th><th>Pendiente activo</th><th>Stock terminado registrado</th><th>Faltante activo / total</th><th>Resultado</th></tr></thead>
         <tbody>@forelse($revision as $fila)
-            <tr><td>{{ $fila['sku'] }}</td><td>{{ $fila['nombre'] }}</td>
-                <td>{{ $fila['necesario'] ?? 'No verificable' }}</td><td>{{ $fila['en_espera'] }}</td><td>{{ $fila['activo'] ?? 'No verificable' }}</td><td>{{ $fila['disponible'] }}</td><td>{{ $fila['faltante_activo'] ?? 'No verificable' }} / {{ $fila['faltante_total'] ?? 'No verificable' }}</td>
-                <td><span class="s3-status {{ $fila['alcanza'] ? 's3-ok' : 's3-danger' }}">{{ $fila['alcanza'] ? 'Suficiente' : ($fila['error'] ?: ($fila['en_espera'] > 0 ? 'Hay unidades en espera; atención pendiente' : 'Insuficiente')) }}</span></td>
+            <tr><td data-label="SKU"><span>{{ $fila['sku'] }}</span></td><td data-label="Producto"><span>{{ $fila['nombre'] }}</span></td>
+                <td data-label="Pendiente total"><span>{{ $fila['necesario'] ?? 'No verificable' }}</span></td><td data-label="En espera"><span>{{ $fila['en_espera'] }}</span></td><td data-label="Pendiente activo"><span>{{ $fila['activo'] ?? 'No verificable' }}</span></td><td data-label="Stock terminado registrado"><span>{{ $fila['disponible'] }}</span></td><td data-label="Faltante activo / total"><span>{{ $fila['faltante_activo'] ?? 'No verificable' }} / {{ $fila['faltante_total'] ?? 'No verificable' }}</span></td>
+                <td data-label="Resultado"><span class="s3-status {{ $fila['alcanza'] ? 's3-ok' : 's3-danger' }}">{{ $fila['alcanza'] ? 'Suficiente' : ($fila['error'] ?: ($fila['en_espera'] > 0 ? 'Hay unidades en espera; atención pendiente' : 'Insuficiente')) }}</span></td>
             </tr>
         @empty<tr><td colspan="8">Este pedido no tiene demanda pendiente.</td></tr>@endforelse</tbody>
     </table></div>
@@ -58,14 +58,14 @@
 @endif
 <section class="table-card">
     <div class="table-header"><strong>Existencias por presentación</strong><span class="muted">{{ $presentaciones->total() }} presentación(es) activas</span></div>
-    <div class="table-container"><table class="app-table">
+    <div class="table-container"><table class="app-table mobile-cards disponibilidad-tabla">
         <thead><tr><th>SKU</th><th>Producto</th><th>Presentación</th><th>Unidades terminadas registradas</th></tr></thead>
         <tbody>@forelse($presentaciones as $p)
             @php $stock = (int) ($cantidades[$p->id] ?? 0); $factor=(int)$p->unidades_por_empaque; @endphp
-            <tr><td><strong>{{ $p->codigo_sku }}</strong></td>
-                <td>{{ $p->producto?->nombre }} {{ $p->variante ? '· '.$p->variante->valor : '' }}</td>
-                <td>{{ $p->contenido }} {{ $p->unidad_medida }}</td>
-                <td><strong>{{ $stock }}</strong></td>
+            <tr><td data-label="SKU"><strong>{{ $p->codigo_sku }}</strong></td>
+                <td data-label="Producto"><span>{{ $p->producto?->nombre }} {{ $p->variante ? '· '.$p->variante->valor : '' }}</span></td>
+                <td data-label="Presentación"><span>{{ $p->contenido }} {{ $p->unidad_medida }}</span></td>
+                <td data-label="Unidades terminadas registradas"><strong>{{ $stock }}</strong></td>
             </tr>
         @empty<tr><td colspan="4">No hay presentaciones activas que coincidan.</td></tr>@endforelse</tbody>
     </table></div>
@@ -85,14 +85,14 @@
             @endif
         </div>
     </div>
-    <div class="table-container"><table class="app-table">
+    <div class="table-container"><table class="app-table mobile-cards disponibilidad-tabla">
         <thead><tr><th>Código</th><th>Material / Insumo</th><th>Categoría</th><th>Saldo histórico registrado</th><th>Unidad</th></tr></thead>
         <tbody>
         @forelse($insumos as $insumo)
-            <tr><td><strong>{{ $insumo->codigo }}</strong></td><td>{{ $insumo->nombre }}</td>
-                <td>{{ $insumo->categoria }}</td>
-                <td><strong>{{ number_format((float) $insumo->cantidad_actual, 3, '.', '') }}</strong></td>
-                <td>{{ $insumo->unidad_medida }}</td></tr>
+            <tr><td data-label="Código"><strong>{{ $insumo->codigo }}</strong></td><td data-label="Material / Insumo"><span>{{ $insumo->nombre }}</span></td>
+                <td data-label="Categoría"><span>{{ $insumo->categoria }}</span></td>
+                <td data-label="Saldo histórico registrado"><strong>{{ number_format((float) $insumo->cantidad_actual, 3, '.', '') }}</strong></td>
+                <td data-label="Unidad"><span>{{ $insumo->unidad_medida }}</span></td></tr>
         @empty
             <tr><td colspan="5">No hay insumos registrados. Usa «Registrar insumo» para dar de alta botellas, galones, etiquetas o químicos.</td></tr>
         @endforelse

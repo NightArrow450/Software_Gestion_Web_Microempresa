@@ -11,7 +11,7 @@ const { chromium } = require(path.join(temporal, 'navegador/node_modules/playwri
 const datos = JSON.parse(fs.readFileSync(path.join(temporal, 'visual-fixture.json'), 'utf8'));
 const salida = path.join(temporal, 'evidencias-pr49');
 fs.mkdirSync(salida, { recursive: false });
-const resultados = [], capturas = [], errores = [];
+const resultados = [], capturas = [], errores = [], mediciones = [];
 const base = 'http://127.0.0.1:8099';
 let pagina;
 
@@ -124,6 +124,31 @@ async function comprobar(nombre, accion) {
         for (const [nombre, ruta] of pantallas) {
             await comprobar(`${nombre} — ${ancho}px`, async () => {
                 await ir(ruta);
+                if (nombre === 'disponibilidad' || nombre === 'materiales-historicos') {
+                    const botones = await pagina.locator('.filters .s3-actions .btn').evaluateAll(elementos => elementos.map(e => ({ texto: e.textContent.trim(), alto: e.getBoundingClientRect().height, arriba: e.getBoundingClientRect().top, abajo: e.getBoundingClientRect().bottom })));
+                    assert.equal(botones.length, 2);
+                    assert.ok(botones.every(b => b.alto >= 44 && b.alto <= 64), `Altura inadecuada de Consultar/Limpiar: ${JSON.stringify(botones)}`);
+                    if (ancho <= 650) assert.ok(botones[1].arriba - botones[0].abajo >= 8, 'Falta separación entre Consultar y Limpiar');
+                    const tarjetas = await pagina.locator('.disponibilidad-tabla').evaluateAll(tablas => tablas.map(t => ({ presentacion: getComputedStyle(t).display,
+                        etiquetas: [...t.querySelectorAll('tbody tr:first-child td[data-label]')].map(c => ({ etiqueta: c.dataset.label, valor: c.innerText.trim(),
+                            etiquetaVisible: getComputedStyle(c, '::before').content, izquierda: c.getBoundingClientRect().left, derecha: c.getBoundingClientRect().right })),
+                        anchoContenedor: t.parentElement.clientWidth, contenidoContenedor: t.parentElement.scrollWidth })));
+                    for (const tabla of tarjetas) {
+                        assert.equal(tabla.presentacion, ancho <= 650 ? 'block' : 'table');
+                        if (ancho <= 650) {
+                            assert.ok(tabla.contenidoContenedor <= tabla.anchoContenedor + 1, 'La tarjeta obliga a desplazarse horizontalmente');
+                            assert.ok(tabla.etiquetas.every(c => c.valor && c.etiquetaVisible === `"${c.etiqueta}"` && c.izquierda >= 0 && c.derecha <= ancho + 1), 'Faltan etiquetas o valores visibles en las tarjetas');
+                        }
+                    }
+                    if (nombre === 'disponibilidad') {
+                        const valores = Object.fromEntries(tarjetas[0].etiquetas.map(c => [c.etiqueta, c.valor]));
+                        for (const [etiqueta, valor] of Object.entries({ 'Pendiente total': '24', 'En espera': '0', 'Pendiente activo': '24', 'Stock terminado registrado': '0', 'Faltante activo / total': '24 / 24' })) assert.equal(valores[etiqueta], valor);
+                    }
+                    await pagina.emulateMedia({ media: 'print' });
+                    assert.ok((await pagina.locator('.disponibilidad-tabla').evaluateAll(tablas => tablas.map(t => getComputedStyle(t).display))).every(d => d === 'table'), 'La impresión debe conservar las tablas');
+                    await pagina.emulateMedia({ media: 'screen' });
+                    mediciones.push({ pantalla: nombre, ancho, botones, tablas: tarjetas });
+                }
                 if (nombre === 'entrega-historial-acciones') {
                     await pagina.locator('.entrega-panel details').evaluateAll(detalles => detalles.forEach(d => { d.open = true; }));
                 }
@@ -136,6 +161,10 @@ async function comprobar(nombre, accion) {
         }
         await comprobar(`Formulario de retiro — ${ancho}px`, async () => {
             await ir(`/pedidos/${datos.parcial}`);
+            const historial = pagina.locator('section').filter({ has: pagina.getByRole('heading', { name: 'Historial de estados', exact: true }) }).first();
+            const estados = await historial.locator('tbody td:nth-child(2), tbody td:nth-child(3)').allTextContents();
+            assert.ok(estados.some(e => e.trim() === 'En preparación') && estados.some(e => e.trim() === 'Despacho parcial'), 'Faltan etiquetas legibles de estados');
+            assert.ok(estados.every(e => !e.includes('_')), 'El historial muestra códigos internos');
             await pagina.locator('.retiro-faltantes summary').click();
             await pagina.locator('[data-retiro-faltantes] input[type=number]').fill('22');
             await foto(`${ancho}-retiro-faltantes`);
@@ -190,7 +219,7 @@ async function comprobar(nombre, accion) {
     await navegador.close();
     if (errores.length) resultados.push({ caso: 'Errores inesperados de navegador o servidor', estado: 'FALLO', detalle: errores });
     const informe = { commit: process.env.GITHUB_SHA, rama_pr: process.env.PR_HEAD_SHA, motor: 'Chromium / Playwright 1.64.1',
-        base: 'SQLite temporal exclusivamente ficticia; conexiones MySQL bloqueadas', resultados, capturas,
+        base: 'SQLite temporal exclusivamente ficticia; conexiones MySQL bloqueadas', resultados, capturas, mediciones,
         limitaciones: ['No es UAT con trabajadores.', 'Las capturas y el PDF requieren revisión humana de legibilidad.', 'No prueba otros motores de navegador ni impresoras físicas.'] };
     fs.writeFileSync(path.join(salida, 'resultados.json'), JSON.stringify(informe, null, 2));
     const escapar = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));

@@ -23,6 +23,7 @@
     @media(max-width:650px) {
         .page .form-grid,.envasado-grid,.unidades-campos,.entrega-grid {grid-template-columns:minmax(0,1fr)}
         .page .s2-actions,.page .s3-actions,.page .acciones-formulario {gap:.65rem}.page .s2-actions .btn,.page .s3-actions .btn,.page .acciones-formulario .btn {width:auto;flex:1 1 10rem}
+        .page .s3-actions .btn {flex:0 0 auto}
         .envasado-seccion .btn,.entrega-formulario .btn,[data-pedido-unidades] .btn {width:auto;max-width:100%}
         .page .form-control {font-size:16px;min-height:44px}.retiro-faltantes td input {min-width:5rem}
     }
