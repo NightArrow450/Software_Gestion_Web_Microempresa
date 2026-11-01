@@ -113,6 +113,9 @@ async function comprobar(nombre, accion) {
         for (const [nombre, ruta] of pantallas) {
             await comprobar(`${nombre} — ${ancho}px`, async () => {
                 await ir(ruta);
+                if (nombre === 'entrega-historial-acciones') {
+                    await pagina.locator('.entrega-panel details').evaluateAll(detalles => detalles.forEach(d => { d.open = true; }));
+                }
                 await foto(`${ancho}-${nombre}`);
             });
         }

@@ -78,7 +78,7 @@ $escenario = new class
         $preparacion = $this->registrarUnidades($e, [24, 12, 6], $this->agrupacionesUnidades($e));
         $preparacion->update(['estado' => 'confirmado']);
         $preparacion->refresh();
-        $d = $preparacion->detalles()->firstOrFail();
+        $d = $preparacion->detalles()->where('presentacion_producto_id', $e['skus'][1]->id)->sole();
         $atender->preparar($preparacion, ['version_pedido' => $preparacion->version, 'pedido_detalle_id' => $d->id,
             'cantidad' => 10, 'incidencia' => 'liquido', 'motivo' => 'Comprobación ficticia: producción incompleta por falta de líquido.'], $e['usuario']);
         $impresion = $this->registrarUnidades($e, [2, 3, 1]);
