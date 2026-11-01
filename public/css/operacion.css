@@ -6,6 +6,7 @@
     .page .s2-actions,.page .s3-actions,.page .acciones-formulario,.page .indicadores-acciones {display:flex;flex-wrap:wrap;gap:.75rem;align-items:center}
     .page .btn {white-space:normal;min-height:44px;line-height:1.4;justify-content:center}
     .page .btn + .btn {margin-inline-start:0}.page .btn-danger {background:#a52a32;color:#fff}
+    .page .cumplimiento-tarjeta > form + [data-registrar-envasado] {margin-top:.75rem}
     .page .form-section > form,.retiro-faltantes form {display:grid;gap:1rem}.page .table-container {max-width:100%;overflow-x:auto}
     .page details > summary {cursor:pointer;padding:.75rem .25rem;font-weight:600;min-height:44px;line-height:1.5}
     .page details[open] > summary {margin-bottom:1rem}.page .form-control {min-width:0;max-width:100%}

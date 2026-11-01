@@ -127,6 +127,10 @@ async function comprobar(nombre, accion) {
                 if (nombre === 'entrega-historial-acciones') {
                     await pagina.locator('.entrega-panel details').evaluateAll(detalles => detalles.forEach(d => { d.open = true; }));
                 }
+                if (nombre === 'preparacion-despacho-incidencias') {
+                    const separaciones = await pagina.locator('.cumplimiento-tarjeta > form + [data-registrar-envasado]').evaluateAll(botones => botones.map(b => b.getBoundingClientRect().top - b.previousElementSibling.getBoundingClientRect().bottom));
+                    assert.ok(separaciones.length > 0 && separaciones.every(distancia => distancia >= 8), 'Los botones de preparación y envasado necesitan separación visual');
+                }
                 await foto(`${ancho}-${nombre}`);
             });
         }
