@@ -41,3 +41,9 @@ test('escribir rápidamente consulta una vez y retira la selección anterior',as
     let veces=0;const e=preparar(async()=>{veces++;return respuesta([]);});e.select.value='7';e.input.value='q';e.input.eventos.input();e.input.value='quita';e.input.eventos.input();
     assert.equal(e.select.value,'');assert.equal(veces,0);await new Promise(r=>setTimeout(r,300));assert.equal(veces,1);e.componente.cancelar();
 });
+
+test('flecha arriba desde el campo elige la última coincidencia y Enter sin flechas elige la primera',async()=>{
+    const e=preparar(async()=>respuesta([{id:1,nombre:'Ana'},{id:2,nombre:'José'},{id:3,nombre:'Rosa'}]));await e.componente.buscar();
+    e.input.eventos.keydown({key:'ArrowUp',preventDefault(){}});e.input.eventos.keydown({key:'Enter',preventDefault(){}});assert.equal(e.select.value,'3');
+    await e.componente.buscar();e.input.eventos.keydown({key:'Enter',preventDefault(){}});assert.equal(e.select.value,'1');
+});

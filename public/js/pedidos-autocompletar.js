@@ -51,7 +51,7 @@
             if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
                 e.preventDefault();
                 if (lista.hidden) { buscar(); return; }
-                activo = (activo + (e.key === 'ArrowDown' ? 1 : -1) + resultados.length) % resultados.length;
+                activo = activo < 0 ? (e.key === 'ArrowDown' ? 0 : resultados.length - 1) : (activo + (e.key === 'ArrowDown' ? 1 : -1) + resultados.length) % resultados.length;
                 Array.from(lista.children).forEach((opcion, i) => opcion.setAttribute('aria-selected', String(i === activo)));
                 input.setAttribute('aria-activedescendant', lista.children[activo].id); lista.children[activo].scrollIntoView?.({ block: 'nearest' });
             } else if (e.key === 'Enter' && !lista.hidden) { e.preventDefault(); if (resultados.length) seleccionar(resultados[activo >= 0 ? activo : 0]); }

@@ -16,7 +16,7 @@
 @endif
 <section class="form-section"><h2>Cliente y fechas</h2><div class="form-grid">
 <div class="busqueda-comercial">
-<label for="buscar-cliente">Buscar y seleccionar cliente</label><input id="buscar-cliente" class="form-control" type="search" data-buscar-cliente autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="coincidencias-clientes" aria-describedby="estado-clientes" value="{{ $cliente?->nombre }}" placeholder="Nombre, documento o teléfono">
+<label for="buscar-cliente">Buscar y seleccionar cliente</label><input id="buscar-cliente" class="form-control" type="search" maxlength="100" data-buscar-cliente autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="coincidencias-clientes" aria-describedby="estado-clientes" value="{{ $cliente?->nombre }}" placeholder="Nombre, documento o teléfono">
 <select name="cliente_id" data-clientes hidden><option value=""></option>@if($cliente)<option value="{{ $cliente->id }}" selected>{{ $cliente->nombre }}</option>@endif</select>
 <div id="coincidencias-clientes" class="coincidencias" role="listbox" aria-label="Clientes encontrados" data-coincidencias-clientes hidden></div><button type="button" class="btn btn-secondary" data-mas-clientes hidden>Más coincidencias de clientes</button><p id="estado-clientes" role="status" aria-live="polite" data-estado-clientes>{{ $cliente ? 'Cliente seleccionado: '.$cliente->nombre : 'Selecciona una coincidencia para asociar el cliente.' }}</p>
 </div>
@@ -28,7 +28,7 @@
 </div></section>
 <section class="form-section"><h2>Seleccionar unidades</h2><div class="form-grid">
 <div class="busqueda-comercial">
-<label for="buscar-producto">Buscar y seleccionar producto</label><input id="buscar-producto" class="form-control" type="search" data-buscar-producto value="{{ $productoSeleccionado?->nombre }}" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="coincidencias-productos" aria-describedby="estado-productos" placeholder="Nombre, código o SKU">
+<label for="buscar-producto">Buscar y seleccionar producto</label><input id="buscar-producto" class="form-control" type="search" maxlength="100" data-buscar-producto value="{{ $productoSeleccionado?->nombre }}" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="coincidencias-productos" aria-describedby="estado-productos" placeholder="Nombre, código o SKU">
 <select data-productos name="producto_seleccionado" hidden><option value=""></option>@if($productoSeleccionado)<option value="{{ $productoSeleccionado->id }}" selected>{{ $productoSeleccionado->nombre }}</option>@endif</select><div id="coincidencias-productos" class="coincidencias" role="listbox" aria-label="Productos encontrados" data-coincidencias-productos hidden></div><button type="button" class="btn btn-secondary" data-mas-productos hidden>Más coincidencias de productos</button><p id="estado-productos" role="status" aria-live="polite" data-estado-productos>Selecciona un producto para consultar sus variantes y presentaciones.</p>
 </div>
 <label data-campo-variante hidden>Variante<select class="form-control" data-variantes name="variante_seleccionada"></select></label>
