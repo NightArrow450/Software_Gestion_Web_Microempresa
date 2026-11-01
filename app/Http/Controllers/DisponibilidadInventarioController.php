@@ -43,7 +43,7 @@ class DisponibilidadInventarioController extends Controller
 
         $estadosPendientes = ['confirmado', 'en_preparacion', 'listo_despacho', 'despacho_parcial'];
         $pedidosDisponibles = Pedido::whereIn('estado', $estadosPendientes)
-            ->orderByDesc('id')->paginate(20, ['id', 'numero', 'cliente_nombre', 'estado'], 'pedidos_pagina')->withQueryString();
+            ->orderByDesc('id')->paginate(20, ['id', 'cliente_nombre', 'estado'], 'pedidos_pagina')->withQueryString();
 
         $pedidoConsulta = null;
         $revision = collect();
