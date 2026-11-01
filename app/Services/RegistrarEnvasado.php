@@ -28,7 +28,7 @@ class RegistrarEnvasado
             $plan = $this->preparar($entrada);
             $inventario = $plan['inventario'];
             $presentacion = $plan['presentacion'];
-            $envasado = Envasado::create(['numero' => (string) Str::ulid(), 'presentacion_producto_id' => $presentacion->id, 'configuracion_envasado_id' => $plan['configuracion']->id, 'configuracion_nombre' => $plan['configuracion']->nombre, 'usuario_id' => $usuario->id, 'pedido_id' => $plan['pedido']?->id, 'cantidad' => $plan['cantidad'], 'observaciones' => $plan['observaciones'], 'presentacion_historica' => ['sku' => $presentacion->codigo_sku, 'producto' => $presentacion->producto->nombre, 'variante' => $presentacion->variante?->valor, 'contenido' => $presentacion->contenido, 'unidad_medida' => $presentacion->unidad_medida, 'tipo_envase' => $presentacion->tipo_envase]]);
+            $envasado = Envasado::create(['numero' => (string) Str::ulid(), 'presentacion_producto_id' => $presentacion->id, 'configuracion_envasado_id' => $plan['configuracion']?->id, 'configuracion_nombre' => $plan['configuracion']?->nombre ?? 'Unidades terminadas sin control de materiales', 'usuario_id' => $usuario->id, 'pedido_id' => $plan['pedido']?->id, 'cantidad' => $plan['cantidad'], 'observaciones' => $plan['observaciones'], 'presentacion_historica' => ['sku' => $presentacion->codigo_sku, 'producto' => $presentacion->producto->nombre, 'variante' => $presentacion->variante?->valor, 'contenido' => $presentacion->contenido, 'unidad_medida' => $presentacion->unidad_medida, 'tipo_envase' => $presentacion->tipo_envase]]);
             foreach ($plan['consumos'] as $consumo) {
                 $insumo = $consumo['insumo'];
                 $anterior = CantidadesEnvasado::milesimas($insumo->cantidad_actual);
@@ -41,7 +41,7 @@ class RegistrarEnvasado
             $nuevo = $anterior + $plan['cantidad'];
             $inventario->fill(['cantidad_actual' => $nuevo])->save();
             MovimientoInventario::create(['presentacion_producto_id' => $presentacion->id, 'usuario_id' => $usuario->id, 'origen_tipo' => 'envasado', 'origen_id' => (string) $envasado->id, 'tipo' => 'entrada', 'cantidad' => $plan['cantidad'], 'stock_anterior' => $anterior, 'stock_nuevo' => $nuevo, 'motivo' => 'Producto terminado del envasado '.$envasado->numero.'.']);
-            RegistroAuditoria::registrar('envasado_registrado', 'envasado', $envasado->id, ['cantidad' => $plan['cantidad'], 'pedido_id' => $envasado->pedido_id]);
+            RegistroAuditoria::registrar('envasado_registrado', 'envasado', $envasado->id, ['cantidad' => $plan['cantidad'], 'pedido_id' => $envasado->pedido_id, 'control_materiales_exacto' => $plan['control_materiales_exacto']]);
 
             return $envasado;
         }, 3);
@@ -49,7 +49,15 @@ class RegistrarEnvasado
 
     private function preparar(array $entrada): array
     {
-        $datos = Validator::make($entrada, ['presentacion_producto_id' => ['required', 'integer', 'exists:presentaciones_producto,id'], 'configuracion_envasado_id' => ['required', 'integer', 'exists:configuraciones_envasado,id'], 'version_configuracion' => ['required', 'integer', 'min:0'], 'cantidad' => ['required', 'integer', 'min:1', 'max:1000000'], 'pedido_id' => ['nullable', 'integer', 'exists:pedidos,id'], 'observaciones' => ['nullable', 'string', 'max:1000']])->validate();
+        $controlMateriales = (bool) config('envasado.control_materiales_exacto', false);
+        $reglas = ['presentacion_producto_id' => ['required', 'integer', 'exists:presentaciones_producto,id'], 'cantidad' => ['required', 'integer', 'min:1', 'max:1000000'], 'pedido_id' => ['nullable', 'integer', 'exists:pedidos,id'], 'observaciones' => ['nullable', 'string', 'max:1000'], 'control_materiales_exacto' => ['sometimes', 'boolean']];
+        if ($controlMateriales) {
+            $reglas += ['configuracion_envasado_id' => ['required', 'integer', 'exists:configuraciones_envasado,id'], 'version_configuracion' => ['required', 'integer', 'min:0']];
+        }
+        $datos = Validator::make($entrada, $reglas)->validate();
+        if (array_key_exists('control_materiales_exacto', $datos) && (bool) $datos['control_materiales_exacto'] !== $controlMateriales) {
+            throw ValidationException::withMessages(['control_materiales_exacto' => 'El modo de control de materiales cambió. Vuelve a revisar las unidades antes de confirmar.']);
+        }
         $pedido = ! empty($datos['pedido_id']) ? Pedido::whereKey($datos['pedido_id'])->lockForUpdate()->firstOrFail() : null;
         if ($pedido && (! in_array($pedido->estado, $pedido->modelo_comercial === 'unidades' ? ['confirmado', 'en_preparacion', 'despacho_parcial'] : ['confirmado', 'en_preparacion'], true) || ! app(LecturaPedido::class)->lineasFisicas($pedido)->contains('presentacion_producto_id', (int) $datos['presentacion_producto_id']))) {
             throw ValidationException::withMessages(['pedido_id' => 'El pedido debe estar confirmado o en preparación y contener la presentación seleccionada.']);
@@ -58,6 +66,16 @@ class RegistrarEnvasado
         if (! $presentacion->estado || ! $presentacion->producto->estado || ($presentacion->variante && ! $presentacion->variante->estado)) {
             throw ValidationException::withMessages(['presentacion_producto_id' => 'Selecciona una presentación activa.']);
         }
+        $inventario = Inventario::where('presentacion_producto_id', $presentacion->id)->lockForUpdate()->first()
+            ?? new Inventario(['presentacion_producto_id' => $presentacion->id, 'cantidad_actual' => 0]);
+        $cantidad = (int) $datos['cantidad'];
+        if ($inventario->cantidad_actual + $cantidad > 4294967295) {
+            throw ValidationException::withMessages(['cantidad' => 'La existencia máxima de producto terminado fue superada.']);
+        }
+        if (! $controlMateriales) {
+            return ['pedido' => $pedido, 'presentacion' => $presentacion, 'configuracion' => null, 'control_materiales_exacto' => false, 'inventario' => $inventario,
+                'cantidad' => $cantidad, 'consumos' => [], 'observaciones' => $datos['observaciones'] ?? null];
+        }
         $configuracion = ConfiguracionEnvasado::whereKey($datos['configuracion_envasado_id'])->lockForUpdate()->firstOrFail();
         if (! $configuracion->estado || $configuracion->presentacion_producto_id !== $presentacion->id || $configuracion->version !== (int) $datos['version_configuracion']) {
             throw ValidationException::withMessages(['configuracion_envasado_id' => 'La configuración no corresponde, está inactiva o cambió. Vuelve a consultar los consumos antes de confirmar.']);
@@ -65,14 +83,6 @@ class RegistrarEnvasado
         $materiales = $configuracion->materiales()->where('estado', true)->where('base_consumo', 'unidad')->orderBy('insumo_id')->lockForUpdate()->get();
         if ($materiales->isEmpty()) {
             throw ValidationException::withMessages(['configuracion_envasado_id' => 'Falta configurar materiales válidos por unidad para esta presentación.']);
-        }
-        $inventario = Inventario::where('presentacion_producto_id', $presentacion->id)->lockForUpdate()->first();
-        if (! $inventario) {
-            $inventario = new Inventario(['presentacion_producto_id' => $presentacion->id, 'cantidad_actual' => 0]);
-        }
-        $cantidad = (int) $datos['cantidad'];
-        if ($inventario->cantidad_actual + $cantidad > 4294967295) {
-            throw ValidationException::withMessages(['cantidad' => 'La existencia máxima de producto terminado fue superada.']);
         }
         $insumos = Insumo::whereIn('id', $materiales->pluck('insumo_id'))->orderBy('id')->lockForUpdate()->get()->keyBy('id');
         $consumos = [];
@@ -99,6 +109,6 @@ class RegistrarEnvasado
             throw ValidationException::withMessages(['materiales' => $faltantes]);
         }
 
-        return ['pedido' => $pedido, 'presentacion' => $presentacion, 'configuracion' => $configuracion, 'inventario' => $inventario, 'cantidad' => $cantidad, 'consumos' => $consumos, 'observaciones' => $datos['observaciones'] ?? null];
+        return ['pedido' => $pedido, 'presentacion' => $presentacion, 'configuracion' => $configuracion, 'control_materiales_exacto' => true, 'inventario' => $inventario, 'cantidad' => $cantidad, 'consumos' => $consumos, 'observaciones' => $datos['observaciones'] ?? null];
     }
 }

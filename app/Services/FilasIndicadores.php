@@ -37,7 +37,7 @@ class FilasIndicadores
         'envasados' => 'envasado_id,correccion_id,fecha_registro,pedido_id,presentacion_id,sku,clasificacion,envasadas_brutas,correcciones_administrativas,perdidas_fisicas,efecto_neto,neto_actual_envasado',
         'materiales' => 'consumo_id,correccion_material_id,envasado_id,pedido_id,insumo_id,codigo,unidad_medida,funcion,fecha_registro,consumo_bruto,devuelto,perdido,salida_neta',
         'movimientos' => 'movimiento_id,fecha_registro,pedido_id,presentacion_id,insumo_id,sku,unidad_medida,tipo,origen_tipo,origen_id,cantidad,stock_anterior,stock_nuevo,variacion',
-        'inventario' => 'tipo_item,presentacion_id,insumo_id,sku,unidad_medida,stock_actual',
+        'inventario' => 'tipo_item,presentacion_id,insumo_id,sku,unidad_medida,stock_actual,control_existencias',
     ];
 
     public function __construct(private readonly PedidosIndicadores $pedidos, private readonly ActividadIndicadores $actividad) {}

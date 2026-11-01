@@ -21,19 +21,19 @@
 
     function filtrarOpciones() {
         const id = campo('presentacion_producto_id').value;
-        Array.from(alternativa.options).forEach(opcion => {
+        Array.from(alternativa?.options ?? []).forEach(opcion => {
             if (!opcion.value) return;
             opcion.hidden = opcion.dataset.presentacion !== id;
             opcion.disabled = opcion.hidden;
         });
-        if (alternativa.selectedOptions[0]?.disabled) alternativa.value = '';
+        if (alternativa?.selectedOptions[0]?.disabled) alternativa.value = '';
         Array.from(campo('pedido_id').options).forEach(opcion => {
             if (!opcion.value) return;
             opcion.hidden = !opcion.dataset.presentaciones.split(',').includes(id);
             opcion.disabled = opcion.hidden;
         });
         if (campo('pedido_id').selectedOptions[0]?.disabled) campo('pedido_id').value = '';
-        campo('version_configuracion').value = alternativa.selectedOptions[0]?.dataset.version ?? '';
+        campo('version_configuracion').value = alternativa?.selectedOptions[0]?.dataset.version ?? '';
     }
 
     function abrir(boton, recuperar = false) {
@@ -49,7 +49,7 @@
         overflowAnterior = document.body.style.overflow;
         dialogo.showModal();
         document.body.style.overflow = 'hidden';
-        alternativa.focus();
+        (alternativa ?? campo('cantidad')).focus();
     }
 
     document.querySelectorAll('[data-registrar-envasado]').forEach(boton => {

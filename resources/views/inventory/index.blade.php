@@ -71,6 +71,7 @@
 </section>
 
 <section class="table-card s3-panel">
+    @unless(config('envasado.control_materiales_exacto'))<p>Los saldos de insumos son registros históricos y pueden no representar las existencias físicas. No se actualizan automáticamente al envasar ni generan alertas.</p>@endunless
     <div class="table-header">
         <strong>Insumos y materiales</strong>
         <div class="s3-actions" style="margin-top:0">
@@ -81,7 +82,7 @@
         </div>
     </div>
     <div class="table-container"><table class="app-table">
-        <thead><tr><th>Código</th><th>Material / Insumo</th><th>Categoría</th><th>Cantidad actual</th><th>Unidad</th></tr></thead>
+        <thead><tr><th>Código</th><th>Material / Insumo</th><th>Categoría</th><th>{{ config('envasado.control_materiales_exacto') ? 'Cantidad actual' : 'Saldo registrado sin verificación física' }}</th><th>Unidad</th></tr></thead>
         <tbody>
         @forelse($insumos as $insumo)
             <tr><td><strong>{{ $insumo->codigo }}</strong></td><td>{{ $insumo->nombre }}</td>
