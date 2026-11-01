@@ -31,6 +31,7 @@
     <a class="btn" href="{{ route('indicadores.index') }}">Restablecer filtros</a>
 </form>
 <section class="card" aria-label="Alcance del reporte">
+    @unless(config('envasado.control_materiales_exacto'))<p class="aviso-contexto">Los consumos y saldos de materiales son registros históricos. Sus existencias físicas no están verificadas; no indican disponibilidad para producir ni generan reservas.</p>@endunless
     <h2>{{ $reportes[$filtros['reporte']][0] }}</h2><p>{{ $reportes[$filtros['reporte']][1] }}</p>
     <p>Referencia temporal: America/Lima. Generado: {{ $generado }}. {{ $resultado['cantidad'] }} filas. No se reconstruyen estados comerciales históricos no conservados.</p>
     <p>La exportación utiliza las mismas reglas y filtros sobre una nueva lectura. Si se registran operaciones después, sus resultados pueden cambiar; consulta la hora de generación del CSV.</p>

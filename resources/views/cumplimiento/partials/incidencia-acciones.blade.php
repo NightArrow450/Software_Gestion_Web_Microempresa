@@ -4,6 +4,7 @@
     $puedeResultado = !$cerradaEntrega && !$resumenEntrega['historico_sin_desglose'] && in_array($pedido->estado, ['despachado', 'entrega_pendiente', 'despacho_parcial'], true) && $rolEntrega?->tienePermiso('cumplimiento.entregar');
 @endphp
 <section class="entrega-panel" aria-label="Registrar entrega o retorno">
+    <h2>Entrega y retorno físico</h2><p>Estas acciones corresponden a productos que salieron a reparto. Retirar faltantes nunca despachados es una decisión comercial diferente.</p>
     @if($puedeResultado)
         <details><summary>Registrar cantidades aceptadas, rechazadas o pendientes</summary>
             <form method="POST" action="{{ route('cumplimiento.resultado-entrega', $pedido) }}" class="entrega-formulario">
@@ -74,17 +75,17 @@
             @endif
         @endforeach
     @endif
-    @foreach(['revisar' => ['cumplimiento.incidencias.revisar', 'Registrar revisión comercial'], 'resolver' => ['cumplimiento.incidencias.resolver', 'Cerrar expediente con resolución comercial'], 'reabrir' => ['cumplimiento.incidencias.corregir', 'Reabrir expediente para rectificación']] as $accion => [$permiso, $etiqueta])
+    @foreach(['revisar' => ['cumplimiento.incidencias.revisar', 'Revisar y documentar la incidencia'], 'resolver' => ['cumplimiento.incidencias.resolver', 'Cerrar el expediente de entrega'], 'reabrir' => ['cumplimiento.incidencias.corregir', 'Reabrir expediente para rectificación']] as $accion => [$permiso, $etiqueta])
         @if($rolEntrega?->tienePermiso($permiso) && ($accion === 'reabrir' ? $cerradaEntrega : !$cerradaEntrega))
             <details><summary>{{ $etiqueta }}</summary><form method="POST" action="{{ route('cumplimiento.incidencia.'.$accion, $pedido) }}" class="entrega-formulario">
                 @csrf @include('components.token-operacion')<input type="hidden" name="version" value="{{ $resumenEntrega['version'] }}">
                 <label>Motivo y observaciones<textarea name="motivo" minlength="10" maxlength="1000" required></textarea></label>
-                <p>La resolución no modifica pagos, comprobantes ni el estado histórico de aceptación o rechazo.</p><button type="submit" class="btn btn-secondary">{{ $etiqueta }}</button>
+                <p>Revisar documenta la evaluación; cerrar finaliza el expediente. Ninguna de estas acciones retira productos faltantes, modifica pagos o cambia la aceptación y el rechazo históricos.</p><button type="submit" class="btn btn-secondary">{{ $etiqueta }}</button>
             </form></details>
         @endif
     @endforeach
     @if(!$cerradaEntrega && !$resumenEntrega['historico_sin_desglose'] && $rolEntrega?->tienePermiso('cumplimiento.incidencias.corregir'))
-        <details><summary>Rectificación administrativa autorizada de cantidades</summary>
+        <details><summary>Corregir un resultado de entrega registrado por error</summary>
             <form method="POST" action="{{ route('cumplimiento.rectificar-entrega', $pedido) }}" class="entrega-formulario">
                 @csrf @include('components.token-operacion')<input type="hidden" name="version" value="{{ $resumenEntrega['version'] }}">
                 <p>Indica diferencias, no totales: un valor negativo resta y uno positivo suma. El historial original se conserva. No se permiten rechazos menores que los retornos ya registrados.</p>

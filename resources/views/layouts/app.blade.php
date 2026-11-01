@@ -31,6 +31,7 @@
     >
 
     @stack('styles')
+    <link rel="stylesheet" href="{{ asset('css/operacion.css') }}">
 </head>
 
 <body>

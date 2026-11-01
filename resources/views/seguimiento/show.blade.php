@@ -51,6 +51,7 @@
     @include('cumplimiento.partials.incidencia-resumen')
 @endif
 @include('orders.partials.versiones')
+@include('cumplimiento.partials.historial-preparacion')
 @endsection
 
 @push('styles')<link rel="stylesheet" href="{{ asset('css/entregas.css') }}">@endpush

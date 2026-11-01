@@ -1,0 +1,25 @@
+/* Espaciado común sin alterar el diseño de las notas impresas. */
+@media screen {
+    .page .form-section,.page .cumplimiento-tarjeta,.page .table-card,.page .entrega-panel {margin-block:1.25rem}
+    .page h1 {line-height:1.2;margin-bottom:.75rem}.page h2 {line-height:1.35;margin-bottom:.75rem}.page h3 {margin-bottom:.65rem}
+    .page .form-grid {gap:1rem 1.25rem}.page label:not(.opcion-confirmacion) {line-height:1.5}
+    .page .s2-actions,.page .s3-actions,.page .acciones-formulario,.page .indicadores-acciones {display:flex;flex-wrap:wrap;gap:.75rem;align-items:center}
+    .page .btn {white-space:normal;min-height:44px;line-height:1.4;justify-content:center}
+    .page .btn + .btn {margin-inline-start:0}.page .btn-danger {background:#a52a32;color:#fff}
+    .page .form-section > form,.retiro-faltantes form {display:grid;gap:1rem}.page .table-container {max-width:100%;overflow-x:auto}
+    .page details > summary {cursor:pointer;padding:.75rem .25rem;font-weight:600;min-height:44px;line-height:1.5}
+    .page details[open] > summary {margin-bottom:1rem}.page .form-control {min-width:0;max-width:100%}
+    .page .opcion-confirmacion {display:flex;gap:.65rem;align-items:flex-start;line-height:1.6}.opcion-confirmacion input {flex:0 0 auto;margin-top:.35rem;min-width:20px;min-height:20px}
+    .retiro-faltantes {border-inline-start:4px solid #af7b25}.aviso-contexto {padding:1rem;background:#f2f6f1;border-radius:.5rem}
+    .busqueda-comercial {position:relative;min-width:0}.busqueda-comercial > input {width:100%}.busqueda-comercial p,[data-estado-skus] {font-size:.875rem;color:#455b4e;overflow-wrap:anywhere}
+    .coincidencias {max-height:18rem;overflow-y:auto;border:1px solid #9caf9f;border-radius:.5rem;background:#fff;box-shadow:0 6px 14px #142c1920;margin-top:.3rem}
+    .coincidencias [role=option] {padding:.8rem;cursor:pointer;min-height:44px;overflow-wrap:anywhere}.coincidencias [aria-selected=true],.coincidencias [role=option]:hover {background:#e5f1e5;color:#173c25}
+    .coincidencias[hidden] {display:none}.sr-only {position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    .unidades-grupo > .btn {margin:.5rem .5rem 0 0}.unidades-campos {gap:1rem}.entrega-formulario .btn,.envasado-seccion .btn {justify-self:start}
+    @media(max-width:650px) {
+        .page .form-grid,.envasado-grid,.unidades-campos,.entrega-grid {grid-template-columns:minmax(0,1fr)}
+        .page .s2-actions,.page .s3-actions,.page .acciones-formulario {gap:.65rem}.page .s2-actions .btn,.page .s3-actions .btn,.page .acciones-formulario .btn {width:auto;flex:1 1 10rem}
+        .envasado-seccion .btn,.entrega-formulario .btn,[data-pedido-unidades] .btn {width:auto;max-width:100%}
+        .page .form-control {font-size:16px;min-height:44px}.retiro-faltantes td input {min-width:5rem}
+    }
+}

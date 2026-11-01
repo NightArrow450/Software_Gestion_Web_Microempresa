@@ -86,6 +86,8 @@
     @include('cumplimiento.partials.incidencia-acciones')
 @endif
 @include('orders.partials.versiones')
+@include('orders.partials.retiro-faltantes')
+@include('cumplimiento.partials.historial-preparacion')
 @endsection
 
 @push('styles')<link rel="stylesheet" href="{{ asset('css/entregas.css') }}">@endpush

@@ -17,6 +17,7 @@ class DisponibilidadInventarioController extends Controller
         $datos = $request->validate([
             'buscar' => ['nullable', 'string', 'max:100'],
             'pedido_id' => ['nullable', 'integer', 'exists:pedidos,id'],
+            'historico_materiales' => ['sometimes', 'boolean'],
         ]);
         $buscar = trim($datos['buscar'] ?? '');
 
@@ -40,8 +41,9 @@ class DisponibilidadInventarioController extends Controller
         $cantidades = Inventario::whereIn('presentacion_producto_id', $presentaciones->pluck('id'))
             ->pluck('cantidad_actual', 'presentacion_producto_id');
 
-        $pedidosDisponibles = Pedido::where('estado', '!=', 'cancelado')
-            ->orderByDesc('id')->limit(100)->get(['id', 'cliente_nombre', 'estado']);
+        $estadosPendientes = ['confirmado', 'en_preparacion', 'listo_despacho', 'despacho_parcial'];
+        $pedidosDisponibles = Pedido::whereIn('estado', $estadosPendientes)
+            ->orderByDesc('id')->paginate(20, ['id', 'numero', 'cliente_nombre', 'estado'], 'pedidos_pagina')->withQueryString();
 
         $pedidoConsulta = null;
         $revision = collect();
@@ -49,7 +51,7 @@ class DisponibilidadInventarioController extends Controller
 
         if (! empty($datos['pedido_id'])) {
             $pedidoConsulta = Pedido::with(['detalles.presentacion'])
-                ->where('estado', '!=', 'cancelado')
+                ->whereIn('estado', $estadosPendientes)
                 ->findOrFail($datos['pedido_id']);
 
             $solicitado = [];
@@ -79,12 +81,13 @@ class DisponibilidadInventarioController extends Controller
                     $solicitado[$id] = [
                         'sku' => $detalle->codigo_sku,
                         'nombre' => $detalle->descripcion_producto,
-                        'necesario' => 0,
+                        'necesario' => 0, 'en_espera' => 0,
                         'presentacion_id' => $id,
                         'error' => $multiplicador < 1 ? 'Empaque sin cantidad de unidades válida.' : null,
                     ];
                 }
                 $solicitado[$id]['necesario'] += $unidades;
+                $solicitado[$id]['en_espera'] += $pedidoConsulta->modelo_comercial === 'unidades' ? min($unidades, (int) $detalle->cantidad_espera) : 0;
                 if ($multiplicador < 1) {
                     $solicitado[$id]['error'] = 'Empaque sin cantidad de unidades válida.';
                 }
@@ -96,7 +99,11 @@ class DisponibilidadInventarioController extends Controller
             $revision = collect($solicitado)->map(function ($fila) use ($cantidadesPedido) {
                 $fila['disponible'] = $fila['presentacion_id']
                     ? (int) ($cantidadesPedido[$fila['presentacion_id']] ?? 0) : 0;
-                $fila['alcanza'] = ! $fila['error'] && $fila['disponible'] >= $fila['necesario'];
+                $fila['en_espera'] ??= 0;
+                $fila['activo'] = $fila['necesario'] === null ? null : max(0, $fila['necesario'] - $fila['en_espera']);
+                $fila['faltante_activo'] = $fila['activo'] === null ? null : max(0, $fila['activo'] - $fila['disponible']);
+                $fila['faltante_total'] = $fila['necesario'] === null ? null : max(0, $fila['necesario'] - $fila['disponible']);
+                $fila['alcanza'] = ! $fila['error'] && $fila['disponible'] >= $fila['necesario'] && $fila['en_espera'] === 0;
 
                 return $fila;
             })->values();
@@ -104,7 +111,7 @@ class DisponibilidadInventarioController extends Controller
         }
 
         // Insumos y materiales de envase: inventario distinto a los productos terminados.
-        $insumos = Insumo::query()
+        $insumos = $request->boolean('historico_materiales') ? Insumo::query()
             ->where('estado', true)
             ->when($buscar !== '', fn ($q) => $q->where(function ($f) use ($buscar) {
                 $f->where('codigo', 'like', "%{$buscar}%")
@@ -112,7 +119,7 @@ class DisponibilidadInventarioController extends Controller
                     ->orWhere('categoria', 'like', "%{$buscar}%");
             }))
             ->orderBy('categoria')->orderBy('nombre')
-            ->paginate(15, ['*'], 'insumos_pagina')->withQueryString();
+            ->paginate(15, ['*'], 'insumos_pagina')->withQueryString() : null;
 
         return view('inventory.index', compact(
             'presentaciones', 'cantidades', 'pedidosDisponibles',
