@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Auditoria;
 use App\Models\Envasado;
 use App\Models\Inventario;
 use App\Services\ActividadIndicadores;
@@ -52,7 +53,7 @@ class EnvasadoUnidadesTerminadasTest extends TestCase
         $envasado = Envasado::sole();
         $this->assertNull($envasado->configuracion_envasado_id);
         $this->assertNull($envasado->pedido_id);
-        $auditoria = \App\Models\Auditoria::where('accion', 'envasado_registrado')->sole();
+        $auditoria = Auditoria::where('accion', 'envasado_registrado')->sole();
         $this->assertSame($e['usuario']->id, $auditoria->usuario_id);
         $this->assertFalse($auditoria->detalle['control_materiales_exacto']);
         $this->assertSame(32, $envasado->cantidad);
