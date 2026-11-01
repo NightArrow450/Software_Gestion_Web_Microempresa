@@ -380,6 +380,7 @@
 </section>
 @include('orders.partials.agrupaciones')
 @include('orders.partials.versiones')
+@include('orders.partials.retiro-faltantes')
 @endsection
 
 @push('scripts')
