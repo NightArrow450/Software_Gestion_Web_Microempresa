@@ -16,13 +16,13 @@
 <article class="cumplimiento-tarjeta"><h3>{{ $detalle->descripcion_producto }} · {{ $detalle->codigo_sku }}</h3>
 <p>Solicitadas vigentes: <strong>{{ $detalle->cantidad }}</strong> · Despachadas: {{ $salidas }} · Pendientes: {{ $pendiente }} · En espera: {{ $detalle->cantidad_espera }}</p>
 <p>Stock terminado: {{ $disponible }} · Faltan para la atención activa frente al stock: {{ max(0, $pendiente - $detalle->cantidad_espera - $disponible) }} · Envasado neto vinculado: {{ $atencionUnidades['envasadas'][$detalle->presentacion_producto_id] ?? 0 }} (incluido en stock) · Preparadas por despachar: {{ min($preparadas, max(0, $pendiente - $detalle->cantidad_espera)) }}</p>
-@if($preparacion?->incidencia)<p><strong>Incidencia de disponibilidad:</strong> {{ $preparacion->incidencia }} · {{ $preparacion->motivo }}</p>@endif
+@if($preparacion?->incidencia)<p><strong>Incidencia de disponibilidad:</strong> {{ \App\Services\AtenderPedidoUnidades::INCIDENCIAS[$preparacion->incidencia] ?? 'Otra incidencia' }} · {{ $preparacion->motivo }}</p>@endif
 @if(auth()->user()->role?->tienePermiso('cumplimiento.preparar') && in_array($pedido->estado, ['confirmado','en_preparacion','listo_despacho','despacho_parcial'], true))
 <form method="POST" action="{{ route('pedidos.unidades.preparar', $pedido) }}">@csrf @include('components.token-operacion')
 <input type="hidden" name="version_pedido" value="{{ $pedido->version }}"><input type="hidden" name="pedido_detalle_id" value="{{ $detalle->id }}">
 <div class="form-grid">
 <label>Unidades físicamente preparadas por despachar<input class="form-control" type="number" name="cantidad" min="0" step="1" required value="{{ min($preparadas, $pendiente) }}"></label>
-<label>Incidencia de disponibilidad<select class="form-control" name="incidencia"><option value="">Sin incidencia nueva</option><option value="liquido">Falta líquido preparado</option><option value="envases">Faltan envases</option><option value="etiquetas_tapas">Faltan etiquetas o tapas</option><option value="insumos_quimicos">Faltan insumos químicos</option><option value="tiempo">Falta tiempo para preparar</option><option value="otro">Otra incidencia</option></select></label>
+<label>Incidencia de disponibilidad<select class="form-control" name="incidencia"><option value="">Sin incidencia nueva</option>@foreach(\App\Services\AtenderPedidoUnidades::INCIDENCIAS as $codigo => $texto)<option value="{{ $codigo }}">{{ $texto }}</option>@endforeach</select></label>
 <label>Motivo y comprobación física<textarea class="form-control" name="motivo" minlength="10" maxlength="1000" required></textarea></label>
 </div><button class="btn btn-primary">Registrar preparación real o incidencia</button></form>
 @endif

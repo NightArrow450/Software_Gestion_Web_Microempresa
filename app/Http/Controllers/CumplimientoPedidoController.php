@@ -12,6 +12,7 @@ use App\Services\DistribuirDespachoUnidades;
 use App\Services\GestionarPedidoUnidades;
 use App\Services\LecturaPedido;
 use App\Services\RegistrarResultadoEntrega;
+use App\Services\RetirarFaltantesPedido;
 use App\Services\TransicionesPedido;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
@@ -229,7 +230,11 @@ class CumplimientoPedidoController extends Controller
         $versionesPedido = app(GestionarPedidoUnidades::class)->historial($pedido);
         $cambiosOriginales = app(GestionarPedidoUnidades::class)->cambiosOriginales($pedido);
 
-        return view('cumplimiento.show', compact('pedido', 'resumenEntrega', 'atencionUnidades', 'versionesPedido', 'cambiosOriginales'));
+        $resumenRetiro = auth()->user()->role?->tienePermiso('pedidos.editar') ? app(RetirarFaltantesPedido::class)->resumen($pedido) : [];
+
+        $historialPreparacion = $pedido->modelo_comercial === 'unidades' ? app(AtenderPedidoUnidades::class)->historialPreparacion($pedido) : null;
+
+        return view('cumplimiento.show', compact('historialPreparacion', 'resumenRetiro', 'pedido', 'resumenEntrega', 'atencionUnidades', 'versionesPedido', 'cambiosOriginales'));
     }
 
     public function iniciarPreparacion(

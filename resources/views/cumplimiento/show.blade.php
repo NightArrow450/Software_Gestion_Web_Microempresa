@@ -11,7 +11,7 @@
             <div class="eyebrow">Cumplimiento de pedidos</div>
             <h1>Pedido N.º {{ $pedido->numero }}</h1>
             <p>Cliente: <strong>{{ $pedido->cliente_nombre }}</strong> · Estado:
-                <span class="cumplimiento-estado">{{ ucfirst(str_replace('_', ' ', $pedido->estado)) }}</span>
+                <span class="cumplimiento-estado">{{ \App\EstadoPedido::etiquetas()[$pedido->estado] ?? ucfirst(str_replace('_', ' ', $pedido->estado)) }}</span>
             </p>
         </div>
         <div class="s2-actions">
@@ -60,6 +60,7 @@
 
     <section class="cumplimiento-tarjeta">
         <h2 class="form-section-title">Historial de estados</h2>
+        @php($etiquetasEstado = \App\EstadoPedido::etiquetas())
         <div class="table-container">
             <table class="cumplimiento-tabla">
                 <thead><tr><th>Fecha</th><th>Anterior</th><th>Nuevo</th><th>Usuario</th><th>Motivo</th></tr></thead>
@@ -67,8 +68,8 @@
                 @foreach($pedido->historialEstados as $evento)
                     <tr>
                         <td>{{ $evento->created_at?->timezone('America/Lima')->format('d/m/Y H:i') }}</td>
-                        <td>{{ $evento->estado_anterior ?? '—' }}</td>
-                        <td>{{ ucfirst(str_replace('_',' ',$evento->estado_nuevo)) }}</td>
+                        <td>{{ $etiquetasEstado[$evento->estado_anterior] ?? ($evento->estado_anterior ? ucfirst(str_replace('_', ' ', $evento->estado_anterior)) : '—') }}</td>
+                        <td>{{ $etiquetasEstado[$evento->estado_nuevo] ?? ucfirst(str_replace('_', ' ', $evento->estado_nuevo)) }}</td>
                         <td>{{ $evento->usuario?->first_name }} {{ $evento->usuario?->last_name }}</td>
                         <td>{{ $evento->motivo ?: '—' }}</td>
                     </tr>
@@ -86,6 +87,8 @@
     @include('cumplimiento.partials.incidencia-acciones')
 @endif
 @include('orders.partials.versiones')
+@include('orders.partials.retiro-faltantes')
+@include('cumplimiento.partials.historial-preparacion')
 @endsection
 
 @push('styles')<link rel="stylesheet" href="{{ asset('css/entregas.css') }}">@endpush

@@ -6,6 +6,7 @@ use App\Models\Inventario;
 use App\Models\MovimientoInventario;
 use App\Models\Pedido;
 use App\Models\User;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -14,6 +15,15 @@ use Illuminate\Validation\ValidationException;
 
 class AtenderPedidoUnidades
 {
+    public const INCIDENCIAS = ['liquido' => 'Falta líquido preparado', 'envases' => 'Faltan envases', 'etiquetas_tapas' => 'Faltan etiquetas o tapas', 'insumos_quimicos' => 'Faltan insumos químicos', 'tiempo' => 'Falta tiempo para preparar', 'otro' => 'Otra incidencia'];
+
+    public function historialPreparacion(Pedido $pedido): LengthAwarePaginator
+    {
+        return DB::table('pedido_preparaciones as p')->join('users as u', 'u.id', '=', 'p.usuario_id')
+            ->join('pedido_detalles as d', 'd.id', '=', 'p.pedido_detalle_id')->where('p.pedido_id', $pedido->id)
+            ->select('p.*', 'u.first_name', 'u.last_name', 'd.codigo_sku')->orderByDesc('p.id')->paginate(10, ['*'], 'pagina_preparacion')->withQueryString();
+    }
+
     public function despachadas(int $pedidoId): Collection
     {
         return DB::table('pedido_despacho_lineas as d')->join('pedido_despachos as s', 's.id', '=', 'd.despacho_id')
@@ -70,7 +80,7 @@ class AtenderPedidoUnidades
         $datos = Validator::make($entrada, [
             'version_pedido' => ['required', 'integer', 'min:0'], 'pedido_detalle_id' => ['required', 'integer'],
             'cantidad' => ['required', 'integer', 'min:0', 'max:4294967295'],
-            'incidencia' => ['nullable', Rule::in(['liquido', 'envases', 'etiquetas_tapas', 'insumos_quimicos', 'tiempo', 'otro'])],
+            'incidencia' => ['nullable', Rule::in(array_keys(self::INCIDENCIAS))],
             'motivo' => ['required', 'string', 'min:10', 'max:1000'],
         ])->validate();
         DB::transaction(function () use ($pedido, $datos, $usuario): void {

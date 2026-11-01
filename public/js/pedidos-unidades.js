@@ -35,7 +35,7 @@
     const lineas = (inicial.lineas || []).map(l => ({...l, cantidad:Number(l.cantidad), cantidad_espera:Number(l.cantidad_espera || 0)}));
     let grupos = Array.isArray(inicial.agrupaciones) ? inicial.agrupaciones.map(g => ({identidad:g.identidad, capacidad:g.capacidad, componentes:g.componentes.map(c => ({sku_id:Number(c.sku_id),cantidad:Number(c.cantidad)}))})) : [];
     let grupoActual = 0;
-    let skus = [], paginas = {}, ultimaBusqueda = {};
+    let skus = [], paginas = {};
     const buscar = s => form.querySelector(s), mensaje = buscar('[data-mensaje]');
     function opcion(select, texto, valor) { const o=document.createElement('option'); o.textContent=texto; o.value=valor; select.append(o); return o; }
     function resumen() {
@@ -104,28 +104,36 @@
             buscar('[data-grupos]').append(card);
         });
     }
-    async function consultar(tipo,mas=false) {
-        const q=buscar(tipo==='clientes'?'[data-buscar-cliente]':'[data-buscar-producto]').value;
-        const llave=tipo+'|'+q+'|'+buscar('[data-productos]').value; ultimaBusqueda[tipo]=llave;
-        const url=new URL(form.dataset.catalogo,location.origin);url.searchParams.set('tipo',tipo);url.searchParams.set('q',tipo==='skus'?'':q);url.searchParams.set('page',mas?(paginas[tipo] || 2):1);
-        if(tipo==='skus') url.searchParams.set('producto_id',buscar('[data-productos]').value);
+    let consultaSku, generacionSku = 0, cargandoSku = false;
+    async function consultarSkus(mas = false) {
+        if (mas && cargandoSku) return;
+        consultaSku?.abort(); const generacion = ++generacionSku; consultaSku = new AbortController(); cargandoSku = true;
+        const estado = buscar('[data-estado-skus]'), boton = buscar('[data-mas-skus]'); boton.disabled = true; estado.textContent = 'Cargando presentaciones…';
+        const producto = buscar('[data-productos]').value;
+        const url = new URL(form.dataset.catalogo, location.origin); url.searchParams.set('tipo', 'skus'); url.searchParams.set('producto_id', producto); url.searchParams.set('page', mas ? (paginas.skus || 2) : 1);
         try {
-            const response=await fetch(url,{headers:{Accept:'application/json'}});if(!response.ok) throw new Error('No se pudo consultar el catálogo. Revisa tu sesión y vuelve a intentar.');
-            const data=await response.json();if(ultimaBusqueda[tipo]!==llave) return;
-            const select=buscar(tipo==='clientes'?'[data-clientes]':'[data-productos]');
-            if(tipo==='skus') {skus=mas?skus.concat(data.data):data.data;renderVariantes();}
-            else {if(!mas){const selected=select.value;const actual=Array.from(select.options).find(o=>o.value===selected);select.replaceChildren();opcion(select,tipo==='clientes'?'Selecciona un cliente activo':'Selecciona un producto','');if(actual && actual.value) select.append(actual);}data.data.forEach(r=>{if(!Array.from(select.options).some(o=>o.value===String(r.id))) opcion(select,r.nombre,r.id);});}
-            paginas[tipo]=data.current_page+1;buscar(`[data-mas-${tipo}]`).hidden=!data.next_page_url;
-        } catch(e) {mensaje.textContent=e.message;}
+            const response = await fetch(url, { signal: consultaSku.signal, headers: { Accept: 'application/json' } });
+            if (!response.ok || response.redirected) throw new Error('No se pudieron consultar las presentaciones. Revisa tu sesión.');
+            const data = await response.json(); if (generacion !== generacionSku || producto !== buscar('[data-productos]').value) return;
+            skus = mas ? skus.concat(data.data.filter(s => !skus.some(p => p.id === s.id))) : data.data; renderVariantes();
+            paginas.skus = data.current_page + 1; boton.hidden = !data.next_page_url;
+            estado.textContent = skus.length ? `${skus.length} presentaciones disponibles cargadas.${data.next_page_url ? ' Puedes consultar más.' : ''}` : 'Este producto no tiene presentaciones activas con precio válido.';
+        } catch (e) { if (generacion === generacionSku && e.name !== 'AbortError') estado.textContent = 'No se pudieron consultar las presentaciones. Revisa la conexión y tu sesión.'; }
+        finally { if (generacion === generacionSku) { cargandoSku = false; boton.disabled = false; } }
     }
     function renderVariantes() {
         const vs=buscar('[data-variantes]'), previo=vs.value;vs.replaceChildren();const variantes=new Map(skus.map(s=>[String(s.variante_id || ''),s.variante || 'Sin variante']));variantes.forEach((v,k)=>opcion(vs,v,k));if(variantes.has(previo))vs.value=previo;
         buscar('[data-campo-variante]').hidden=!skus.some(s=>s.variante_id);renderSkus();
     }
     function renderSkus(){const s=buscar('[data-skus]');s.replaceChildren();opcion(s,'Selecciona una presentación','');skus.filter(x=>String(x.variante_id || '')===buscar('[data-variantes]').value).forEach(x=>{const o=opcion(s,`${x.presentacion} · ${x.sku} · ${Number(x.precio_unitario)>0?'S/ '+Number(x.precio_unitario).toFixed(2):'Falta precio unitario'}`,x.id);o.disabled=!(Number(x.precio_unitario)>0);});}
-    for(const tipo of ['clientes','productos']) {let timer;buscar(tipo==='clientes'?'[data-buscar-cliente]':'[data-buscar-producto]').addEventListener('input',()=>{clearTimeout(timer);timer=setTimeout(()=>consultar(tipo),250);});buscar(`[data-mas-${tipo}]`).addEventListener('click',()=>consultar(tipo,true));}
-    buscar('[data-productos]').addEventListener('change',()=>{skus=[];renderVariantes();if(buscar('[data-productos]').value)consultar('skus');});
-    buscar('[data-variantes]').addEventListener('change',renderSkus);buscar('[data-mas-skus]').addEventListener('click',()=>consultar('skus',true));
+    for (const tipo of ['clientes', 'productos']) {
+        global.PedidosAutocompletar.crear({ input: buscar(tipo === 'clientes' ? '[data-buscar-cliente]' : '[data-buscar-producto]'), select: buscar(tipo === 'clientes' ? '[data-clientes]' : '[data-productos]'), lista: buscar(`[data-coincidencias-${tipo}]`), estado: buscar(`[data-estado-${tipo}]`), mas: buscar(`[data-mas-${tipo}]`), url: form.dataset.catalogo, tipo });
+    }
+    buscar('[data-productos]').addEventListener('change', () => {
+        consultaSku?.abort(); generacionSku++; cargandoSku = false; skus = []; buscar('[data-mas-skus]').hidden = true; buscar('[data-estado-skus]').textContent = ''; renderVariantes();
+        if (buscar('[data-productos]').value) consultarSkus();
+    });
+    buscar('[data-variantes]').addEventListener('change', renderSkus); buscar('[data-mas-skus]').addEventListener('click', () => consultarSkus(true));
     buscar('[data-agregar-linea]').addEventListener('click',()=>{
         const sku=skus.find(s=>Number(s.id)===Number(buscar('[data-skus]').value)), n=Number(buscar('[data-cantidad-nueva]').value);
         if(!sku || !Number.isSafeInteger(n) || n<1){mensaje.textContent='Selecciona presentación y cantidad entera positiva.';return;}
@@ -137,5 +145,9 @@
     buscar('[data-empaquetar]').addEventListener('change',e=>{if(!e.target.checked && (inicial.bloqueadas || []).length){e.target.checked=true;mensaje.textContent='Se conservan las agrupaciones que ya fueron despachadas.';return;}if(!e.target.checked && grupos.length && !confirm('¿Entregar todas las unidades sueltas y retirar las agrupaciones vigentes?')){e.target.checked=true;return;}if(!e.target.checked)grupos=[];buscar('[data-grupos-panel]').hidden=!e.target.checked;renderGrupos();resumen();});
     buscar('[data-agregar-grupo]').addEventListener('click',()=>{if(grupos.length>=1000){mensaje.textContent='El formulario admite hasta 1000 agrupaciones por versión.';return;}grupos.push({capacidad:1,componentes:[]});grupoActual=grupos.length-1;renderGrupos();resumen();});
     form.addEventListener('submit',e=>{if(!lineas.length || !resumen()){e.preventDefault();mensaje.textContent ||= 'Añade al menos una línea.';mensaje.focus();}});
-    renderLineas();renderGrupos();consultar('clientes');consultar('productos');
+    renderLineas();renderGrupos();
+    if (inicial.seleccionSku && buscar('[data-productos]').value) {
+        skus = [inicial.seleccionSku]; renderVariantes(); buscar('[data-variantes]').value = String(inicial.seleccionSku.variante_id || ''); renderSkus(); buscar('[data-skus]').value = String(inicial.seleccionSku.id);
+        buscar('[data-mas-skus]').hidden = false; paginas.skus = 1;
+    } else if (buscar('[data-productos]').value) consultarSkus();
 })(typeof globalThis!=='undefined'?globalThis:this);

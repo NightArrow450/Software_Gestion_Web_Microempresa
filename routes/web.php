@@ -333,6 +333,7 @@ Route::middleware('auth')->group(function () {
 
     /* HU-02: editar, confirmar y observar pedidos */
     Route::middleware('permiso:pedidos.editar')->group(function () {
+        Route::post('/pedidos/{pedido}/retirar-faltantes', [PedidoUnidadesController::class, 'retirarFaltantes'])->whereNumber('pedido')->defaults('idempotente', true)->name('pedidos.retirar-faltantes');
         Route::get('/pedidos/{pedido}/editar', [PedidoController::class, 'edit'])
             ->whereNumber('pedido')->name('pedidos.edit');
         Route::put('/pedidos/{pedido}', [PedidoController::class, 'update'])

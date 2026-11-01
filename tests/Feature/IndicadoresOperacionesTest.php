@@ -130,6 +130,7 @@ class IndicadoresOperacionesTest extends TestCase
 
     public function test_historicos_entregados_sin_desglose_no_se_convierten_en_aceptados(): void
     {
+        $this->travelTo(CarbonImmutable::parse('2026-10-20 10:00:00', 'America/Lima'));
         $e = $this->escenarioUnidades();
         $this->pedidoEnvasado($e, 'entregado');
 

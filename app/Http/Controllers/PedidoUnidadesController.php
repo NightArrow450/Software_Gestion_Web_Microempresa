@@ -7,9 +7,11 @@ use App\Models\Pedido;
 use App\Models\PresentacionProducto;
 use App\Models\Producto;
 use App\Services\AtenderPedidoUnidades;
+use App\Services\BusquedaCatalogo;
 use App\Services\GestionarPedidoUnidades;
 use App\Services\LecturaPedido;
 use App\Services\LeerAgrupaciones;
+use App\Services\RetirarFaltantesPedido;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -52,31 +54,65 @@ class PedidoUnidadesController extends Controller
                 && array_is_list($grupo['componentes']) && collect($grupo['componentes'])->every(static fn ($c): bool => is_array($c) && isset($c['sku_id'], $c['cantidad']))))
             : [];
 
-        return view('orders.units-form', compact('pedido', 'cliente', 'lineas', 'foto', 'agrupacionesIniciales'));
+        $productoSeleccionado = old('producto_seleccionado') ? Producto::where('estado', true)->find((int) old('producto_seleccionado')) : null;
+        $seleccionSku = null;
+        if ($productoSeleccionado && old('sku_seleccionado')) {
+            $consulta = PresentacionProducto::with(['producto', 'variante'])->where('producto_id', $productoSeleccionado->id)->whereKey((int) old('sku_seleccionado'));
+            BusquedaCatalogo::vendibles($consulta);
+            $sku = $consulta->first();
+            if ($sku) {
+                $seleccionSku = ['id' => $sku->id, 'sku' => $sku->codigo_sku, 'producto' => $sku->producto->nombre, 'variante_id' => $sku->variante_producto_id,
+                    'variante' => $sku->variante?->valor, 'presentacion' => $sku->contenido.' '.$sku->unidad_medida.' · '.$sku->tipo_envase,
+                    'precio_unitario' => $sku->precio_unitario, 'compatibilidad' => [$sku->producto_id, (string) $sku->contenido, $sku->unidad_medida, $sku->tipo_envase]];
+            }
+        }
+
+        return view('orders.units-form', compact('productoSeleccionado', 'seleccionSku', 'pedido', 'cliente', 'lineas', 'foto', 'agrupacionesIniciales'));
     }
 
     public function catalogo(Request $request): JsonResponse
     {
         $rol = $request->user()->role;
         abort_unless($rol?->tienePermiso('pedidos.crear') || $rol?->tienePermiso('pedidos.editar'), 403);
-        $datos = $request->validate(['tipo' => ['sometimes', 'in:clientes,productos,skus'], 'q' => ['nullable', 'string', 'max:100'], 'producto_id' => ['nullable', 'integer', 'min:1']]);
-        $datos['tipo'] ??= 'productos';
+        $datos = $request->validate(['tipo' => ['sometimes', 'in:clientes,productos,skus'], 'q' => ['nullable', 'string', 'max:100'], 'page' => ['sometimes', 'integer', 'min:1'], 'producto_id' => ['nullable', 'integer', 'min:1']]);
+        $tipo = $datos['tipo'] ?? 'productos';
         $termino = trim($datos['q'] ?? '');
-        if ($datos['tipo'] === 'clientes') {
-            return response()->json(Cliente::where('estado', true)->when($termino !== '', fn ($q) => $q->where('nombre', 'like', '%'.$termino.'%'))->orderBy('nombre')->orderBy('id')->paginate(20, ['id', 'nombre']));
+        if ($tipo === 'clientes') {
+            $clientes = Cliente::where('estado', true);
+            BusquedaCatalogo::coincidencia($clientes, ['nombre', 'documento', 'telefono'], $termino);
+
+            return response()->json($clientes->orderBy('nombre')->orderBy('id')->paginate(20, ['id', 'nombre']));
         }
-        if ($datos['tipo'] === 'productos') {
-            return response()->json(Producto::where('estado', true)->when($termino !== '', fn ($q) => $q->where('nombre', 'like', '%'.$termino.'%'))->orderBy('nombre')->orderBy('id')->paginate(20, ['id', 'nombre']));
+        if ($tipo === 'productos') {
+            $productos = Producto::where('estado', true)->whereHas('presentaciones', fn ($q) => BusquedaCatalogo::vendibles($q));
+            if ($termino !== '') {
+                $productos->where(function ($q) use ($termino): void {
+                    $q->where(fn ($n) => BusquedaCatalogo::coincidencia($n, ['productos.nombre', 'productos.codigo'], $termino))
+                        ->orWhereHas('presentaciones', function ($sku) use ($termino): void {
+                            BusquedaCatalogo::vendibles($sku);
+                            BusquedaCatalogo::coincidencia($sku, ['codigo_sku'], $termino);
+                        });
+                });
+            }
+
+            return response()->json($productos->orderBy('nombre')->orderBy('id')->paginate(20, ['id', 'nombre']));
         }
         $request->validate(['producto_id' => ['required', 'integer', 'min:1']]);
-        $skus = PresentacionProducto::with(['producto', 'variante'])->where('producto_id', $datos['producto_id'])->where('estado', true)
-            ->whereHas('producto', fn ($q) => $q->where('estado', true))->where(fn ($q) => $q->whereNull('variante_producto_id')->orWhereHas('variante', fn ($v) => $v->where('estado', true)))
-            ->orderBy('codigo_sku')->paginate(50);
+        $skus = PresentacionProducto::with(['producto', 'variante'])->where('producto_id', $datos['producto_id']);
+        BusquedaCatalogo::vendibles($skus);
+        $skus = $skus->orderBy('codigo_sku')->orderBy('id')->paginate(50);
         $skus->through(fn ($s): array => ['id' => $s->id, 'sku' => $s->codigo_sku, 'producto' => $s->producto->nombre, 'variante_id' => $s->variante_producto_id,
             'variante' => $s->variante?->valor, 'presentacion' => $s->contenido.' '.$s->unidad_medida.' · '.$s->tipo_envase, 'precio_unitario' => $s->precio_unitario,
             'compatibilidad' => [$s->producto_id, (string) $s->contenido, $s->unidad_medida, $s->tipo_envase]]);
 
         return response()->json($skus);
+    }
+
+    public function retirarFaltantes(Request $request, Pedido $pedido, RetirarFaltantesPedido $servicio): RedirectResponse
+    {
+        $servicio->ejecutar($pedido, $request->all(), $request->user());
+
+        return redirect()->route('pedidos.show', $pedido)->with('success', 'Faltantes retirados del compromiso comercial. Se conservaron el pedido original y todas las entregas; no se modificó el inventario.');
     }
 
     public function guardar(Request $request, ?Pedido $pedido = null): RedirectResponse

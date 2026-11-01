@@ -7,6 +7,7 @@ use App\Models\Pedido;
 use App\Models\PresentacionProducto;
 use App\Services\AjustarPedidoHistorico;
 use App\Services\GestionarPedidoUnidades;
+use App\Services\RetirarFaltantesPedido;
 use App\Services\TransicionesPedido;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -94,7 +95,9 @@ class PedidoController extends Controller
         $cambiosOriginales = app(GestionarPedidoUnidades::class)->cambiosOriginales($pedido);
         $fotosUnidades = app(GestionarPedidoUnidades::class)->fotografiasActuales(collect([$pedido]));
 
-        return view('orders.show', compact('pedido', 'versionesPedido', 'fotosUnidades', 'cambiosOriginales'));
+        $resumenRetiro = auth()->user()->role?->tienePermiso('pedidos.editar') ? app(RetirarFaltantesPedido::class)->resumen($pedido) : [];
+
+        return view('orders.show', compact('resumenRetiro', 'pedido', 'versionesPedido', 'fotosUnidades', 'cambiosOriginales'));
     }
 
     public function edit(Pedido $pedido): View

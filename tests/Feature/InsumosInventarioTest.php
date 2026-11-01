@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\Insumo;
 use App\Models\Permiso;
 use App\Models\Role;
 use App\Models\User;
@@ -20,6 +19,7 @@ class InsumosInventarioTest extends TestCase
             $permiso = Permiso::firstOrCreate(['nombre' => $nombre], ['descripcion' => $nombre]);
             $rol->permisos()->attach($permiso->id);
         }
+
         return User::create([
             'first_name' => 'Operador', 'last_name' => 'Insumos',
             'email' => 'insumos@local.test', 'password' => 'password123',
@@ -37,7 +37,8 @@ class InsumosInventarioTest extends TestCase
         $this->assertDatabaseHas('insumos', [
             'codigo' => 'ENV-GAL-35L', 'cantidad_actual' => '40.000',
         ]);
-        $this->actingAs($u)->get(route('inventario.index'))
+        $this->actingAs($u)->get(route('inventario.index'))->assertOk()->assertDontSee('ENV-GAL-35L');
+        $this->actingAs($u)->get(route('inventario.index', ['historico_materiales' => 1]))
             ->assertOk()->assertSee('ENV-GAL-35L')->assertSee('Galón vacío');
     }
 

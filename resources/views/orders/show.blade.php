@@ -81,7 +81,7 @@
 
 <div class="s2-summary">
     <span class="s2-state">
-        {{ ucfirst($pedido->estado) }}
+        {{ \App\EstadoPedido::etiquetas()[$pedido->estado] ?? ucfirst(str_replace('_', ' ', $pedido->estado)) }}
     </span>
 
     <strong>
@@ -311,6 +311,7 @@
 
 <section class="form-section">
     <h2 class="form-section-title">Historial de estados</h2>
+    @php($etiquetasEstado = \App\EstadoPedido::etiquetas())
 
     <div class="table-container">
         <table class="app-table">
@@ -332,12 +333,12 @@
                         </td>
 
                         <td>
-                            {{ $evento->estado_anterior ?: '—' }}
+                            {{ $etiquetasEstado[$evento->estado_anterior] ?? ($evento->estado_anterior ? ucfirst(str_replace('_', ' ', $evento->estado_anterior)) : '—') }}
                         </td>
 
                         <td>
                             <strong>
-                                {{ ucfirst($evento->estado_nuevo) }}
+                                {{ $etiquetasEstado[$evento->estado_nuevo] ?? ucfirst(str_replace('_', ' ', $evento->estado_nuevo)) }}
                             </strong>
                         </td>
 
@@ -380,6 +381,7 @@
 </section>
 @include('orders.partials.agrupaciones')
 @include('orders.partials.versiones')
+@include('orders.partials.retiro-faltantes')
 @endsection
 
 @push('scripts')

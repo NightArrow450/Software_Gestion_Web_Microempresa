@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\EstadoPedido;
 use App\Models\Pedido;
+use App\Services\AtenderPedidoUnidades;
 use App\Services\ControlEntregaPedido;
 use App\Services\GestionarPedidoUnidades;
 use Illuminate\Http\Request;
@@ -46,7 +47,9 @@ class SeguimientoPedidoController extends Controller
         $versionesPedido = app(GestionarPedidoUnidades::class)->historial($pedido);
         $cambiosOriginales = app(GestionarPedidoUnidades::class)->cambiosOriginales($pedido);
 
-        return view('seguimiento.show', compact('pedido', 'resumenEntrega', 'versionesPedido', 'cambiosOriginales'));
+        $historialPreparacion = $pedido->modelo_comercial === 'unidades' ? app(AtenderPedidoUnidades::class)->historialPreparacion($pedido) : null;
+
+        return view('seguimiento.show', compact('historialPreparacion', 'pedido', 'resumenEntrega', 'versionesPedido', 'cambiosOriginales'));
     }
 
     public function trazabilidad(Pedido $pedido): View
@@ -63,7 +66,9 @@ class SeguimientoPedidoController extends Controller
         $versionesPedido = app(GestionarPedidoUnidades::class)->historial($pedido);
         $cambiosOriginales = app(GestionarPedidoUnidades::class)->cambiosOriginales($pedido);
 
-        return view('seguimiento.trazabilidad', compact('pedido', 'resumenEntrega', 'versionesPedido', 'cambiosOriginales'));
+        $historialPreparacion = $pedido->modelo_comercial === 'unidades' ? app(AtenderPedidoUnidades::class)->historialPreparacion($pedido) : null;
+
+        return view('seguimiento.trazabilidad', compact('historialPreparacion', 'pedido', 'resumenEntrega', 'versionesPedido', 'cambiosOriginales'));
     }
 
     public function historial(Request $request): View
