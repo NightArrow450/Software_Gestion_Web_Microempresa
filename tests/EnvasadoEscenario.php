@@ -20,6 +20,7 @@ trait EnvasadoEscenario
 {
     protected function escenarioEnvasado(int $stockMaterial = 100, int $stockProducto = 0): array
     {
+        config(['envasado.control_materiales_exacto' => true]);
         $sufijo = (string) Str::ulid();
         $rol = Role::create(['nombre' => 'Prueba '.$sufijo, 'es_sistema' => false]);
         foreach (['envasado.ver', 'envasado.registrar', 'envasado.corregir', 'envasado.reportar', 'materiales.envasado.configurar', 'pedidos.ver', 'cumplimiento.despachar', 'inventario.ver', 'inventario.entrada'] as $nombre) {

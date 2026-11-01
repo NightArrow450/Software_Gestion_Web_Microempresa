@@ -6,7 +6,7 @@
 @section('content')
 <div class="page-heading">
     <div><div class="eyebrow">Inventario · HU-06</div><h1>Control de stock y alertas</h1>
-        <p>Alertas para productos terminados y para insumos: botellas, galones, etiquetas, tapas y materias primas.</p></div>
+        <p>Alertas para productos terminados.@if($controlMateriales) El control exacto de materiales está habilitado.@else No se calculan alertas de insumos cuyo inventario no se contabiliza.@endif</p></div>
     <a class="btn btn-secondary" href="{{ route('inventario.index') }}">Consultar disponibilidad</a>
 </div>
 <div class="s3-cardrow">
@@ -52,6 +52,7 @@
         @empty<tr><td colspan="6">No se encontraron productos terminados.</td></tr>@endforelse</tbody>
     </table></div><div class="s3-pagination">{{ $presentaciones->links() }}</div>
 </section>
+@if($controlMateriales)
 <section class="table-card s3-panel"><div class="table-header"><strong>Insumos, envases y materiales · mínimos</strong>
     <span class="muted">{{ $insumos->total() }} resultado(s)</span></div>
     <div class="table-container"><table class="app-table">
@@ -76,4 +77,7 @@
     </table></div><div class="s3-pagination">{{ $insumos->links() }}</div>
 </section>
 <p class="s3-muted">Se utiliza un mínimo inicial de 10 para nuevos SKU o insumos. Ajusta el umbral según la cantidad que la empresa necesite conservar. La alerta no realiza compras automáticamente.</p>
+@else
+<p class="s3-muted">Control numérico de materiales desactivado. Comprueba físicamente los envases y etiquetas antes de comprar. Los saldos históricos siguen disponibles en Inventario, sin considerarlos existencias verificadas.</p>
+@endif
 @endsection

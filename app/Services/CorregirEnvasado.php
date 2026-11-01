@@ -57,7 +57,8 @@ class CorregirEnvasado
 
     private function preparar(Envasado $envasado, array $entrada): array
     {
-        $datos = Validator::make($entrada, ['clasificacion' => ['required', Rule::in(['error_administrativo', 'perdida_fisica'])], 'cantidad' => ['required', 'integer', 'min:1', 'max:1000000'], 'revertidas_previas' => ['required', 'integer', 'min:0'], 'motivo' => ['required', 'string', 'min:10', 'max:1000'], 'devoluciones' => ['required', 'array'], 'devoluciones.*' => ['required', 'numeric', 'min:0', 'max:1000000000', 'decimal:0,3']])->validate();
+        $datos = Validator::make($entrada, ['clasificacion' => ['required', Rule::in(['error_administrativo', 'perdida_fisica'])], 'cantidad' => ['required', 'integer', 'min:1', 'max:1000000'], 'revertidas_previas' => ['required', 'integer', 'min:0'], 'motivo' => ['required', 'string', 'min:10', 'max:1000'], 'devoluciones' => ['sometimes', 'array'], 'devoluciones.*' => ['required', 'numeric', 'min:0', 'max:1000000000', 'decimal:0,3']])->validate();
+        $datos['devoluciones'] ??= [];
         $envasado = Envasado::whereKey($envasado->id)->lockForUpdate()->firstOrFail();
         $cantidad = (int) $datos['cantidad'];
         if ($envasado->unidades_revertidas !== (int) $datos['revertidas_previas'] || $envasado->estado === 'anulado' || $cantidad > $envasado->cantidad - $envasado->unidades_revertidas) {

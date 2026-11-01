@@ -28,14 +28,14 @@ class EnvasadoController extends Controller
 
     public function create(): View
     {
-        $presentaciones = PresentacionProducto::with('producto')->where('estado', true)
+        $presentaciones = PresentacionProducto::with(['producto', 'variante'])->where('estado', true)
             ->whereHas('producto', fn (Builder $consulta): Builder => $consulta->where('estado', true))
             ->where(fn (Builder $consulta): Builder => $consulta->whereNull('variante_producto_id')
                 ->orWhereHas('variante', fn (Builder $variante): Builder => $variante->where('estado', true)))
             ->orderBy('codigo_sku')->get();
-        $configuraciones = ConfiguracionEnvasado::with('presentacion')->where('estado', true)
-            ->whereIn('presentacion_producto_id', $presentaciones->modelKeys())->orderBy('nombre')->get();
-        $pedidos = Pedido::whereIn('estado', ['confirmado', 'en_preparacion'])->orderByDesc('id')->get();
+        $configuraciones = config('envasado.control_materiales_exacto') ? ConfiguracionEnvasado::with('presentacion')->where('estado', true)
+            ->whereIn('presentacion_producto_id', $presentaciones->modelKeys())->orderBy('nombre')->get() : collect();
+        $pedidos = Pedido::whereIn('estado', ['confirmado', 'en_preparacion', 'despacho_parcial'])->orderByDesc('id')->get();
 
         return view('envasado.create', compact('presentaciones', 'configuraciones', 'pedidos'));
     }
@@ -62,10 +62,10 @@ class EnvasadoController extends Controller
                 return redirect()->route('cumplimiento.show', $filtrosLista['volver_pedido_id'])->with('success', 'Producción física registrada una sola vez. El stock ya incluye estas unidades.');
             }
 
-            return redirect()->route('cumplimiento.lista-preparacion', $filtrosLista)->with('success', 'Envasado registrado. Materiales descontados y stock actualizado; no registres otra entrada por esta producción.');
+            return redirect()->route('cumplimiento.lista-preparacion', $filtrosLista)->with('success', 'Unidades terminadas registradas y stock actualizado; no registres otra entrada por esta producción.');
         }
 
-        return redirect()->route('envasado.show', $envasado)->with('success', 'Envasado registrado: materiales descontados y producto terminado ingresado. No registres otra entrada por esta producción.');
+        return redirect()->route('envasado.show', $envasado)->with('success', 'Envasado registrado: producto terminado ingresado. No registres otra entrada por esta producción.');
     }
 
     /** @return array<string, string|null>|null */

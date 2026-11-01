@@ -16,6 +16,7 @@ $request = Request::create($datos['ruta'], $datos['metodo'] ?? 'POST', $datos['d
 $app->instance('request', $request);
 $kernel->bootstrap();
 EntornoMySql::conectar();
+config(['envasado.control_materiales_exacto' => (bool) ($datos['control_materiales_exacto'] ?? false)]);
 $usuario = User::findOrFail($datos['usuario_id']);
 Auth::setUser($usuario);
 $conexion = DB::selectOne('SELECT CONNECTION_ID() AS id')->id;

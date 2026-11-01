@@ -101,12 +101,12 @@ class RetiroControladoSurtidosTest extends TestCase
         }
         $this->assertTrue(Schema::hasTable('formatos_surtidos'));
         $this->assertTrue(Schema::hasColumn('pedido_detalles', 'formato_surtido_id'));
-        $this->assertDatabaseCount('migrations', 48);
+        $this->assertDatabaseCount('migrations', 49);
     }
 
     public function test_el_retiro_no_se_ejecuta_con_migraciones_ordinarias_y_exige_autorizacion(): void
     {
-        $this->assertDatabaseCount('migrations', 48);
+        $this->assertDatabaseCount('migrations', 49);
         $this->assertTrue(Schema::hasTable('formatos_surtidos'));
         try {
             $this->migracion()->up();
@@ -181,7 +181,7 @@ class RetiroControladoSurtidosTest extends TestCase
         }
         $this->assertTrue(Schema::hasTable('formatos_surtidos'));
         $this->assertTrue(Schema::hasColumn('pedido_detalles', 'formato_surtido_id'));
-        $this->assertDatabaseCount('migrations', 48);
+        $this->assertDatabaseCount('migrations', 49);
     }
 
     public static function dependenciasSql(): array
@@ -209,6 +209,6 @@ class RetiroControladoSurtidosTest extends TestCase
         $this->assertTrue(Schema::hasTable('formatos_surtidos'));
         $this->assertTrue(Schema::hasColumn('pedido_detalles', 'formato_surtido_id'));
         $this->assertSame(1, DB::table('sqlite_master')->where('name', 'dependencia_sql_prueba')->count());
-        $this->assertDatabaseCount('migrations', 48);
+        $this->assertDatabaseCount('migrations', 49);
     }
 }

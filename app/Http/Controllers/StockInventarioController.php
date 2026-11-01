@@ -38,7 +38,8 @@ class StockInventarioController extends Controller
         $minimo = 'COALESCE(inventarios.stock_minimo, 10)';
 
         $productos = $this->consultaProductos()->selectRaw("SUM(CASE WHEN {$stock} = 0 THEN 1 ELSE 0 END) AS agotado, SUM(CASE WHEN {$stock} > 0 AND {$stock} <= {$minimo} THEN 1 ELSE 0 END) AS bajo, SUM(CASE WHEN {$stock} > 0 AND {$stock} > {$minimo} THEN 1 ELSE 0 END) AS normal")->toBase()->first();
-        $materiales = Insumo::where('estado', true)->selectRaw('SUM(CASE WHEN cantidad_actual = 0 THEN 1 ELSE 0 END) AS agotado, SUM(CASE WHEN cantidad_actual > 0 AND cantidad_actual <= stock_minimo THEN 1 ELSE 0 END) AS bajo, SUM(CASE WHEN cantidad_actual > 0 AND cantidad_actual > stock_minimo THEN 1 ELSE 0 END) AS normal')->toBase()->first();
+        $controlMateriales = (bool) config('envasado.control_materiales_exacto', false);
+        $materiales = $controlMateriales ? Insumo::where('estado', true)->selectRaw('SUM(CASE WHEN cantidad_actual = 0 THEN 1 ELSE 0 END) AS agotado, SUM(CASE WHEN cantidad_actual > 0 AND cantidad_actual <= stock_minimo THEN 1 ELSE 0 END) AS bajo, SUM(CASE WHEN cantidad_actual > 0 AND cantidad_actual > stock_minimo THEN 1 ELSE 0 END) AS normal')->toBase()->first() : (object) ['agotado' => 0, 'bajo' => 0, 'normal' => 0];
         $resumen = [];
         foreach (['agotado', 'bajo', 'normal'] as $estado) {
             $resumen[$estado] = (int) $productos->{$estado} + (int) $materiales->{$estado};
@@ -81,7 +82,7 @@ class StockInventarioController extends Controller
         $puedeConfigurar = $request->user()->role?->tienePermiso('inventario.ajustar') ?? false;
 
         return view('inventory.stock', compact(
-            'resumen', 'presentaciones', 'insumos', 'filtro', 'puedeConfigurar'
+            'resumen', 'presentaciones', 'insumos', 'filtro', 'puedeConfigurar', 'controlMateriales'
         ));
     }
 

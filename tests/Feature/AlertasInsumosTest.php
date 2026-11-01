@@ -20,6 +20,7 @@ class AlertasInsumosTest extends TestCase
             $p = Permiso::firstOrCreate(['nombre' => $nombre], ['descripcion' => $nombre]);
             $rol->permisos()->attach($p->id);
         }
+
         return User::create([
             'first_name' => 'Ana', 'last_name' => 'Almacén',
             'email' => 'alertasinsumos@local.test', 'password' => 'password123',
@@ -29,6 +30,7 @@ class AlertasInsumosTest extends TestCase
 
     public function test_incluye_botellas_bajo_minimo_en_alertas(): void
     {
+        config(['envasado.control_materiales_exacto' => true]);
         $u = $this->usuario(['inventario.ver']);
         Insumo::create([
             'codigo' => 'BOT-1L', 'nombre' => 'Botella 1 L', 'categoria' => 'Envases',

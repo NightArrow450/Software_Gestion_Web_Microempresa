@@ -18,7 +18,7 @@ function selector(opciones) {
     Object.defineProperty(select, 'selectedOptions', { get: () => opciones.filter(opcion => opcion.value === select.value) });
     return select;
 }
-function preparar(fetch = async () => ({ ok: true, text: async () => '<section>Consumos revisados</section>' })) {
+function preparar(fetch = async () => ({ ok: true, text: async () => '<section>Consumos revisados</section>' }), sinAlternativa = false) {
     const boton = elemento({ dataset: { registrarEnvasado: '7', sku: 'LAV-1L' } });
     const campos = {
         presentacion_producto_id: elemento(), version_configuracion: elemento(), cantidad: elemento(),
@@ -34,6 +34,7 @@ function preparar(fetch = async () => ({ ok: true, text: async () => '<section>C
         ]),
         produccion_desde: elemento({ value: '2026-10-22' }),
     };
+    if (sinAlternativa) { delete campos.configuracion_envasado_id; }
     const consultar = elemento();
     const formulario = elemento({
         action: '/envasados/previsualizar', elements: { namedItem: nombre => campos[nombre] },
@@ -120,4 +121,22 @@ test('cerrar durante una consulta impide reutilizar una respuesta tardía', asyn
     await pendiente;
     assert.equal(e.vista.innerHTML, '');
     assert.equal(e.dialogo.open, false);
+});
+
+
+test('registro habitual desde la lista permite revisar unidades sin configuración de materiales', async () => {
+    let enviada;
+    const e = preparar(async (url, opciones) => {
+        enviada = opciones.body.valores;
+        return { ok: true, text: async () => '<section>32 unidades terminadas</section>' };
+    }, true);
+    e.boton.eventos.click();
+    assert.equal(e.campos.cantidad.enfocado, true);
+    e.campos.cantidad.value = '32';
+    await e.formulario.eventos.submit({ preventDefault() {} });
+    assert.equal(enviada.cantidad, '32');
+    assert.equal(enviada.presentacion_producto_id, '7');
+    assert.equal(Object.hasOwn(enviada, 'configuracion_envasado_id'), false);
+    assert.equal(e.vista.innerHTML, '<section>32 unidades terminadas</section>');
+    assert.equal(e.errores.textContent, '');
 });

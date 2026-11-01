@@ -164,6 +164,6 @@ abstract class PruebaInventarioMySql extends TestCase
 
     protected function operacion(User $usuario, string $ruta, array $datos, ?string $token = null): array
     {
-        return ['usuario_id' => $usuario->id, 'ruta' => $ruta, 'datos' => $datos + ['_token_operacion' => $token ?? TokenOperacion::emitir($usuario->id)]];
+        return ['usuario_id' => $usuario->id, 'ruta' => $ruta, 'control_materiales_exacto' => (bool) config('envasado.control_materiales_exacto', false), 'datos' => $datos + ['_token_operacion' => $token ?? TokenOperacion::emitir($usuario->id)]];
     }
 }

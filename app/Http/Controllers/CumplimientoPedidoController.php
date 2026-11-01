@@ -196,7 +196,7 @@ class CumplimientoPedidoController extends Controller
 
         $permisos = $request->user()->loadMissing('role.permisos')->role?->permisos;
         $puedeRegistrar = $permisos?->contains('nombre', 'envasado.ver') && $permisos->contains('nombre', 'envasado.registrar');
-        $configuraciones = $puedeRegistrar ? ConfiguracionEnvasado::whereIn('presentacion_producto_id', $ids)->where('estado', true)->orderBy('nombre')->get() : collect();
+        $configuraciones = $puedeRegistrar && config('envasado.control_materiales_exacto') ? ConfiguracionEnvasado::whereIn('presentacion_producto_id', $ids)->where('estado', true)->orderBy('nombre')->get() : collect();
 
         return view('cumplimiento.lista-preparacion', compact('filas', 'fechaDesde', 'fechaHasta', 'produccionDesde', 'produccionHasta', 'puedeRegistrar', 'configuraciones', 'pedidos', 'lecturaPedidoPendientes'));
     }
@@ -222,7 +222,7 @@ class CumplimientoPedidoController extends Controller
                 'stock' => Inventario::whereIn('presentacion_producto_id', $ids)->pluck('cantidad_actual', 'presentacion_producto_id'),
                 'preparadas' => DB::table('pedido_preparaciones')->where('pedido_id', $pedido->id)->orderBy('id')->get()->keyBy('pedido_detalle_id'),
                 'envasadas' => Envasado::where('pedido_id', $pedido->id)->groupBy('presentacion_producto_id')->select('presentacion_producto_id')->selectRaw('SUM(cantidad - unidades_revertidas) cantidad')->pluck('cantidad', 'presentacion_producto_id'),
-                'configuraciones' => ConfiguracionEnvasado::whereIn('presentacion_producto_id', $ids)->where('estado', true)->get(),
+                'configuraciones' => config('envasado.control_materiales_exacto') ? ConfiguracionEnvasado::whereIn('presentacion_producto_id', $ids)->where('estado', true)->get() : collect(),
             ];
         }
 

@@ -91,7 +91,7 @@ class RetiroSurtidosMySqlTest extends PruebaInventarioMySql
             putenv('DHACER_RETIRO_SURTIDOS_AUTORIZADO');
         }
         $retiradas = ['formatos_surtidos', 'formato_surtido_skus', 'pedido_paquetes_surtidos', 'paquete_surtido_composiciones', 'paquete_surtido_componentes', 'pedido_despacho_componentes'];
-        $this->assertDatabaseCount('migrations', 49);
+        $this->assertDatabaseCount('migrations', 50);
         $this->assertCount(46, Schema::getTableListing($nombre, false));
         foreach ($originales as $tabla => [$columnas, $filas]) {
             if (in_array($tabla, $retiradas, true)) {

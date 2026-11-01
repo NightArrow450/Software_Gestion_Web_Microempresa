@@ -72,7 +72,7 @@ class ActividadIndicadores
             $q = DB::table('inventarios as i')->join('presentaciones_producto as p', 'p.id', '=', 'i.presentacion_producto_id');
             $this->filtrar($q, $f);
             foreach ($q->select(['i.id', 'i.presentacion_producto_id', 'i.cantidad_actual', 'p.codigo_sku'])->lazyById(100, 'i.id', 'id') as $r) {
-                yield ['tipo_item' => 'Producto terminado', 'presentacion_id' => $r->presentacion_producto_id, 'insumo_id' => null, 'sku' => $r->codigo_sku, 'unidad_medida' => 'unidad', 'stock_actual' => $r->cantidad_actual];
+                yield ['tipo_item' => 'Producto terminado', 'presentacion_id' => $r->presentacion_producto_id, 'insumo_id' => null, 'sku' => $r->codigo_sku, 'unidad_medida' => 'unidad', 'stock_actual' => $r->cantidad_actual, 'control_existencias' => 'Unidades terminadas registradas'];
             }
         }
         if (empty($f['producto_id']) && empty($f['presentacion_id']) && empty($f['sku'])) {
@@ -81,7 +81,8 @@ class ActividadIndicadores
                 $q->where('id', $f['insumo_id']);
             }
             foreach ($q->lazyById(100) as $r) {
-                yield ['tipo_item' => 'Insumo', 'presentacion_id' => null, 'insumo_id' => $r->id, 'sku' => $r->codigo, 'unidad_medida' => $r->unidad_medida, 'stock_actual' => $r->cantidad_actual];
+                yield ['tipo_item' => 'Insumo', 'presentacion_id' => null, 'insumo_id' => $r->id, 'sku' => $r->codigo, 'unidad_medida' => $r->unidad_medida, 'stock_actual' => $r->cantidad_actual,
+                    'control_existencias' => config('envasado.control_materiales_exacto') ? 'Control numérico habilitado' : 'Saldo histórico sin verificación física'];
             }
         }
     }
