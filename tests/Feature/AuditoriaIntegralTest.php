@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Http\Middleware\PermisoMiddleware;
 use App\Models\Inventario;
 use App\Models\Permiso;
 use App\Models\Producto;
@@ -9,6 +10,7 @@ use App\Services\RegistrarEnvasado;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\MessageBag;
@@ -17,6 +19,7 @@ use Illuminate\Validation\ValidationException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
 use Tests\UsabilidadEscenario;
 
@@ -46,6 +49,41 @@ class AuditoriaIntegralTest extends TestCase
     public function test_disponibilidad_encuentra_un_pedido_antiguo_entre_mas_de_20_sin_tildes(): void
     {
         $this->comprobarBusquedaDisponibilidad();
+    }
+
+    public function test_permisos_se_recargan_una_vez_por_solicitud_y_no_sobreviven_a_la_siguiente(): void
+    {
+        $e = $this->escenarioUnidades();
+        $usuario = $e['usuario'];
+        $permiso = 'envasado.ver';
+        $crear = static function () use ($usuario): Request {
+            $r = Request::create('/envasados');
+            $r->setUserResolver(fn () => $usuario);
+
+            return $r;
+        };
+        $middleware = new PermisoMiddleware;
+        $continuar = fn () => response('Lectura autorizada');
+        $request = $crear();
+        DB::enableQueryLog();
+        DB::flushQueryLog();
+        $usuario->load('role.permisos');
+        $usuario->load('role.permisos');
+        $antes = count(DB::getQueryLog());
+        DB::flushQueryLog();
+        $this->assertSame(200, $middleware->handle($request, $continuar, $permiso)->getStatusCode());
+        $this->assertSame(200, $middleware->handle($request, $continuar, $permiso)->getStatusCode());
+        $despues = count(DB::getQueryLog());
+        DB::disableQueryLog();
+        $this->assertSame(4, $antes);
+        $this->assertSame(2, $despues);
+        $usuario->role->permisos()->detach(Permiso::where('nombre', $permiso)->value('id'));
+        try {
+            $middleware->handle($crear(), $continuar, $permiso);
+            $this->fail('Una solicitud nueva debe observar la revocación del permiso.');
+        } catch (HttpException $error) {
+            $this->assertSame(403, $error->getStatusCode());
+        }
     }
 
     public static function imagenes(): array

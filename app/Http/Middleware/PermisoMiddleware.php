@@ -32,7 +32,10 @@ class PermisoMiddleware
                 ]);
         }
 
-        $user->load('role.permisos');
+        if ($request->attributes->get('dhacer.permisos.usuario') !== $user) {
+            $user->load('role.permisos');
+            $request->attributes->set('dhacer.permisos.usuario', $user);
+        }
 
         if (! $user->role) {
             abort(403);

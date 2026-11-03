@@ -25,3 +25,9 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Configuraciones privadas y respaldos locales; las muestras públicas se conservan.
+.env.*
+!.env.example
+/BD*.sql
+/BD*.sql.sha256
