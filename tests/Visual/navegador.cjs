@@ -29,7 +29,7 @@ async function foto(nombre) {
         fs.writeFileSync(path.join(salida, `${nombre}-desbordamiento.json`), JSON.stringify(diagnostico, null, 2));
     }
     const desbordamiento = Math.max(medidas.cuerpo, medidas.documento) > medidas.ancho + 1;
-    const defectoPrevio = process.env.AUDIT_ETAPA === 'antes' && /^(360|390)-preparacion-despacho-incidencias$/.test(nombre);
+    const defectoPrevio = process.env.AUDIT_ETAPA === 'antes' && /^360-(preparacion-despacho-incidencias|entrega-historial-acciones)$/.test(nombre);
     mediciones.push({ captura: nombre, ...medidas, defectoPrevioEsperado: defectoPrevio });
     if (defectoPrevio) {
         assert.ok(desbordamiento, 'El SKU largo debe reproducir el desbordamiento previo conocido.');
