@@ -6,17 +6,16 @@ use App\Models\Cliente;
 use App\Models\Permiso;
 use App\Services\GestionarPedidoUnidades;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\DataProvider;
 use RuntimeException;
 use Tests\EnvasadoEscenario;
-use Tests\TestCase;
+use Tests\TestCaseEsquemaHistorico;
 
-class RetiroControladoSurtidosTest extends TestCase
+class RetiroControladoSurtidosTest extends TestCaseEsquemaHistorico
 {
-    use EnvasadoEscenario, RefreshDatabase;
+    use EnvasadoEscenario;
 
     private function migracion(): object
     {
@@ -104,7 +103,7 @@ class RetiroControladoSurtidosTest extends TestCase
         $this->assertDatabaseCount('migrations', 49);
     }
 
-    public function test_el_retiro_no_se_ejecuta_con_migraciones_ordinarias_y_exige_autorizacion(): void
+    public function test_el_retiro_manual_no_forma_parte_del_esquema_historico_ordinario_y_exige_autorizacion(): void
     {
         $this->assertDatabaseCount('migrations', 49);
         $this->assertTrue(Schema::hasTable('formatos_surtidos'));

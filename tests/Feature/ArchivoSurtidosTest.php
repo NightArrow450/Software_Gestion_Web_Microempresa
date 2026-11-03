@@ -2,14 +2,13 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
-use Tests\TestCase;
+use Tests\TestCaseEsquemaHistorico;
 use Tests\VentaUnidadesEscenario;
 
-class ArchivoSurtidosTest extends TestCase
+class ArchivoSurtidosTest extends TestCaseEsquemaHistorico
 {
-    use RefreshDatabase, VentaUnidadesEscenario;
+    use VentaUnidadesEscenario;
 
     public function test_retirar_el_archivo_no_borra_sus_datos_y_el_formulario_no_consulta_surtidos(): void
     {

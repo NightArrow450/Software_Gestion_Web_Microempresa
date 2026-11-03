@@ -3,15 +3,14 @@
 namespace Tests\Feature;
 
 use Illuminate\Database\QueryException;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Tests\EnvasadoEscenario;
-use Tests\TestCase;
+use Tests\TestCaseEsquemaHistorico;
 
-class MigracionReferenciasFisicasTest extends TestCase
+class MigracionReferenciasFisicasTest extends TestCaseEsquemaHistorico
 {
-    use EnvasadoEscenario, RefreshDatabase;
+    use EnvasadoEscenario;
 
     public function test_copia_hechos_fisicos_sin_conversiones_ni_cambios_de_cuentas_o_movimientos(): void
     {

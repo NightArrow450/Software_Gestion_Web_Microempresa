@@ -14,15 +14,14 @@ use App\Services\RegistrarResultadoEntrega;
 use App\Services\RegistrarRetornoPedido;
 use App\Services\TokenOperacion;
 use App\Services\TransicionesPedido;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\EnvasadoEscenario;
-use Tests\TestCase;
+use Tests\TestCaseEsquemaHistorico;
 
-class FlujoVentaUnidadesPr45Test extends TestCase
+class FlujoVentaUnidadesPr45Test extends TestCaseEsquemaHistorico
 {
-    use EnvasadoEscenario, RefreshDatabase;
+    use EnvasadoEscenario;
 
     public static function resultados(): array
     {

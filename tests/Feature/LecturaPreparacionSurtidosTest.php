@@ -6,6 +6,7 @@ use App\Models\Pedido;
 use App\Services\LecturaPedido;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 use Tests\VentaUnidadesEscenario;
 
@@ -32,7 +33,7 @@ class LecturaPreparacionSurtidosTest extends TestCase
         DB::disableQueryLog();
         $this->assertDatabaseCount('pedido_agrupaciones', 0);
         $this->assertDatabaseCount('movimientos_inventario', 0);
-        $this->assertDatabaseCount('formatos_surtidos', 0);
+        $this->assertFalse(Schema::hasTable('formatos_surtidos'));
     }
 
     public function test_precarga_vacia_no_consulta_y_no_persiste_datos_obsoletos_en_el_servicio(): void
