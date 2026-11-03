@@ -9,19 +9,7 @@
         @method('PUT')
     @endif
 
-    @if($errors->any())
-        <div class="alert alert-danger" style="margin-bottom:22px;">
-            <span class="material-symbols-outlined">error</span>
-            <div>
-                <strong>Revisa la información ingresada.</strong>
-                <ul style="margin:7px 0 0 18px;">
-                    @foreach($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-        </div>
-    @endif
+
 
     <section class="form-section">
         <h2 class="form-section-title">Información de la categoría</h2>

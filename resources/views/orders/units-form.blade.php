@@ -6,7 +6,7 @@
 <h1>{{ isset($pedido) ? 'Editar pedido N.º '.$pedido->numero : 'Nuevo pedido por unidades' }}</h1>
 <p>Venta por unidades físicas. La entrega suelta es predeterminada. Agrupar no añade productos ni precios y no exige múltiplos.</p>
 <p><a class="btn btn-secondary" href="{{ route('pedidos.index') }}">Volver a pedidos</a></p>
-@if($errors->any())<div role="alert" class="s2-error">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
+
 <noscript><p role="alert">Activa JavaScript para seleccionar productos y distribuir las unidades de este formulario.</p></noscript>
 <form method="POST" action="{{ isset($pedido) ? route('pedidos.update', $pedido) : route('pedidos.store') }}" data-pedido-unidades data-catalogo="{{ route('pedidos.unidades.catalogo') }}">
 @csrf @include('components.token-operacion')
@@ -37,7 +37,7 @@
 <label>Cantidad de unidades<input class="form-control" data-cantidad-nueva name="cantidad_nueva" type="number" min="1" step="1" value="{{ old('cantidad_nueva', 1) }}" inputmode="numeric"></label>
 <button type="button" class="btn btn-primary" data-agregar-linea>Añadir unidades</button>
 </div><p>No se comprueba disponibilidad de líquido ni se descuenta inventario al registrar o confirmar.</p>
-<p data-mensaje role="status" aria-live="polite"></p>
+<p tabindex="-1" data-mensaje role="status" aria-live="polite"></p>
 <div data-lineas></div></section>
 <section class="form-section"><h2>Forma de entrega</h2>
 <label><input type="checkbox" data-empaquetar> Configurar agrupaciones opcionales</label>

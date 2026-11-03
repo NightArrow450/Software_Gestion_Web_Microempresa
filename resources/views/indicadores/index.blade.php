@@ -26,7 +26,7 @@
     </div></details>
     <p data-filtro><label><input type="checkbox" name="historial" value="1" @checked($filtros['historial'])> Incluir versiones históricas en composiciones (no se suman)</label></p>
     @if(auth()->user()->role?->tienePermiso('indicadores.economicos.ver'))<p><label><input type="checkbox" name="economico" value="1" @checked($filtros['economico'])> Mostrar importes informativos en céntimos PEN; no son cobros</label></p>@endif
-    @if($errors->any())<div role="alert">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
+
     <button type="submit" class="btn btn-primary">Consultar indicadores</button>
     <a class="btn" href="{{ route('indicadores.index') }}">Restablecer filtros</a>
 </form>

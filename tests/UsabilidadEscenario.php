@@ -86,4 +86,24 @@ trait UsabilidadEscenario
         $this->assertSame(0, $servicio->pendientes($pedido->fresh()));
         $this->assertSame(1, DB::table('auditoria')->where('entidad_id', $pedido->id)->where('accion', 'pedido_faltantes_retirados')->count());
     }
+
+    protected function comprobarBusquedaDisponibilidad(): void
+    {
+        $anteriores = Pedido::count();
+        $e = $this->escenarioUnidades();
+        $pedido = $this->pedidoUnico($e, 4);
+        $pedido->update(['estado' => 'confirmado', 'cliente_nombre' => 'JOSÉ NÚÑEZ ficticio']);
+        for ($i = 0; $i < 22; $i++) {
+            $otro = $this->pedidoUnico($e, 1);
+            $otro->update(['estado' => 'confirmado']);
+        }
+        $this->actingAs($e['usuario']);
+        $this->get(route('inventario.index'))->assertOk()->assertViewHas('pedidosDisponibles', fn ($p) => $p->total() >= 23 && ! $p->contains('id', $pedido->id));
+        $this->get(route('inventario.index', ['pedido_buscar' => 'jose nunez']))->assertOk()
+            ->assertViewHas('pedidosDisponibles', fn ($p) => $p->total() === 1 && $p->first()->id === $pedido->id);
+        $this->get(route('inventario.index', ['pedido_buscar' => $pedido->numero]))->assertOk()->assertViewHas('pedidosDisponibles', fn ($p) => $p->contains('id', $pedido->id));
+        $this->get(route('inventario.index', ['pedido_buscar' => "' OR 1=1 --"]))->assertOk()->assertViewHas('pedidosDisponibles', fn ($p) => $p->total() === 0);
+        $this->getJson(route('inventario.index', ['pedido_buscar' => str_repeat('x', 101)]))->assertUnprocessable();
+        $this->assertDatabaseCount('pedidos', $anteriores + 23);
+    }
 }

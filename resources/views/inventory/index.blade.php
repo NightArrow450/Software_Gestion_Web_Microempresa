@@ -19,6 +19,11 @@
                 <input class="form-control" name="buscar" id="buscar" value="{{ $buscar }}" placeholder="Buscar producto, SKU, galón, botella...">
             </div>
             <div class="form-group">
+                <label class="form-label" for="pedido_buscar">Encontrar pedido por número o cliente</label>
+                <input class="form-control" type="search" id="pedido_buscar" name="pedido_buscar" maxlength="100" value="{{ $pedidoBuscar }}" placeholder="N.º de pedido o nombre del cliente" aria-describedby="ayuda-pedido-buscar">
+                <small id="ayuda-pedido-buscar">Pulsa Consultar para filtrar todos los pendientes; después selecciona el pedido. Se muestran 20 por página.</small>
+            </div>
+            <div class="form-group">
                 <label class="form-label" for="pedido_id">Consultar pedido pendiente de despacho</label>
                 <select name="pedido_id" id="pedido_id" class="form-control">
                     <option value="">Sin pedido</option>

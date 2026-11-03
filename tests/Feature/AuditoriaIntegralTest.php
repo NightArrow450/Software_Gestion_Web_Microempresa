@@ -7,6 +7,7 @@ use App\Models\Permiso;
 use App\Models\Producto;
 use App\Services\RegistrarEnvasado;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
@@ -15,6 +16,7 @@ use Illuminate\Support\ViewErrorBag;
 use Illuminate\Validation\ValidationException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use RuntimeException;
+use Symfony\Component\HttpFoundation\Response;
 use Tests\TestCase;
 use Tests\UsabilidadEscenario;
 
@@ -25,8 +27,8 @@ class AuditoriaIntegralTest extends TestCase
     public function test_errores_de_pedido_se_muestran_una_sola_vez_y_tienen_destino_de_foco(): void
     {
         $e = $this->escenarioUnidades();
-        $html = $this->actingAs($e['usuario'])->withSession(['errors' => (new ViewErrorBag)->put('default', new MessageBag(['cliente_id' => 'ERROR_FICTICIO_UNICO']))])
-            ->get(route('pedidos.create'))->assertOk()->getContent();
+        $respuesta = $this->actingAs($e['usuario'])->get(route('pedidos.create'))->assertOk();
+        $html = $respuesta->original->with('errors', (new ViewErrorBag)->put('default', new MessageBag(['cliente_id' => 'ERROR_FICTICIO_UNICO'])))->render();
         $this->assertSame(1, substr_count($html, 'ERROR_FICTICIO_UNICO'));
     }
 
@@ -37,35 +39,22 @@ class AuditoriaIntegralTest extends TestCase
         $dom = new \DOMDocument;
         @$dom->loadHTML('<?xml encoding="UTF-8">'.$html);
         $mensaje = (new \DOMXPath($dom))->query('//*[@data-mensaje]')->item(0);
+        $this->assertInstanceOf(\DOMElement::class, $mensaje);
         $this->assertSame('-1', $mensaje->getAttribute('tabindex'));
     }
 
     public function test_disponibilidad_encuentra_un_pedido_antiguo_entre_mas_de_20_sin_tildes(): void
     {
-        $e = $this->escenarioUnidades();
-        $pedido = $this->pedidoUnico($e, 4);
-        $pedido->update(['estado' => 'confirmado', 'cliente_nombre' => 'JOSÉ NÚÑEZ ficticio']);
-        for ($i = 0; $i < 22; $i++) {
-            $otro = $this->pedidoUnico($e, 1);
-            $otro->update(['estado' => 'confirmado']);
-        }
-        $this->actingAs($e['usuario']);
-        $this->get(route('inventario.index'))->assertOk()->assertViewHas('pedidosDisponibles', fn ($p) => $p->total() === 23 && ! $p->contains('id', $pedido->id));
-        $this->get(route('inventario.index', ['pedido_buscar' => 'jose nunez']))->assertOk()
-            ->assertViewHas('pedidosDisponibles', fn ($p) => $p->total() === 1 && $p->first()->id === $pedido->id);
-        $this->get(route('inventario.index', ['pedido_buscar' => $pedido->numero]))->assertOk()->assertViewHas('pedidosDisponibles', fn ($p) => $p->contains('id', $pedido->id));
-        $this->get(route('inventario.index', ['pedido_buscar' => "' OR 1=1 --"]))->assertOk()->assertViewHas('pedidosDisponibles', fn ($p) => $p->total() === 0);
-        $this->getJson(route('inventario.index', ['pedido_buscar' => str_repeat('x', 101)]))->assertUnprocessable();
-        $this->assertDatabaseCount('pedidos', 23);
+        $this->comprobarBusquedaDisponibilidad();
     }
 
     public static function imagenes(): array
     {
-        return [['crear'], ['reemplazar'], ['quitar']];
+        return [['crear', true], ['reemplazar', true], ['quitar', true], ['crear', false], ['reemplazar', false], ['quitar', false], ['reemplazar', true, true]];
     }
 
     #[DataProvider('imagenes')]
-    public function test_un_fallo_de_base_no_borra_la_imagen_anterior_ni_deja_una_nueva_huerfana(string $accion): void
+    public function test_un_fallo_de_base_no_borra_la_imagen_anterior_ni_deja_una_nueva_huerfana(string $accion, bool $fallo, bool $posterior = false): void
     {
         Storage::fake('public');
         $e = $this->escenarioEnvasado();
@@ -86,16 +75,35 @@ class AuditoriaIntegralTest extends TestCase
         } else {
             $datos['imagen_referencia'] = UploadedFile::fake()->createWithContent('nueva.png', base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jWQAAAABJRU5ErkJggg=='));
         }
-        $evento = $accion === 'crear' ? 'creating' : 'updating';
-        Event::listen('eloquent.'.$evento.': '.Producto::class, static function (): void {
-            throw new RuntimeException('Fallo de base ficticio');
-        });
+        if (! $fallo) {
+            $respuesta = $accion === 'crear' ? $this->post(route('productos.store'), $datos) : $this->put(route('productos.update', $producto), $datos);
+            $respuesta->assertSessionHasNoErrors();
+            $actual = $accion === 'crear' ? Producto::where('codigo', 'AUD-NUEVO')->sole() : $producto->fresh();
+            if ($accion === 'quitar') {
+                $this->assertNull($actual->imagen_referencia);
+                $this->assertSame([], Storage::disk('public')->allFiles('productos'));
+            } else {
+                $this->assertNotSame('productos/anterior.png', $actual->imagen_referencia);
+                Storage::disk('public')->assertExists($actual->imagen_referencia);
+                $this->assertCount($accion === 'crear' ? 2 : 1, Storage::disk('public')->allFiles('productos'));
+            }
+
+            return;
+        }
+        if ($posterior) {
+            app('router')->getRoutes()->getByName('productos.update')->middleware(FalloPosteriorImagen::class);
+        } else {
+            $evento = $accion === 'crear' ? 'creating' : 'updating';
+            Event::listen('eloquent.'.$evento.': '.Producto::class, static function (): void {
+                throw new RuntimeException('Fallo de base ficticio');
+            });
+        }
         $this->withoutExceptionHandling();
         try {
             $accion === 'crear' ? $this->post(route('productos.store'), $datos) : $this->put(route('productos.update', $producto), $datos);
             $this->fail('Debe propagarse el fallo de base, sin perder el archivo anterior.');
         } catch (RuntimeException $error) {
-            $this->assertSame('Fallo de base ficticio', $error->getMessage());
+            $this->assertSame($posterior ? 'Fallo posterior ficticio' : 'Fallo de base ficticio', $error->getMessage());
         }
         $this->assertSame('productos/anterior.png', $producto->fresh()->imagen_referencia);
         $this->assertSame(['productos/anterior.png'], Storage::disk('public')->allFiles('productos'));
@@ -119,5 +127,15 @@ class AuditoriaIntegralTest extends TestCase
         $this->assertSame(4294967294, (int) $inventario->fresh()->cantidad_actual);
         $this->assertDatabaseCount('envasados', 0);
         $this->assertDatabaseCount('movimientos_inventario', 0);
+    }
+}
+
+/** Falla después del controlador, antes de confirmar las transacciones de los middleware reales. */
+class FalloPosteriorImagen
+{
+    public function handle(Request $request, \Closure $next): Response
+    {
+        $next($request);
+        throw new RuntimeException('Fallo posterior ficticio');
     }
 }

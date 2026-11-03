@@ -24,11 +24,7 @@
     @if(session('success'))
         <div class="cumplimiento-nota" role="status">{{ session('success') }}</div>
     @endif
-    @if($errors->any())
-        <div class="cumplimiento-tarjeta" style="border-color:#dc2626;" role="alert">
-            @foreach($errors->all() as $error)<p style="color:#b91c1c">{{ $error }}</p>@endforeach
-        </div>
-    @endif
+
 
     <section class="cumplimiento-tarjeta">
         <h2 class="form-section-title">Acciones de cumplimiento</h2>

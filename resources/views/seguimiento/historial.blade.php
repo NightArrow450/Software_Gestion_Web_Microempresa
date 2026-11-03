@@ -27,7 +27,7 @@
             <a href="{{ route('seguimiento.historial') }}" class="btn btn-secondary">Limpiar</a>
         </div>
     </form>
-    @if($errors->any())<div style="margin-top:12px;color:#b42318">{{ $errors->first() }}</div>@endif
+
 </section>
 <section class="seg-panel">
     <p class="seg-ayuda">Resultados: {{ $pedidos->total() }} pedido(s). Se muestran 15 por página.</p>
