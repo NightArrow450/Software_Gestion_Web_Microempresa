@@ -60,6 +60,9 @@ $escenario = new class
         }
 
         $e['presentacion']->producto->update(['nombre' => 'Quitásarro ficticio', 'codigo' => 'VISUAL-QTS']);
+        foreach ($e['skus'] as $indice => $sku) {
+            $sku->update(['codigo_sku' => 'VISUAL-QTS-'.str_repeat('W', 20).'-'.$indice]);
+        }
         Cliente::create(['nombre' => 'JOSÉ NÚÑEZ — cliente ficticio', 'estado' => true]);
         for ($i = 1; $i <= 22; $i++) {
             Cliente::create(['nombre' => sprintf('Cliente ficticio %02d', $i), 'estado' => true]);

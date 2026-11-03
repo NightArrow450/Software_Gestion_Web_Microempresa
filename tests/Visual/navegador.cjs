@@ -28,7 +28,14 @@ async function foto(nombre) {
             posicion: getComputedStyle(e).position, ancho: getComputedStyle(e).width, desbordamiento: getComputedStyle(e).overflowX })));
         fs.writeFileSync(path.join(salida, `${nombre}-desbordamiento.json`), JSON.stringify(diagnostico, null, 2));
     }
-    assert.ok(Math.max(medidas.cuerpo, medidas.documento) <= medidas.ancho + 1, `Desbordamiento horizontal en ${nombre}: ${JSON.stringify(medidas)}`);
+    const desbordamiento = Math.max(medidas.cuerpo, medidas.documento) > medidas.ancho + 1;
+    const defectoPrevio = process.env.AUDIT_ETAPA === 'antes' && /^(360|390)-preparacion-despacho-incidencias$/.test(nombre);
+    mediciones.push({ captura: nombre, ...medidas, defectoPrevioEsperado: defectoPrevio });
+    if (defectoPrevio) {
+        assert.ok(desbordamiento, 'El SKU largo debe reproducir el desbordamiento previo conocido.');
+    } else {
+        assert.equal(desbordamiento, false, `Desbordamiento horizontal en ${nombre}: ${JSON.stringify(medidas)}`);
+    }
 }
 async function ir(ruta) {
     const respuesta = await pagina.goto(base + ruta, { waitUntil: 'networkidle' });
