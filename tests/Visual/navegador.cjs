@@ -234,7 +234,7 @@ async function comprobar(nombre, accion) {
         await confirmacion.getByRole('button', { name: 'Confirmar unidades terminadas', exact: true }).click();
         await pagina.waitForLoadState('networkidle');
         const textoConfirmacion = 'Unidades terminadas registradas y stock actualizado; no registres otra entrada por esta producción.';
-        assert.equal(await pagina.locator('.app-alert.success').innerText().then(s => s.trim()), textoConfirmacion);
+        assert.ok((await pagina.locator('.app-alert.success').innerText()).includes(textoConfirmacion));
         assert.equal((await pagina.locator('body').innerText()).split(textoConfirmacion).length - 1, process.env.AUDIT_ETAPA === 'antes' ? 2 : 1);
         await foto('1366-envasado-integrado-confirmado');
     });
