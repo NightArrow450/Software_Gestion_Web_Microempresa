@@ -243,14 +243,14 @@ async function comprobar(nombre, accion) {
         const primeraPagina = await pagina.locator('#coincidencias-clientes [role=option]').count();
         await pagina.locator('[data-mas-clientes]').click();
         await pagina.waitForFunction(n => document.querySelectorAll('#coincidencias-clientes [role=option]').length > n, primeraPagina);
-        await foto('1440-busqueda-paginada');
+        await foto('1366-busqueda-paginada');
         await pagina.locator('[data-buscar-cliente]').fill('ZZZ-no-existe-ficticio');
         await pagina.getByText('No se encontraron coincidencias.', { exact: true }).waitFor();
-        await foto('1440-busqueda-sin-resultados');
+        await foto('1366-busqueda-sin-resultados');
         await pagina.route('**/pedidos-unidades/catalogo**', ruta => ruta.fulfill({ status: 503, body: '{}' }));
         await pagina.locator('[data-buscar-cliente]').fill('falla controlada');
         await pagina.getByText('No se pudo consultar. Revisa la conexión y tu sesión, y vuelve a intentar.', { exact: true }).waitFor();
-        await foto('1440-busqueda-error-controlado');
+        await foto('1366-busqueda-error-controlado');
         await pagina.unroute('**/pedidos-unidades/catalogo**');
         const esperado = errores.findIndex(e => e === 'HTTP 503: /pedidos-unidades/catalogo');
         if (esperado !== -1) errores.splice(esperado, 1);
@@ -259,7 +259,7 @@ async function comprobar(nombre, accion) {
         await ir(`/pedidos/imprimir-dos?pedido_1=${datos.parcial}&pedido_2=${datos.impresion}`);
         assert.equal(await pagina.locator('.a4-hoja').count(), 1);
         assert.equal(await pagina.locator('.nota').count(), 2);
-        await foto('1440-impresion-dos-notas');
+        await foto('1366-impresion-dos-notas');
         await pagina.emulateMedia({ media: 'print' });
         if (motor === 'chromium') await pagina.pdf({ path: path.join(salida, 'notas.pdf'), preferCSSPageSize: true, printBackground: true, displayHeaderFooter: false });
         await pagina.emulateMedia({ media: 'screen' });
@@ -280,8 +280,24 @@ async function comprobar(nombre, accion) {
         await pagina.waitForLoadState('networkidle');
         assert.equal(await pagina.locator('[data-retiro-faltantes]').count(), 0);
         assert.match(await pagina.locator('body').innerText(), /retir|vigente/i);
-        await foto('1440-retiro-confirmado');
+        await foto('1366-retiro-confirmado');
     });
+    for (const [rol, correo] of [['Operaciones Comerciales', 'comercial.visual@example.test'], ['Producción/Reparto', 'produccion.visual@example.test']]) {
+        await comprobar(`Permisos operativos reales en navegador — ${rol}`, async () => {
+            await pagina.locator('form[action$="/logout"] button').click();
+            await pagina.waitForURL('**/login');
+            await pagina.locator('[name=email]').fill(correo);
+            await pagina.locator('[name=password]').fill(process.env.VISUAL_PASSWORD);
+            await pagina.locator('button[type=submit]').click();
+            await pagina.waitForURL('**/dashboard');
+            await ir('/envasados/nuevo');
+            assert.equal((await pagina.request.get(base + '/roles-permisos')).status(), 403);
+            if (rol === 'Producción/Reparto') {
+                assert.equal((await pagina.request.get(base + '/indicadores')).status(), 403);
+            }
+            await foto(`1366-rol-${rol === 'Producción/Reparto' ? 'produccion' : 'comercial'}`);
+        });
+    }
     await navegador.close();
     if (errores.length) resultados.push({ caso: 'Errores inesperados de navegador o servidor', estado: 'FALLO', detalle: errores });
     const informe = { commit: process.env.GITHUB_SHA, rama_pr: process.env.PR_HEAD_SHA, motor: `${motor} / Playwright 1.64.1`, etapa: process.env.AUDIT_ETAPA,
@@ -289,7 +305,7 @@ async function comprobar(nombre, accion) {
         limitaciones: ['No es UAT con trabajadores.', 'Las capturas y el PDF requieren revisión humana de legibilidad.', 'Chrome y Edge de marca, impresoras físicas y UAT: PENDIENTE DE EJECUCIÓN.'] };
     fs.writeFileSync(path.join(salida, 'resultados.json'), JSON.stringify(informe, null, 2));
     const escapar = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-    fs.writeFileSync(path.join(salida, 'index.html'), `<!doctype html><html lang="es"><meta charset="utf-8"><title>Evidencias ficticias PR49</title><style>body{font-family:system-ui;margin:2rem}img{max-width:100%;border:1px solid #aaa}section{margin:3rem 0}li{margin:.5rem 0}</style><h1>Auditoría — Evidencias con datos ficticios</h1><p>Commit PR: ${escapar(process.env.PR_HEAD_SHA)}</p><p><a href="notas.pdf">PDF A4 horizontal</a> · <a href="resultados.json">Resultados verificables</a> · <a href="retiro-verificado.json">Cantidades verificadas</a></p><section><h2>Vista previa del PDF</h2><img src="notas-a4-horizontal.png" alt="Dos notas independientes en A4 horizontal"></section><ul>${resultados.map(r => `<li>${escapar(r.estado)} — ${escapar(r.caso)} ${escapar(r.detalle || '')}</li>`).join('')}</ul>${capturas.map(c => `<section><h2>${escapar(c)}</h2><a href="${c}"><img loading="lazy" src="${c}" alt="${escapar(c)}"></a></section>`).join('')}</html>`);
+    fs.writeFileSync(path.join(salida, 'index.html'), `<!doctype html><html lang="es"><meta charset="utf-8"><title>Auditoría visual ficticia</title><style>body{font-family:system-ui;margin:2rem}img{max-width:100%;border:1px solid #aaa}section{margin:3rem 0}li{margin:.5rem 0}</style><h1>Auditoría — Evidencias con datos ficticios</h1><p>Commit PR: ${escapar(process.env.PR_HEAD_SHA)}</p><p>${motor === 'chromium' ? '<a href="notas.pdf">PDF A4 horizontal</a>' : 'PDF disponible en el artefacto Chromium'} · <a href="resultados.json">Resultados verificables</a> · <a href="retiro-verificado.json">Cantidades verificadas</a></p>${motor === 'chromium' ? '<section><h2>Vista previa del PDF</h2><img src="notas-a4-horizontal.png" alt="Dos notas independientes en A4 horizontal"></section>' : ''}<ul>${resultados.map(r => `<li>${escapar(r.estado)} — ${escapar(r.caso)} ${escapar(r.detalle || '')}</li>`).join('')}</ul>${capturas.map(c => `<section><h2>${escapar(c)}</h2><a href="${c}"><img loading="lazy" src="${c}" alt="${escapar(c)}"></a></section>`).join('')}</html>`);
     console.log(JSON.stringify(resultados, null, 2));
     if (resultados.some(r => r.estado !== 'APROBADO')) process.exitCode = 1;
 })().catch(error => {

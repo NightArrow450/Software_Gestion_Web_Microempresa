@@ -54,6 +54,11 @@ $escenario = new class
         $e['usuario']->update(['email' => 'visual@example.test', 'first_name' => 'Ana', 'last_name' => 'Demostración',
             'password' => getenv('VISUAL_PASSWORD'), 'debe_cambiar_password' => false, 'role_id' => $rol->id]);
         $e['usuario']->unsetRelation('role');
+        foreach (['Operaciones Comerciales' => 'comercial.visual@example.test', 'Producción/Reparto' => 'produccion.visual@example.test'] as $nombre => $correo) {
+            User::factory()->create(['first_name' => 'Usuario', 'last_name' => 'Ficticio', 'email' => $correo,
+                'password' => getenv('VISUAL_PASSWORD'), 'debe_cambiar_password' => false, 'status' => true, 'role_id' => Role::where('nombre', $nombre)->sole()->id]);
+        }
+
         $e['presentacion']->producto->update(['nombre' => 'Quitásarro ficticio', 'codigo' => 'VISUAL-QTS']);
         Cliente::create(['nombre' => 'JOSÉ NÚÑEZ — cliente ficticio', 'estado' => true]);
         for ($i = 1; $i <= 22; $i++) {
