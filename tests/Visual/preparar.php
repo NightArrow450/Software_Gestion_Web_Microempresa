@@ -8,7 +8,9 @@ use App\Services\AtenderPedidoUnidades;
 use App\Services\ControlEntregaPedido;
 use App\Services\GestionarPedidoUnidades;
 use App\Services\RegistrarResultadoEntrega;
+use Database\Seeders\AuditoriaPermisoSeeder;
 use Database\Seeders\EntregaRetornoPermisoSeeder;
+use Database\Seeders\EnvasadoPermisoSeeder;
 use Database\Seeders\IndicadoresPermisoSeeder;
 use Database\Seeders\PermisoSeeder;
 use Database\Seeders\RoleSeeder;
@@ -44,7 +46,7 @@ $escenario = new class
         $e = $this->escenarioUnidades(32);
         config(['envasado.control_materiales_exacto' => false]);
         foreach ([RoleSeeder::class, PermisoSeeder::class, EntregaRetornoPermisoSeeder::class,
-            IndicadoresPermisoSeeder::class] as $clase) {
+            IndicadoresPermisoSeeder::class, AuditoriaPermisoSeeder::class, EnvasadoPermisoSeeder::class] as $clase) {
             (new $clase)->run();
         }
         $rol = Role::where('nombre', 'Administrador')->sole();
