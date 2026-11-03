@@ -25,12 +25,12 @@ trait PruebasCierreSurtidos
     public function test_cierre_ordinario_seguro_sin_perder_historia(string $caso): void
     {
         $this->prepararBaseCierre($caso);
-        $this->assertSame([], Schema::getTableListing(null, false));
+        $this->assertSame([], Schema::getTableListing(Schema::getCurrentSchemaListing(), false));
         $registro = Log::spy();
         $opciones = ['--force' => true, '--no-interaction' => true];
         if ($caso === 'nueva') {
             $this->assertSame(0, Artisan::call('migrate', $opciones));
-            $this->assertCount(46, Schema::getTableListing(null, false));
+            $this->assertCount(46, Schema::getTableListing(Schema::getCurrentSchemaListing(), false));
             $this->assertDatabaseCount('migrations', 50);
             $antes = $this->fotografiaCierre();
             $this->assertSame(0, Artisan::call('migrate', $opciones));
@@ -104,7 +104,7 @@ trait PruebasCierreSurtidos
         }
         $this->assertSame(0, Artisan::call('migrate', $opciones));
         $this->assertDatabaseCount('migrations', 50);
-        $this->assertCount($caso === 'historica' ? 52 : 46, Schema::getTableListing(null, false));
+        $this->assertCount($caso === 'historica' ? 52 : 46, Schema::getTableListing(Schema::getCurrentSchemaListing(), false));
         $this->assertSame($antes, $this->fotografiaCierre());
         $this->assertSame($esquema, $this->estructuraCierre());
         $this->assertSame(0, Artisan::call('migrate', $opciones));
@@ -121,7 +121,7 @@ trait PruebasCierreSurtidos
     private function fotografiaCierre(): array
     {
         $fotografia = [];
-        foreach (Schema::getTableListing(null, false) as $tabla) {
+        foreach (Schema::getTableListing(Schema::getCurrentSchemaListing(), false) as $tabla) {
             if ($tabla !== 'migrations') {
                 $filas = DB::table($tabla)->get()->map(fn (object $fila): string => json_encode($fila, JSON_THROW_ON_ERROR))->all();
                 sort($filas);
@@ -136,7 +136,7 @@ trait PruebasCierreSurtidos
     private function estructuraCierre(): array
     {
         $estructura = [];
-        foreach (Schema::getTableListing(null, false) as $tabla) {
+        foreach (Schema::getTableListing(Schema::getCurrentSchemaListing(), false) as $tabla) {
             $estructura[$tabla] = [Schema::getColumns($tabla), Schema::getIndexes($tabla), Schema::getForeignKeys($tabla)];
         }
         ksort($estructura);

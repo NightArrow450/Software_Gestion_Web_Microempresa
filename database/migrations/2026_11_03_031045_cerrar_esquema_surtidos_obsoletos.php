@@ -111,7 +111,7 @@ return new class extends Migration
 
     private function verificarDependenciasFisicas(): void
     {
-        foreach (Schema::getTableListing(null, false) as $tabla) {
+        foreach (Schema::getTableListing(Schema::getCurrentSchemaListing(), false) as $tabla) {
             foreach (Schema::getForeignKeys($tabla) as $clave) {
                 if (in_array($clave['foreign_table'], self::TABLAS, true) && ! in_array($tabla, self::TABLAS, true)
                     && ! ($tabla === 'pedido_detalles' && Schema::hasTable('formatos_surtidos') && $clave['foreign_table'] === 'formatos_surtidos' && $clave['columns'] === ['formato_surtido_id'])) {
