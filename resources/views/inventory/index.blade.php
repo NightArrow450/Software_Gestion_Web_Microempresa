@@ -38,7 +38,7 @@
         </div>
         {{ $pedidosDisponibles->links() }}
         <div class="s3-actions">
-            <button class="btn btn-primary" type="submit"><span class="material-symbols-outlined">search</span> Consultar</button>
+            <button class="btn btn-primary" type="submit"><span class="material-symbols-outlined" aria-hidden="true">search</span> Consultar</button>
             <a class="btn btn-secondary" href="{{ route('inventario.index') }}">Limpiar</a>
         </div>
     </form>
