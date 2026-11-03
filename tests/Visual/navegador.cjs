@@ -133,7 +133,9 @@ async function comprobar(nombre, accion) {
                 await pagina.locator('#pedido_id').selectOption(String(datos.preparacion));
                 await pagina.getByRole('button', { name: 'Consultar', exact: true }).click();
                 await pagina.waitForLoadState('networkidle');
-                assert.match(await pagina.locator('body').innerText(), /Pendiente activo/);
+                assert.match(await pagina.locator('body').innerText(), /Pendiente activo/i);
+                assert.equal(new URL(pagina.url()).searchParams.get('pedido_id'), String(datos.preparacion));
+                assert.equal(await pagina.locator('.disponibilidad-tabla tbody tr').first().locator('[data-label="Pendiente activo"] span').innerText(), '24');
             }
             await foto(`${ancho}-busqueda-pedido-${process.env.AUDIT_ETAPA}`);
         });
