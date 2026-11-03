@@ -71,8 +71,9 @@ class AuditoriaIntegralTest extends TestCase
         $usuario->load('role.permisos');
         $antes = count(DB::getQueryLog());
         DB::flushQueryLog();
-        $this->assertSame(200, $middleware->handle($request, $continuar, $permiso)->getStatusCode());
-        $this->assertSame(200, $middleware->handle($request, $continuar, $permiso)->getStatusCode());
+        $primera = $middleware->handle($request, $continuar, $permiso);
+        $segunda = $middleware->handle($request, $continuar, $permiso);
+        $this->assertSame([200, 200], [$primera->getStatusCode(), $segunda->getStatusCode()]);
         $despues = count(DB::getQueryLog());
         DB::disableQueryLog();
         $this->assertSame(4, $antes);
