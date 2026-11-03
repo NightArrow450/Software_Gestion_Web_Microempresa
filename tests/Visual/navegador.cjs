@@ -284,13 +284,19 @@ async function comprobar(nombre, accion) {
     });
     for (const [rol, correo] of [['Operaciones Comerciales', 'comercial.visual@example.test'], ['Producción/Reparto', 'produccion.visual@example.test']]) {
         await comprobar(`Permisos operativos reales en navegador — ${rol}`, async () => {
+            await ir('/dashboard');
             await pagina.locator('form[action$="/logout"] button').click();
             await pagina.waitForURL('**/login');
             await pagina.locator('[name=email]').fill(correo);
             await pagina.locator('[name=password]').fill(process.env.VISUAL_PASSWORD);
             await pagina.locator('button[type=submit]').click();
             await pagina.waitForURL('**/dashboard');
-            await ir('/envasados/nuevo');
+            if (rol === 'Operaciones Comerciales') {
+                assert.equal((await pagina.request.get(base + '/envasados/nuevo')).status(), 403);
+                await ir('/envasados');
+            } else {
+                await ir('/envasados/nuevo');
+            }
             assert.equal((await pagina.request.get(base + '/roles-permisos')).status(), 403);
             if (rol === 'Producción/Reparto') {
                 assert.equal((await pagina.request.get(base + '/indicadores')).status(), 403);
