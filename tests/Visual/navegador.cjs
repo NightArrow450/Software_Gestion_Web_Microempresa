@@ -7,7 +7,7 @@ if (process.env.GITHUB_ACTIONS !== 'true' || process.env.RUNNER_ENVIRONMENT !== 
 }
 const temporal = fs.realpathSync(process.env.RUNNER_TEMP);
 assert.equal(process.env.VISUAL_DATABASE, path.join(temporal, 'pr49-visual.sqlite'));
-const { chromium } = require(path.join(temporal, 'navegador/node_modules/playwright'));
+const motores = require(path.join(temporal, 'navegador/node_modules/playwright'));
 const datos = JSON.parse(fs.readFileSync(path.join(temporal, 'visual-fixture.json'), 'utf8'));
 const salida = path.join(temporal, 'evidencias-pr49');
 fs.mkdirSync(salida, { recursive: false });
@@ -50,7 +50,9 @@ async function comprobar(nombre, accion) {
 }
 
 (async () => {
-    const navegador = await chromium.launch();
+    const motor = process.env.AUDIT_BROWSER || 'chromium';
+    assert.ok(['chromium', 'firefox'].includes(motor));
+    const navegador = await motores[motor].launch();
     const contexto = await navegador.newContext({ viewport: { width: 1440, height: 1000 }, locale: 'es-PE' });
     await contexto.route('**/*', async ruta => {
         const url = new URL(ruta.request().url());
@@ -72,7 +74,7 @@ async function comprobar(nombre, accion) {
         await pagina.locator('button[type=submit]').click();
         await pagina.waitForURL('**/dashboard');
     });
-    for (const ancho of [360, 390, 768, 1024, 1440]) {
+    for (const ancho of [360, 390, 768, 1024, 1366]) {
         await pagina.setViewportSize({ width: ancho, height: 950 });
         await comprobar(`Buscadores, variante, presentación, validación y agrupaciones — ${ancho}px`, async () => {
             await ir('/pedidos/nuevo');
@@ -110,7 +112,55 @@ async function comprobar(nombre, accion) {
             assert.equal(grupos[1].componentes[0].cantidad, 3);
             await foto(`${ancho}-04-editor-agrupaciones`);
         });
+        await comprobar(`Foco del error de pedido — ${ancho}px`, async () => {
+            await ir('/pedidos/nuevo');
+            await pagina.locator('[data-pedido-unidades]').evaluate(form => { form.noValidate = true; form.requestSubmit(); });
+            const foco = await pagina.locator('[data-mensaje]').evaluate(e => document.activeElement === e);
+            assert.equal(foco, process.env.AUDIT_ETAPA !== 'antes');
+            await foto(`${ancho}-foco-error-${process.env.AUDIT_ETAPA}`);
+        });
+        await comprobar(`Búsqueda de pedido fuera de los primeros veinte — ${ancho}px`, async () => {
+            await ir('/inventario');
+            const buscador = pagina.locator('[name=pedido_buscar]');
+            if (process.env.AUDIT_ETAPA === 'antes') {
+                assert.equal(await buscador.count(), 0);
+                assert.equal(await pagina.locator(`#pedido_id option[value="${datos.preparacion}"]`).count(), 0);
+            } else {
+                await buscador.fill('jose nunez');
+                await pagina.getByRole('button', { name: 'Consultar', exact: true }).click();
+                await pagina.waitForLoadState('networkidle');
+                await pagina.locator(`#pedido_id option[value="${datos.preparacion}"]`).waitFor({ state: 'attached' });
+                await pagina.locator('#pedido_id').selectOption(String(datos.preparacion));
+                await pagina.getByRole('button', { name: 'Consultar', exact: true }).click();
+                await pagina.waitForLoadState('networkidle');
+                assert.match(await pagina.locator('body').innerText(), /Pendiente activo/);
+            }
+            await foto(`${ancho}-busqueda-pedido-${process.env.AUDIT_ETAPA}`);
+        });
+        await comprobar(`Error de validación sin duplicados — ${ancho}px`, async () => {
+            await ir('/pedidos/nuevo');
+            await pagina.locator('[data-buscar-producto]').fill('quitasarro');
+            await pagina.locator('#coincidencias-productos [role=option]').first().click();
+            await pagina.waitForFunction(() => document.querySelector('[data-variantes]').options.length === 3);
+            await pagina.locator('[data-variantes]').selectOption({ label: 'Limón' });
+            await pagina.locator('[data-skus]').selectOption(await pagina.locator('[data-skus] option').nth(1).getAttribute('value'));
+            await pagina.locator('[data-cantidad-nueva]').fill('1');
+            await pagina.locator('[data-agregar-linea]').click();
+            await pagina.locator('[data-pedido-unidades]').evaluate(form => { form.noValidate = true; });
+            await pagina.getByRole('button', { name: 'Guardar pedido por unidades', exact: true }).click();
+            await pagina.waitForLoadState('networkidle');
+            const erroresGlobales = await pagina.locator('.app-alert.error li').allTextContents();
+            assert.ok(erroresGlobales.length > 0, 'Se esperaba una validación del cliente no seleccionado');
+            const texto = await pagina.locator('body').innerText();
+            for (const error of erroresGlobales) {
+                assert.equal(texto.split(error.trim()).length - 1, process.env.AUDIT_ETAPA === 'antes' ? 2 : 1);
+            }
+            await foto(`${ancho}-validacion-${process.env.AUDIT_ETAPA}`);
+        });
         const pantallas = [
+            ['dashboard', '/dashboard'], ['usuarios', '/usuarios'], ['roles', '/roles-permisos'],
+            ['productos', '/productos'], ['producto-nuevo', '/productos/nuevo'], ['clientes', '/clientes'], ['cliente-nuevo', '/clientes/nuevo'],
+            ['pedidos', '/pedidos'], ['envasado-nuevo', '/envasados/nuevo'], ['envasados', '/envasados'], ['movimientos', '/inventario/movimientos'], ['auditoria', '/auditoria'],
             ['disponibilidad', `/inventario?pedido_id=${datos.preparacion}`],
             ['materiales-historicos', '/inventario?historico_materiales=1'],
             ['lista-preparacion', '/cumplimiento/lista-preparacion'],
@@ -170,6 +220,22 @@ async function comprobar(nombre, accion) {
             await foto(`${ancho}-retiro-faltantes`);
         });
     }
+    await comprobar('Envasado integrado real sin consumo de materiales', async () => {
+        await ir('/cumplimiento/lista-preparacion');
+        await pagina.locator('[data-registrar-envasado]').first().click();
+        const dialogo = pagina.locator('dialog[open]');
+        await dialogo.locator('[name=cantidad]').fill('2');
+        await dialogo.getByRole('button', { name: 'Revisar unidades antes de confirmar', exact: true }).click();
+        const confirmacion = dialogo.locator('[data-confirmacion-envasado]');
+        await confirmacion.waitFor();
+        assert.match(await confirmacion.innerText(), /No se registran consumos ni movimientos de insumos/);
+        await foto('1366-envasado-integrado-previa');
+        await confirmacion.locator('input[type=checkbox][required]').check();
+        await confirmacion.getByRole('button', { name: 'Confirmar unidades terminadas', exact: true }).click();
+        await pagina.waitForLoadState('networkidle');
+        assert.match(await pagina.locator('body').innerText(), /envasado|unidades terminadas/i);
+        await foto('1366-envasado-integrado-confirmado');
+    });
     await comprobar('Paginación, sin resultados y mensaje de error de búsqueda', async () => {
         await ir('/pedidos/nuevo');
         await pagina.locator('[data-buscar-cliente]').fill('Cliente ficticio');
@@ -195,7 +261,7 @@ async function comprobar(nombre, accion) {
         assert.equal(await pagina.locator('.nota').count(), 2);
         await foto('1440-impresion-dos-notas');
         await pagina.emulateMedia({ media: 'print' });
-        await pagina.pdf({ path: path.join(salida, 'notas.pdf'), preferCSSPageSize: true, printBackground: true, displayHeaderFooter: false });
+        if (motor === 'chromium') await pagina.pdf({ path: path.join(salida, 'notas.pdf'), preferCSSPageSize: true, printBackground: true, displayHeaderFooter: false });
         await pagina.emulateMedia({ media: 'screen' });
     });
     await comprobar('Retiro real 54 → 32, validación de límites y confirmación', async () => {
@@ -218,12 +284,12 @@ async function comprobar(nombre, accion) {
     });
     await navegador.close();
     if (errores.length) resultados.push({ caso: 'Errores inesperados de navegador o servidor', estado: 'FALLO', detalle: errores });
-    const informe = { commit: process.env.GITHUB_SHA, rama_pr: process.env.PR_HEAD_SHA, motor: 'Chromium / Playwright 1.64.1',
+    const informe = { commit: process.env.GITHUB_SHA, rama_pr: process.env.PR_HEAD_SHA, motor: `${motor} / Playwright 1.64.1`, etapa: process.env.AUDIT_ETAPA,
         base: 'SQLite temporal exclusivamente ficticia; conexiones MySQL bloqueadas', resultados, capturas, mediciones,
-        limitaciones: ['No es UAT con trabajadores.', 'Las capturas y el PDF requieren revisión humana de legibilidad.', 'No prueba otros motores de navegador ni impresoras físicas.'] };
+        limitaciones: ['No es UAT con trabajadores.', 'Las capturas y el PDF requieren revisión humana de legibilidad.', 'Chrome y Edge de marca, impresoras físicas y UAT: PENDIENTE DE EJECUCIÓN.'] };
     fs.writeFileSync(path.join(salida, 'resultados.json'), JSON.stringify(informe, null, 2));
     const escapar = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-    fs.writeFileSync(path.join(salida, 'index.html'), `<!doctype html><html lang="es"><meta charset="utf-8"><title>Evidencias ficticias PR49</title><style>body{font-family:system-ui;margin:2rem}img{max-width:100%;border:1px solid #aaa}section{margin:3rem 0}li{margin:.5rem 0}</style><h1>PR49 — Evidencias con datos ficticios</h1><p>Commit PR: ${escapar(process.env.PR_HEAD_SHA)}</p><p><a href="notas.pdf">PDF A4 horizontal</a> · <a href="resultados.json">Resultados verificables</a> · <a href="retiro-verificado.json">Cantidades verificadas</a></p><section><h2>Vista previa del PDF</h2><img src="notas-a4-horizontal.png" alt="Dos notas independientes en A4 horizontal"></section><ul>${resultados.map(r => `<li>${escapar(r.estado)} — ${escapar(r.caso)} ${escapar(r.detalle || '')}</li>`).join('')}</ul>${capturas.map(c => `<section><h2>${escapar(c)}</h2><a href="${c}"><img loading="lazy" src="${c}" alt="${escapar(c)}"></a></section>`).join('')}</html>`);
+    fs.writeFileSync(path.join(salida, 'index.html'), `<!doctype html><html lang="es"><meta charset="utf-8"><title>Evidencias ficticias PR49</title><style>body{font-family:system-ui;margin:2rem}img{max-width:100%;border:1px solid #aaa}section{margin:3rem 0}li{margin:.5rem 0}</style><h1>Auditoría — Evidencias con datos ficticios</h1><p>Commit PR: ${escapar(process.env.PR_HEAD_SHA)}</p><p><a href="notas.pdf">PDF A4 horizontal</a> · <a href="resultados.json">Resultados verificables</a> · <a href="retiro-verificado.json">Cantidades verificadas</a></p><section><h2>Vista previa del PDF</h2><img src="notas-a4-horizontal.png" alt="Dos notas independientes en A4 horizontal"></section><ul>${resultados.map(r => `<li>${escapar(r.estado)} — ${escapar(r.caso)} ${escapar(r.detalle || '')}</li>`).join('')}</ul>${capturas.map(c => `<section><h2>${escapar(c)}</h2><a href="${c}"><img loading="lazy" src="${c}" alt="${escapar(c)}"></a></section>`).join('')}</html>`);
     console.log(JSON.stringify(resultados, null, 2));
     if (resultados.some(r => r.estado !== 'APROBADO')) process.exitCode = 1;
 })().catch(error => {

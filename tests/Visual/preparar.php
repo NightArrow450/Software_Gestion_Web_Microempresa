@@ -83,6 +83,12 @@ $escenario = new class
             'cantidad' => 10, 'incidencia' => 'liquido', 'motivo' => 'Comprobación ficticia: producción incompleta por falta de líquido.'], $e['usuario']);
         $impresion = $this->registrarUnidades($e, [2, 3, 1]);
 
+        $preparacion->update(['cliente_nombre' => 'JOSÉ NÚÑEZ — pedido antiguo ficticio']);
+        for ($i = 0; $i < 25; $i++) {
+            $extra = app(GestionarPedidoUnidades::class)->guardar($entrada, $e['usuario']);
+            $extra->update(['estado' => 'confirmado']);
+        }
+
         return ['parcial' => $parcial->id, 'preparacion' => $preparacion->id, 'nota1' => $parcial->numero,
             'nota2' => $impresion->numero, 'impresion' => $impresion->id, 'sku' => $e['presentacion']->id];
     }
