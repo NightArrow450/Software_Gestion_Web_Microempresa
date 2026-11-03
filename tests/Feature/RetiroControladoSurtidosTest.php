@@ -103,7 +103,7 @@ class RetiroControladoSurtidosTest extends TestCaseEsquemaHistorico
         $this->assertDatabaseCount('migrations', 49);
     }
 
-    public function test_el_retiro_no_se_ejecuta_con_migraciones_ordinarias_y_exige_autorizacion(): void
+    public function test_el_retiro_manual_no_forma_parte_del_esquema_historico_ordinario_y_exige_autorizacion(): void
     {
         $this->assertDatabaseCount('migrations', 49);
         $this->assertTrue(Schema::hasTable('formatos_surtidos'));

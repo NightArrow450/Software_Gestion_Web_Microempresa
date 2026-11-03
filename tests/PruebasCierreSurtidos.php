@@ -17,8 +17,8 @@ trait PruebasCierreSurtidos
 
     public static function escenariosCierre(): array
     {
-        return array_combine(['nueva', 'saneada', 'historica', 'parcial', 'vista', 'fk', 'trigger', 'referencia', 'fotografia'],
-            array_map(fn (string $caso): array => [$caso], ['nueva', 'saneada', 'historica', 'parcial', 'vista', 'fk', 'trigger', 'referencia', 'fotografia']));
+        return array_combine(['nueva', 'saneada', 'historica', 'parcial', 'vista', 'fk', 'trigger', 'referencia', 'fotografia', 'columna'],
+            array_map(fn (string $caso): array => [$caso], ['nueva', 'saneada', 'historica', 'parcial', 'vista', 'fk', 'trigger', 'referencia', 'fotografia', 'columna']));
     }
 
     #[DataProvider('escenariosCierre')]
@@ -26,7 +26,7 @@ trait PruebasCierreSurtidos
     {
         $this->prepararBaseCierre($caso);
         $this->assertSame([], Schema::getTableListing(null, false));
-        Log::spy();
+        $registro = Log::spy();
         $opciones = ['--force' => true, '--no-interaction' => true];
         if ($caso === 'nueva') {
             $this->assertSame(0, Artisan::call('migrate', $opciones));
@@ -37,7 +37,7 @@ trait PruebasCierreSurtidos
             $this->assertSame($antes, $this->fotografiaCierre());
             $this->assertFalse(Schema::hasTable('formatos_surtidos'));
             $this->assertFalse(Schema::hasColumn('pedido_detalles', 'formato_surtido_id'));
-            Log::shouldHaveReceived('info')->once()->withArgs(fn (string $mensaje, array $contexto): bool => $contexto['estado_esquema'] === 'estructuras_vacias_retiradas');
+            $registro->shouldHaveReceived('info')->once()->withArgs(fn (string $mensaje, array $contexto): bool => $contexto['estado_esquema'] === 'estructuras_vacias_retiradas');
 
             return;
         }
@@ -81,6 +81,8 @@ trait PruebasCierreSurtidos
             DB::unprepared(DB::getDriverName() === 'mysql'
                 ? 'CREATE TRIGGER dependencia_cierre BEFORE UPDATE ON formatos_surtidos FOR EACH ROW SET @dependencia = 1'
                 : 'CREATE TRIGGER dependencia_cierre BEFORE UPDATE ON formatos_surtidos BEGIN SELECT 1; END');
+        } elseif ($caso === 'columna') {
+            Schema::table('pedido_detalles', fn (Blueprint $tabla) => $tabla->unsignedBigInteger('dependencia_cierre')->virtualAs('COALESCE(formato_surtido_id, 0)'));
         } elseif ($caso === 'referencia') {
             Schema::table('entrega_pedido_detalles', fn (Blueprint $tabla) => $tabla->index('entrega_id', 'entrega_cierre_soporte'));
             Schema::table('entrega_pedido_detalles', fn (Blueprint $tabla) => $tabla->dropUnique('entrega_id_fisica_unica'));
@@ -108,7 +110,7 @@ trait PruebasCierreSurtidos
         $this->assertSame(0, Artisan::call('migrate', $opciones));
         $this->assertSame($antes, $this->fotografiaCierre());
         $estado = $caso === 'historica' ? 'historial_conservado' : 'ya_saneado';
-        Log::shouldHaveReceived($caso === 'historica' ? 'warning' : 'info')->once()->withArgs(fn (string $mensaje, array $contexto): bool => $contexto['estado_esquema'] === $estado);
+        $registro->shouldHaveReceived($caso === 'historica' ? 'warning' : 'info')->once()->withArgs(fn (string $mensaje, array $contexto): bool => $contexto['estado_esquema'] === $estado);
         $this->assertTrue(Schema::hasColumns('pedido_detalles', ['tipo_linea', 'retirado_en']));
         $this->assertTrue(Schema::hasTable('pedido_agrupacion_detalles'));
         $this->assertSame(0, Artisan::call('migrate', $opciones + ['--path' => [base_path('tests/migracion_futura_cierre.php')], '--realpath' => true]));

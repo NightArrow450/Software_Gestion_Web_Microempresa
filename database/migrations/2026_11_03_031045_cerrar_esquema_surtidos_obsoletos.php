@@ -50,6 +50,9 @@ return new class extends Migration
         }
         $this->verificarEsquemaVigente();
         $this->verificarEsquemaHistorico();
+        if (DB::table('pedido_detalles')->whereNotNull('tipo_linea')->whereNotIn('tipo_linea', ['normal', 'surtido'])->exists()) {
+            throw new RuntimeException('Tipo de línea histórico desconocido. No se ha iniciado DDL.');
+        }
         $formato = array_filter(Schema::getForeignKeys('pedido_detalles'), fn (array $fk): bool => $fk['columns'] === ['formato_surtido_id'] && $fk['foreign_table'] === 'formatos_surtidos' && $fk['foreign_columns'] === ['id']);
         if (count($formato) !== 1 || DB::table('pedido_detalles as d')->leftJoin('formatos_surtidos as f', 'f.id', '=', 'd.formato_surtido_id')->whereNotNull('d.formato_surtido_id')->whereNull('f.id')->exists()) {
             throw new RuntimeException('Referencia comercial histórica incompleta. No se ha iniciado DDL.');
@@ -157,6 +160,22 @@ return new class extends Migration
     private function verificarEsquemaHistorico(): void
     {
         $this->verificarTriggers();
+        $unicas = [
+            'formatos_surtidos' => [['id']],
+            'formato_surtido_skus' => [['id'], ['formato_surtido_id', 'presentacion_producto_id']],
+            'pedido_paquetes_surtidos' => [['id'], ['pedido_detalle_id', 'numero']],
+            'paquete_surtido_composiciones' => [['id'], ['paquete_surtido_id', 'version']],
+            'paquete_surtido_componentes' => [['id'], ['composicion_id', 'presentacion_producto_id']],
+            'pedido_despacho_componentes' => [['id'], ['componente_id'], ['id', 'pedido_detalle_id'], ['paquete_surtido_id', 'presentacion_producto_id']],
+        ];
+        foreach ($unicas as $tabla => $columnas) {
+            $reales = array_values(array_map(fn (array $indice): array => $indice['columns'], array_filter(Schema::getIndexes($tabla), fn (array $indice): bool => $indice['unique'])));
+            sort($columnas);
+            sort($reales);
+            if ($columnas !== $reales) {
+                throw new RuntimeException('Unicidad histórica desconocida o incompleta. No se ha iniciado DDL.');
+            }
+        }
         $esperadas = [
             'formatos_surtidos' => ['id', 'producto_id', 'nombre', 'tipo_envase', 'contenido', 'unidad_medida', 'unidades_por_empaque', 'precio_empaque', 'estado', 'version', 'created_at', 'updated_at'],
             'formato_surtido_skus' => ['id', 'formato_surtido_id', 'presentacion_producto_id'],
@@ -234,7 +253,16 @@ return new class extends Migration
         $patron = '/\b('.implode('|', [...self::TABLAS, 'formato_surtido_id']).')\b/i';
         if (DB::getDriverName() === 'sqlite') {
             foreach (DB::table('sqlite_master')->whereIn('type', ['trigger', 'view', 'table'])->get(['tbl_name as tabla', 'sql', 'type']) as $objeto) {
-                if (in_array($objeto->tabla, self::TABLAS, true) || ($objeto->tabla === 'pedido_detalles' && $objeto->type === 'table')) {
+                if (in_array($objeto->tabla, self::TABLAS, true)) {
+                    continue;
+                }
+                if ($objeto->tabla === 'pedido_detalles' && $objeto->type === 'table' && Schema::hasColumn('pedido_detalles', 'formato_surtido_id')) {
+                    if (! is_string($objeto->sql) || preg_match_all('/\bformato_surtido_id\b/i', $objeto->sql) !== 2
+                        || preg_match_all('/\bformatos_surtidos\b/i', $objeto->sql) !== 1
+                        || preg_match('/\b('.implode('|', array_diff(self::TABLAS, ['formatos_surtidos'])).')\b/i', $objeto->sql)) {
+                        throw new RuntimeException('Definición comercial SQLite desconocida. No se ha iniciado DDL.');
+                    }
+
                     continue;
                 }
                 if (! is_string($objeto->sql) || preg_match($patron, $objeto->sql)) {
@@ -250,10 +278,16 @@ return new class extends Migration
         foreach ([['TRIGGERS', 'TRIGGER_SCHEMA', 'ACTION_STATEMENT', 'EVENT_OBJECT_TABLE'], ['VIEWS', 'TABLE_SCHEMA', 'VIEW_DEFINITION', 'TABLE_NAME'], ['ROUTINES', 'ROUTINE_SCHEMA', 'ROUTINE_DEFINITION', 'ROUTINE_NAME'], ['EVENTS', 'EVENT_SCHEMA', 'EVENT_DEFINITION', 'EVENT_NAME']] as [$catalogo, $esquema, $definicion, $objeto]) {
             foreach (DB::table('information_schema.'.$catalogo)->whereNotIn($esquema, ['mysql', 'sys', 'information_schema', 'performance_schema'])->get([$esquema.' as esquema', $definicion.' as sql', $objeto.' as objeto']) as $fila) {
                 if ($catalogo === 'TRIGGERS' && $fila->esquema === $base && in_array($fila->objeto, self::TABLAS, true)) {
+                    if (! is_string($fila->sql)) {
+                        throw new RuntimeException('Trigger histórico ilegible. No se ha iniciado DDL.');
+                    }
+
                     continue;
                 }
                 $cualificado = '/\b'.preg_quote($base, '/').'\s*\.\s*('.implode('|', self::TABLAS).')\b/i';
-                if (! is_string($fila->sql) || preg_match($fila->esquema === $base ? $patron : $cualificado, str_replace('`', '', $fila->sql))) {
+                $columnaCualificada = '/\b'.preg_quote($base, '/').'\s*\.\s*pedido_detalles\b/i';
+                if (! is_string($fila->sql) || preg_match($fila->esquema === $base ? $patron : $cualificado, str_replace('`', '', $fila->sql))
+                    || (preg_match($columnaCualificada, str_replace('`', '', $fila->sql)) && preg_match('/\bformato_surtido_id\b/i', $fila->sql))) {
                     throw new RuntimeException('Trigger, vista, rutina o evento dependiente o ilegible. No se ha iniciado DDL.');
                 }
             }
