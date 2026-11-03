@@ -12,6 +12,7 @@ use App\Services\TokenOperacion;
 use Database\Seeders\SurtidosPermisoSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
@@ -47,8 +48,8 @@ class SurtidosTest extends TestCase
         $pedido = $this->registrar($e);
         $this->assertDatabaseCount('productos', 1);
         $this->assertDatabaseCount('presentaciones_producto', 3);
-        $this->assertDatabaseCount('formatos_surtidos', 0);
-        $this->assertDatabaseCount('pedido_paquetes_surtidos', 0);
+        $this->assertFalse(Schema::hasTable('formatos_surtidos'));
+        $this->assertFalse(Schema::hasTable('pedido_paquetes_surtidos'));
         $this->assertDatabaseCount('movimientos_inventario', 0);
         $this->assertSame('48.00', $pedido->total);
     }

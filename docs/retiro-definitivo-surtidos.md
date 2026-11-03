@@ -10,7 +10,7 @@ La inspección de Laragon del 31/10/2026 encontró MySQL 8.4.3, 52 tablas, 48 mi
 
 Ruta: `database/migrations/retiro_controlado/2026_10_31_174658_retirar_definitivamente_surtidos_obsoletos.php`.
 
-Es deliberadamente **manual**: una instalación limpia ejecuta primero las migraciones históricas ordinarias y luego esta ruta explícita, con autorización. No se modifican migraciones fusionadas ni se incorpora un DROP automático al actualizar código. La migración manual anterior, limitada a tablas vacías, y sus regresiones se conservan como historial compatible; no ejecutar ambas rutas.
+Es deliberadamente **manual** y corresponde al procedimiento autorizado del PR47. Las instalaciones nuevas utilizan ahora el cierre ordinario descrito a continuación; no deben ejecutar este retiro manual adicional. No se modifican migraciones fusionadas ni se incorpora un DROP automático al actualizar código. La migración manual anterior, limitada a tablas vacías, y sus regresiones se conservan como historial compatible; no ejecutar ambas rutas.
 
 Se retiran, en orden de hijas antes que padres:
 
@@ -73,3 +73,36 @@ Las regresiones conservan el retiro antiguo y agregan: autorización propia, des
 Es una tarea separada. `comercio:preparar-saneamiento --base=BASE_EXACTA --uuid=UUID_VERIFICADO` solo calcula conteos, huellas y orden de dependencias; se adapta a las tablas que realmente existan y funciona también después del retiro. No es un ejecutor de borrado.
 
 Para la entrega futura: autorizar específicamente la limpieza, comprobar identidad y ausencia de escritores, clasificar tablas y referencias, proteger íntegramente cuentas y autorizaciones, resolver triggers inmutables y dependencias, ensayar el procedimiento aprobado y comparar las huellas protegidas después. Auditoría, idempotencia, sesiones y tablas relacionadas con cuentas permanecen protegidas; no se borran indiscriminadamente como “datos de prueba”. No desactivar FK ni triggers a ciegas, no recrear la base ni ejecutar seeders generales. Si no puede distinguirse un registro comercial de información de cuentas, se conserva. Este PR no implementa ni ejecuta esa eliminación general.
+
+
+## Cierre ordinario para instalaciones nuevas y actualizaciones
+
+Migración: `2026_11_03_031045_cerrar_esquema_surtidos_obsoletos.php`. Los 49 archivos ordinarios anteriores y los dos retiros controlados permanecen intactos. No depende de banderas locales, UUID de Laragon ni nombres de bases operativas. Solo admite MySQL y SQLite.
+
+| Estado verificado antes del DDL | Resultado | Tablas de aplicación, incluida migrations | Registro ordinario |
+|---|---|---|---|
+| Instalación nueva, seis tablas vacías y ninguna referencia comercial | Retira exclusivamente seis tablas y formato_surtido_id | 46 | 50 migraciones |
+| Base ya saneada íntegra | No ejecuta DDL | 46, salvo extensiones ajenas | Añade únicamente el cierre; conserva el historial de retiros manuales |
+| Seis tablas completas con información histórica íntegra | Conserva todas las estructuras y datos; registra el cierre como ejecutado | 52, salvo extensiones ajenas | 50 ordinarias; las posteriores pueden continuar |
+| Retiro parcial, fotografía física distinta, esquema incompleto o dependencia desconocida | Excepción antes del primer DDL | Sin cambios | El cierre no queda registrado |
+
+Una base local que ya tenga 49 ordinarias y un retiro manual registrado tendrá **51 registros de migraciones** después del cierre; no es un error ni motivo para eliminar filas del historial. Las cuentas de tablas incluyen `migrations`, no marcadores exclusivos de laboratorios.
+
+**Migración ejecutada no significa esquema saneado.** El cierre escribe en el canal de logs configurado un registro con `migracion`, `estado_esquema` y `tablas_obsoletas_presentes`. Los estados son `estructuras_vacias_retiradas`, `ya_saneado` e `historial_conservado` (advertencia explícita). Conservar los logs de la actualización. No se inserta una auditoría atribuida artificialmente a un usuario ni se añade una tabla de control. La comprobación actual debe combinar el registro de migración con la presencia real de las seis tablas y la columna: seis presentes implica historial conservado; ninguna y columna ausente implica saneado; cualquier combinación intermedia exige detenerse. El log describe lo observado en ese momento, no certifica futuros cambios manuales.
+
+El historial conservado no reactiva el negocio de surtidos. Su eventual archivo o eliminación exige un procedimiento independiente autorizado; no se intenta en futuras ejecuciones de `migrate`. Ningún permiso, cuenta, precio, saldo ni movimiento se modifica.
+
+### Precondiciones y límites operativos
+
+- Ejecutar las actualizaciones con escrituras detenidas y respaldo verificado. El bloqueo asesor MySQL serializa este cierre, pero no detiene escrituras de procesos ajenos.
+- Antes del primer DDL se verifican las ocho estructuras vigentes, discriminadores conservados, FK compuestas y unicidad de entregas/retornos, expresión generada, columnas/FK históricas, filas huérfanas, fotografía física, índices de formato y dependencias SQL visibles (vistas, triggers, rutinas, eventos, CHECK y columnas generadas). Los triggers históricos deben formar el conjunto conocido.
+- La cuenta de mantenimiento debe poder inspeccionar todas las dependencias pertinentes y ejecutar los DDL necesarios. Las dependencias entre bases requieren visibilidad de metadatos de esas bases; si no puede garantizarse, detener la actualización para revisión administrativa. No interpretar metadatos invisibles como ausencia demostrada de dependencias.
+- MySQL confirma cada DDL por separado: no existe una transacción global de todos los DROP. Una falta de permisos, fallo de disco o interrupción puede dejar un estado parcial; detenerse sin rollback, reparación ni reintento automático. La siguiente ejecución reconoce el estado parcial y se bloquea.
+- No se desactivan globalmente las claves foráneas. SQLite conserva y restablece los triggers vigentes que referencian `pedido_detalles` durante la alteración de su tabla.
+- `down()` rechaza recrear un modelo obsoleto. Un retroceso requiere evaluación y restauración independiente autorizada, nunca un rollback automático.
+
+### Verificación automatizada aislada
+
+Las pruebas ordinarias usan el esquema cerrado. Las regresiones históricas construyen explícitamente las 49 migraciones anteriores mediante `EsquemaSurtidosHistorico`, con SQLite en memoria separado; no hay una excepción productiva para pruebas. Las pruebas MySQL históricas conservan sus rutas y escenarios originales. Una matriz adicional ejecuta instalación nueva, repetición sin cambios, saneada, historial completo con fotografía física, retiro parcial, vista, FK, trigger desconocido, unicidad física ausente y fotografía ausente, sobre SQLite y MySQL 8.4 temporal de GitHub Actions. En los bloqueos se comparan filas y metadatos antes/después. Una fixture posterior comprueba que conservar historia no bloquea nuevas migraciones.
+
+No se ejecutan pruebas ni migraciones en Laragon como parte de este cambio. Los resultados reales se registran en el PR; los escenarios no ejecutados deben identificarse como PENDIENTE DE EJECUCIÓN.

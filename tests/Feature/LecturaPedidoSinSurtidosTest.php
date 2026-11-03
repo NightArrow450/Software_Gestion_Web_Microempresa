@@ -3,15 +3,14 @@
 namespace Tests\Feature;
 
 use App\Services\LecturaPedido;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Tests\EnvasadoEscenario;
-use Tests\TestCase;
+use Tests\TestCaseEsquemaHistorico;
 
-class LecturaPedidoSinSurtidosTest extends TestCase
+class LecturaPedidoSinSurtidosTest extends TestCaseEsquemaHistorico
 {
-    use EnvasadoEscenario, RefreshDatabase;
+    use EnvasadoEscenario;
 
     public function test_relacion_y_lectura_fisica_no_dependen_de_tablas_de_surtidos(): void
     {

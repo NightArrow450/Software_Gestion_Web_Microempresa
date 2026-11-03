@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Schema;
 use PDO;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\EnvasadoEscenario;
+use Tests\EsquemaSurtidosHistorico;
 
 class RetiroSurtidosMySqlTest extends PruebaInventarioMySql
 {
@@ -41,7 +42,7 @@ class RetiroSurtidosMySqlTest extends PruebaInventarioMySql
         EntornoMySql::conectar();
         $tablasIniciales = Schema::getTableListing($nombre, false);
         $this->assertSame([], $tablasIniciales, 'Solo se ensaya en una base independiente nueva y vacía.');
-        $this->assertSame(0, Artisan::call('migrate', ['--database' => 'mysql_concurrencia', '--force' => true, '--no-interaction' => true]));
+        $this->assertSame(0, Artisan::call('migrate', ['--database' => 'mysql_concurrencia', '--path' => EsquemaSurtidosHistorico::rutas(), '--realpath' => true, '--force' => true, '--no-interaction' => true]));
         app()->forgetInstance(LecturaPedido::class);
         $e = $this->escenarioEnvasado(100, 100);
         foreach (['pedidos.crear', 'cumplimiento.preparar', 'cumplimiento.entregar', 'cumplimiento.retornos.registrar', 'cumplimiento.retornos.aprobar'] as $permiso) {

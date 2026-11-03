@@ -2,12 +2,11 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
-use Tests\TestCase;
+use Tests\TestCaseEsquemaHistorico;
 use Tests\VentaUnidadesEscenario;
 
-class ArchivoSurtidosTest extends TestCase
+class ArchivoSurtidosTest extends TestCaseEsquemaHistorico
 {
     use RefreshDatabase, VentaUnidadesEscenario;
 

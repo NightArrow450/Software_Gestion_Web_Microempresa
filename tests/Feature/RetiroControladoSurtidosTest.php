@@ -6,17 +6,16 @@ use App\Models\Cliente;
 use App\Models\Permiso;
 use App\Services\GestionarPedidoUnidades;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\DataProvider;
 use RuntimeException;
 use Tests\EnvasadoEscenario;
-use Tests\TestCase;
+use Tests\TestCaseEsquemaHistorico;
 
-class RetiroControladoSurtidosTest extends TestCase
+class RetiroControladoSurtidosTest extends TestCaseEsquemaHistorico
 {
-    use EnvasadoEscenario, RefreshDatabase;
+    use EnvasadoEscenario;
 
     private function migracion(): object
     {
