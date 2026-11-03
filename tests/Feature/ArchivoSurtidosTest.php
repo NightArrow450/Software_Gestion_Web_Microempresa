@@ -8,7 +8,7 @@ use Tests\VentaUnidadesEscenario;
 
 class ArchivoSurtidosTest extends TestCaseEsquemaHistorico
 {
-    use RefreshDatabase, VentaUnidadesEscenario;
+    use VentaUnidadesEscenario;
 
     public function test_retirar_el_archivo_no_borra_sus_datos_y_el_formulario_no_consulta_surtidos(): void
     {
