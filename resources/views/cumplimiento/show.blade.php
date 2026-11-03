@@ -21,9 +21,7 @@
         </div>
     </div>
 
-    @if(session('success'))
-        <div class="cumplimiento-nota" role="status">{{ session('success') }}</div>
-    @endif
+
 
 
     <section class="cumplimiento-tarjeta">

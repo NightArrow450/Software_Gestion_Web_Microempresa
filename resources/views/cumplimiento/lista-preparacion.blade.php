@@ -61,7 +61,7 @@
     <p class="cumplimiento-rango">Envasado neto registrado del <strong>{{ \Carbon\Carbon::parse($produccionDesde)->format('d/m/Y') }}</strong>
         al <strong>{{ \Carbon\Carbon::parse($produccionHasta)->format('d/m/Y') }}</strong> (hora de Lima),
         incluyendo producción general sin pedido y descontando las correcciones actuales de esos registros.</p>
-    @if(session('success'))<p role="status" class="cumplimiento-nota">{{ session('success') }}</p>@endif
+
 
     <section class="cumplimiento-tarjeta">
         <div class="table-container">

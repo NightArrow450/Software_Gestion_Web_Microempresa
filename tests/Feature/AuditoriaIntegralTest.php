@@ -35,6 +35,18 @@ class AuditoriaIntegralTest extends TestCase
         $this->assertSame(1, substr_count($html, 'ERROR_FICTICIO_UNICO'));
     }
 
+    public function test_confirmacion_de_cumplimiento_se_anuncia_una_sola_vez(): void
+    {
+        $e = $this->escenarioUnidades();
+        $pedido = $this->pedidoUnico($e, 4);
+        $pedido->update(['estado' => 'confirmado']);
+        foreach ([route('cumplimiento.lista-preparacion'), route('cumplimiento.show', $pedido)] as $ruta) {
+            $html = $this->actingAs($e['usuario'])->withSession(['success' => 'CONFIRMACION_FICTICIA_UNICA'])
+                ->get($ruta)->assertOk()->getContent();
+            $this->assertSame(1, substr_count($html, 'CONFIRMACION_FICTICIA_UNICA'));
+        }
+    }
+
     public function test_mensaje_del_editor_admite_foco_por_programa(): void
     {
         $e = $this->escenarioUnidades();

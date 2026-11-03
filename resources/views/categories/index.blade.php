@@ -36,12 +36,7 @@
     </div>
 </div>
 
-@if(session('success'))
-    <div class="alert alert-success" style="margin-bottom:22px;">
-        <span class="material-symbols-outlined">check_circle</span>
-        <div>{{ session('success') }}</div>
-    </div>
-@endif
+
 
 <section class="table-card">
     <div class="table-header">
