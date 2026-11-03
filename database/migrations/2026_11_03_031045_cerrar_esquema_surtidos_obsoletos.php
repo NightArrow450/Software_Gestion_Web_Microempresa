@@ -195,6 +195,11 @@ return new class extends Migration
                 throw new RuntimeException('Estructura histórica desconocida. No se ha iniciado DDL.');
             }
             $fkEsperadas = array_intersect_key($destinos, array_flip($columnas));
+            foreach (Schema::getIndexes($tabla) as $indice) {
+                if (! $indice['unique'] && (count($indice['columns']) !== 1 || ! array_key_exists($indice['columns'][0], $fkEsperadas))) {
+                    throw new RuntimeException('Índice histórico desconocido. No se ha iniciado DDL.');
+                }
+            }
             $fkReales = Schema::getForeignKeys($tabla);
             if (count($fkReales) !== count($fkEsperadas)) {
                 throw new RuntimeException('Claves históricas incompletas. No se ha iniciado DDL.');

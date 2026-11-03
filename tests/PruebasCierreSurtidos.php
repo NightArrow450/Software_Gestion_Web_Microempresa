@@ -65,7 +65,7 @@ trait PruebasCierreSurtidos
         if ($caso === 'saneada') {
             putenv('DHACER_RETIRO_SURTIDOS_AUTORIZADO=RETIRAR_SOLO_ESTRUCTURAS_SURTIDOS_VACIAS');
             try {
-                (require database_path('migrations/retiro_controlado/2026_10_30_003639_retirar_estructuras_surtidos_vacias.php'))->up();
+                $this->assertSame(0, Artisan::call('migrate', $opciones + ['--path' => ['database/migrations/retiro_controlado/2026_10_30_003639_retirar_estructuras_surtidos_vacias.php']]));
             } finally {
                 putenv('DHACER_RETIRO_SURTIDOS_AUTORIZADO');
             }
@@ -103,7 +103,8 @@ trait PruebasCierreSurtidos
             return;
         }
         $this->assertSame(0, Artisan::call('migrate', $opciones));
-        $this->assertDatabaseCount('migrations', 50);
+        $migraciones = $caso === 'saneada' ? 51 : 50;
+        $this->assertDatabaseCount('migrations', $migraciones);
         $this->assertCount($caso === 'historica' ? 52 : 46, Schema::getTableListing(Schema::getCurrentSchemaListing(), false));
         $this->assertSame($antes, $this->fotografiaCierre());
         $this->assertSame($esquema, $this->estructuraCierre());
@@ -115,7 +116,7 @@ trait PruebasCierreSurtidos
         $this->assertTrue(Schema::hasTable('pedido_agrupacion_detalles'));
         $this->assertSame(0, Artisan::call('migrate', $opciones + ['--path' => [base_path('tests/migracion_futura_cierre.php')], '--realpath' => true]));
         $this->assertTrue(Schema::hasTable('prueba_actualizacion_futura'));
-        $this->assertDatabaseCount('migrations', 51);
+        $this->assertDatabaseCount('migrations', $migraciones + 1);
     }
 
     private function fotografiaCierre(): array
