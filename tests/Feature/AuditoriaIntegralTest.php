@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Inventario;
 use App\Models\Permiso;
 use App\Models\Producto;
 use App\Services\RegistrarEnvasado;
@@ -34,7 +35,7 @@ class AuditoriaIntegralTest extends TestCase
         $e = $this->escenarioUnidades();
         $html = $this->actingAs($e['usuario'])->get(route('pedidos.create'))->assertOk()->getContent();
         $dom = new \DOMDocument;
-        @$dom->loadHTML(mb_convert_encoding($html, 'HTML-ENTITIES', 'UTF-8'));
+        @$dom->loadHTML('<?xml encoding="UTF-8">'.$html);
         $mensaje = (new \DOMXPath($dom))->query('//*[@data-mensaje]')->item(0);
         $this->assertSame('-1', $mensaje->getAttribute('tabindex'));
     }
@@ -105,7 +106,8 @@ class AuditoriaIntegralTest extends TestCase
     {
         $e = $this->escenarioEnvasado();
         config(['envasado.control_materiales_exacto' => false]);
-        $e['inventario']->update(['cantidad_actual' => 4294967294]);
+        $inventario = Inventario::where('presentacion_producto_id', $e['presentacion']->id)->sole();
+        $inventario->update(['cantidad_actual' => 4294967294]);
         $servicio = app(RegistrarEnvasado::class);
         $this->assertSame(1, $servicio->previsualizar(['presentacion_producto_id' => $e['presentacion']->id, 'cantidad' => 1])['cantidad']);
         try {
@@ -114,7 +116,7 @@ class AuditoriaIntegralTest extends TestCase
         } catch (ValidationException $error) {
             $this->assertArrayHasKey('cantidad', $error->errors());
         }
-        $this->assertSame(4294967294, (int) $e['inventario']->fresh()->cantidad_actual);
+        $this->assertSame(4294967294, (int) $inventario->fresh()->cantidad_actual);
         $this->assertDatabaseCount('envasados', 0);
         $this->assertDatabaseCount('movimientos_inventario', 0);
     }
