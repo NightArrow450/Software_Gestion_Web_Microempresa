@@ -37,11 +37,7 @@
             <button type="submit" class="btn btn-primary">Actualizar cantidades</button>
             <button type="button" class="btn btn-secondary" onclick="window.print()">Imprimir</button>
         </form>
-        @if($errors->any())
-            <div role="alert" class="cumplimiento-error">
-                @foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach
-            </div>
-        @endif
+
     </section>
     <p class="cumplimiento-rango">Entrega: @if($fechaDesde) desde <strong>{{ \Carbon\Carbon::parse($fechaDesde)->format('d/m/Y') }}</strong> @else sin límite inicial (incluye atrasados) @endif
         @if($fechaHasta) hasta <strong>{{ \Carbon\Carbon::parse($fechaHasta)->format('d/m/Y') }}</strong> @else sin límite final @endif.
@@ -65,7 +61,7 @@
     <p class="cumplimiento-rango">Envasado neto registrado del <strong>{{ \Carbon\Carbon::parse($produccionDesde)->format('d/m/Y') }}</strong>
         al <strong>{{ \Carbon\Carbon::parse($produccionHasta)->format('d/m/Y') }}</strong> (hora de Lima),
         incluyendo producción general sin pedido y descontando las correcciones actuales de esos registros.</p>
-    @if(session('success'))<p role="status" class="cumplimiento-nota">{{ session('success') }}</p>@endif
+
 
     <section class="cumplimiento-tarjeta">
         <div class="table-container">

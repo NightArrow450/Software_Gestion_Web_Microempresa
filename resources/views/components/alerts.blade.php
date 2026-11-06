@@ -1,8 +1,8 @@
 @if(session('success'))
 
-    <div class="app-alert success">
+    <div class="app-alert success" role="status">
 
-        <span class="material-symbols-outlined">
+        <span class="material-symbols-outlined" aria-hidden="true">
             check_circle
         </span>
 
@@ -15,9 +15,9 @@
 
 @if(session('error'))
 
-    <div class="app-alert error">
+    <div class="app-alert error" role="alert">
 
-        <span class="material-symbols-outlined">
+        <span class="material-symbols-outlined" aria-hidden="true">
             error
         </span>
 
@@ -30,9 +30,9 @@
 
 @if($errors->any())
 
-    <div class="app-alert error">
+    <div class="app-alert error" role="alert">
 
-        <span class="material-symbols-outlined">
+        <span class="material-symbols-outlined" aria-hidden="true">
             error
         </span>
 

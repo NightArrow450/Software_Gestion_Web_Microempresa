@@ -9,6 +9,11 @@ class UsabilidadMySqlTest extends PruebaInventarioMySql
 {
     use UsabilidadEscenario;
 
+    public function test_busqueda_de_pedidos_antiguos_paginada_sin_tildes(): void
+    {
+        $this->comprobarBusquedaDisponibilidad();
+    }
+
     public function test_busqueda_sin_tildes_y_paginacion_en_mysql(): void
     {
         $this->comprobarBusquedaComercial();

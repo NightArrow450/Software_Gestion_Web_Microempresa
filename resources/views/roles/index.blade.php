@@ -48,40 +48,10 @@
 </div>
 
 
-@if(session('success'))
-
-    <div
-        class="alert alert-success"
-        style="margin-bottom:22px;"
-    >
-        <span class="material-symbols-outlined">
-            check_circle
-        </span>
-
-        <div>
-            {{ session('success') }}
-        </div>
-    </div>
-
-@endif
 
 
-@if(session('error'))
 
-    <div
-        class="alert alert-danger"
-        style="margin-bottom:22px;"
-    >
-        <span class="material-symbols-outlined">
-            error
-        </span>
 
-        <div>
-            {{ session('error') }}
-        </div>
-    </div>
-
-@endif
 
 
 {{-- ROLES --}}

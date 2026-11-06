@@ -1,0 +1,2873 @@
+{
+  "commit": "6e92ebddceed651ca9eec73424dae7b2103b2cc0",
+  "rama_pr": "547c9fa05c7ab08af2a15b6d73c3987f50d740cf",
+  "motor": "chromium / Playwright 1.64.1",
+  "etapa": "despues",
+  "base": "SQLite temporal exclusivamente ficticia; conexiones MySQL bloqueadas",
+  "resultados": [
+    {
+      "caso": "Inicio de sesión real con usuario exclusivamente ficticio",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "Buscadores, variante, presentación, validación y agrupaciones — 360px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "Foco del error de pedido — 360px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "Búsqueda de pedido fuera de los primeros veinte — 360px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "Error de validación sin duplicados — 360px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "dashboard — 360px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "usuarios — 360px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "roles — 360px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "productos — 360px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "producto-nuevo — 360px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "clientes — 360px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "cliente-nuevo — 360px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "pedidos — 360px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "envasado-nuevo — 360px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "envasados — 360px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "movimientos — 360px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "auditoria — 360px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "disponibilidad — 360px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "materiales-historicos — 360px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "lista-preparacion — 360px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "preparacion-despacho-incidencias — 360px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "entrega-historial-acciones — 360px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "seguimiento — 360px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "trazabilidad — 360px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "indicadores — 360px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "edicion-pedido — 360px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "Formulario de retiro — 360px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "Buscadores, variante, presentación, validación y agrupaciones — 390px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "Foco del error de pedido — 390px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "Búsqueda de pedido fuera de los primeros veinte — 390px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "Error de validación sin duplicados — 390px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "dashboard — 390px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "usuarios — 390px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "roles — 390px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "productos — 390px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "producto-nuevo — 390px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "clientes — 390px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "cliente-nuevo — 390px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "pedidos — 390px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "envasado-nuevo — 390px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "envasados — 390px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "movimientos — 390px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "auditoria — 390px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "disponibilidad — 390px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "materiales-historicos — 390px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "lista-preparacion — 390px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "preparacion-despacho-incidencias — 390px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "entrega-historial-acciones — 390px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "seguimiento — 390px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "trazabilidad — 390px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "indicadores — 390px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "edicion-pedido — 390px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "Formulario de retiro — 390px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "Buscadores, variante, presentación, validación y agrupaciones — 768px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "Foco del error de pedido — 768px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "Búsqueda de pedido fuera de los primeros veinte — 768px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "Error de validación sin duplicados — 768px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "dashboard — 768px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "usuarios — 768px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "roles — 768px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "productos — 768px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "producto-nuevo — 768px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "clientes — 768px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "cliente-nuevo — 768px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "pedidos — 768px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "envasado-nuevo — 768px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "envasados — 768px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "movimientos — 768px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "auditoria — 768px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "disponibilidad — 768px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "materiales-historicos — 768px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "lista-preparacion — 768px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "preparacion-despacho-incidencias — 768px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "entrega-historial-acciones — 768px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "seguimiento — 768px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "trazabilidad — 768px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "indicadores — 768px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "edicion-pedido — 768px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "Formulario de retiro — 768px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "Buscadores, variante, presentación, validación y agrupaciones — 1024px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "Foco del error de pedido — 1024px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "Búsqueda de pedido fuera de los primeros veinte — 1024px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "Error de validación sin duplicados — 1024px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "dashboard — 1024px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "usuarios — 1024px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "roles — 1024px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "productos — 1024px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "producto-nuevo — 1024px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "clientes — 1024px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "cliente-nuevo — 1024px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "pedidos — 1024px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "envasado-nuevo — 1024px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "envasados — 1024px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "movimientos — 1024px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "auditoria — 1024px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "disponibilidad — 1024px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "materiales-historicos — 1024px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "lista-preparacion — 1024px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "preparacion-despacho-incidencias — 1024px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "entrega-historial-acciones — 1024px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "seguimiento — 1024px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "trazabilidad — 1024px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "indicadores — 1024px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "edicion-pedido — 1024px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "Formulario de retiro — 1024px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "Buscadores, variante, presentación, validación y agrupaciones — 1366px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "Foco del error de pedido — 1366px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "Búsqueda de pedido fuera de los primeros veinte — 1366px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "Error de validación sin duplicados — 1366px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "dashboard — 1366px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "usuarios — 1366px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "roles — 1366px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "productos — 1366px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "producto-nuevo — 1366px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "clientes — 1366px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "cliente-nuevo — 1366px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "pedidos — 1366px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "envasado-nuevo — 1366px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "envasados — 1366px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "movimientos — 1366px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "auditoria — 1366px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "disponibilidad — 1366px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "materiales-historicos — 1366px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "lista-preparacion — 1366px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "preparacion-despacho-incidencias — 1366px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "entrega-historial-acciones — 1366px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "seguimiento — 1366px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "trazabilidad — 1366px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "indicadores — 1366px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "edicion-pedido — 1366px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "Formulario de retiro — 1366px",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "Envasado integrado real sin consumo de materiales",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "Paginación, sin resultados y mensaje de error de búsqueda",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "Impresión real de dos notas diferentes",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "Retiro real 54 → 32, validación de límites y confirmación",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "Permisos operativos reales en navegador — Operaciones Comerciales",
+      "estado": "APROBADO"
+    },
+    {
+      "caso": "Permisos operativos reales en navegador — Producción/Reparto",
+      "estado": "APROBADO"
+    }
+  ],
+  "capturas": [
+    "360-01-sugerencias-clientes.png",
+    "360-02-sugerencias-productos.png",
+    "360-03-seleccion-y-validacion.png",
+    "360-04-editor-agrupaciones.png",
+    "360-foco-error-despues.png",
+    "360-busqueda-pedido-despues.png",
+    "360-validacion-despues.png",
+    "360-dashboard.png",
+    "360-usuarios.png",
+    "360-roles.png",
+    "360-productos.png",
+    "360-producto-nuevo.png",
+    "360-clientes.png",
+    "360-cliente-nuevo.png",
+    "360-pedidos.png",
+    "360-envasado-nuevo.png",
+    "360-envasados.png",
+    "360-movimientos.png",
+    "360-auditoria.png",
+    "360-disponibilidad.png",
+    "360-materiales-historicos.png",
+    "360-lista-preparacion.png",
+    "360-preparacion-despacho-incidencias.png",
+    "360-entrega-historial-acciones.png",
+    "360-seguimiento.png",
+    "360-trazabilidad.png",
+    "360-indicadores.png",
+    "360-edicion-pedido.png",
+    "360-retiro-faltantes.png",
+    "390-01-sugerencias-clientes.png",
+    "390-02-sugerencias-productos.png",
+    "390-03-seleccion-y-validacion.png",
+    "390-04-editor-agrupaciones.png",
+    "390-foco-error-despues.png",
+    "390-busqueda-pedido-despues.png",
+    "390-validacion-despues.png",
+    "390-dashboard.png",
+    "390-usuarios.png",
+    "390-roles.png",
+    "390-productos.png",
+    "390-producto-nuevo.png",
+    "390-clientes.png",
+    "390-cliente-nuevo.png",
+    "390-pedidos.png",
+    "390-envasado-nuevo.png",
+    "390-envasados.png",
+    "390-movimientos.png",
+    "390-auditoria.png",
+    "390-disponibilidad.png",
+    "390-materiales-historicos.png",
+    "390-lista-preparacion.png",
+    "390-preparacion-despacho-incidencias.png",
+    "390-entrega-historial-acciones.png",
+    "390-seguimiento.png",
+    "390-trazabilidad.png",
+    "390-indicadores.png",
+    "390-edicion-pedido.png",
+    "390-retiro-faltantes.png",
+    "768-01-sugerencias-clientes.png",
+    "768-02-sugerencias-productos.png",
+    "768-03-seleccion-y-validacion.png",
+    "768-04-editor-agrupaciones.png",
+    "768-foco-error-despues.png",
+    "768-busqueda-pedido-despues.png",
+    "768-validacion-despues.png",
+    "768-dashboard.png",
+    "768-usuarios.png",
+    "768-roles.png",
+    "768-productos.png",
+    "768-producto-nuevo.png",
+    "768-clientes.png",
+    "768-cliente-nuevo.png",
+    "768-pedidos.png",
+    "768-envasado-nuevo.png",
+    "768-envasados.png",
+    "768-movimientos.png",
+    "768-auditoria.png",
+    "768-disponibilidad.png",
+    "768-materiales-historicos.png",
+    "768-lista-preparacion.png",
+    "768-preparacion-despacho-incidencias.png",
+    "768-entrega-historial-acciones.png",
+    "768-seguimiento.png",
+    "768-trazabilidad.png",
+    "768-indicadores.png",
+    "768-edicion-pedido.png",
+    "768-retiro-faltantes.png",
+    "1024-01-sugerencias-clientes.png",
+    "1024-02-sugerencias-productos.png",
+    "1024-03-seleccion-y-validacion.png",
+    "1024-04-editor-agrupaciones.png",
+    "1024-foco-error-despues.png",
+    "1024-busqueda-pedido-despues.png",
+    "1024-validacion-despues.png",
+    "1024-dashboard.png",
+    "1024-usuarios.png",
+    "1024-roles.png",
+    "1024-productos.png",
+    "1024-producto-nuevo.png",
+    "1024-clientes.png",
+    "1024-cliente-nuevo.png",
+    "1024-pedidos.png",
+    "1024-envasado-nuevo.png",
+    "1024-envasados.png",
+    "1024-movimientos.png",
+    "1024-auditoria.png",
+    "1024-disponibilidad.png",
+    "1024-materiales-historicos.png",
+    "1024-lista-preparacion.png",
+    "1024-preparacion-despacho-incidencias.png",
+    "1024-entrega-historial-acciones.png",
+    "1024-seguimiento.png",
+    "1024-trazabilidad.png",
+    "1024-indicadores.png",
+    "1024-edicion-pedido.png",
+    "1024-retiro-faltantes.png",
+    "1366-01-sugerencias-clientes.png",
+    "1366-02-sugerencias-productos.png",
+    "1366-03-seleccion-y-validacion.png",
+    "1366-04-editor-agrupaciones.png",
+    "1366-foco-error-despues.png",
+    "1366-busqueda-pedido-despues.png",
+    "1366-validacion-despues.png",
+    "1366-dashboard.png",
+    "1366-usuarios.png",
+    "1366-roles.png",
+    "1366-productos.png",
+    "1366-producto-nuevo.png",
+    "1366-clientes.png",
+    "1366-cliente-nuevo.png",
+    "1366-pedidos.png",
+    "1366-envasado-nuevo.png",
+    "1366-envasados.png",
+    "1366-movimientos.png",
+    "1366-auditoria.png",
+    "1366-disponibilidad.png",
+    "1366-materiales-historicos.png",
+    "1366-lista-preparacion.png",
+    "1366-preparacion-despacho-incidencias.png",
+    "1366-entrega-historial-acciones.png",
+    "1366-seguimiento.png",
+    "1366-trazabilidad.png",
+    "1366-indicadores.png",
+    "1366-edicion-pedido.png",
+    "1366-retiro-faltantes.png",
+    "1366-envasado-integrado-previa.png",
+    "1366-envasado-integrado-confirmado.png",
+    "1366-busqueda-paginada.png",
+    "1366-busqueda-sin-resultados.png",
+    "1366-busqueda-error-controlado.png",
+    "1366-impresion-dos-notas.png",
+    "1366-retiro-confirmado.png",
+    "1366-rol-comercial.png",
+    "1366-rol-produccion.png"
+  ],
+  "mediciones": [
+    {
+      "captura": "360-01-sugerencias-clientes",
+      "ancho": 360,
+      "cuerpo": 360,
+      "documento": 360,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "360-02-sugerencias-productos",
+      "ancho": 360,
+      "cuerpo": 360,
+      "documento": 360,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "360-03-seleccion-y-validacion",
+      "ancho": 360,
+      "cuerpo": 360,
+      "documento": 360,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "360-04-editor-agrupaciones",
+      "ancho": 360,
+      "cuerpo": 360,
+      "documento": 360,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "360-foco-error-despues",
+      "ancho": 360,
+      "cuerpo": 360,
+      "documento": 360,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "360-busqueda-pedido-despues",
+      "ancho": 360,
+      "cuerpo": 360,
+      "documento": 360,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "360-validacion-despues",
+      "ancho": 360,
+      "cuerpo": 360,
+      "documento": 360,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "360-dashboard",
+      "ancho": 360,
+      "cuerpo": 360,
+      "documento": 360,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "360-usuarios",
+      "ancho": 360,
+      "cuerpo": 360,
+      "documento": 360,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "360-roles",
+      "ancho": 360,
+      "cuerpo": 360,
+      "documento": 360,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "360-productos",
+      "ancho": 360,
+      "cuerpo": 360,
+      "documento": 360,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "360-producto-nuevo",
+      "ancho": 360,
+      "cuerpo": 360,
+      "documento": 360,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "360-clientes",
+      "ancho": 360,
+      "cuerpo": 360,
+      "documento": 360,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "360-cliente-nuevo",
+      "ancho": 360,
+      "cuerpo": 360,
+      "documento": 360,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "360-pedidos",
+      "ancho": 360,
+      "cuerpo": 360,
+      "documento": 360,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "360-envasado-nuevo",
+      "ancho": 360,
+      "cuerpo": 360,
+      "documento": 360,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "360-envasados",
+      "ancho": 360,
+      "cuerpo": 360,
+      "documento": 360,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "360-movimientos",
+      "ancho": 360,
+      "cuerpo": 360,
+      "documento": 360,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "360-auditoria",
+      "ancho": 360,
+      "cuerpo": 360,
+      "documento": 360,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "pantalla": "disponibilidad",
+      "ancho": 360,
+      "botones": [
+        {
+          "texto": "search Consultar",
+          "alto": 44,
+          "arriba": 776.75,
+          "abajo": 820.75
+        },
+        {
+          "texto": "Limpiar",
+          "alto": 44,
+          "arriba": 831.140625,
+          "abajo": 875.140625
+        }
+      ],
+      "tablas": [
+        {
+          "presentacion": "block",
+          "etiquetas": [
+            {
+              "etiqueta": "SKU",
+              "valor": "VISUAL-QTS-WWWWWWWWWWWWWWWWWWWW-0",
+              "etiquetaVisible": "\"SKU\"",
+              "izquierda": 34,
+              "derecha": 326
+            },
+            {
+              "etiqueta": "Producto",
+              "valor": "Quitásarro ficticio · Lavanda · 1.00 L",
+              "etiquetaVisible": "\"Producto\"",
+              "izquierda": 34,
+              "derecha": 326
+            },
+            {
+              "etiqueta": "Pendiente total",
+              "valor": "24",
+              "etiquetaVisible": "\"Pendiente total\"",
+              "izquierda": 34,
+              "derecha": 326
+            },
+            {
+              "etiqueta": "En espera",
+              "valor": "0",
+              "etiquetaVisible": "\"En espera\"",
+              "izquierda": 34,
+              "derecha": 326
+            },
+            {
+              "etiqueta": "Pendiente activo",
+              "valor": "24",
+              "etiquetaVisible": "\"Pendiente activo\"",
+              "izquierda": 34,
+              "derecha": 326
+            },
+            {
+              "etiqueta": "Stock terminado registrado",
+              "valor": "0",
+              "etiquetaVisible": "\"Stock terminado registrado\"",
+              "izquierda": 34,
+              "derecha": 326
+            },
+            {
+              "etiqueta": "Faltante activo / total",
+              "valor": "24 / 24",
+              "etiquetaVisible": "\"Faltante activo / total\"",
+              "izquierda": 34,
+              "derecha": 326
+            },
+            {
+              "etiqueta": "Resultado",
+              "valor": "Insuficiente",
+              "etiquetaVisible": "\"Resultado\"",
+              "izquierda": 34,
+              "derecha": 326
+            }
+          ],
+          "anchoContenedor": 294,
+          "contenidoContenedor": 294
+        },
+        {
+          "presentacion": "block",
+          "etiquetas": [
+            {
+              "etiqueta": "SKU",
+              "valor": "VISUAL-QTS-WWWWWWWWWWWWWWWWWWWW-0",
+              "etiquetaVisible": "\"SKU\"",
+              "izquierda": 18,
+              "derecha": 342
+            },
+            {
+              "etiqueta": "Producto",
+              "valor": "Quitásarro ficticio · Lavanda",
+              "etiquetaVisible": "\"Producto\"",
+              "izquierda": 18,
+              "derecha": 342
+            },
+            {
+              "etiqueta": "Presentación",
+              "valor": "1.00 L",
+              "etiquetaVisible": "\"Presentación\"",
+              "izquierda": 18,
+              "derecha": 342
+            },
+            {
+              "etiqueta": "Unidades terminadas registradas",
+              "valor": "0",
+              "etiquetaVisible": "\"Unidades terminadas registradas\"",
+              "izquierda": 18,
+              "derecha": 342
+            }
+          ],
+          "anchoContenedor": 326,
+          "contenidoContenedor": 326
+        }
+      ]
+    },
+    {
+      "captura": "360-disponibilidad",
+      "ancho": 360,
+      "cuerpo": 360,
+      "documento": 360,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "pantalla": "materiales-historicos",
+      "ancho": 360,
+      "botones": [
+        {
+          "texto": "search Consultar",
+          "alto": 44,
+          "arriba": 776.75,
+          "abajo": 820.75
+        },
+        {
+          "texto": "Limpiar",
+          "alto": 44,
+          "arriba": 831.140625,
+          "abajo": 875.140625
+        }
+      ],
+      "tablas": [
+        {
+          "presentacion": "block",
+          "etiquetas": [
+            {
+              "etiqueta": "SKU",
+              "valor": "VISUAL-QTS-WWWWWWWWWWWWWWWWWWWW-0",
+              "etiquetaVisible": "\"SKU\"",
+              "izquierda": 18,
+              "derecha": 342
+            },
+            {
+              "etiqueta": "Producto",
+              "valor": "Quitásarro ficticio · Lavanda",
+              "etiquetaVisible": "\"Producto\"",
+              "izquierda": 18,
+              "derecha": 342
+            },
+            {
+              "etiqueta": "Presentación",
+              "valor": "1.00 L",
+              "etiquetaVisible": "\"Presentación\"",
+              "izquierda": 18,
+              "derecha": 342
+            },
+            {
+              "etiqueta": "Unidades terminadas registradas",
+              "valor": "0",
+              "etiquetaVisible": "\"Unidades terminadas registradas\"",
+              "izquierda": 18,
+              "derecha": 342
+            }
+          ],
+          "anchoContenedor": 326,
+          "contenidoContenedor": 326
+        },
+        {
+          "presentacion": "block",
+          "etiquetas": [
+            {
+              "etiqueta": "Código",
+              "valor": "I01M6HENYG48ZTVNGP03KBTXW7N",
+              "etiquetaVisible": "\"Código\"",
+              "izquierda": 18,
+              "derecha": 342
+            },
+            {
+              "etiqueta": "Material / Insumo",
+              "valor": "Envase de prueba",
+              "etiquetaVisible": "\"Material / Insumo\"",
+              "izquierda": 18,
+              "derecha": 342
+            },
+            {
+              "etiqueta": "Categoría",
+              "valor": "Envases",
+              "etiquetaVisible": "\"Categoría\"",
+              "izquierda": 18,
+              "derecha": 342
+            },
+            {
+              "etiqueta": "Saldo histórico registrado",
+              "valor": "100.000",
+              "etiquetaVisible": "\"Saldo histórico registrado\"",
+              "izquierda": 18,
+              "derecha": 342
+            },
+            {
+              "etiqueta": "Unidad",
+              "valor": "unidad",
+              "etiquetaVisible": "\"Unidad\"",
+              "izquierda": 18,
+              "derecha": 342
+            }
+          ],
+          "anchoContenedor": 326,
+          "contenidoContenedor": 326
+        }
+      ]
+    },
+    {
+      "captura": "360-materiales-historicos",
+      "ancho": 360,
+      "cuerpo": 360,
+      "documento": 360,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "360-lista-preparacion",
+      "ancho": 360,
+      "cuerpo": 360,
+      "documento": 360,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "360-preparacion-despacho-incidencias",
+      "ancho": 360,
+      "cuerpo": 360,
+      "documento": 360,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "360-entrega-historial-acciones",
+      "ancho": 360,
+      "cuerpo": 360,
+      "documento": 360,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "360-seguimiento",
+      "ancho": 360,
+      "cuerpo": 360,
+      "documento": 360,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "360-trazabilidad",
+      "ancho": 360,
+      "cuerpo": 360,
+      "documento": 360,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "360-indicadores",
+      "ancho": 360,
+      "cuerpo": 360,
+      "documento": 360,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "360-edicion-pedido",
+      "ancho": 360,
+      "cuerpo": 360,
+      "documento": 360,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "360-retiro-faltantes",
+      "ancho": 360,
+      "cuerpo": 360,
+      "documento": 360,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "390-01-sugerencias-clientes",
+      "ancho": 390,
+      "cuerpo": 390,
+      "documento": 390,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "390-02-sugerencias-productos",
+      "ancho": 390,
+      "cuerpo": 390,
+      "documento": 390,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "390-03-seleccion-y-validacion",
+      "ancho": 390,
+      "cuerpo": 390,
+      "documento": 390,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "390-04-editor-agrupaciones",
+      "ancho": 390,
+      "cuerpo": 390,
+      "documento": 390,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "390-foco-error-despues",
+      "ancho": 390,
+      "cuerpo": 390,
+      "documento": 390,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "390-busqueda-pedido-despues",
+      "ancho": 390,
+      "cuerpo": 390,
+      "documento": 390,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "390-validacion-despues",
+      "ancho": 390,
+      "cuerpo": 390,
+      "documento": 390,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "390-dashboard",
+      "ancho": 390,
+      "cuerpo": 390,
+      "documento": 390,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "390-usuarios",
+      "ancho": 390,
+      "cuerpo": 390,
+      "documento": 390,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "390-roles",
+      "ancho": 390,
+      "cuerpo": 390,
+      "documento": 390,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "390-productos",
+      "ancho": 390,
+      "cuerpo": 390,
+      "documento": 390,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "390-producto-nuevo",
+      "ancho": 390,
+      "cuerpo": 390,
+      "documento": 390,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "390-clientes",
+      "ancho": 390,
+      "cuerpo": 390,
+      "documento": 390,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "390-cliente-nuevo",
+      "ancho": 390,
+      "cuerpo": 390,
+      "documento": 390,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "390-pedidos",
+      "ancho": 390,
+      "cuerpo": 390,
+      "documento": 390,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "390-envasado-nuevo",
+      "ancho": 390,
+      "cuerpo": 390,
+      "documento": 390,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "390-envasados",
+      "ancho": 390,
+      "cuerpo": 390,
+      "documento": 390,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "390-movimientos",
+      "ancho": 390,
+      "cuerpo": 390,
+      "documento": 390,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "390-auditoria",
+      "ancho": 390,
+      "cuerpo": 390,
+      "documento": 390,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "pantalla": "disponibilidad",
+      "ancho": 390,
+      "botones": [
+        {
+          "texto": "search Consultar",
+          "alto": 44,
+          "arriba": 726.75,
+          "abajo": 770.75
+        },
+        {
+          "texto": "Limpiar",
+          "alto": 44,
+          "arriba": 781.140625,
+          "abajo": 825.140625
+        }
+      ],
+      "tablas": [
+        {
+          "presentacion": "block",
+          "etiquetas": [
+            {
+              "etiqueta": "SKU",
+              "valor": "VISUAL-QTS-WWWWWWWWWWWWWWWWWWWW-0",
+              "etiquetaVisible": "\"SKU\"",
+              "izquierda": 34,
+              "derecha": 356
+            },
+            {
+              "etiqueta": "Producto",
+              "valor": "Quitásarro ficticio · Lavanda · 1.00 L",
+              "etiquetaVisible": "\"Producto\"",
+              "izquierda": 34,
+              "derecha": 356
+            },
+            {
+              "etiqueta": "Pendiente total",
+              "valor": "24",
+              "etiquetaVisible": "\"Pendiente total\"",
+              "izquierda": 34,
+              "derecha": 356
+            },
+            {
+              "etiqueta": "En espera",
+              "valor": "0",
+              "etiquetaVisible": "\"En espera\"",
+              "izquierda": 34,
+              "derecha": 356
+            },
+            {
+              "etiqueta": "Pendiente activo",
+              "valor": "24",
+              "etiquetaVisible": "\"Pendiente activo\"",
+              "izquierda": 34,
+              "derecha": 356
+            },
+            {
+              "etiqueta": "Stock terminado registrado",
+              "valor": "0",
+              "etiquetaVisible": "\"Stock terminado registrado\"",
+              "izquierda": 34,
+              "derecha": 356
+            },
+            {
+              "etiqueta": "Faltante activo / total",
+              "valor": "24 / 24",
+              "etiquetaVisible": "\"Faltante activo / total\"",
+              "izquierda": 34,
+              "derecha": 356
+            },
+            {
+              "etiqueta": "Resultado",
+              "valor": "Insuficiente",
+              "etiquetaVisible": "\"Resultado\"",
+              "izquierda": 34,
+              "derecha": 356
+            }
+          ],
+          "anchoContenedor": 324,
+          "contenidoContenedor": 324
+        },
+        {
+          "presentacion": "block",
+          "etiquetas": [
+            {
+              "etiqueta": "SKU",
+              "valor": "VISUAL-QTS-WWWWWWWWWWWWWWWWWWWW-0",
+              "etiquetaVisible": "\"SKU\"",
+              "izquierda": 18,
+              "derecha": 372
+            },
+            {
+              "etiqueta": "Producto",
+              "valor": "Quitásarro ficticio · Lavanda",
+              "etiquetaVisible": "\"Producto\"",
+              "izquierda": 18,
+              "derecha": 372
+            },
+            {
+              "etiqueta": "Presentación",
+              "valor": "1.00 L",
+              "etiquetaVisible": "\"Presentación\"",
+              "izquierda": 18,
+              "derecha": 372
+            },
+            {
+              "etiqueta": "Unidades terminadas registradas",
+              "valor": "0",
+              "etiquetaVisible": "\"Unidades terminadas registradas\"",
+              "izquierda": 18,
+              "derecha": 372
+            }
+          ],
+          "anchoContenedor": 356,
+          "contenidoContenedor": 356
+        }
+      ]
+    },
+    {
+      "captura": "390-disponibilidad",
+      "ancho": 390,
+      "cuerpo": 390,
+      "documento": 390,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "pantalla": "materiales-historicos",
+      "ancho": 390,
+      "botones": [
+        {
+          "texto": "search Consultar",
+          "alto": 44,
+          "arriba": 726.75,
+          "abajo": 770.75
+        },
+        {
+          "texto": "Limpiar",
+          "alto": 44,
+          "arriba": 781.140625,
+          "abajo": 825.140625
+        }
+      ],
+      "tablas": [
+        {
+          "presentacion": "block",
+          "etiquetas": [
+            {
+              "etiqueta": "SKU",
+              "valor": "VISUAL-QTS-WWWWWWWWWWWWWWWWWWWW-0",
+              "etiquetaVisible": "\"SKU\"",
+              "izquierda": 18,
+              "derecha": 372
+            },
+            {
+              "etiqueta": "Producto",
+              "valor": "Quitásarro ficticio · Lavanda",
+              "etiquetaVisible": "\"Producto\"",
+              "izquierda": 18,
+              "derecha": 372
+            },
+            {
+              "etiqueta": "Presentación",
+              "valor": "1.00 L",
+              "etiquetaVisible": "\"Presentación\"",
+              "izquierda": 18,
+              "derecha": 372
+            },
+            {
+              "etiqueta": "Unidades terminadas registradas",
+              "valor": "0",
+              "etiquetaVisible": "\"Unidades terminadas registradas\"",
+              "izquierda": 18,
+              "derecha": 372
+            }
+          ],
+          "anchoContenedor": 356,
+          "contenidoContenedor": 356
+        },
+        {
+          "presentacion": "block",
+          "etiquetas": [
+            {
+              "etiqueta": "Código",
+              "valor": "I01M6HENYG48ZTVNGP03KBTXW7N",
+              "etiquetaVisible": "\"Código\"",
+              "izquierda": 18,
+              "derecha": 372
+            },
+            {
+              "etiqueta": "Material / Insumo",
+              "valor": "Envase de prueba",
+              "etiquetaVisible": "\"Material / Insumo\"",
+              "izquierda": 18,
+              "derecha": 372
+            },
+            {
+              "etiqueta": "Categoría",
+              "valor": "Envases",
+              "etiquetaVisible": "\"Categoría\"",
+              "izquierda": 18,
+              "derecha": 372
+            },
+            {
+              "etiqueta": "Saldo histórico registrado",
+              "valor": "100.000",
+              "etiquetaVisible": "\"Saldo histórico registrado\"",
+              "izquierda": 18,
+              "derecha": 372
+            },
+            {
+              "etiqueta": "Unidad",
+              "valor": "unidad",
+              "etiquetaVisible": "\"Unidad\"",
+              "izquierda": 18,
+              "derecha": 372
+            }
+          ],
+          "anchoContenedor": 356,
+          "contenidoContenedor": 356
+        }
+      ]
+    },
+    {
+      "captura": "390-materiales-historicos",
+      "ancho": 390,
+      "cuerpo": 390,
+      "documento": 390,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "390-lista-preparacion",
+      "ancho": 390,
+      "cuerpo": 390,
+      "documento": 390,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "390-preparacion-despacho-incidencias",
+      "ancho": 390,
+      "cuerpo": 390,
+      "documento": 390,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "390-entrega-historial-acciones",
+      "ancho": 390,
+      "cuerpo": 390,
+      "documento": 390,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "390-seguimiento",
+      "ancho": 390,
+      "cuerpo": 390,
+      "documento": 390,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "390-trazabilidad",
+      "ancho": 390,
+      "cuerpo": 390,
+      "documento": 390,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "390-indicadores",
+      "ancho": 390,
+      "cuerpo": 390,
+      "documento": 390,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "390-edicion-pedido",
+      "ancho": 390,
+      "cuerpo": 390,
+      "documento": 390,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "390-retiro-faltantes",
+      "ancho": 390,
+      "cuerpo": 390,
+      "documento": 390,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "768-01-sugerencias-clientes",
+      "ancho": 768,
+      "cuerpo": 768,
+      "documento": 768,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "768-02-sugerencias-productos",
+      "ancho": 768,
+      "cuerpo": 768,
+      "documento": 768,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "768-03-seleccion-y-validacion",
+      "ancho": 768,
+      "cuerpo": 768,
+      "documento": 768,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "768-04-editor-agrupaciones",
+      "ancho": 768,
+      "cuerpo": 768,
+      "documento": 768,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "768-foco-error-despues",
+      "ancho": 768,
+      "cuerpo": 768,
+      "documento": 768,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "768-busqueda-pedido-despues",
+      "ancho": 768,
+      "cuerpo": 768,
+      "documento": 768,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "768-validacion-despues",
+      "ancho": 768,
+      "cuerpo": 768,
+      "documento": 768,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "768-dashboard",
+      "ancho": 768,
+      "cuerpo": 768,
+      "documento": 768,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "768-usuarios",
+      "ancho": 768,
+      "cuerpo": 768,
+      "documento": 768,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "768-roles",
+      "ancho": 768,
+      "cuerpo": 768,
+      "documento": 768,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "768-productos",
+      "ancho": 768,
+      "cuerpo": 768,
+      "documento": 768,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "768-producto-nuevo",
+      "ancho": 768,
+      "cuerpo": 768,
+      "documento": 768,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "768-clientes",
+      "ancho": 768,
+      "cuerpo": 768,
+      "documento": 768,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "768-cliente-nuevo",
+      "ancho": 768,
+      "cuerpo": 768,
+      "documento": 768,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "768-pedidos",
+      "ancho": 768,
+      "cuerpo": 768,
+      "documento": 768,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "768-envasado-nuevo",
+      "ancho": 768,
+      "cuerpo": 768,
+      "documento": 768,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "768-envasados",
+      "ancho": 768,
+      "cuerpo": 768,
+      "documento": 768,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "768-movimientos",
+      "ancho": 768,
+      "cuerpo": 768,
+      "documento": 768,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "768-auditoria",
+      "ancho": 768,
+      "cuerpo": 768,
+      "documento": 768,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "pantalla": "disponibilidad",
+      "ancho": 768,
+      "botones": [
+        {
+          "texto": "search Consultar",
+          "alto": 44,
+          "arriba": 623.578125,
+          "abajo": 667.578125
+        },
+        {
+          "texto": "Limpiar",
+          "alto": 44,
+          "arriba": 679.578125,
+          "abajo": 723.578125
+        }
+      ],
+      "tablas": [
+        {
+          "presentacion": "table",
+          "etiquetas": [
+            {
+              "etiqueta": "SKU",
+              "valor": "VISUAL-QTS-WWWWWWWWWWWWWWWWWWWW-0",
+              "etiquetaVisible": "none",
+              "izquierda": 49,
+              "derecha": 370
+            },
+            {
+              "etiqueta": "Producto",
+              "valor": "Quitásarro ficticio · Lavanda · 1.00 L",
+              "etiquetaVisible": "none",
+              "izquierda": 370,
+              "derecha": 474
+            },
+            {
+              "etiqueta": "Pendiente total",
+              "valor": "24",
+              "etiquetaVisible": "none",
+              "izquierda": 474,
+              "derecha": 610
+            },
+            {
+              "etiqueta": "En espera",
+              "valor": "0",
+              "etiquetaVisible": "none",
+              "izquierda": 610,
+              "derecha": 706
+            },
+            {
+              "etiqueta": "Pendiente activo",
+              "valor": "24",
+              "etiquetaVisible": "none",
+              "izquierda": 706,
+              "derecha": 849
+            },
+            {
+              "etiqueta": "Stock terminado registrado",
+              "valor": "0",
+              "etiquetaVisible": "none",
+              "izquierda": 849,
+              "derecha": 1066
+            },
+            {
+              "etiqueta": "Faltante activo / total",
+              "valor": "24 / 24",
+              "etiquetaVisible": "none",
+              "izquierda": 1066,
+              "derecha": 1245
+            },
+            {
+              "etiqueta": "Resultado",
+              "valor": "Insuficiente",
+              "etiquetaVisible": "none",
+              "izquierda": 1245,
+              "derecha": 1366
+            }
+          ],
+          "anchoContenedor": 670,
+          "contenidoContenedor": 1317
+        },
+        {
+          "presentacion": "table",
+          "etiquetas": [
+            {
+              "etiqueta": "SKU",
+              "valor": "VISUAL-QTS-WWWWWWWWWWWWWWWWWWWW-0",
+              "etiquetaVisible": "none",
+              "izquierda": 23,
+              "derecha": 365
+            },
+            {
+              "etiqueta": "Producto",
+              "valor": "Quitásarro ficticio · Lavanda",
+              "etiquetaVisible": "none",
+              "izquierda": 365,
+              "derecha": 469
+            },
+            {
+              "etiqueta": "Presentación",
+              "valor": "1.00 L",
+              "etiquetaVisible": "none",
+              "izquierda": 469,
+              "derecha": 590
+            },
+            {
+              "etiqueta": "Unidades terminadas registradas",
+              "valor": "0",
+              "etiquetaVisible": "none",
+              "izquierda": 590,
+              "derecha": 837
+            }
+          ],
+          "anchoContenedor": 722,
+          "contenidoContenedor": 814
+        }
+      ]
+    },
+    {
+      "captura": "768-disponibilidad",
+      "ancho": 768,
+      "cuerpo": 768,
+      "documento": 768,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "pantalla": "materiales-historicos",
+      "ancho": 768,
+      "botones": [
+        {
+          "texto": "search Consultar",
+          "alto": 44,
+          "arriba": 623.578125,
+          "abajo": 667.578125
+        },
+        {
+          "texto": "Limpiar",
+          "alto": 44,
+          "arriba": 679.578125,
+          "abajo": 723.578125
+        }
+      ],
+      "tablas": [
+        {
+          "presentacion": "table",
+          "etiquetas": [
+            {
+              "etiqueta": "SKU",
+              "valor": "VISUAL-QTS-WWWWWWWWWWWWWWWWWWWW-0",
+              "etiquetaVisible": "none",
+              "izquierda": 23,
+              "derecha": 365
+            },
+            {
+              "etiqueta": "Producto",
+              "valor": "Quitásarro ficticio · Lavanda",
+              "etiquetaVisible": "none",
+              "izquierda": 365,
+              "derecha": 469
+            },
+            {
+              "etiqueta": "Presentación",
+              "valor": "1.00 L",
+              "etiquetaVisible": "none",
+              "izquierda": 469,
+              "derecha": 590
+            },
+            {
+              "etiqueta": "Unidades terminadas registradas",
+              "valor": "0",
+              "etiquetaVisible": "none",
+              "izquierda": 590,
+              "derecha": 837
+            }
+          ],
+          "anchoContenedor": 722,
+          "contenidoContenedor": 814
+        },
+        {
+          "presentacion": "table",
+          "etiquetas": [
+            {
+              "etiqueta": "Código",
+              "valor": "I01M6HENYG48ZTVNGP03KBTXW7N",
+              "etiquetaVisible": "none",
+              "izquierda": 23,
+              "derecha": 316
+            },
+            {
+              "etiqueta": "Material / Insumo",
+              "valor": "Envase de prueba",
+              "etiquetaVisible": "none",
+              "izquierda": 316,
+              "derecha": 460
+            },
+            {
+              "etiqueta": "Categoría",
+              "valor": "Envases",
+              "etiquetaVisible": "none",
+              "izquierda": 460,
+              "derecha": 560
+            },
+            {
+              "etiqueta": "Saldo histórico registrado",
+              "valor": "100.000",
+              "etiquetaVisible": "none",
+              "izquierda": 560,
+              "derecha": 770
+            },
+            {
+              "etiqueta": "Unidad",
+              "valor": "unidad",
+              "etiquetaVisible": "none",
+              "izquierda": 770,
+              "derecha": 851
+            }
+          ],
+          "anchoContenedor": 722,
+          "contenidoContenedor": 828
+        }
+      ]
+    },
+    {
+      "captura": "768-materiales-historicos",
+      "ancho": 768,
+      "cuerpo": 768,
+      "documento": 768,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "768-lista-preparacion",
+      "ancho": 768,
+      "cuerpo": 768,
+      "documento": 768,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "768-preparacion-despacho-incidencias",
+      "ancho": 768,
+      "cuerpo": 768,
+      "documento": 768,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "768-entrega-historial-acciones",
+      "ancho": 768,
+      "cuerpo": 768,
+      "documento": 768,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "768-seguimiento",
+      "ancho": 768,
+      "cuerpo": 768,
+      "documento": 768,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "768-trazabilidad",
+      "ancho": 768,
+      "cuerpo": 768,
+      "documento": 768,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "768-indicadores",
+      "ancho": 768,
+      "cuerpo": 768,
+      "documento": 768,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "768-edicion-pedido",
+      "ancho": 768,
+      "cuerpo": 768,
+      "documento": 768,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "768-retiro-faltantes",
+      "ancho": 768,
+      "cuerpo": 768,
+      "documento": 768,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1024-01-sugerencias-clientes",
+      "ancho": 1024,
+      "cuerpo": 1024,
+      "documento": 1024,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1024-02-sugerencias-productos",
+      "ancho": 1024,
+      "cuerpo": 1024,
+      "documento": 1024,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1024-03-seleccion-y-validacion",
+      "ancho": 1024,
+      "cuerpo": 1024,
+      "documento": 1024,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1024-04-editor-agrupaciones",
+      "ancho": 1024,
+      "cuerpo": 1024,
+      "documento": 1024,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1024-foco-error-despues",
+      "ancho": 1024,
+      "cuerpo": 1024,
+      "documento": 1024,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1024-busqueda-pedido-despues",
+      "ancho": 1024,
+      "cuerpo": 1024,
+      "documento": 1024,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1024-validacion-despues",
+      "ancho": 1024,
+      "cuerpo": 1024,
+      "documento": 1024,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1024-dashboard",
+      "ancho": 1024,
+      "cuerpo": 1024,
+      "documento": 1024,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1024-usuarios",
+      "ancho": 1024,
+      "cuerpo": 1024,
+      "documento": 1024,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1024-roles",
+      "ancho": 1024,
+      "cuerpo": 1024,
+      "documento": 1024,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1024-productos",
+      "ancho": 1024,
+      "cuerpo": 1024,
+      "documento": 1024,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1024-producto-nuevo",
+      "ancho": 1024,
+      "cuerpo": 1024,
+      "documento": 1024,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1024-clientes",
+      "ancho": 1024,
+      "cuerpo": 1024,
+      "documento": 1024,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1024-cliente-nuevo",
+      "ancho": 1024,
+      "cuerpo": 1024,
+      "documento": 1024,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1024-pedidos",
+      "ancho": 1024,
+      "cuerpo": 1024,
+      "documento": 1024,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1024-envasado-nuevo",
+      "ancho": 1024,
+      "cuerpo": 1024,
+      "documento": 1024,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1024-envasados",
+      "ancho": 1024,
+      "cuerpo": 1024,
+      "documento": 1024,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1024-movimientos",
+      "ancho": 1024,
+      "cuerpo": 1024,
+      "documento": 1024,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1024-auditoria",
+      "ancho": 1024,
+      "cuerpo": 1024,
+      "documento": 1024,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "pantalla": "disponibilidad",
+      "ancho": 1024,
+      "botones": [
+        {
+          "texto": "search Consultar",
+          "alto": 44,
+          "arriba": 595.515625,
+          "abajo": 639.515625
+        },
+        {
+          "texto": "Limpiar",
+          "alto": 44,
+          "arriba": 595.515625,
+          "abajo": 639.515625
+        }
+      ],
+      "tablas": [
+        {
+          "presentacion": "table",
+          "etiquetas": [
+            {
+              "etiqueta": "SKU",
+              "valor": "VISUAL-QTS-WWWWWWWWWWWWWWWWWWWW-0",
+              "etiquetaVisible": "none",
+              "izquierda": 361,
+              "derecha": 682
+            },
+            {
+              "etiqueta": "Producto",
+              "valor": "Quitásarro ficticio · Lavanda · 1.00 L",
+              "etiquetaVisible": "none",
+              "izquierda": 682,
+              "derecha": 786
+            },
+            {
+              "etiqueta": "Pendiente total",
+              "valor": "24",
+              "etiquetaVisible": "none",
+              "izquierda": 786,
+              "derecha": 922
+            },
+            {
+              "etiqueta": "En espera",
+              "valor": "0",
+              "etiquetaVisible": "none",
+              "izquierda": 922,
+              "derecha": 1018
+            },
+            {
+              "etiqueta": "Pendiente activo",
+              "valor": "24",
+              "etiquetaVisible": "none",
+              "izquierda": 1018,
+              "derecha": 1161
+            },
+            {
+              "etiqueta": "Stock terminado registrado",
+              "valor": "0",
+              "etiquetaVisible": "none",
+              "izquierda": 1161,
+              "derecha": 1378
+            },
+            {
+              "etiqueta": "Faltante activo / total",
+              "valor": "24 / 24",
+              "etiquetaVisible": "none",
+              "izquierda": 1378,
+              "derecha": 1557
+            },
+            {
+              "etiqueta": "Resultado",
+              "valor": "Insuficiente",
+              "etiquetaVisible": "none",
+              "izquierda": 1557,
+              "derecha": 1678
+            }
+          ],
+          "anchoContenedor": 598,
+          "contenidoContenedor": 1317
+        },
+        {
+          "presentacion": "table",
+          "etiquetas": [
+            {
+              "etiqueta": "SKU",
+              "valor": "VISUAL-QTS-WWWWWWWWWWWWWWWWWWWW-0",
+              "etiquetaVisible": "none",
+              "izquierda": 335,
+              "derecha": 677
+            },
+            {
+              "etiqueta": "Producto",
+              "valor": "Quitásarro ficticio · Lavanda",
+              "etiquetaVisible": "none",
+              "izquierda": 677,
+              "derecha": 781
+            },
+            {
+              "etiqueta": "Presentación",
+              "valor": "1.00 L",
+              "etiquetaVisible": "none",
+              "izquierda": 781,
+              "derecha": 902
+            },
+            {
+              "etiqueta": "Unidades terminadas registradas",
+              "valor": "0",
+              "etiquetaVisible": "none",
+              "izquierda": 902,
+              "derecha": 1149
+            }
+          ],
+          "anchoContenedor": 650,
+          "contenidoContenedor": 814
+        }
+      ]
+    },
+    {
+      "captura": "1024-disponibilidad",
+      "ancho": 1024,
+      "cuerpo": 1024,
+      "documento": 1024,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "pantalla": "materiales-historicos",
+      "ancho": 1024,
+      "botones": [
+        {
+          "texto": "search Consultar",
+          "alto": 44,
+          "arriba": 595.515625,
+          "abajo": 639.515625
+        },
+        {
+          "texto": "Limpiar",
+          "alto": 44,
+          "arriba": 595.515625,
+          "abajo": 639.515625
+        }
+      ],
+      "tablas": [
+        {
+          "presentacion": "table",
+          "etiquetas": [
+            {
+              "etiqueta": "SKU",
+              "valor": "VISUAL-QTS-WWWWWWWWWWWWWWWWWWWW-0",
+              "etiquetaVisible": "none",
+              "izquierda": 335,
+              "derecha": 677
+            },
+            {
+              "etiqueta": "Producto",
+              "valor": "Quitásarro ficticio · Lavanda",
+              "etiquetaVisible": "none",
+              "izquierda": 677,
+              "derecha": 781
+            },
+            {
+              "etiqueta": "Presentación",
+              "valor": "1.00 L",
+              "etiquetaVisible": "none",
+              "izquierda": 781,
+              "derecha": 902
+            },
+            {
+              "etiqueta": "Unidades terminadas registradas",
+              "valor": "0",
+              "etiquetaVisible": "none",
+              "izquierda": 902,
+              "derecha": 1149
+            }
+          ],
+          "anchoContenedor": 650,
+          "contenidoContenedor": 814
+        },
+        {
+          "presentacion": "table",
+          "etiquetas": [
+            {
+              "etiqueta": "Código",
+              "valor": "I01M6HENYG48ZTVNGP03KBTXW7N",
+              "etiquetaVisible": "none",
+              "izquierda": 335,
+              "derecha": 628
+            },
+            {
+              "etiqueta": "Material / Insumo",
+              "valor": "Envase de prueba",
+              "etiquetaVisible": "none",
+              "izquierda": 628,
+              "derecha": 772
+            },
+            {
+              "etiqueta": "Categoría",
+              "valor": "Envases",
+              "etiquetaVisible": "none",
+              "izquierda": 772,
+              "derecha": 872
+            },
+            {
+              "etiqueta": "Saldo histórico registrado",
+              "valor": "100.000",
+              "etiquetaVisible": "none",
+              "izquierda": 872,
+              "derecha": 1082
+            },
+            {
+              "etiqueta": "Unidad",
+              "valor": "unidad",
+              "etiquetaVisible": "none",
+              "izquierda": 1082,
+              "derecha": 1163
+            }
+          ],
+          "anchoContenedor": 650,
+          "contenidoContenedor": 828
+        }
+      ]
+    },
+    {
+      "captura": "1024-materiales-historicos",
+      "ancho": 1024,
+      "cuerpo": 1024,
+      "documento": 1024,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1024-lista-preparacion",
+      "ancho": 1024,
+      "cuerpo": 1024,
+      "documento": 1024,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1024-preparacion-despacho-incidencias",
+      "ancho": 1024,
+      "cuerpo": 1024,
+      "documento": 1024,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1024-entrega-historial-acciones",
+      "ancho": 1024,
+      "cuerpo": 1024,
+      "documento": 1024,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1024-seguimiento",
+      "ancho": 1024,
+      "cuerpo": 1024,
+      "documento": 1024,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1024-trazabilidad",
+      "ancho": 1024,
+      "cuerpo": 1024,
+      "documento": 1024,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1024-indicadores",
+      "ancho": 1024,
+      "cuerpo": 1024,
+      "documento": 1024,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1024-edicion-pedido",
+      "ancho": 1024,
+      "cuerpo": 1024,
+      "documento": 1024,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1024-retiro-faltantes",
+      "ancho": 1024,
+      "cuerpo": 1024,
+      "documento": 1024,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1366-01-sugerencias-clientes",
+      "ancho": 1366,
+      "cuerpo": 1366,
+      "documento": 1366,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1366-02-sugerencias-productos",
+      "ancho": 1366,
+      "cuerpo": 1366,
+      "documento": 1366,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1366-03-seleccion-y-validacion",
+      "ancho": 1366,
+      "cuerpo": 1366,
+      "documento": 1366,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1366-04-editor-agrupaciones",
+      "ancho": 1366,
+      "cuerpo": 1366,
+      "documento": 1366,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1366-foco-error-despues",
+      "ancho": 1366,
+      "cuerpo": 1366,
+      "documento": 1366,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1366-busqueda-pedido-despues",
+      "ancho": 1366,
+      "cuerpo": 1366,
+      "documento": 1366,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1366-validacion-despues",
+      "ancho": 1366,
+      "cuerpo": 1366,
+      "documento": 1366,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1366-dashboard",
+      "ancho": 1366,
+      "cuerpo": 1366,
+      "documento": 1366,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1366-usuarios",
+      "ancho": 1366,
+      "cuerpo": 1366,
+      "documento": 1366,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1366-roles",
+      "ancho": 1366,
+      "cuerpo": 1366,
+      "documento": 1366,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1366-productos",
+      "ancho": 1366,
+      "cuerpo": 1366,
+      "documento": 1366,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1366-producto-nuevo",
+      "ancho": 1366,
+      "cuerpo": 1366,
+      "documento": 1366,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1366-clientes",
+      "ancho": 1366,
+      "cuerpo": 1366,
+      "documento": 1366,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1366-cliente-nuevo",
+      "ancho": 1366,
+      "cuerpo": 1366,
+      "documento": 1366,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1366-pedidos",
+      "ancho": 1366,
+      "cuerpo": 1366,
+      "documento": 1366,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1366-envasado-nuevo",
+      "ancho": 1366,
+      "cuerpo": 1366,
+      "documento": 1366,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1366-envasados",
+      "ancho": 1366,
+      "cuerpo": 1366,
+      "documento": 1366,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1366-movimientos",
+      "ancho": 1366,
+      "cuerpo": 1366,
+      "documento": 1366,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1366-auditoria",
+      "ancho": 1366,
+      "cuerpo": 1366,
+      "documento": 1366,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "pantalla": "disponibilidad",
+      "ancho": 1366,
+      "botones": [
+        {
+          "texto": "search Consultar",
+          "alto": 44,
+          "arriba": 494.453125,
+          "abajo": 538.453125
+        },
+        {
+          "texto": "Limpiar",
+          "alto": 44,
+          "arriba": 494.453125,
+          "abajo": 538.453125
+        }
+      ],
+      "tablas": [
+        {
+          "presentacion": "table",
+          "etiquetas": [
+            {
+              "etiqueta": "SKU",
+              "valor": "VISUAL-QTS-WWWWWWWWWWWWWWWWWWWW-0",
+              "etiquetaVisible": "none",
+              "izquierda": 361,
+              "derecha": 682
+            },
+            {
+              "etiqueta": "Producto",
+              "valor": "Quitásarro ficticio · Lavanda · 1.00 L",
+              "etiquetaVisible": "none",
+              "izquierda": 682,
+              "derecha": 786
+            },
+            {
+              "etiqueta": "Pendiente total",
+              "valor": "24",
+              "etiquetaVisible": "none",
+              "izquierda": 786,
+              "derecha": 922
+            },
+            {
+              "etiqueta": "En espera",
+              "valor": "0",
+              "etiquetaVisible": "none",
+              "izquierda": 922,
+              "derecha": 1018
+            },
+            {
+              "etiqueta": "Pendiente activo",
+              "valor": "24",
+              "etiquetaVisible": "none",
+              "izquierda": 1018,
+              "derecha": 1161
+            },
+            {
+              "etiqueta": "Stock terminado registrado",
+              "valor": "0",
+              "etiquetaVisible": "none",
+              "izquierda": 1161,
+              "derecha": 1378
+            },
+            {
+              "etiqueta": "Faltante activo / total",
+              "valor": "24 / 24",
+              "etiquetaVisible": "none",
+              "izquierda": 1378,
+              "derecha": 1557
+            },
+            {
+              "etiqueta": "Resultado",
+              "valor": "Insuficiente",
+              "etiquetaVisible": "none",
+              "izquierda": 1557,
+              "derecha": 1678
+            }
+          ],
+          "anchoContenedor": 940,
+          "contenidoContenedor": 1317
+        },
+        {
+          "presentacion": "table",
+          "etiquetas": [
+            {
+              "etiqueta": "SKU",
+              "valor": "VISUAL-QTS-WWWWWWWWWWWWWWWWWWWW-0",
+              "etiquetaVisible": "none",
+              "izquierda": 335,
+              "derecha": 760.28125
+            },
+            {
+              "etiqueta": "Producto",
+              "valor": "Quitásarro ficticio · Lavanda",
+              "etiquetaVisible": "none",
+              "izquierda": 760.28125,
+              "derecha": 958.984375
+            },
+            {
+              "etiqueta": "Presentación",
+              "valor": "1.00 L",
+              "etiquetaVisible": "none",
+              "izquierda": 958.984375,
+              "derecha": 1079.984375
+            },
+            {
+              "etiqueta": "Unidades terminadas registradas",
+              "valor": "0",
+              "etiquetaVisible": "none",
+              "izquierda": 1079.984375,
+              "derecha": 1327
+            }
+          ],
+          "anchoContenedor": 992,
+          "contenidoContenedor": 992
+        }
+      ]
+    },
+    {
+      "captura": "1366-disponibilidad",
+      "ancho": 1366,
+      "cuerpo": 1366,
+      "documento": 1366,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "pantalla": "materiales-historicos",
+      "ancho": 1366,
+      "botones": [
+        {
+          "texto": "search Consultar",
+          "alto": 44,
+          "arriba": 494.453125,
+          "abajo": 538.453125
+        },
+        {
+          "texto": "Limpiar",
+          "alto": 44,
+          "arriba": 494.453125,
+          "abajo": 538.453125
+        }
+      ],
+      "tablas": [
+        {
+          "presentacion": "table",
+          "etiquetas": [
+            {
+              "etiqueta": "SKU",
+              "valor": "VISUAL-QTS-WWWWWWWWWWWWWWWWWWWW-0",
+              "etiquetaVisible": "none",
+              "izquierda": 335,
+              "derecha": 760.28125
+            },
+            {
+              "etiqueta": "Producto",
+              "valor": "Quitásarro ficticio · Lavanda",
+              "etiquetaVisible": "none",
+              "izquierda": 760.28125,
+              "derecha": 958.984375
+            },
+            {
+              "etiqueta": "Presentación",
+              "valor": "1.00 L",
+              "etiquetaVisible": "none",
+              "izquierda": 958.984375,
+              "derecha": 1079.984375
+            },
+            {
+              "etiqueta": "Unidades terminadas registradas",
+              "valor": "0",
+              "etiquetaVisible": "none",
+              "izquierda": 1079.984375,
+              "derecha": 1327
+            }
+          ],
+          "anchoContenedor": 992,
+          "contenidoContenedor": 992
+        },
+        {
+          "presentacion": "table",
+          "etiquetas": [
+            {
+              "etiqueta": "Código",
+              "valor": "I01M6HENYG48ZTVNGP03KBTXW7N",
+              "etiquetaVisible": "none",
+              "izquierda": 335,
+              "derecha": 681.421875
+            },
+            {
+              "etiqueta": "Material / Insumo",
+              "valor": "Envase de prueba",
+              "etiquetaVisible": "none",
+              "izquierda": 681.421875,
+              "derecha": 864.6875
+            },
+            {
+              "etiqueta": "Categoría",
+              "valor": "Envases",
+              "etiquetaVisible": "none",
+              "izquierda": 864.6875,
+              "derecha": 982.921875
+            },
+            {
+              "etiqueta": "Saldo histórico registrado",
+              "valor": "100.000",
+              "etiquetaVisible": "none",
+              "izquierda": 982.921875,
+              "derecha": 1231.203125
+            },
+            {
+              "etiqueta": "Unidad",
+              "valor": "unidad",
+              "etiquetaVisible": "none",
+              "izquierda": 1231.203125,
+              "derecha": 1327
+            }
+          ],
+          "anchoContenedor": 992,
+          "contenidoContenedor": 992
+        }
+      ]
+    },
+    {
+      "captura": "1366-materiales-historicos",
+      "ancho": 1366,
+      "cuerpo": 1366,
+      "documento": 1366,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1366-lista-preparacion",
+      "ancho": 1366,
+      "cuerpo": 1366,
+      "documento": 1366,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1366-preparacion-despacho-incidencias",
+      "ancho": 1366,
+      "cuerpo": 1366,
+      "documento": 1366,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1366-entrega-historial-acciones",
+      "ancho": 1366,
+      "cuerpo": 1366,
+      "documento": 1366,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1366-seguimiento",
+      "ancho": 1366,
+      "cuerpo": 1366,
+      "documento": 1366,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1366-trazabilidad",
+      "ancho": 1366,
+      "cuerpo": 1366,
+      "documento": 1366,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1366-indicadores",
+      "ancho": 1366,
+      "cuerpo": 1366,
+      "documento": 1366,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1366-edicion-pedido",
+      "ancho": 1366,
+      "cuerpo": 1366,
+      "documento": 1366,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1366-retiro-faltantes",
+      "ancho": 1366,
+      "cuerpo": 1366,
+      "documento": 1366,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1366-envasado-integrado-previa",
+      "ancho": 1366,
+      "cuerpo": 1366,
+      "documento": 1366,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1366-envasado-integrado-confirmado",
+      "ancho": 1366,
+      "cuerpo": 1366,
+      "documento": 1366,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1366-busqueda-paginada",
+      "ancho": 1366,
+      "cuerpo": 1366,
+      "documento": 1366,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1366-busqueda-sin-resultados",
+      "ancho": 1366,
+      "cuerpo": 1366,
+      "documento": 1366,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1366-busqueda-error-controlado",
+      "ancho": 1366,
+      "cuerpo": 1366,
+      "documento": 1366,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1366-impresion-dos-notas",
+      "ancho": 1366,
+      "cuerpo": 1366,
+      "documento": 1366,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1366-retiro-confirmado",
+      "ancho": 1366,
+      "cuerpo": 1366,
+      "documento": 1366,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1366-rol-comercial",
+      "ancho": 1366,
+      "cuerpo": 1366,
+      "documento": 1366,
+      "defectoPrevioEsperado": false
+    },
+    {
+      "captura": "1366-rol-produccion",
+      "ancho": 1366,
+      "cuerpo": 1366,
+      "documento": 1366,
+      "defectoPrevioEsperado": false
+    }
+  ],
+  "limitaciones": [
+    "No es UAT con trabajadores.",
+    "Las capturas y el PDF requieren revisión humana de legibilidad.",
+    "Chrome y Edge de marca, impresoras físicas y UAT: PENDIENTE DE EJECUCIÓN."
+  ]
+}

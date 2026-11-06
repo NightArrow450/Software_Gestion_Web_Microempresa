@@ -74,3 +74,7 @@
     .cumplimiento-lista td[data-label]::before { content:attr(data-label); display:block; font-weight:600; color:#475569; margin-bottom:4px; }
     .cumplimiento-lista tr { margin-bottom:14px; border:1px solid #e5e7eb; }
 }
+
+@media screen and (max-width:650px) {
+    .cumplimiento-tarjeta h3 { overflow-wrap:anywhere; }
+}

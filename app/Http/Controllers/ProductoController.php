@@ -8,6 +8,7 @@ use App\Models\Producto;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -72,9 +73,7 @@ class ProductoController extends Controller
             ];
 
             if ($request->hasFile('imagen_referencia')) {
-                $dataProducto['imagen_referencia'] = $request
-                    ->file('imagen_referencia')
-                    ->store('productos', 'public');
+                $dataProducto['imagen_referencia'] = $this->guardarImagen($request);
             }
 
             $producto = Producto::create($dataProducto);
@@ -146,19 +145,15 @@ class ProductoController extends Controller
                 'estado' => (bool) $validated['estado'],
             ];
 
-            if ($request->boolean('eliminar_imagen') && $producto->imagen_referencia) {
-                Storage::disk('public')->delete($producto->imagen_referencia);
+            $imagenAnterior = $producto->imagen_referencia;
+            if ($request->boolean('eliminar_imagen')) {
                 $dataProducto['imagen_referencia'] = null;
             }
-
             if ($request->hasFile('imagen_referencia')) {
-                if ($producto->imagen_referencia) {
-                    Storage::disk('public')->delete($producto->imagen_referencia);
-                }
-
-                $dataProducto['imagen_referencia'] = $request
-                    ->file('imagen_referencia')
-                    ->store('productos', 'public');
+                $dataProducto['imagen_referencia'] = $this->guardarImagen($request);
+            }
+            if ($imagenAnterior && array_key_exists('imagen_referencia', $dataProducto)) {
+                DB::afterCommit(fn () => $this->retirarImagen($imagenAnterior));
             }
 
             $producto->update($dataProducto);
@@ -240,6 +235,28 @@ class ProductoController extends Controller
         return redirect()
             ->route('productos.show', $producto)
             ->with('success', 'El producto fue actualizado correctamente.');
+    }
+
+    private function guardarImagen(Request $request): string
+    {
+        $ruta = $request->file('imagen_referencia')->store('productos', 'public');
+        if (! is_string($ruta) || $ruta === '') {
+            throw ValidationException::withMessages(['imagen_referencia' => 'No se pudo guardar la imagen. Intenta nuevamente.']);
+        }
+        DB::afterRollBack(fn () => $this->retirarImagen($ruta));
+
+        return $ruta;
+    }
+
+    private function retirarImagen(string $ruta): void
+    {
+        try {
+            if (! Storage::disk('public')->delete($ruta)) {
+                Log::warning('imagen_producto_pendiente_retiro', ['archivo' => $ruta]);
+            }
+        } catch (\Throwable $error) {
+            Log::warning('imagen_producto_pendiente_retiro', ['archivo' => $ruta, 'excepcion' => $error::class]);
+        }
     }
 
     public function toggleStatus(Producto $producto): RedirectResponse

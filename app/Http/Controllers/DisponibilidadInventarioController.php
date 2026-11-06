@@ -6,6 +6,7 @@ use App\Models\Insumo;
 use App\Models\Inventario;
 use App\Models\Pedido;
 use App\Models\PresentacionProducto;
+use App\Services\BusquedaCatalogo;
 use App\Services\LecturaPedido;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -16,6 +17,7 @@ class DisponibilidadInventarioController extends Controller
     {
         $datos = $request->validate([
             'buscar' => ['nullable', 'string', 'max:100'],
+            'pedido_buscar' => ['nullable', 'string', 'max:100'],
             'pedido_id' => ['nullable', 'integer', 'exists:pedidos,id'],
             'historico_materiales' => ['sometimes', 'boolean'],
         ]);
@@ -41,8 +43,17 @@ class DisponibilidadInventarioController extends Controller
         $cantidades = Inventario::whereIn('presentacion_producto_id', $presentaciones->pluck('id'))
             ->pluck('cantidad_actual', 'presentacion_producto_id');
 
+        $pedidoBuscar = trim($datos['pedido_buscar'] ?? '');
         $estadosPendientes = ['confirmado', 'en_preparacion', 'listo_despacho', 'despacho_parcial'];
         $pedidosDisponibles = Pedido::whereIn('estado', $estadosPendientes)
+            ->when($pedidoBuscar !== '', function ($consulta) use ($pedidoBuscar): void {
+                $consulta->where(function ($grupo) use ($pedidoBuscar): void {
+                    BusquedaCatalogo::coincidencia($grupo, ['cliente_nombre'], $pedidoBuscar);
+                    if (ctype_digit($pedidoBuscar) && strlen($pedidoBuscar) <= 18) {
+                        $grupo->orWhere('id', (int) $pedidoBuscar);
+                    }
+                });
+            })
             ->orderByDesc('id')->paginate(20, ['id', 'cliente_nombre', 'estado'], 'pedidos_pagina')->withQueryString();
 
         $pedidoConsulta = null;
@@ -123,7 +134,7 @@ class DisponibilidadInventarioController extends Controller
 
         return view('inventory.index', compact(
             'presentaciones', 'cantidades', 'pedidosDisponibles',
-            'pedidoConsulta', 'revision', 'puedeAtender', 'buscar', 'insumos'
+            'pedidoConsulta', 'revision', 'puedeAtender', 'buscar', 'insumos', 'pedidoBuscar'
         ));
     }
 }

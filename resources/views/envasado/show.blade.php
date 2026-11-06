@@ -11,7 +11,7 @@
 <a class="btn btn-secondary" href="{{ route('envasado.index') }}">Volver al historial</a>
 </section>
 
-@if($errors->any())<div role="alert">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
+
 <section class="envasado-seccion"><h2>Historial de correcciones</h2>
 @forelse($envasado->correcciones as $correccion)<article><h3>{{ $correccion->cantidad }} unidades · {{ $correccion->clasificacion === 'error_administrativo' ? 'Error administrativo' : 'Pérdida física' }}</h3><p>{{ $correccion->created_at->timezone('America/Lima')->format('d/m/Y H:i') }} · {{ $correccion->usuario->first_name }} {{ $correccion->usuario->last_name }} · {{ $correccion->motivo }}</p>
 @foreach($correccion->materiales as $material) @php $consumo=$envasado->consumos->firstWhere('id',$material->envasado_consumo_id); @endphp <p>{{ $consumo?->nombre }}: devuelto {{ $material->cantidad_devuelta }}, pérdida física {{ $material->cantidad_perdida }} {{ $consumo?->unidad_medida }}.</p>@endforeach</article>@empty<p>No hay correcciones.</p>@endforelse

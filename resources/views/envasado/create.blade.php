@@ -5,7 +5,7 @@
 @section('content')
 @php($controlMateriales = (bool) config('envasado.control_materiales_exacto'))
 <section class="form-section envasado-seccion"><h1>Registrar envasado real</h1><p>Registra únicamente las unidades físicamente terminadas. El stock aumentará al confirmar, sin otra entrada manual. @if($controlMateriales) El control exacto de materiales está habilitado. @else No se descuentan envases, etiquetas, contratapas, químicos ni líquidos. @endif</p>
-@if($errors->any())<div role="alert">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
+
 <form method="POST" action="{{ route('envasado.previsualizar') }}">@csrf
 <input type="hidden" name="control_materiales_exacto" value="{{ $controlMateriales ? 1 : 0 }}">
 <div class="envasado-grid"><label>Presentación<select class="form-control" required name="presentacion_producto_id" id="presentacion-envasado">@foreach($presentaciones as $presentacion)<option value="{{ $presentacion->id }}" @selected((int)old('presentacion_producto_id')===$presentacion->id)>{{ $presentacion->codigo_sku }} · {{ $presentacion->producto->nombre }} {{ $presentacion->variante ? '· '.$presentacion->variante->valor : '' }} · {{ $presentacion->contenido }} {{ $presentacion->unidad_medida }}</option>@endforeach</select></label>

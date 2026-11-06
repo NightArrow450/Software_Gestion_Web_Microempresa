@@ -6,7 +6,7 @@
 <div class="page-heading"><div><h1>Materiales de envasado</h1><p>{{ $presentacion->codigo_sku }} · {{ $presentacion->producto->nombre }}</p></div><a class="btn btn-secondary" href="{{ route('productos.show',$presentacion->producto_id) }}">Volver al producto</a></div>
 <p>Configura alternativas compatibles de envase y materiales. No se sustituyen contratapas automáticamente. Las tapas normales solo deben agregarse si la empresa confirmó su control separado.</p>
 <p>Consumo por empaque: estructura preparada para materiales como mangas en metros. No se descuenta durante el envasado; requiere un registro futuro de empaques realmente armados y consumos validados.</p>
-@if($errors->any())<div role="alert">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
+
 @php $alternativas = $configuraciones->concat([null]); @endphp
 @foreach($alternativas as $configuracion)
 <section class="form-section envasado-seccion"><h2>{{ $configuracion ? $configuracion->nombre : 'Nueva alternativa de envase' }}</h2>

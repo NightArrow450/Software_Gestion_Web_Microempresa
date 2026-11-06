@@ -8,7 +8,9 @@ use App\Services\AtenderPedidoUnidades;
 use App\Services\ControlEntregaPedido;
 use App\Services\GestionarPedidoUnidades;
 use App\Services\RegistrarResultadoEntrega;
+use Database\Seeders\AuditoriaPermisoSeeder;
 use Database\Seeders\EntregaRetornoPermisoSeeder;
+use Database\Seeders\EnvasadoPermisoSeeder;
 use Database\Seeders\IndicadoresPermisoSeeder;
 use Database\Seeders\PermisoSeeder;
 use Database\Seeders\RoleSeeder;
@@ -44,7 +46,7 @@ $escenario = new class
         $e = $this->escenarioUnidades(32);
         config(['envasado.control_materiales_exacto' => false]);
         foreach ([RoleSeeder::class, PermisoSeeder::class, EntregaRetornoPermisoSeeder::class,
-            IndicadoresPermisoSeeder::class] as $clase) {
+            IndicadoresPermisoSeeder::class, AuditoriaPermisoSeeder::class, EnvasadoPermisoSeeder::class] as $clase) {
             (new $clase)->run();
         }
         $rol = Role::where('nombre', 'Administrador')->sole();
@@ -52,7 +54,15 @@ $escenario = new class
         $e['usuario']->update(['email' => 'visual@example.test', 'first_name' => 'Ana', 'last_name' => 'Demostración',
             'password' => getenv('VISUAL_PASSWORD'), 'debe_cambiar_password' => false, 'role_id' => $rol->id]);
         $e['usuario']->unsetRelation('role');
+        foreach (['Operaciones Comerciales' => 'comercial.visual@example.test', 'Producción/Reparto' => 'produccion.visual@example.test'] as $nombre => $correo) {
+            User::create(['first_name' => 'Usuario', 'last_name' => 'Ficticio', 'email' => $correo,
+                'password' => getenv('VISUAL_PASSWORD'), 'debe_cambiar_password' => false, 'status' => true, 'role_id' => Role::where('nombre', $nombre)->sole()->id]);
+        }
+
         $e['presentacion']->producto->update(['nombre' => 'Quitásarro ficticio', 'codigo' => 'VISUAL-QTS']);
+        foreach ($e['skus'] as $indice => $sku) {
+            $sku->update(['codigo_sku' => 'VISUAL-QTS-'.str_repeat('W', 20).'-'.$indice]);
+        }
         Cliente::create(['nombre' => 'JOSÉ NÚÑEZ — cliente ficticio', 'estado' => true]);
         for ($i = 1; $i <= 22; $i++) {
             Cliente::create(['nombre' => sprintf('Cliente ficticio %02d', $i), 'estado' => true]);
@@ -82,6 +92,12 @@ $escenario = new class
         $atender->preparar($preparacion, ['version_pedido' => $preparacion->version, 'pedido_detalle_id' => $d->id,
             'cantidad' => 10, 'incidencia' => 'liquido', 'motivo' => 'Comprobación ficticia: producción incompleta por falta de líquido.'], $e['usuario']);
         $impresion = $this->registrarUnidades($e, [2, 3, 1]);
+
+        $preparacion->update(['cliente_nombre' => 'JOSÉ NÚÑEZ — pedido antiguo ficticio']);
+        for ($i = 0; $i < 25; $i++) {
+            $extra = app(GestionarPedidoUnidades::class)->guardar($entrada, $e['usuario']);
+            $extra->update(['estado' => 'confirmado']);
+        }
 
         return ['parcial' => $parcial->id, 'preparacion' => $preparacion->id, 'nota1' => $parcial->numero,
             'nota2' => $impresion->numero, 'impresion' => $impresion->id, 'sku' => $e['presentacion']->id];

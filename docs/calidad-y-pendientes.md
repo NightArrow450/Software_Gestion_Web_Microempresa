@@ -1,5 +1,7 @@
 # Calidad y pendientes de cierre
 
+Este documento conserva inventarios históricos. La revisión posterior al PR50 está en [Auditoría integral de calidad y UX](auditoria-integral-calidad-ux.md).
+
 ## Inventario previo al PR 5
 
 Referencia: código posterior a #40. Casos recolectados con proveedores de datos, no reglas de negocio únicas:
@@ -30,7 +32,7 @@ MySQL: concurrencia envasado 6, inventario 7, retornos 5; entregas/retornos 24, 
 
 ## Fase 9 obligatoria
 
-Actualización 9A: consultar el [informe parcial](pruebas/00_informe_resumen.md) y la [matriz de los catorce requisitos](pruebas/02_casos_funcionales.md). El inventario anterior corresponde al cierre de Fase 8; el nuevo descubrimiento registra 588 casos Laravel y 68 MySQL. D9A-01 está corregido y su reproducción se conserva como regresión habitual aprobada. 9B y 9C no se han ejecutado.
+Actualización 9A: consultar el [informe parcial](pruebas/00_informe_resumen.md) y la [matriz de los catorce requisitos](pruebas/02_casos_funcionales.md). El inventario anterior corresponde al cierre de Fase 8; el nuevo descubrimiento registra 588 casos Laravel y 68 MySQL. D9A-01 está corregido y su reproducción se conserva como regresión habitual aprobada. Al cierre de 9A, 9B y 9C seguían pendientes. Las evidencias posteriores de 9B están en `pruebas/evidencias/cierre_9b.json`; no representan una nueva medición de esta versión. La aceptación UAT de 9C continúa pendiente.
 
 Conservar los catorce puntos originales como requisitos de entrada, sin reducirlos a esta lista. El documento original ya está archivado en las evidencias de 9A; siguen pendientes la entrevista, Anexo 7 y definiciones X1–X12 para cerrar la trazabilidad académica. No inventar texto, correspondencias ni participación.
 
