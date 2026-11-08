@@ -35,6 +35,7 @@
 </head>
 
 <body>
+    <a class="skip-link" href="#contenido-principal">Ir al contenido principal</a>
 
     @include('components.sidebar')
     <div class="sidebar-overlay" hidden aria-hidden="true"></div>
@@ -43,7 +44,7 @@
 
         @include('components.header')
 
-        <main class="page">
+        <main class="page" id="contenido-principal" tabindex="-1">
             @include('components.demostracion')
 
             @include('components.alerts')
