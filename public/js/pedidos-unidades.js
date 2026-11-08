@@ -27,8 +27,13 @@
         return {unidades, centimos, espera, agrupadas, sueltas: unidades - agrupadas, paquetes: grupos.length};
     }
     function copiar(grupo) { const copia = JSON.parse(JSON.stringify(grupo)); delete copia.identidad; return copia; }
-    global.PedidosUnidadesUtilidades = {resumir, copiar};
-    if (typeof module !== 'undefined' && module.exports) module.exports = {resumir, copiar};
+    function mostrarResumen(salida, resultado) {
+        for (const campo of ['unidades', 'sueltas', 'agrupadas', 'paquetes', 'espera', 'centimos']) {
+            salida.querySelector(`[data-resumen-campo="${campo}"]`).textContent = campo === 'centimos' ? `S/ ${(resultado[campo] / 100).toFixed(2)}` : String(resultado[campo]);
+        }
+    }
+    global.PedidosUnidadesUtilidades = {resumir, copiar, mostrarResumen};
+    if (typeof module !== 'undefined' && module.exports) module.exports = {resumir, copiar, mostrarResumen};
     if (typeof document === 'undefined') return;
     const form = document.querySelector('[data-pedido-unidades]'); if (!form) return;
     const inicial = JSON.parse(document.getElementById('pedido-unidades-inicial').textContent);
@@ -44,7 +49,7 @@
             const grupo = grupos[Number(salida.dataset.totalGrupo)];
             salida.textContent = `Contenido declarado: ${grupo.componentes.reduce((s,c)=>s+Number(c.cantidad),0)} de ${grupo.capacidad} unidades. Si no llena la capacidad, queda expresamente incompleto.`;
         });
-        try { const r=resumir(lineas,grupos); buscar('[data-resumen]').textContent=`${r.unidades} unidades físicas · ${r.sueltas} sueltas · ${r.agrupadas} agrupadas · ${r.paquetes} paquetes · ${r.espera} en espera · Total S/ ${(r.centimos/100).toFixed(2)}`; mensaje.textContent=''; return true; }
+        try { const r=resumir(lineas,grupos); mostrarResumen(buscar('[data-resumen]'), r); mensaje.textContent=''; return true; }
         catch(e) {mensaje.textContent=e.message; return false;}
     }
     function renderLineas() {
