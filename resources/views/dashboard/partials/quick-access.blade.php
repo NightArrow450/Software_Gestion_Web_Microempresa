@@ -13,7 +13,7 @@
             ['seguimiento.ver', 'seguimiento.index', 'travel_explore', 'Seguimiento', 'Consulta de estados y trazabilidad.'],
         ],
         'Inventario y envasado' => [
-            ['inventario.ver', 'inventario.index', 'inventory', 'Disponibilidad', 'Existencias de productos terminados e insumos.'],
+            ['inventario.ver', 'inventario.index', 'inventory', 'Disponibilidad', 'Consulta de productos terminados y pedidos pendientes.'],
             ['inventario.ver', 'inventario.movimientos.index', 'swap_horiz', 'Movimientos', 'Entradas, salidas y ajustes trazables.'],
             ['inventario.ver', 'inventario.stock', 'notifications_active', 'Stock y alertas', 'Revisión de niveles y mínimos.'],
             ['envasado.ver', 'envasado.index', 'water_drop', 'Envasados', 'Producción registrada, materiales y correcciones.'],
