@@ -45,6 +45,7 @@
     }
 
     body { line-height: 1.55; }
+    .page [hidden] { display: none !important; }
     button, input, select, textarea { font: inherit; }
     .material-symbols-outlined { flex-shrink: 0; line-height: 1; vertical-align: middle; }
     :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
@@ -132,6 +133,15 @@
     }
     .page :is(.app-table, .seg-tabla, .cumplimiento-tabla, .entrega-tabla) tbody tr:hover { background: #f7fbf8; }
     .page .table-container { border-radius: 10px; }
+    .page .table-container > table { width: 100%; border-collapse: collapse; }
+    .page .table-container > table th { background: #edf4ef; color: #3c5949; text-align: left; padding: 13px 16px; font-size: 12px; font-weight: 700; }
+    .page .table-container > table td { padding: 15px 16px; border-bottom: 1px solid #e2ebe5; font-size: 14px; line-height: 1.55; }
+    .page .money-prefix .form-control { padding-left: 38px; }
+    .page :is(.presentation-card, .variant-group-card, .dynamic-row) { background: #f6faf7; border-color: #ccdfd2; border-radius: 12px; }
+    .page :is(.presentation-head, .variant-group-head, .dynamic-row-head) { gap: 14px; }
+    .page :is(.sale-box, .variant-check-item) { border-color: #cddfd3; }
+    .page .btn-link { min-height: 44px; padding: 8px 10px; font-size: 13px; color: #006948; font-weight: 650; }
+    .page > form.form-grid { background: #fff; padding: 22px; margin-bottom: 22px; border: 1px solid var(--ui-border); border-radius: 14px; }
     .page :is(.s3-status, .s2-state, .cumplimiento-estado, .seg-estado, .status-badge, .role-badge) { line-height: 1.5; font-size: 12px; font-weight: 700; }
     .page :is(.app-alert, .s2-error, .aviso-contexto, .entrega-aviso, .cumplimiento-nota, .s2-instructions) { border-radius: 10px; padding: 14px 16px; line-height: 1.65; }
     .app-alert { border: 1px solid transparent; box-shadow: var(--ui-shadow); }

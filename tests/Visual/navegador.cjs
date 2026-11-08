@@ -104,6 +104,7 @@ async function comprobar(nombre, accion) {
         await pagina.setViewportSize({ width: ancho, height: 950 });
         await comprobar(`Buscadores, variante, presentación, validación y agrupaciones — ${ancho}px`, async () => {
             await ir('/pedidos/nuevo');
+            assert.equal(await pagina.locator('[data-campo-variante]').isVisible(), false);
             await pagina.locator('[data-buscar-cliente]').fill('jose nunez');
             await pagina.locator('#coincidencias-clientes [role=option]').first().waitFor({ state: 'visible' });
             await foto(`${ancho}-01-sugerencias-clientes`);

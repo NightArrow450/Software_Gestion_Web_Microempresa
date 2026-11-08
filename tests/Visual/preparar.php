@@ -101,7 +101,9 @@ $escenario = new class
             $extra->update(['estado' => 'confirmado']);
         }
 
-        $rechazo = $this->registrarUnidades($e, [0, 0, 4]);
+        $entradaRechazo = $this->entradaUnidades($e, [0, 0, 4]);
+        $entradaRechazo['detalles'] = [$entradaRechazo['detalles'][2]];
+        $rechazo = app(GestionarPedidoUnidades::class)->guardar($entradaRechazo, $e['usuario']);
         $this->despacharUnidades($rechazo, $e);
         $rechazo->refresh();
         $resultado = app(ControlEntregaPedido::class)->resumen($rechazo);
