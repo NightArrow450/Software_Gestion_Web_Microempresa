@@ -19,8 +19,8 @@ async function foto(nombre) {
     const archivo = `${nombre}.png`;
     await pagina.evaluate(async () => { window.scrollTo(0, 0); await document.fonts.ready; });
     const muestra = !/^\d+-/.test(nombre)
-        || /^1366-(dashboard|usuarios|roles|producto-nuevo|clientes|pedidos|envasado-nuevo|envasados|movimientos|auditoria|disponibilidad|lista-preparacion|preparacion-despacho-incidencias|entrega-historial-acciones|indicadores|retiro-faltantes|categorias|rol-nuevo|entrega-retorno-aprobacion|envasado-correccion|producto-detalle|seguimiento)$/.test(nombre)
-        || /^390-(04-editor-agrupaciones|disponibilidad|lista-preparacion|entrega-retorno-aprobacion|retiro-faltantes|producto-nuevo|rol-nuevo|envasado-correccion|login)$/.test(nombre)
+        || /^1366-(01-sugerencias-clientes|02-sugerencias-productos|envasado-integrado-previa|producto-editar|dashboard|usuarios|roles|producto-nuevo|clientes|pedidos|envasado-nuevo|envasados|movimientos|auditoria|disponibilidad|lista-preparacion|preparacion-despacho-incidencias|entrega-historial-acciones|indicadores|retiro-faltantes|categorias|rol-nuevo|entrega-retorno-aprobacion|envasado-correccion|producto-detalle|seguimiento)$/.test(nombre)
+        || /^390-(envasado-integrado-previa|04-editor-agrupaciones|disponibilidad|lista-preparacion|entrega-retorno-aprobacion|retiro-faltantes|producto-nuevo|rol-nuevo|envasado-correccion|login)$/.test(nombre)
         || /^360-(03-seleccion-y-validacion|login)$/.test(nombre)
         || /^(768-dashboard|1024-productos)$/.test(nombre);
     if (muestra) {

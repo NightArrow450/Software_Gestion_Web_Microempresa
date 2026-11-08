@@ -9,9 +9,7 @@
 @endpush
 
 @section('content')
-@if(auth()->user()->role?->tienePermiso('materiales.envasado.configurar'))
-<div class="product-actions">@foreach($producto->presentaciones as $presentacion)<a class="btn btn-secondary" href="{{ route('envasado.materiales',$presentacion) }}">Configurar materiales: {{ $presentacion->codigo_sku }}</a>@endforeach</div>
-@endif
+
 
 @php
     $permisosRol = auth()->user()->role?->permisos()->pluck('nombre')->all() ?? [];
@@ -184,4 +182,7 @@
         </table>
     </div>
 </section>
+@if(auth()->user()->role?->tienePermiso('materiales.envasado.configurar'))
+<section class="form-section" style="margin-top:22px;"><h2 class="form-section-title">Configuración de materiales por presentación</h2><div class="product-actions">@foreach($producto->presentaciones as $presentacion)<a class="btn btn-secondary" href="{{ route('envasado.materiales',$presentacion) }}">Configurar materiales: {{ $presentacion->codigo_sku }}</a>@endforeach</div></section>
+@endif
 @endsection
