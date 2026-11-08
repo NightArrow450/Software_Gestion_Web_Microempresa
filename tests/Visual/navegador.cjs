@@ -20,11 +20,11 @@ async function foto(nombre) {
     await pagina.evaluate(async () => { window.scrollTo(0, 0); await document.fonts.ready; });
     const muestra = !/^\d+-/.test(nombre)
         || /^1366-(01-sugerencias-clientes|02-sugerencias-productos|envasado-integrado-previa|producto-editar|dashboard|usuarios|roles|producto-nuevo|clientes|pedidos|envasado-nuevo|envasados|movimientos|auditoria|disponibilidad|lista-preparacion|preparacion-despacho-incidencias|entrega-historial-acciones|indicadores|retiro-faltantes|categorias|rol-nuevo|entrega-retorno-aprobacion|envasado-correccion|producto-detalle|seguimiento)$/.test(nombre)
-        || /^390-(envasado-integrado-previa|04-editor-agrupaciones|disponibilidad|lista-preparacion|entrega-retorno-aprobacion|retiro-faltantes|producto-nuevo|rol-nuevo|envasado-correccion|login)$/.test(nombre)
+        || /^390-(envasado-integrado-confirmacion|envasado-integrado-previa|04-editor-agrupaciones|disponibilidad|lista-preparacion|entrega-retorno-aprobacion|retiro-faltantes|producto-nuevo|rol-nuevo|envasado-correccion|login)$/.test(nombre)
         || /^360-(03-seleccion-y-validacion|login)$/.test(nombre)
         || /^(768-dashboard|1024-productos)$/.test(nombre);
     if (muestra) {
-        await pagina.screenshot({ path: path.join(salida, archivo), fullPage: true, animations: 'disabled' });
+        await pagina.screenshot({ path: path.join(salida, archivo), fullPage: await pagina.locator('dialog[open]').count() === 0, animations: 'disabled' });
         capturas.push(archivo);
     }
     const medidas = await pagina.evaluate(() => ({ ancho: innerWidth, cuerpo: document.body.scrollWidth, documento: document.documentElement.scrollWidth }));
@@ -293,8 +293,14 @@ async function comprobar(nombre, accion) {
         assert.match(await confirmacion.innerText(), /No se registran consumos ni movimientos de insumos/);
         const checkbox = confirmacion.locator('input[type=checkbox][required]');
         if (process.env.AUDIT_ETAPA === 'despues') assert.ok(await checkbox.evaluate(e => e.getBoundingClientRect().height <= 24));
+        const limites = await dialogo.evaluate(e => ({ arriba: e.getBoundingClientRect().top, abajo: e.getBoundingClientRect().bottom, alto: innerHeight }));
+        assert.ok(limites.arriba >= 0 && limites.abajo <= limites.alto + 1, 'El diálogo debe permanecer dentro de la pantalla móvil');
+        await dialogo.evaluate(e => { e.scrollTop = 0; });
         await foto('390-envasado-integrado-previa');
+        await confirmacion.scrollIntoViewIfNeeded();
+        await foto('390-envasado-integrado-confirmacion');
         await pagina.setViewportSize({ width: 1366, height: 950 });
+        await dialogo.evaluate(e => { e.scrollTop = 0; });
         await foto('1366-envasado-integrado-previa');
         await confirmacion.locator('input[type=checkbox][required]').check();
         await confirmacion.getByRole('button', { name: 'Confirmar unidades terminadas', exact: true }).click();

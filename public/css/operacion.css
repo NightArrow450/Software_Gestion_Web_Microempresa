@@ -119,7 +119,7 @@
     .page :is(.btn, .icon-button):disabled { opacity: .6; cursor: not-allowed; box-shadow: none; }
     .page :is(.form-actions, .s2-actions, .s3-actions, .s2-table-actions, .table-actions, .product-actions, .indicadores-acciones) { gap: 10px; flex-wrap: wrap; }
     .page .form-actions { padding-top: 18px; border-top: 1px solid var(--ui-border); }
-    .page :is(.s2-actions, .s3-actions) { align-items: center; }
+    .page :is(.s2-actions, .s3-actions) { align-items: center; margin-top: 16px; }
     .page .s3-actions .btn { flex: 0 0 auto; }
     .page .icon-button { border: 1px solid var(--ui-border); background: #f6faf7; border-radius: 9px; }
     .page .table-header { padding: 18px 22px; background: #fafcfb; border-color: var(--ui-border); }
