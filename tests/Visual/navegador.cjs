@@ -181,6 +181,15 @@ async function comprobar(nombre, accion) {
             }
             await foto(`${ancho}-validacion-${process.env.AUDIT_ETAPA}`);
         });
+        await comprobar(`Editor de variantes y presentaciones — ${ancho}px`, async () => {
+            await ir('/productos/nuevo');
+            const variantes = await pagina.locator('[data-variant-group]').count();
+            await pagina.locator('[data-add-variant]').click();
+            assert.equal(await pagina.locator('[data-variant-group]').count(), variantes + 1);
+            const presentaciones = await pagina.locator('[data-presentation-list] > .presentation-card').count();
+            await pagina.locator('[data-add-presentation]').click();
+            assert.equal(await pagina.locator('[data-presentation-list] > .presentation-card').count(), presentaciones + 1);
+        });
         await comprobar(`Proporción del checkbox y controles — ${ancho}px`, async () => {
             await ir('/pedidos/nuevo');
             const medidas = await pagina.locator('[data-empaquetar]').evaluate(e => ({ alto: e.getBoundingClientRect().height, ancho: e.getBoundingClientRect().width }));
@@ -242,6 +251,21 @@ async function comprobar(nombre, accion) {
                 if (nombre === 'preparacion-despacho-incidencias') {
                     const separaciones = await pagina.locator('.cumplimiento-tarjeta > form + [data-registrar-envasado]').evaluateAll(botones => botones.map(b => b.getBoundingClientRect().top - b.previousElementSibling.getBoundingClientRect().bottom));
                     assert.ok(separaciones.length > 0 && separaciones.every(distancia => distancia >= 8), 'Los botones de preparación y envasado necesitan separación visual');
+                }
+                if (process.env.AUDIT_ETAPA === 'despues') {
+                    const contraste = await pagina.locator('.page .btn-primary, .page .form-label').evaluateAll(elementos => {
+                        const rgb = s => (s.match(/[\d.]+/g) || []).map(Number);
+                        const luz = c => c.slice(0, 3).map(v => v / 255).map(v => v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4).reduce((s, v, i) => s + v * [.2126, .7152, .0722][i], 0);
+                        return elementos.filter(e => e.getClientRects().length && !e.disabled).map(e => {
+                            let padre = e, fondo;
+                            do { fondo = rgb(getComputedStyle(padre).backgroundColor); padre = padre.parentElement; } while (padre && (fondo[3] ?? 1) === 0);
+                            if ((fondo[3] ?? 1) === 0) fondo = [255, 255, 255];
+                            const colores = [luz(rgb(getComputedStyle(e).color)), luz(fondo)].sort((a, b) => a - b);
+                            return { texto: e.textContent.trim(), razon: (colores[1] + .05) / (colores[0] + .05) };
+                        });
+                    });
+                    assert.ok(contraste.every(c => c.razon >= 4.5), `Contraste insuficiente: ${JSON.stringify(contraste.filter(c => c.razon < 4.5))}`);
+                    mediciones.push({ pantalla: nombre, ancho, contraste });
                 }
                 await foto(`${ancho}-${nombre}`);
             });

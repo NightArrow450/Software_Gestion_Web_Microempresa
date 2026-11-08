@@ -72,7 +72,7 @@
     .page-heading, .page-header, .seg-top, .cumplimiento-encabezado {
         padding-bottom: 18px; margin-bottom: 22px; border-bottom: 1px solid var(--ui-border);
     }
-    .page-heading h1, .page > h1, .page-header h1 { font-size: clamp(24px, 2.5vw, 30px); font-weight: 750; letter-spacing: -.6px; }
+    .page-heading h1, .page h1, .page-header h1 { font-size: clamp(24px, 2.5vw, 30px); font-weight: 750; letter-spacing: -.6px; }
     .page h2 { font-size: 19px; font-weight: 700; }
     .page h3 { font-size: 16px; font-weight: 650; }
     .page p { line-height: 1.65; }
@@ -132,7 +132,7 @@
         padding: 15px 16px; border-bottom: 1px solid #e2ebe5; font-size: 14px; line-height: 1.55; vertical-align: middle;
     }
     .page :is(.app-table, .seg-tabla, .cumplimiento-tabla, .entrega-tabla) tbody tr:hover { background: #f7fbf8; }
-    .page .table-container { border-radius: 10px; }
+    .page .table-container { border-radius: 10px; background: #fff; border: 1px solid var(--ui-border); }
     .page .table-container > table { width: 100%; border-collapse: collapse; }
     .page .table-container > table th { background: #edf4ef; color: #3c5949; text-align: left; padding: 13px 16px; font-size: 12px; font-weight: 700; }
     .page .table-container > table td { padding: 15px 16px; border-bottom: 1px solid #e2ebe5; font-size: 14px; line-height: 1.55; }
@@ -156,6 +156,9 @@
     .page [data-resumen] { padding: 18px; border: 1px solid #c6e0d0; border-radius: 12px; background: #edf7f0; font-size: 18px; font-weight: 700; color: #145334; }
     .page .s3-metric { min-width: 0; padding: 18px 22px; border-color: var(--ui-border); box-shadow: var(--ui-shadow); }
     .page .s3-metric strong { font-size: 30px; line-height: 1.3; margin-bottom: 6px; font-variant-numeric: tabular-nums; }
+    .page .envasado-resumen { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-block: 18px; }
+    .page .envasado-resumen p { padding: 14px; background: #edf7f0; border: 1px solid #caddd0; border-radius: 10px; margin: 0; font-variant-numeric: tabular-nums; }
+    .page .envasado-resumen strong { color: #145334; }
     .page .entrega-cifras { gap: 10px; }
     .page .entrega-cifras > div { background: #f1f7f3; border: 1px solid var(--ui-border); border-radius: 10px; padding: 12px; }
     .page .entrega-cifras dd { margin: 4px 0 0; font-variant-numeric: tabular-nums; }
@@ -212,6 +215,7 @@
         .page .mobile-cards tbody td { padding: 11px 13px; }
         .page .mobile-cards td[data-label]::before { color: #44614f; font-size: 12px; }
         .page .cumplimiento-lista tr { border-radius: 10px; }
+        .page .envasado-resumen { grid-template-columns: minmax(0, 1fr); }
         .page .entrega-cifras { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         .page .s3-metric { flex-basis: calc(50% - 16px); padding: 14px; }
         .page .s2-actions .btn, .page .acciones-formulario .btn { flex-basis: auto; }
