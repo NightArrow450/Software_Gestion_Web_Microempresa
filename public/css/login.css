@@ -19,3 +19,13 @@ label:has(input[type="checkbox"]) { min-height: 44px; }
 @media (max-width: 390px) {
     .login-brand h1 { font-size: 21px; }
 }
+@media screen {
+    body { background: #f0f6f2; color: #183329; }
+    main > div > div { border: 1px solid #cfdfd4; box-shadow: 0 16px 50px #183b2514; border-radius: 20px; }
+    input:not([type=checkbox]) { border-radius: 10px; border-color: #a8bfb0; }
+    input::placeholder { color: #5d7165; }
+    input[type=checkbox] { appearance: auto; accent-color: #006948; width: 18px; height: 18px; flex: 0 0 18px; }
+    :is(a, button, input):focus-visible { outline: 3px solid #007b55; outline-offset: 3px; }
+    button[type=submit] { border-radius: 10px; font-weight: 700; box-shadow: 0 3px 8px #00694820; }
+    @media(max-width:390px) { main { padding: 20px 12px; } }
+}

@@ -3,11 +3,11 @@
 @section('page-title', 'Auditoría')
 @section('content')
 <div class="page-heading"><div><h1>Auditoría</h1><p>Consulta de acciones sensibles. Los registros no pueden modificarse.</p></div></div>
-<form method="GET" class="form-grid">
+<form method="GET" class="filters"><div class="form-grid">
 @foreach(['usuario_id' => 'Usuario (ID)', 'accion' => 'Acción', 'entidad' => 'Entidad', 'desde' => 'Desde', 'hasta' => 'Hasta'] as $campo => $etiqueta)
 <label>{{ $etiqueta }}<input class="form-control" name="{{ $campo }}" value="{{ request($campo) }}" type="{{ in_array($campo, ['desde', 'hasta']) ? 'date' : 'text' }}"></label>
 @endforeach
-<button class="btn btn-primary" type="submit">Filtrar</button><a class="btn btn-secondary" href="{{ route('auditoria.index') }}">Limpiar filtros</a>
+</div><div class="s2-actions"><button class="btn btn-primary" type="submit">Filtrar</button><a class="btn btn-secondary" href="{{ route('auditoria.index') }}">Limpiar filtros</a></div>
 </form>
 <div class="table-container"><table><thead><tr><th>Fecha (Lima)</th><th>Usuario</th><th>Acción</th><th>Entidad</th><th>Detalle</th><th>IP</th></tr></thead><tbody>
 @forelse($registros as $registro)

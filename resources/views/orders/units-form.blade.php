@@ -3,9 +3,9 @@
 @section('page-title', 'Pedidos por unidades físicas')
 @push('styles')<link rel="stylesheet" href="{{ asset('css/sprint2.css') }}"><link rel="stylesheet" href="{{ asset('css/pedidos-unidades.css') }}">@endpush
 @section('content')
-<h1>{{ isset($pedido) ? 'Editar pedido N.º '.$pedido->numero : 'Nuevo pedido por unidades' }}</h1>
+<div class="page-heading"><div><div class="eyebrow">Gestión comercial</div><h1>{{ isset($pedido) ? 'Editar pedido N.º '.$pedido->numero : 'Nuevo pedido por unidades' }}</h1>
 <p>Venta por unidades físicas. La entrega suelta es predeterminada. Agrupar no añade productos ni precios y no exige múltiplos.</p>
-<p><a class="btn btn-secondary" href="{{ route('pedidos.index') }}">Volver a pedidos</a></p>
+</div><a class="btn btn-secondary" href="{{ route('pedidos.index') }}">Volver a pedidos</a></div>
 
 <noscript><p role="alert">Activa JavaScript para seleccionar productos y distribuir las unidades de este formulario.</p></noscript>
 <form method="POST" action="{{ isset($pedido) ? route('pedidos.update', $pedido) : route('pedidos.store') }}" data-pedido-unidades data-catalogo="{{ route('pedidos.unidades.catalogo') }}">
@@ -40,7 +40,7 @@
 <p tabindex="-1" data-mensaje role="status" aria-live="polite"></p>
 <div data-lineas></div></section>
 <section class="form-section"><h2>Forma de entrega</h2>
-<label><input type="checkbox" data-empaquetar> Configurar agrupaciones opcionales</label>
+<label class="opcion-confirmacion"><input type="checkbox" data-empaquetar> Configurar agrupaciones opcionales</label>
 <p>Lo no asignado a un paquete se entrega suelto. Indica la distribución de cada paquete, incluso si no se llena su capacidad.</p>
 <div data-grupos-panel hidden><button type="button" class="btn btn-secondary" data-agregar-grupo>Crear paquete</button><div data-grupos></div></div>
 <input type="hidden" name="agrupaciones_json" data-agrupaciones-json value="[]">
