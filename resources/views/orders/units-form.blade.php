@@ -4,7 +4,7 @@
 @push('styles')<link rel="stylesheet" href="{{ asset('css/sprint2.css') }}"><link rel="stylesheet" href="{{ asset('css/pedidos-unidades.css') }}">@endpush
 @section('content')
 <div class="page-heading"><div><div class="eyebrow">Gestión comercial</div><h1>{{ isset($pedido) ? 'Editar pedido N.º '.$pedido->numero : 'Nuevo pedido por unidades' }}</h1>
-<p>Venta por unidades físicas. La entrega suelta es predeterminada. Agrupar no añade productos ni precios y no exige múltiplos.</p>
+<p>Venta por unidades, sin múltiplos obligatorios. Agrupar es opcional y no cambia el precio.</p>
 </div><a class="btn btn-secondary" href="{{ route('pedidos.index') }}">Volver a pedidos</a></div>
 
 <noscript><p role="alert">Activa JavaScript para seleccionar productos y distribuir las unidades de este formulario.</p></noscript>
@@ -36,18 +36,25 @@
 <button type="button" class="btn btn-secondary" data-mas-skus hidden>Más presentaciones y variantes</button><p data-estado-skus role="status" aria-live="polite"></p>
 <label>Cantidad de unidades<input class="form-control" data-cantidad-nueva name="cantidad_nueva" type="number" min="1" step="1" value="{{ old('cantidad_nueva', 1) }}" inputmode="numeric"></label>
 <button type="button" class="btn btn-primary" data-agregar-linea>Añadir unidades</button>
-</div><p>No se comprueba disponibilidad de líquido ni se descuenta inventario al registrar o confirmar.</p>
+</div><p class="pedido-ayuda">Registrar o confirmar no descuenta stock ni verifica líquido disponible.</p>
 <p tabindex="-1" data-mensaje role="status" aria-live="polite"></p>
 <div data-lineas></div></section>
 <section class="form-section"><h2>Forma de entrega</h2>
 <label class="opcion-confirmacion"><input type="checkbox" data-empaquetar> Configurar agrupaciones opcionales</label>
-<p>Lo no asignado a un paquete se entrega suelto. Indica la distribución de cada paquete, incluso si no se llena su capacidad.</p>
+<p class="pedido-ayuda">Las unidades no agrupadas se entregan sueltas. Los paquetes pueden estar incompletos.</p>
 <div data-grupos-panel hidden><button type="button" class="btn btn-secondary" data-agregar-grupo>Crear paquete</button><div data-grupos></div></div>
 <input type="hidden" name="agrupaciones_json" data-agrupaciones-json value="[]">
 </section>
-<section class="form-section"><h2>Resumen del pedido</h2><p data-resumen aria-live="polite"></p>
-<p>En espera conserva obligación de atención. Retirar reduce la cantidad vigente y conserva la versión anterior. No retires unidades ya despachadas.</p>
-<button type="submit" class="btn btn-primary">Guardar pedido por unidades</button></section>
+<section class="form-section"><h2>Resumen del pedido</h2><dl class="unidades-resumen" data-resumen aria-live="polite" aria-atomic="true" aria-label="Resumen de cantidades e importe">
+    <div><dt>Unidades físicas</dt><dd data-resumen-campo="unidades">0</dd></div>
+    <div><dt>Unidades sueltas</dt><dd data-resumen-campo="sueltas">0</dd></div>
+    <div><dt>Unidades agrupadas</dt><dd data-resumen-campo="agrupadas">0</dd></div>
+    <div><dt>Cantidad de paquetes</dt><dd data-resumen-campo="paquetes">0</dd></div>
+    <div><dt>Unidades en espera</dt><dd data-resumen-campo="espera">0</dd></div>
+    <div class="unidades-resumen-total"><dt>Importe total</dt><dd data-resumen-campo="centimos">S/ 0.00</dd></div>
+</dl>
+<p class="pedido-ayuda">En espera: sigue pendiente. Retiro: deja de solicitarse y conserva el historial. Las unidades despachadas no se pueden retirar.</p>
+<button type="submit" class="btn btn-primary pedido-guardar">Guardar pedido por unidades</button></section>
 </form>
 @php
     $datosUnidadesIniciales = ['seleccionSku'=>$seleccionSku, 'lineas'=>$lineas, 'agrupaciones'=>$agrupacionesIniciales, 'bloqueadas' => isset($pedido) ? array_keys(app(\App\Services\DistribuirDespachoUnidades::class)->anteriores($pedido->id)['paquetes']) : []];

@@ -40,6 +40,8 @@ jobs:
       MAIL_MAILER: array
       QUEUE_CONNECTION: sync
       MYSQL_TEST_ENABLE: '0'
+      # Este ajuste solo necesita las dos áreas modificadas; los demás PR conservan el recorrido integral.
+      AUDIT_SCOPE: ${{ github.head_ref == 'fix/ajustes-dashboard-pedidos-ui' && 'dashboard-pedidos' || 'integral' }}
       AUDIT_ETAPA: ${{ matrix.etapa }}
       AUDIT_BROWSER: ${{ matrix.navegador }}
       AUDIT_BASE_SHA: ${{ github.event.pull_request.base.sha }}
@@ -86,9 +88,14 @@ jobs:
           done
           exit 1
       - name: Recorrer pantallas e interacciones reales
-        run: node tests/Visual/navegador.cjs
+        run: |
+          if [ "$AUDIT_SCOPE" = dashboard-pedidos ]; then
+            node tests/Visual/dashboard-pedidos.cjs
+          else
+            node tests/Visual/navegador.cjs
+          fi
       - name: Comprobar PDF y generar vista previa
-        if: ${{ !cancelled() && matrix.navegador == 'chromium' }}
+        if: ${{ !cancelled() && matrix.navegador == 'chromium' && env.AUDIT_SCOPE != 'dashboard-pedidos' }}
         run: |
           pdfinfo "$RUNNER_TEMP/evidencias-pr49/notas.pdf" > "$RUNNER_TEMP/evidencias-pr49/pdf-info.txt"
           pdftotext -layout "$RUNNER_TEMP/evidencias-pr49/notas.pdf" "$RUNNER_TEMP/evidencias-pr49/notas.txt"

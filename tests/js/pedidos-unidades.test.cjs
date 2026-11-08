@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const contexto = {};
 vm.runInNewContext(fs.readFileSync(require('node:path').resolve(__dirname, '../../public/js/pedidos-unidades.js'), 'utf8'), contexto);
-const {resumir, copiar} = contexto.PedidosUnidadesUtilidades;
+const {resumir, copiar, mostrarResumen} = contexto.PedidosUnidadesUtilidades;
 const lineas = () => [1,2,3].map((id,i)=>({presentacion_producto_id:id,cantidad:[5,24,24][i],precio_unitario:'2.00',cantidad_espera:0}));
 test('53 unidades agrupadas y sueltas no duplican el importe',()=>{
     const resultado=resumir(lineas(),[{capacidad:24,componentes:[{sku_id:2,cantidad:24}]},{capacidad:30,componentes:[{sku_id:3,cantidad:24}]}]);
@@ -22,3 +22,33 @@ test('copiar un paquete permite cambiarlo sin alterar el original',()=>{const a=
 test('copiar conserva composición pero no reutiliza la identidad del paquete físico',()=>{const a={identidad:'identidad-anterior',capacidad:12,componentes:[{sku_id:1,cantidad:5}]};const b=copiar(a);assert.equal(b.identidad,undefined);assert.equal(a.identidad,'identidad-anterior');assert.equal(b.capacidad,12);});
 
 test('el tope económico se valida sin imponer múltiplos ni un máximo de diez mil unidades',()=>{assert.equal(resumir([{presentacion_producto_id:1,cantidad:10001,precio_unitario:'2.00'}],[]).unidades,10001);assert.throws(()=>resumir([{presentacion_producto_id:1,cantidad:500000,precio_unitario:'2.00'}],[]),/importe/);});
+
+
+test('el resumen presenta los seis valores sin duplicar el importe comercial', () => {
+    const campos = Object.fromEntries(['unidades', 'sueltas', 'agrupadas', 'paquetes', 'espera', 'centimos'].map(k => [k, {textContent: ''}]));
+    const salida = {querySelector: selector => campos[selector.match(/="([^"\]]+)"/)[1]]};
+    const l = lineas(); l[1].cantidad_espera = 22;
+    mostrarResumen(salida, resumir(l, [{capacidad:30, componentes:[{sku_id:2, cantidad:24}]}]));
+    assert.deepEqual(Object.fromEntries(Object.entries(campos).map(([k,v]) => [k,v.textContent])), {
+        unidades:'53', sueltas:'29', agrupadas:'24', paquetes:'1', espera:'22', centimos:'S/ 106.00',
+    });
+    l[0].cantidad = 7;
+    mostrarResumen(salida, resumir(l, []));
+    assert.equal(campos.unidades.textContent, '55');
+    assert.equal(campos.sueltas.textContent, '55');
+    assert.equal(campos.agrupadas.textContent, '0');
+    assert.equal(campos.paquetes.textContent, '0');
+    assert.equal(campos.espera.textContent, '22');
+    assert.equal(campos.centimos.textContent, 'S/ 110.00');
+});
+
+test('el resumen vacío inicializa todos los indicadores y formatea los céntimos', () => {
+    const campos = {};
+    const salida = {querySelector: selector => campos[selector] ||= {textContent:'anterior'}};
+    mostrarResumen(salida, resumir([], []));
+    assert.equal(Object.keys(campos).length, 6);
+    assert.equal(campos['[data-resumen-campo="centimos"]'].textContent, 'S/ 0.00');
+    for (const [selector, nodo] of Object.entries(campos)) {
+        if (!selector.includes('centimos')) assert.equal(nodo.textContent, '0');
+    }
+});
