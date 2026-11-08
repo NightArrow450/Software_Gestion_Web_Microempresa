@@ -295,6 +295,9 @@ async function comprobar(nombre, accion) {
         if (process.env.AUDIT_ETAPA === 'despues') assert.ok(await checkbox.evaluate(e => e.getBoundingClientRect().height <= 24));
         const limites = await dialogo.evaluate(e => ({ arriba: e.getBoundingClientRect().top, abajo: e.getBoundingClientRect().bottom, alto: innerHeight }));
         assert.ok(limites.arriba >= 0 && limites.abajo <= limites.alto + 1, 'El diálogo debe permanecer dentro de la pantalla móvil');
+        const interior = await dialogo.evaluate(e => ({ visible: e.clientWidth, contenido: e.scrollWidth }));
+        mediciones.push({ dialogo: 'envasado', ancho: 390, ...interior });
+        if (process.env.AUDIT_ETAPA === 'despues') assert.ok(interior.contenido <= interior.visible + 1, 'El SKU no debe desbordar el interior del diálogo');
         await dialogo.evaluate(e => { e.scrollTop = 0; });
         await foto('390-envasado-integrado-previa');
         await confirmacion.scrollIntoViewIfNeeded();

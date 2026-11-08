@@ -171,7 +171,7 @@
     .page details { min-width: 0; }
     .page details > summary { padding: 12px 8px; border-radius: 8px; }
     .page details > summary:hover { background: #f0f6f2; }
-    .page .cumplimiento-modal { padding: 26px; border-color: #bacfc1; border-radius: 18px; box-shadow: 0 24px 80px #122c2540; }
+    .page .cumplimiento-modal { overflow-wrap: anywhere; padding: 26px; border-color: #bacfc1; border-radius: 18px; box-shadow: 0 24px 80px #122c2540; }
     .cumplimiento-modal::backdrop { background: #122c25a6; }
     .page .cumplimiento-modal label:has(> input[type=checkbox]) { display: flex; }
     .page .indicadores-totales p { background: #f1f8f4; border-color: #cddfd3; font-variant-numeric: tabular-nums; }
