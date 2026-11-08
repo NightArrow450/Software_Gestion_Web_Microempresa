@@ -18,8 +18,15 @@ let pagina;
 async function foto(nombre) {
     const archivo = `${nombre}.png`;
     await pagina.evaluate(async () => { window.scrollTo(0, 0); await document.fonts.ready; });
-    await pagina.screenshot({ path: path.join(salida, archivo), fullPage: true, animations: 'disabled' });
-    capturas.push(archivo);
+    const muestra = !/^\d+-/.test(nombre)
+        || /^1366-(dashboard|usuarios|roles|producto-nuevo|clientes|pedidos|envasado-nuevo|envasados|movimientos|auditoria|disponibilidad|lista-preparacion|preparacion-despacho-incidencias|entrega-historial-acciones|indicadores|retiro-faltantes|categorias|rol-nuevo|entrega-retorno-aprobacion|envasado-correccion|producto-detalle|seguimiento)$/.test(nombre)
+        || /^390-(04-editor-agrupaciones|disponibilidad|lista-preparacion|entrega-retorno-aprobacion|retiro-faltantes|producto-nuevo|rol-nuevo|envasado-correccion|login)$/.test(nombre)
+        || /^360-(03-seleccion-y-validacion|login)$/.test(nombre)
+        || /^(768-dashboard|1024-productos)$/.test(nombre);
+    if (muestra) {
+        await pagina.screenshot({ path: path.join(salida, archivo), fullPage: true, animations: 'disabled' });
+        capturas.push(archivo);
+    }
     const medidas = await pagina.evaluate(() => ({ ancho: innerWidth, cuerpo: document.body.scrollWidth, documento: document.documentElement.scrollWidth }));
     if (Math.max(medidas.cuerpo, medidas.documento) > medidas.ancho + 1) {
         const diagnostico = await pagina.evaluate(() => [...document.querySelectorAll('body *')].filter(e => {
@@ -29,13 +36,8 @@ async function foto(nombre) {
         fs.writeFileSync(path.join(salida, `${nombre}-desbordamiento.json`), JSON.stringify(diagnostico, null, 2));
     }
     const desbordamiento = Math.max(medidas.cuerpo, medidas.documento) > medidas.ancho + 1;
-    const defectoPrevio = process.env.AUDIT_ETAPA === 'antes' && /^360-(preparacion-despacho-incidencias|entrega-historial-acciones)$/.test(nombre);
-    mediciones.push({ captura: nombre, ...medidas, defectoPrevioEsperado: defectoPrevio });
-    if (defectoPrevio) {
-        assert.ok(desbordamiento, 'El SKU largo debe reproducir el desbordamiento previo conocido.');
-    } else {
-        assert.equal(desbordamiento, false, `Desbordamiento horizontal en ${nombre}: ${JSON.stringify(medidas)}`);
-    }
+    mediciones.push({ captura: nombre, ...medidas });
+    assert.equal(desbordamiento, false, `Desbordamiento horizontal en ${nombre}: ${JSON.stringify(medidas)}`);
 }
 async function ir(ruta) {
     const respuesta = await pagina.goto(base + ruta, { waitUntil: 'networkidle' });
@@ -81,6 +83,23 @@ async function comprobar(nombre, accion) {
         await pagina.locator('button[type=submit]').click();
         await pagina.waitForURL('**/dashboard');
     });
+    await comprobar('Navegación móvil y foco con teclado', async () => {
+        await pagina.setViewportSize({ width: 390, height: 950 });
+        await pagina.locator('.menu-toggle').click();
+        assert.equal(await pagina.locator('.menu-toggle').getAttribute('aria-expanded'), 'true');
+        assert.equal(await pagina.locator('.app-content').evaluate(e => e.inert), true);
+        await pagina.keyboard.press('Escape');
+        assert.equal(await pagina.locator('.menu-toggle').getAttribute('aria-expanded'), 'false');
+        assert.equal(await pagina.locator('.menu-toggle').evaluate(e => document.activeElement === e), true);
+        await pagina.locator('.menu-toggle').click();
+        await pagina.locator('.sidebar-overlay').click({ position: { x: 370, y: 300 } });
+        assert.equal(await pagina.locator('.menu-toggle').getAttribute('aria-expanded'), 'false');
+        if (process.env.AUDIT_ETAPA === 'despues') {
+            await pagina.locator('.skip-link').focus();
+            await pagina.keyboard.press('Enter');
+            assert.equal(await pagina.locator('#contenido-principal').evaluate(e => document.activeElement === e), true);
+        }
+    });
     for (const ancho of [360, 390, 768, 1024, 1366]) {
         await pagina.setViewportSize({ width: ancho, height: 950 });
         await comprobar(`Buscadores, variante, presentación, validación y agrupaciones — ${ancho}px`, async () => {
@@ -123,16 +142,12 @@ async function comprobar(nombre, accion) {
             await ir('/pedidos/nuevo');
             await pagina.locator('[data-pedido-unidades]').evaluate(form => { form.noValidate = true; form.requestSubmit(); });
             const foco = await pagina.locator('[data-mensaje]').evaluate(e => document.activeElement === e);
-            assert.equal(foco, process.env.AUDIT_ETAPA !== 'antes');
+            assert.equal(foco, true);
             await foto(`${ancho}-foco-error-${process.env.AUDIT_ETAPA}`);
         });
         await comprobar(`Búsqueda de pedido fuera de los primeros veinte — ${ancho}px`, async () => {
             await ir('/inventario');
             const buscador = pagina.locator('[name=pedido_buscar]');
-            if (process.env.AUDIT_ETAPA === 'antes') {
-                assert.equal(await buscador.count(), 0);
-                assert.equal(await pagina.locator(`#pedido_id option[value="${datos.preparacion}"]`).count(), 0);
-            } else {
                 await buscador.fill('jose nunez');
                 await pagina.getByRole('button', { name: 'Consultar', exact: true }).click();
                 await pagina.waitForLoadState('networkidle');
@@ -143,7 +158,6 @@ async function comprobar(nombre, accion) {
                 assert.match(await pagina.locator('body').innerText(), /Pendiente activo/i);
                 assert.equal(new URL(pagina.url()).searchParams.get('pedido_id'), String(datos.preparacion));
                 assert.equal(await pagina.locator('.disponibilidad-tabla tbody tr').first().locator('[data-label="Pendiente activo"] span').innerText(), '24');
-            }
             await foto(`${ancho}-busqueda-pedido-${process.env.AUDIT_ETAPA}`);
         });
         await comprobar(`Error de validación sin duplicados — ${ancho}px`, async () => {
@@ -162,12 +176,25 @@ async function comprobar(nombre, accion) {
             assert.ok(erroresGlobales.length > 0, 'Se esperaba una validación del cliente no seleccionado');
             const texto = await pagina.locator('body').innerText();
             for (const error of erroresGlobales) {
-                assert.equal(texto.split(error.trim()).length - 1, process.env.AUDIT_ETAPA === 'antes' ? 2 : 1);
+                assert.equal(texto.split(error.trim()).length - 1, 1);
             }
             await foto(`${ancho}-validacion-${process.env.AUDIT_ETAPA}`);
         });
+        await comprobar(`Proporción del checkbox y controles — ${ancho}px`, async () => {
+            await ir('/pedidos/nuevo');
+            const medidas = await pagina.locator('[data-empaquetar]').evaluate(e => ({ alto: e.getBoundingClientRect().height, ancho: e.getBoundingClientRect().width }));
+            mediciones.push({ control: 'Agrupaciones opcionales', viewport: ancho, ...medidas });
+            if (process.env.AUDIT_ETAPA === 'despues') {
+                assert.ok(medidas.alto >= 18 && medidas.alto <= 24 && medidas.ancho >= 18 && medidas.ancho <= 24);
+            }
+        });
         const pantallas = [
-            ['dashboard', '/dashboard'], ['usuarios', '/usuarios'], ['roles', '/roles-permisos'],
+            ['dashboard', '/dashboard'], ['usuarios', '/usuarios'], ['usuario-nuevo', '/usuarios/nuevo'], ['roles', '/roles-permisos'], ['rol-nuevo', '/roles-permisos/nuevo'], ['permiso-nuevo', '/permisos/nuevo'],
+            ['categorias', '/categorias-productos'], ['categoria-nueva', '/categorias-productos/nueva'],
+            ['producto-detalle', `/productos/${datos.producto}`], ['producto-editar', `/productos/${datos.producto}/editar`],
+            ['cliente-detalle', `/clientes/${datos.cliente}`], ['cliente-editar', `/clientes/${datos.cliente}/editar`],
+            ['stock-alertas', '/inventario/stock'], ['movimiento-nuevo', '/inventario/movimientos/nuevo'], ['seguimiento-listado', '/seguimiento'], ['seguimiento-historial', '/seguimiento/historial'],
+            ['entrega-retorno-aprobacion', `/cumplimiento/${datos.rechazo}`], ['envasado-correccion', `/envasados/${datos.envasado}`], ['materiales-configuracion', `/presentaciones/${datos.sku}/materiales-envasado`],
             ['productos', '/productos'], ['producto-nuevo', '/productos/nuevo'], ['clientes', '/clientes'], ['cliente-nuevo', '/clientes/nuevo'],
             ['pedidos', '/pedidos'], ['envasado-nuevo', '/envasados/nuevo'], ['envasados', '/envasados'], ['movimientos', '/inventario/movimientos'], ['auditoria', '/auditoria'],
             ['disponibilidad', `/inventario?pedido_id=${datos.preparacion}`],
@@ -208,7 +235,7 @@ async function comprobar(nombre, accion) {
                     await pagina.emulateMedia({ media: 'screen' });
                     mediciones.push({ pantalla: nombre, ancho, botones, tablas: tarjetas });
                 }
-                if (nombre === 'entrega-historial-acciones') {
+                if (nombre === 'entrega-historial-acciones' || nombre === 'entrega-retorno-aprobacion') {
                     await pagina.locator('.entrega-panel details').evaluateAll(detalles => detalles.forEach(d => { d.open = true; }));
                 }
                 if (nombre === 'preparacion-despacho-incidencias') {
@@ -230,6 +257,7 @@ async function comprobar(nombre, accion) {
         });
     }
     await comprobar('Envasado integrado real sin consumo de materiales', async () => {
+        await pagina.setViewportSize({ width: 390, height: 950 });
         await ir('/cumplimiento/lista-preparacion');
         await pagina.locator('[data-registrar-envasado]').first().click();
         const dialogo = pagina.locator('dialog[open]');
@@ -238,13 +266,17 @@ async function comprobar(nombre, accion) {
         const confirmacion = dialogo.locator('[data-confirmacion-envasado]');
         await confirmacion.waitFor();
         assert.match(await confirmacion.innerText(), /No se registran consumos ni movimientos de insumos/);
+        const checkbox = confirmacion.locator('input[type=checkbox][required]');
+        if (process.env.AUDIT_ETAPA === 'despues') assert.ok(await checkbox.evaluate(e => e.getBoundingClientRect().height <= 24));
+        await foto('390-envasado-integrado-previa');
+        await pagina.setViewportSize({ width: 1366, height: 950 });
         await foto('1366-envasado-integrado-previa');
         await confirmacion.locator('input[type=checkbox][required]').check();
         await confirmacion.getByRole('button', { name: 'Confirmar unidades terminadas', exact: true }).click();
         await pagina.waitForLoadState('networkidle');
         const textoConfirmacion = 'Unidades terminadas registradas y stock actualizado; no registres otra entrada por esta producción.';
         assert.ok((await pagina.locator('.app-alert.success').innerText()).includes(textoConfirmacion));
-        assert.equal((await pagina.locator('body').innerText()).split(textoConfirmacion).length - 1, process.env.AUDIT_ETAPA === 'antes' ? 2 : 1);
+        assert.equal((await pagina.locator('body').innerText()).split(textoConfirmacion).length - 1, 1);
         await foto('1366-envasado-integrado-confirmado');
     });
     await comprobar('Paginación, sin resultados y mensaje de error de búsqueda', async () => {
@@ -313,6 +345,19 @@ async function comprobar(nombre, accion) {
                 assert.equal((await pagina.request.get(base + '/indicadores')).status(), 403);
             }
             await foto(`1366-rol-${rol === 'Producción/Reparto' ? 'produccion' : 'comercial'}`);
+        });
+    }
+    await pagina.locator('form[action$="/logout"] button').click();
+    await pagina.waitForURL('**/login');
+    for (const ancho of [360, 390, 768, 1024, 1366]) {
+        await comprobar(`Login y controles — ${ancho}px`, async () => {
+            await pagina.setViewportSize({ width: ancho, height: 950 });
+            await pagina.locator('#password').fill('ClaveFicticiaSoloVisual');
+            await pagina.locator('#password-toggle').click();
+            assert.equal(await pagina.locator('#password').getAttribute('type'), 'text');
+            await pagina.locator('#password-toggle').click();
+            assert.equal(await pagina.locator('#password').getAttribute('type'), 'password');
+            await foto(`${ancho}-login`);
         });
     }
     await navegador.close();

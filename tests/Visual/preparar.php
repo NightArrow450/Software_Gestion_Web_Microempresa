@@ -7,7 +7,9 @@ use App\Models\User;
 use App\Services\AtenderPedidoUnidades;
 use App\Services\ControlEntregaPedido;
 use App\Services\GestionarPedidoUnidades;
+use App\Services\RegistrarEnvasado;
 use App\Services\RegistrarResultadoEntrega;
+use App\Services\RegistrarRetornoPedido;
 use Database\Seeders\AuditoriaPermisoSeeder;
 use Database\Seeders\EntregaRetornoPermisoSeeder;
 use Database\Seeders\EnvasadoPermisoSeeder;
@@ -99,8 +101,27 @@ $escenario = new class
             $extra->update(['estado' => 'confirmado']);
         }
 
+        $rechazo = $this->registrarUnidades($e, [0, 0, 4]);
+        $this->despacharUnidades($rechazo, $e);
+        $rechazo->refresh();
+        $resultado = app(ControlEntregaPedido::class)->resumen($rechazo);
+        $referencia = array_values($resultado['lineas'])[0];
+        app(RegistrarResultadoEntrega::class)->ejecutar($rechazo, ['version' => $resultado['version'],
+            'detalles' => [['pedido_detalle_id' => $referencia['id'], 'aceptadas' => 1, 'rechazadas' => 2,
+                'motivo' => 'Dos unidades ficticias rechazadas para revisar la presentación de retornos.']],
+            'observaciones' => 'Escenario visual con una unidad aún pendiente de resolución.'], $e['usuario']);
+        $rechazo->refresh();
+        $resultado = app(ControlEntregaPedido::class)->resumen($rechazo);
+        app(RegistrarRetornoPedido::class)->ejecutar($rechazo, ['version' => $resultado['version'],
+            'observaciones' => 'Recepción ficticia de una unidad apta; no se aprueba ni aumenta stock.',
+            'detalles' => [['pedido_detalle_id' => $referencia['id'], 'aptas' => 1, 'danadas' => 0,
+                'en_revision' => 0, 'no_recuperadas' => 0]]], $e['usuario']);
+        $envasado = app(RegistrarEnvasado::class)->ejecutar(['presentacion_producto_id' => $e['skus'][2]->id,
+            'cantidad' => 3, 'observaciones' => 'Producción anticipada exclusivamente ficticia para revisión visual.'], $e['usuario']);
+
         return ['parcial' => $parcial->id, 'preparacion' => $preparacion->id, 'nota1' => $parcial->numero,
-            'nota2' => $impresion->numero, 'impresion' => $impresion->id, 'sku' => $e['presentacion']->id];
+            'nota2' => $impresion->numero, 'impresion' => $impresion->id, 'sku' => $e['presentacion']->id, 'producto' => $e['presentacion']->producto_id,
+            'cliente' => $parcial->cliente_id, 'rechazo' => $rechazo->id, 'envasado' => $envasado->id];
     }
 };
 file_put_contents(getenv('RUNNER_TEMP').'/visual-fixture.json', json_encode($escenario->preparar(), JSON_THROW_ON_ERROR));

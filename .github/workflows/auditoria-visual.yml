@@ -42,7 +42,7 @@ jobs:
       MYSQL_TEST_ENABLE: '0'
       AUDIT_ETAPA: ${{ matrix.etapa }}
       AUDIT_BROWSER: ${{ matrix.navegador }}
-      AUDIT_BASE_SHA: ecc76506b3283d71332d87b0769dab60b31f259e
+      AUDIT_BASE_SHA: ${{ github.event.pull_request.base.sha }}
       PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
