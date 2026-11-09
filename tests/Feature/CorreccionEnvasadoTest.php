@@ -137,10 +137,10 @@ class CorreccionEnvasadoTest extends TestCase
         $e = $this->registrado();
         $e['usuario']->role->permisos()->detach(Permiso::where('nombre', 'envasado.corregir')->value('id'));
         $this->post(route('envasado.reportar', $e['envasado']), ['motivo' => 'Revisar la cantidad digitada'])->assertRedirect();
-        $this->post(route('envasado.correcciones.store',$e['envasado']),$this->datos($e))->assertForbidden();
-        $this->assertDatabaseCount('envasado_reportes',1);
-        $this->assertDatabaseCount('envasado_correcciones',0);
-        $this->assertDatabaseCount('movimientos_inventario',2);
-        $this->get(route('envasado.show',$e['envasado']))->assertOk()->assertSee('Revisar la cantidad digitada');
+        $this->post(route('envasado.correcciones.store', $e['envasado']), $this->datos($e))->assertForbidden();
+        $this->assertDatabaseCount('envasado_reportes', 1);
+        $this->assertDatabaseCount('envasado_correcciones', 0);
+        $this->assertDatabaseCount('movimientos_inventario', 2);
+        $this->get(route('envasado.show', $e['envasado']))->assertOk()->assertSee('Revisar la cantidad digitada');
     }
 }

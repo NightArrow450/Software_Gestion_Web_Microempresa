@@ -23,6 +23,7 @@ class PreparacionPedidosTest extends TestCase
             );
             $rol->permisos()->attach($permiso->id);
         }
+
         return User::create([
             'first_name' => 'Operador', 'last_name' => 'Prueba',
             'email' => 'operador@local.test', 'password' => 'password123',
@@ -45,9 +46,9 @@ class PreparacionPedidosTest extends TestCase
             'modalidad' => 'unidad', 'cantidad' => 2,
             'precio_unitario' => '10.50', 'importe' => '21.00',
         ]);
+
         return $pedido;
     }
-
 
     public function test_produccion_ve_pedidos_confirmados(): void
     {
@@ -64,18 +65,18 @@ class PreparacionPedidosTest extends TestCase
         $this->actingAs($u)->post(route('cumplimiento.iniciar-preparacion', $p))
             ->assertRedirect(route('cumplimiento.show', $p));
         $this->assertDatabaseHas('pedidos', [
-            'id'=>$p->id, 'estado'=>'en_preparacion', 'preparacion_iniciada_por_id'=>$u->id,
+            'id' => $p->id, 'estado' => 'en_preparacion', 'preparacion_iniciada_por_id' => $u->id,
         ]);
         $this->assertNotNull($p->fresh()->preparacion_iniciada_en);
         $this->actingAs($u)->post(route('cumplimiento.finalizar-preparacion', $p))
             ->assertRedirect(route('cumplimiento.show', $p));
         $this->assertDatabaseHas('pedidos', [
-            'id'=>$p->id, 'estado'=>'listo_despacho', 'preparacion_finalizada_por_id'=>$u->id,
+            'id' => $p->id, 'estado' => 'listo_despacho', 'preparacion_finalizada_por_id' => $u->id,
         ]);
         $this->assertNotNull($p->fresh()->preparacion_finalizada_en);
         $this->assertDatabaseHas('pedido_estados_historial', [
-            'pedido_id'=>$p->id, 'estado_anterior'=>'en_preparacion',
-            'estado_nuevo'=>'listo_despacho', 'usuario_id'=>$u->id,
+            'pedido_id' => $p->id, 'estado_anterior' => 'en_preparacion',
+            'estado_nuevo' => 'listo_despacho', 'usuario_id' => $u->id,
         ]);
     }
 
@@ -109,5 +110,4 @@ class PreparacionPedidosTest extends TestCase
             ->assertForbidden();
         $this->assertSame('confirmado', $p->fresh()->estado);
     }
-
 }

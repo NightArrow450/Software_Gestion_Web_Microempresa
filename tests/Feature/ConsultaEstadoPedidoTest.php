@@ -1,4 +1,5 @@
 <?php
+
 namespace Tests\Feature;
 
 use App\Models\Cliente;
@@ -22,6 +23,7 @@ class ConsultaEstadoPedidoTest extends TestCase
             );
             $rol->permisos()->attach($permiso->id);
         }
+
         return User::create([
             'first_name' => 'María', 'last_name' => 'Operadora',
             'email' => 'seguimiento_'.uniqid().'@local.test',
@@ -33,6 +35,7 @@ class ConsultaEstadoPedidoTest extends TestCase
         string $fecha = '2026-10-17', string $estado = 'confirmado'): Pedido
     {
         $cliente = Cliente::create(['nombre' => $nombre, 'estado' => true]);
+
         return Pedido::create([
             'cliente_id' => $cliente->id, 'usuario_id' => $usuario->id,
             'fecha_pedido' => $fecha, 'fecha_entrega' => '2026-10-20',
@@ -56,9 +59,9 @@ class ConsultaEstadoPedidoTest extends TestCase
         $u = $this->usuario(['seguimiento.ver']);
         $this->pedido($u, 'Rosa Flores');
         $this->pedido($u, 'Carlos Núñez');
-        $this->actingAs($u)->get(route('seguimiento.index', ['cliente'=>'Rosa']))
+        $this->actingAs($u)->get(route('seguimiento.index', ['cliente' => 'Rosa']))
             ->assertOk()->assertSee('Rosa Flores')->assertDontSee('Carlos Núñez');
-        $this->actingAs($u)->get(route('seguimiento.index', ['codigo'=>'999999']))
+        $this->actingAs($u)->get(route('seguimiento.index', ['codigo' => '999999']))
             ->assertOk()->assertSee('No se encontraron pedidos');
     }
 

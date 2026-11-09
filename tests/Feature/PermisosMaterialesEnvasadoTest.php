@@ -135,7 +135,7 @@ class PermisosMaterialesEnvasadoTest extends TestCase
         $e['insumo']->update(['estado' => false]);
         $this->patch(route('envasado.materiales.estado', [$e['presentacion'], $e['configuracion']]), ['estado' => 0, 'version' => 1])->assertRedirect()->assertSessionHasNoErrors();
         $this->assertSame($consumos, $registro->consumos()->get()->toJson());
-        $this->assertSame($movimientos,MovimientoInventario::orderBy('id')->get()->toJson());
-        $this->assertSame('88.000',$e['insumo']->fresh()->cantidad_actual);
+        $this->assertSame($movimientos, MovimientoInventario::orderBy('id')->get()->toJson());
+        $this->assertSame('88.000', $e['insumo']->fresh()->cantidad_actual);
     }
 }

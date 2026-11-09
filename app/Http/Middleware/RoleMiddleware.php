@@ -16,11 +16,11 @@ class RoleMiddleware
     ): Response {
         $usuario = $request->user();
 
-        if (!$usuario) {
+        if (! $usuario) {
             return redirect()->route('login');
         }
 
-        if (!$usuario->status) {
+        if (! $usuario->status) {
             Auth::logout();
 
             $request->session()->invalidate();
@@ -36,8 +36,8 @@ class RoleMiddleware
         $nombreRol = $usuario->role?->nombre;
 
         if (
-            !$nombreRol ||
-            !in_array($nombreRol, $roles, true)
+            ! $nombreRol ||
+            ! in_array($nombreRol, $roles, true)
         ) {
             abort(403);
         }

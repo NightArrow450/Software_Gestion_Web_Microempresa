@@ -25,6 +25,7 @@ class DisponibilidadInventarioTest extends TestCase
             $p = Permiso::create(['nombre' => 'inventario.ver', 'descripcion' => 'Ver inventario']);
             $rol->permisos()->attach($p);
         }
+
         return User::create([
             'first_name' => 'Juan', 'last_name' => 'Inventario',
             'email' => 'inv@example.com', 'password' => 'password123',
@@ -39,6 +40,7 @@ class DisponibilidadInventarioTest extends TestCase
             'categoria_id' => $categoria->id, 'codigo' => 'P-S3-01',
             'nombre' => 'Desinfectante', 'estado' => true,
         ]);
+
         return PresentacionProducto::create([
             'producto_id' => $producto->id, 'codigo_sku' => 'DES-1L',
             'contenido' => 1, 'unidad_medida' => 'L',
@@ -69,11 +71,11 @@ class DisponibilidadInventarioTest extends TestCase
         ]);
         $pedido->detalles()->createMany([
             ['presentacion_producto_id' => $presentacion->id, 'codigo_sku' => 'DES-1L',
-             'descripcion_producto' => 'Desinfectante', 'modalidad' => 'empaque',
-             'cantidad' => 2, 'precio_unitario' => 60, 'importe' => 120],
+                'descripcion_producto' => 'Desinfectante', 'modalidad' => 'empaque',
+                'cantidad' => 2, 'precio_unitario' => 60, 'importe' => 120],
             ['presentacion_producto_id' => $presentacion->id, 'codigo_sku' => 'DES-1L',
-             'descripcion_producto' => 'Desinfectante', 'modalidad' => 'unidad',
-             'cantidad' => 2, 'precio_unitario' => 5, 'importe' => 10],
+                'descripcion_producto' => 'Desinfectante', 'modalidad' => 'unidad',
+                'cantidad' => 2, 'precio_unitario' => 5, 'importe' => 10],
         ]);
         $this->actingAs($usuario)->get(route('inventario.index', ['pedido_id' => $pedido->id]))
             ->assertOk()->assertSee('Stock insuficiente'); // 26 > 25

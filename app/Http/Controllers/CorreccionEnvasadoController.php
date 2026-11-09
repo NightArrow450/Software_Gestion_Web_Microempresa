@@ -34,6 +34,6 @@ class CorreccionEnvasadoController extends Controller
             RegistroAuditoria::registrar('envasado_reportado', 'envasado_reporte', $reporte->id, ['envasado_id' => $envasado->id, 'motivo' => $datos['motivo']]);
         });
 
-        return redirect()->route('envasado.show', $envasado)->with('success','Error comunicado. Este reporte no modifica el inventario.');
+        return redirect()->route('envasado.show', $envasado)->with('success', 'Error comunicado. Este reporte no modifica el inventario.');
     }
 }
