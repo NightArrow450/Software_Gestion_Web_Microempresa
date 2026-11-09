@@ -79,6 +79,8 @@ jobs:
             sleep 1
           done
           exit 1
+      - name: Ejecutar operaciones completas mediante formularios y comprobar la base temporal
+        run: node tests/Visual/operacion-candidata.cjs
       - name: Recorrer pantallas e interacciones reales
         run: |
           if [ "$AUDIT_SCOPE" = dashboard-pedidos ]; then
@@ -86,8 +88,6 @@ jobs:
           else
             node tests/Visual/navegador.cjs
           fi
-      - name: Ejecutar operaciones completas mediante formularios y comprobar la base temporal
-        run: node tests/Visual/operacion-candidata.cjs
       - name: Comprobar PDF y generar vista previa
         if: ${{ !cancelled() && matrix.navegador == 'chromium' && env.AUDIT_SCOPE != 'dashboard-pedidos' }}
         run: |

@@ -7,6 +7,7 @@ const temp = fs.realpathSync(process.env.RUNNER_TEMP);
 assert.equal(process.env.VISUAL_DATABASE, path.join(temp, 'pr49-visual.sqlite'));
 const { chromium, firefox } = require(path.join(temp, 'navegador/node_modules/playwright'));
 const output = path.join(temp, 'evidencias-pr49');
+fs.mkdirSync(output, { recursive: false });
 const base = 'http://127.0.0.1:8099';
 const resultados = [], errores = [], stock = [];
 let page, browser, sku, pedido;
@@ -81,7 +82,7 @@ async function captura(nombre) {
         for (const width of [360,390,1366]) { await page.setViewportSize({ width, height: 950 }); await captura('pedido-' + width); }
         await page.getByRole('button', { name: 'Guardar pedido por unidades', exact: true }).click(); await page.waitForURL(/\/pedidos\/\d+$/);
         pedido = Number(new URL(page.url()).pathname.split('/').pop());
-        const row = db('SELECT numero,total FROM pedidos WHERE id=?', [pedido])[0]; assert.ok(row.numero); assert.equal(Number(row.total),108);
+        const row = db('SELECT id,total FROM pedidos WHERE id=?', [pedido])[0]; assert.ok((await page.locator('h1').innerText()).includes(String(row.id).padStart(6,'0'))); assert.equal(Number(row.total),108);
         assert.equal(saldo('pedido registrado'),antes);
         await page.getByRole('button', { name: /Confirmar pedido/ }).click(); await page.waitForLoadState('networkidle');
         assert.equal(db('SELECT estado FROM pedidos WHERE id=?',[pedido])[0].estado,'confirmado');
