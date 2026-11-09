@@ -163,7 +163,7 @@ async function captura(nombre) {
         await page.locator('input[type=checkbox][required]').check(); await page.getByRole('button',{name:'Confirmar compensación de inventario',exact:true}).click(); await page.waitForLoadState('networkidle');
         assert.equal(saldo('compensación registrada'),before-1);
         assert.equal(db('SELECT COUNT(*) n FROM movimientos_inventario WHERE origen_tipo="envasado" AND origen_id=?',[String(id)])[0].n,1);
-        assert.equal(await page.locator('form[action$="/rectificar-entrega"]').count(),0); await captura('correccion');
+        await captura('correccion'); await ir('/cumplimiento/'+pedido); assert.equal(await page.locator('form[action$="/rectificar-entrega"]').count(),1);
     });
     await caso('Integridad final: sin consumos, usuarios alterados, stock negativo ni referencias huérfanas', async () => {
         assert.deepEqual(db('SELECT id,first_name,last_name,email,password,status,role_id FROM users ORDER BY id'),cuentas);
