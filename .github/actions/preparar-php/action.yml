@@ -1,0 +1,44 @@
+name: Preparar PHP aislado
+description: Instala dependencias sin scripts y comprueba SQLite antes de arrancar las pruebas.
+runs:
+  using: composite
+  steps:
+    - name: Comprobar que el entorno sea temporal
+      shell: bash
+      run: |
+        test "$GITHUB_ACTIONS" = true
+        test "$RUNNER_ENVIRONMENT" = github-hosted
+        test ! -e .env
+        test ! -e bootstrap/cache/config.php
+    - name: Preparar PHP 8.3
+      uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # v2, verificado el 24-10-2026
+      with:
+        php-version: '8.3'
+        extensions: bcmath, ctype, curl, dom, fileinfo, intl, mbstring, pdo_mysql, pdo_sqlite, sqlite3, tokenizer, xml, zip
+        coverage: none
+        tools: composer:v2
+    - name: Validar e instalar Composer sin ejecutar scripts ni plugins
+      shell: bash
+      run: |
+        composer validate --strict --no-check-publish
+        composer install --no-interaction --prefer-dist --no-progress --no-scripts --no-plugins
+    - name: Verificar conexión SQLite en memoria antes de las pruebas
+      shell: bash
+      run: |
+        php <<'PHP'
+        <?php
+        require 'tests/bootstrap.php';
+        $app = require 'bootstrap/app.php';
+        $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+        if (PHP_MAJOR_VERSION !== 8 || PHP_MINOR_VERSION !== 3 || ! $app->environment('testing')
+            || config('database.default') !== 'sqlite'
+            || config('database.connections.sqlite.database') !== ':memory:'
+            || config('database.connections.sqlite.url') !== '') {
+            throw new RuntimeException('Entorno bloqueado: se exige PHP 8.3 y SQLite en memoria.');
+        }
+        $connection = Illuminate\Support\Facades\DB::connection();
+        if ($connection->getDatabaseName() !== ':memory:' || (int) $connection->selectOne('SELECT 1 AS correcto')->correcto !== 1) {
+            throw new RuntimeException('La conexión aislada no superó la comprobación.');
+        }
+        echo "PHP 8.3 y SQLite en memoria comprobados; sin archivo .env.\n";
+        PHP

@@ -1,0 +1,38 @@
+{
+    "fecha": "2026-10-25T13:48:15-05:00",
+    "alcance": "Diagnóstico CLI del controlador sin renderizado Blade, solo lectura; sin OPcache CLI ni bindings, no sustituye latencias HTTP ni compara totales de períodos diferentes.",
+    "escenarios": {
+        "surtidos_hoy": {
+            "fecha_entrega": "2026-10-25",
+            "pedidos": 180,
+            "filas": 27,
+            "consultas": 1270,
+            "tiempo_sql_ms": 513.6999999999998,
+            "tiempo_total_ms": 1162.406,
+            "memoria_pico_proceso_bytes": 31457280,
+            "patrones_repetidos": {
+                "select `p`.`id`, `p`.`numero`, `p`.`version`, `c`.`id` as `composicion_id`, `c`.`estado` from `pedido_paquetes_surtidos` as `p` inner join `paquete_surtido_composiciones` as `c` on `c`.`paquete_surtido_id` = `p`.`id` and `c`.`version` = `p`.`version` where `p`.`pedido_detalle_id` = ? and `p`.`activo` = ? order by `p`.`numero` asc": 360,
+                "select * from `paquete_surtido_componentes` where `composicion_id` in (?, ?) order by `presentacion_producto_id` asc": 360,
+                "select * from `productos` where `productos`.`id` in (?)": 180,
+                "select * from `variantes_producto` where `variantes_producto`.`id` in (?, ?, ?)": 180,
+                "select * from `presentaciones_producto` where `id` in (?, ?, ?, ?, ?, ?)": 130
+            }
+        },
+        "normales_dos_dias": {
+            "fecha_entrega": "2026-10-27",
+            "pedidos": 100,
+            "filas": 5,
+            "consultas": 8,
+            "tiempo_sql_ms": 12.340000000000002,
+            "tiempo_total_ms": 42.0985,
+            "memoria_pico_proceso_bytes": 31457280,
+            "patrones_repetidos": {
+                "select * from `pedidos` where `estado` in (?, ?) and date(`fecha_entrega`) >= ? and date(`fecha_entrega`) <= ? order by `fecha_entrega` asc, `id` asc": 1,
+                "select * from `pedido_detalles` where `retirado_en` is null and `pedido_detalles`.`pedido_id` in (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)": 1,
+                "select * from `presentaciones_producto` where `presentaciones_producto`.`id` in (?, ?, ?, ?, ?)": 1,
+                "select * from `productos` where `productos`.`id` in (?, ?, ?, ?, ?)": 1,
+                "select * from `variantes_producto` where `variantes_producto`.`id` in (?, ?, ?, ?, ?)": 1
+            }
+        }
+    }
+}

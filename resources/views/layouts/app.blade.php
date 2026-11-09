@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        @yield('title', 'Sistema Web') | DHACER ECO LIMP
+    </title>
+
+    @vite('resources/css/app.css')
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap"
+        rel="stylesheet"
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
+        rel="stylesheet"
+    >
+
+    <link
+        rel="stylesheet"
+        href="{{ asset('css/stitch.css') }}?v=4"
+    >
+
+    @stack('styles')
+    <link rel="stylesheet" href="{{ asset('css/operacion.css') }}">
+</head>
+
+<body>
+    <a class="skip-link" href="#contenido-principal">Ir al contenido principal</a>
+
+    @include('components.sidebar')
+    <div class="sidebar-overlay" hidden aria-hidden="true"></div>
+
+    <div class="app-content">
+
+        @include('components.header')
+
+        <main class="page" id="contenido-principal" tabindex="-1">
+            @include('components.demostracion')
+
+            @include('components.alerts')
+
+            @yield('content')
+
+        </main>
+
+    </div>
+
+    <script src="{{ asset('js/layout.js') }}" defer></script>
+    <script src="{{ asset('js/formularios-seguros.js') }}" defer></script>
+    @stack('scripts')
+
+</body>
+
+</html>

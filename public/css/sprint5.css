@@ -1,0 +1,24 @@
+/* Sprint 5: continuidad visual del panel DHACER ECO LIMP. */
+.seg-top {display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:18px}
+.seg-panel {background:white; border:1px solid #e3e8e6; border-radius:12px; padding:20px; margin:14px 0; box-shadow:0 2px 9px #0000000a}
+.seg-filtros {display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:14px; align-items:end}
+.seg-filtros label {display:block; font-size:13px; font-weight:600; margin-bottom:6px}
+.seg-filtros .form-control {width:100%; min-height:40px}
+.seg-filtros .seg-botones {display:flex; gap:8px; flex-wrap:wrap}
+.seg-tabla {width:100%; border-collapse:collapse; font-size:14px}
+.seg-tabla th,.seg-tabla td {padding:11px 13px; text-align:left; border-bottom:1px solid #e5eae8}
+.seg-tabla th {color:#52625c; font-size:12px; background:#f6f8f7}
+.seg-tabla td {vertical-align:middle}
+.seg-detalles {display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:15px}
+.seg-dato b {display:block; color:#53635e; font-size:12px; margin-bottom:4px}
+.seg-dato span {font-weight:600; overflow-wrap:anywhere}
+.seg-estado {display:inline-block; background:#e4f1ea; color:#065a39; padding:5px 11px; border-radius:999px; font-weight:700; font-size:12px}
+.seg-vacio {text-align:center; color:#63736c; padding:30px}
+.seg-ayuda {color:#62716d; font-size:13px; margin:6px 0 13px}
+.seg-enlace {color:#00734e; text-decoration:underline; font-weight:600}
+.seg-timeline {list-style:none; padding:0 0 0 12px; margin:12px 0 0; border-left:2px solid #b9d8c5}
+.seg-evento {position:relative; margin:0 0 20px 15px; border:1px solid #e5ebe8; border-radius:10px; padding:14px}
+.seg-evento:before {position:absolute; content:""; left:-24px; top:18px; width:12px; height:12px; border:3px solid white; background:#158155; border-radius:50%; box-shadow:0 0 0 2px #b9d8c5}
+.seg-evento h3 {margin:0 0 7px; font-size:15px}
+.seg-evento p {margin:3px 0; font-size:13px; color:#52625d}
+@media(max-width:650px){.seg-panel{padding:14px}.seg-tabla{font-size:12px}.seg-tabla th,.seg-tabla td{padding:8px}}

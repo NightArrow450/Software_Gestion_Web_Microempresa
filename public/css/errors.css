@@ -1,0 +1,7 @@
+.pagina-error{min-height:100dvh;display:grid;place-items:center;margin:0;padding:20px;background:var(--surface-low,#f3f7f5);font-family:Inter,system-ui,sans-serif;color:var(--text-main,#172c23)}
+.tarjeta-error{width:min(100%,540px);box-sizing:border-box;border:1px solid #dce6df;border-radius:18px;background:#fff;padding:32px;text-align:center;box-shadow:0 12px 35px #123a2210;overflow-wrap:anywhere}
+.marca-error{font-weight:700;color:var(--primary,#096242);letter-spacing:.06em}
+.codigo-error{font-size:64px;line-height:1;margin:24px 0;color:var(--primary,#096242);font-weight:800}
+.tarjeta-error h1{font-size:24px;margin:16px 0}.tarjeta-error p{margin-bottom:24px}
+.tarjeta-error .btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 20px}
+@media(max-width:480px){.tarjeta-error{padding:24px 18px}.tarjeta-error h1{font-size:21px}}

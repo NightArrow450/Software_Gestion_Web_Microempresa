@@ -1,0 +1,16 @@
+/* Sprint 3: extensión al diseño verde/blanco existente. */
+.s3-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px}
+.s3-panel{margin:20px 0}
+.s3-status{display:inline-block;padding:5px 9px;border-radius:7px;font-size:12px;font-weight:700}
+.s3-ok{background:#dcfce7;color:#166534}
+.s3-danger{background:#fee2e2;color:#991b1b}
+.s3-warning{background:#fef3c7;color:#92400e}
+.s3-muted{color:#64748b;font-size:13px;margin:10px 0}
+.s3-pagination{padding:12px 20px}
+.s3-inline{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.s3-cardrow{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+.s3-metric{border:1px solid #d9e6df;border-radius:10px;padding:15px 20px;background:#fff;min-width:160px;flex:1}
+.s3-metric strong{font-size:25px;display:block;color:#176142}
+.s3-metric span{color:#64748b;font-size:12px}
+.s3-formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+@media(max-width:800px){.s3-formgrid{grid-template-columns:1fr}.s3-actions{flex-direction:column;align-items:stretch}}

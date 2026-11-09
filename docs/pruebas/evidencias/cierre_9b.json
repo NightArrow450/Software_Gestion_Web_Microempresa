@@ -1,0 +1,1069 @@
+{
+  "fecha": "2026-10-25T15:15:49.52465-05:00",
+  "base": "dhacer_eco_limp_demo_f9b_001",
+  "version_mysql": "8.4.3",
+  "ensayos_originales": "resultados_9b.json (14 originales conservados)",
+  "metodo_percentil": "Orden ascendente e interpolación lineal, índice (n-1)*p; contraste con resumen nativo de humo/carga/recuperación.",
+  "instrumento": {
+    "cupos": 8,
+    "ventana_turnos": 8,
+    "espera_maxima_s": 60,
+    "subproceso_maximo_s": 15,
+    "cliente_control_maximo_s": 90,
+    "inspeccion_fresca_por_solicitud": true,
+    "cache_identidades": false,
+    "apache_hilos": 32,
+    "keepalive": "Off"
+  },
+  "compatibilidad": "180 combinaciones PENDIENTES DE EJECUCIÓN; nuevo intento GUI bloqueado por verificación de URL",
+  "ensayos": [
+    {
+      "ensayo": "carga20-cierre-001",
+      "sha256_resumen": "b4347f7c00ffd3a443e524ace231b6434a0b854b3717d7ee4e27401e75e0a8a1",
+      "sha256_series": "a1f2e16342c95be51a44dac01a588031377052f4138d63e65a85e2bf56f84bf9",
+      "solicitudes": 229,
+      "solicitudes_por_segundo": 6.444378224002472,
+      "errores_http_porcentaje": 0.43668122270742354,
+      "checks_correctos": 176,
+      "checks_fallidos": 0,
+      "vu_maximo_real": 20,
+      "iteraciones_completas_stdout": 28,
+      "iteraciones_resumen": 29,
+      "iteraciones_interrumpidas": 21,
+      "latencias": {
+        "listados": {
+          "muestras": 126,
+          "p50_ms": 150.10854999999998,
+          "p95_ms": 560.7191,
+          "max_ms": 604.544
+        },
+        "control": {
+          "muestras": 35,
+          "p50_ms": 7334.0004,
+          "p95_ms": 30930.997549999996,
+          "max_ms": 35527.8658
+        },
+        "preparacion": {
+          "muestras": 30,
+          "p50_ms": 537.55165,
+          "p95_ms": 604.113285,
+          "max_ms": 604.544
+        },
+        "recuperacion": {
+          "muestras": 0,
+          "p50_ms": null,
+          "p95_ms": null,
+          "max_ms": null
+        }
+      },
+      "ram_libre_minima_mib": 5426.0,
+      "cpu_equipo_max_pct": 88.0,
+      "inspectores_simultaneos_muestreados": null,
+      "muestras_vu50": 0,
+      "primera_muestra_vu50": null,
+      "ultima_muestra_vu50": null,
+      "completado": false,
+      "meta_p95_listados_cumplida": true,
+      "perfil": "perfil intermedio, consultar informe",
+      "comando": "tests/Performance/ejecutar-k6.ps1 -Escenario carga -SalidaPrivadaNueva <raiz-privada>/evidencias-privadas/carga20-cierre-001"
+    },
+    {
+      "ensayo": "carga20-cierre-002",
+      "sha256_resumen": "4442adb5d640b139ef43e4600e0ba487d85534c2a9fe391f53b680eddedf0ddb",
+      "sha256_series": "fae82605abe0b74bab555bc261a12f8d183edb8cc9ef38420cb23f02cac48323",
+      "solicitudes": 1234,
+      "solicitudes_por_segundo": 9.428536069705586,
+      "errores_http_porcentaje": 0,
+      "checks_correctos": 1015,
+      "checks_fallidos": 0,
+      "vu_maximo_real": 20,
+      "iteraciones_completas_stdout": 199,
+      "iteraciones_resumen": 199,
+      "iteraciones_interrumpidas": 0,
+      "latencias": {
+        "listados": {
+          "muestras": 796,
+          "p50_ms": 189.25484999999998,
+          "p95_ms": 796.02565,
+          "max_ms": 1145.1577
+        },
+        "control": {
+          "muestras": 199,
+          "p50_ms": 5956.2051,
+          "p95_ms": 9100.4352,
+          "max_ms": 12398.4127
+        },
+        "preparacion": {
+          "muestras": 199,
+          "p50_ms": 742.5095,
+          "p95_ms": 907.6897799999998,
+          "max_ms": 1145.1577
+        },
+        "recuperacion": {
+          "muestras": 0,
+          "p50_ms": null,
+          "p95_ms": null,
+          "max_ms": null
+        }
+      },
+      "ram_libre_minima_mib": 4994.0,
+      "cpu_equipo_max_pct": 100.0,
+      "inspectores_simultaneos_muestreados": null,
+      "muestras_vu50": 0,
+      "primera_muestra_vu50": null,
+      "ultima_muestra_vu50": null,
+      "completado": true,
+      "meta_p95_listados_cumplida": true,
+      "perfil": "perfil intermedio, consultar informe",
+      "comando": "tests/Performance/ejecutar-k6.ps1 -Escenario carga -SalidaPrivadaNueva <raiz-privada>/evidencias-privadas/carga20-cierre-002"
+    },
+    {
+      "ensayo": "carga20-cierre-003",
+      "sha256_resumen": "60088a5f433ef8cbd52f884983b71474bfcb9778803b0a81b4fba2003feca163",
+      "sha256_series": "af449bd480458e3761caa80f3103dd850c7d79944541ad42d28dc2511f96f950",
+      "solicitudes": 1270,
+      "solicitudes_por_segundo": 9.693490420848878,
+      "errores_http_porcentaje": 0,
+      "checks_correctos": 1045,
+      "checks_fallidos": 0,
+      "vu_maximo_real": 20,
+      "iteraciones_completas_stdout": 205,
+      "iteraciones_resumen": 205,
+      "iteraciones_interrumpidas": 0,
+      "latencias": {
+        "listados": {
+          "muestras": 820,
+          "p50_ms": 262.66705,
+          "p95_ms": 801.2732599999999,
+          "max_ms": 1200.955
+        },
+        "control": {
+          "muestras": 205,
+          "p50_ms": 5485.0085,
+          "p95_ms": 8748.498739999999,
+          "max_ms": 16753.5368
+        },
+        "preparacion": {
+          "muestras": 205,
+          "p50_ms": 747.8847,
+          "p95_ms": 843.36344,
+          "max_ms": 1200.955
+        },
+        "recuperacion": {
+          "muestras": 0,
+          "p50_ms": null,
+          "p95_ms": null,
+          "max_ms": null
+        }
+      },
+      "ram_libre_minima_mib": 5251.0,
+      "cpu_equipo_max_pct": 100.0,
+      "inspectores_simultaneos_muestreados": null,
+      "muestras_vu50": 0,
+      "primera_muestra_vu50": null,
+      "ultima_muestra_vu50": null,
+      "completado": true,
+      "meta_p95_listados_cumplida": true,
+      "perfil": "perfil intermedio, consultar informe",
+      "comando": "tests/Performance/ejecutar-k6.ps1 -Escenario carga -SalidaPrivadaNueva <raiz-privada>/evidencias-privadas/carga20-cierre-003"
+    },
+    {
+      "ensayo": "carga20-cierre-004",
+      "sha256_resumen": "5d6a8352a577d78b2816ab7916aef428488a0743a1dfabbc457fb6c54624c09d",
+      "sha256_series": "c1976f6ebb6e9ff7eab9765021a398837250a124df1bb7efd2fab5b6c44a7746",
+      "solicitudes": 1102,
+      "solicitudes_por_segundo": 8.210201788134269,
+      "errores_http_porcentaje": 0,
+      "checks_correctos": 905,
+      "checks_fallidos": 0,
+      "vu_maximo_real": 20,
+      "iteraciones_completas_stdout": 177,
+      "iteraciones_resumen": 177,
+      "iteraciones_interrumpidas": 0,
+      "latencias": {
+        "listados": {
+          "muestras": 708,
+          "p50_ms": 262.20989999999995,
+          "p95_ms": 825.31806,
+          "max_ms": 954.2946
+        },
+        "control": {
+          "muestras": 177,
+          "p50_ms": 7272.7504,
+          "p95_ms": 14490.107759999999,
+          "max_ms": 26805.9111
+        },
+        "preparacion": {
+          "muestras": 177,
+          "p50_ms": 753.0442,
+          "p95_ms": 868.74722,
+          "max_ms": 954.2946
+        },
+        "recuperacion": {
+          "muestras": 0,
+          "p50_ms": null,
+          "p95_ms": null,
+          "max_ms": null
+        }
+      },
+      "ram_libre_minima_mib": 5223.0,
+      "cpu_equipo_max_pct": 100.0,
+      "inspectores_simultaneos_muestreados": null,
+      "muestras_vu50": 0,
+      "primera_muestra_vu50": null,
+      "ultima_muestra_vu50": null,
+      "completado": true,
+      "meta_p95_listados_cumplida": true,
+      "perfil": "ocho cupos, cola 60 s, KeepAlive Off",
+      "comando": "tests/Performance/ejecutar-k6.ps1 -Escenario carga -SalidaPrivadaNueva <raiz-privada>/evidencias-privadas/carga20-cierre-004"
+    },
+    {
+      "ensayo": "estres50-cierre-001",
+      "sha256_resumen": "0556d626389549ff805362878999f027ae7b444be56fa41e923e1de127d4b107",
+      "sha256_series": "1f13ec8bd106c3f1ca7d52cb5f1de0c38b49f7b04f4de613f14bf2165da5b0a1",
+      "solicitudes": 1047,
+      "solicitudes_por_segundo": 7.6824179296152675,
+      "errores_http_porcentaje": 0.09551098376313276,
+      "checks_correctos": 847,
+      "checks_fallidos": 0,
+      "vu_maximo_real": 46,
+      "iteraciones_completas_stdout": 157,
+      "iteraciones_resumen": 158,
+      "iteraciones_interrumpidas": 46,
+      "latencias": {
+        "listados": {
+          "muestras": 652,
+          "p50_ms": 192.76325,
+          "p95_ms": 854.1355149999999,
+          "max_ms": 1111.9407
+        },
+        "control": {
+          "muestras": 168,
+          "p50_ms": 6691.1754,
+          "p95_ms": 26015.680555000003,
+          "max_ms": 39024.2629
+        },
+        "preparacion": {
+          "muestras": 162,
+          "p50_ms": 775.79665,
+          "p95_ms": 917.68526,
+          "max_ms": 1111.9407
+        },
+        "recuperacion": {
+          "muestras": 0,
+          "p50_ms": null,
+          "p95_ms": null,
+          "max_ms": null
+        }
+      },
+      "ram_libre_minima_mib": 5251.0,
+      "cpu_equipo_max_pct": 100.0,
+      "inspectores_simultaneos_muestreados": null,
+      "muestras_vu50": 0,
+      "primera_muestra_vu50": null,
+      "ultima_muestra_vu50": null,
+      "completado": false,
+      "meta_p95_listados_cumplida": true,
+      "perfil": "perfil intermedio, consultar informe",
+      "comando": "tests/Performance/ejecutar-k6.ps1 -Escenario estres -SalidaPrivadaNueva <raiz-privada>/evidencias-privadas/estres50-cierre-001"
+    },
+    {
+      "ensayo": "estres50-cierre-002",
+      "sha256_resumen": "6da31839951b1e271b8fe70ee6adfdc8e7a79c22cbe2c3df92d3f88213d996c2",
+      "sha256_series": "5dd90ae31ef7076d54c7ab114eb459e007ca323c983a71fb3b37171ccb4e28d0",
+      "solicitudes": 1308,
+      "solicitudes_por_segundo": 7.430844732714054,
+      "errores_http_porcentaje": 0.0764525993883792,
+      "checks_correctos": 1064,
+      "checks_fallidos": 0,
+      "vu_maximo_real": 50,
+      "iteraciones_completas_stdout": 203,
+      "iteraciones_resumen": 204,
+      "iteraciones_interrumpidas": 50,
+      "latencias": {
+        "listados": {
+          "muestras": 825,
+          "p50_ms": 232.7464,
+          "p95_ms": 825.5877399999999,
+          "max_ms": 1078.7397
+        },
+        "control": {
+          "muestras": 212,
+          "p50_ms": 12384.3372,
+          "p95_ms": 23831.892184999993,
+          "max_ms": 90002.8318
+        },
+        "preparacion": {
+          "muestras": 204,
+          "p50_ms": 753.17295,
+          "p95_ms": 876.2226850000001,
+          "max_ms": 1078.7397
+        },
+        "recuperacion": {
+          "muestras": 0,
+          "p50_ms": null,
+          "p95_ms": null,
+          "max_ms": null
+        }
+      },
+      "ram_libre_minima_mib": 5233.0,
+      "cpu_equipo_max_pct": 100.0,
+      "inspectores_simultaneos_muestreados": null,
+      "muestras_vu50": 26,
+      "primera_muestra_vu50": "2026-10-25T15:02:51.3114915-05:00",
+      "ultima_muestra_vu50": "2026-10-25T15:03:16.3068858-05:00",
+      "completado": false,
+      "meta_p95_listados_cumplida": true,
+      "perfil": "perfil intermedio, consultar informe",
+      "comando": "tests/Performance/ejecutar-k6.ps1 -Escenario estres -SalidaPrivadaNueva <raiz-privada>/evidencias-privadas/estres50-cierre-002"
+    },
+    {
+      "ensayo": "estres50-cierre-003",
+      "sha256_resumen": "4ae6ea390b35ed9f50421cbce83d7769e0ae40b619f4b87cc7f14d7fb5935226",
+      "sha256_series": "7f5d5d240401d9142587f1bf20f1d8d73bc0730b9508a65920f421d87473407f",
+      "solicitudes": 1584,
+      "solicitudes_por_segundo": 5.023998185098417,
+      "errores_http_porcentaje": 0,
+      "checks_correctos": 1286,
+      "checks_fallidos": 0,
+      "vu_maximo_real": 50,
+      "iteraciones_completas_stdout": 245,
+      "iteraciones_resumen": 245,
+      "iteraciones_interrumpidas": 4,
+      "latencias": {
+        "listados": {
+          "muestras": 989,
+          "p50_ms": 772.2893,
+          "p95_ms": 3731.293939999996,
+          "max_ms": 5882.2028
+        },
+        "control": {
+          "muestras": 248,
+          "p50_ms": 25642.692199999998,
+          "p95_ms": 46060.560339999996,
+          "max_ms": 64244.3586
+        },
+        "preparacion": {
+          "muestras": 247,
+          "p50_ms": 914.3633,
+          "p95_ms": 3699.8330499999984,
+          "max_ms": 5882.2028
+        },
+        "recuperacion": {
+          "muestras": 142,
+          "p50_ms": 176.06380000000001,
+          "p95_ms": 773.3937549999997,
+          "max_ms": 867.875
+        }
+      },
+      "ram_libre_minima_mib": 5441.0,
+      "cpu_equipo_max_pct": 100.0,
+      "inspectores_simultaneos_muestreados": null,
+      "muestras_vu50": 65,
+      "primera_muestra_vu50": "2026-10-25T15:11:13.4509399-05:00",
+      "ultima_muestra_vu50": "2026-10-25T15:12:17.456808-05:00",
+      "completado": true,
+      "meta_p95_listados_cumplida": false,
+      "perfil": "ocho cupos, cola 60 s, KeepAlive Off",
+      "comando": "tests/Performance/ejecutar-k6.ps1 -Escenario estres -SalidaPrivadaNueva <raiz-privada>/evidencias-privadas/estres50-cierre-003"
+    },
+    {
+      "ensayo": "humo-cierre-001",
+      "sha256_resumen": "860392b667af92fd240b15c172eb77ef02ad9f40c75d32f99e4626d6f282c336",
+      "sha256_series": "316ca8de92057cbdfc847a46885ce5dea2187b5633451bd1b401e534143da1a5",
+      "solicitudes": 8,
+      "solicitudes_por_segundo": 0.9934765350280453,
+      "errores_http_porcentaje": 0,
+      "checks_correctos": 6,
+      "checks_fallidos": 0,
+      "vu_maximo_real": 1,
+      "iteraciones_completas_stdout": 1,
+      "iteraciones_resumen": 1,
+      "iteraciones_interrumpidas": 0,
+      "latencias": {
+        "listados": {
+          "muestras": 4,
+          "p50_ms": 145.5036,
+          "p95_ms": 363.88559999999995,
+          "max_ms": 396.4746
+        },
+        "control": {
+          "muestras": 1,
+          "p50_ms": 1633.677,
+          "p95_ms": 1633.677,
+          "max_ms": 1633.677
+        },
+        "preparacion": {
+          "muestras": 1,
+          "p50_ms": 396.4746,
+          "p95_ms": 396.4746,
+          "max_ms": 396.4746
+        },
+        "recuperacion": {
+          "muestras": 0,
+          "p50_ms": null,
+          "p95_ms": null,
+          "max_ms": null
+        }
+      },
+      "ram_libre_minima_mib": 5650.0,
+      "cpu_equipo_max_pct": 36.0,
+      "inspectores_simultaneos_muestreados": null,
+      "muestras_vu50": 0,
+      "primera_muestra_vu50": null,
+      "ultima_muestra_vu50": null,
+      "completado": true,
+      "meta_p95_listados_cumplida": true,
+      "perfil": "perfil intermedio, consultar informe",
+      "comando": "tests/Performance/ejecutar-k6.ps1 -Escenario humo -SalidaPrivadaNueva <raiz-privada>/evidencias-privadas/humo-cierre-001"
+    },
+    {
+      "ensayo": "humo-cierre-002",
+      "sha256_resumen": "cff72165ce2bbb0cc5039f9444177cd24e24acc89f96b49466e0783ac2a11371",
+      "sha256_series": "0c10cd36605163ae46eda234a0cc31b8b2084c4dbce3b33521b40ba8b44409d1",
+      "solicitudes": 8,
+      "solicitudes_por_segundo": 0.9643563292779256,
+      "errores_http_porcentaje": 0,
+      "checks_correctos": 6,
+      "checks_fallidos": 0,
+      "vu_maximo_real": 1,
+      "iteraciones_completas_stdout": 1,
+      "iteraciones_resumen": 1,
+      "iteraciones_interrumpidas": 0,
+      "latencias": {
+        "listados": {
+          "muestras": 4,
+          "p50_ms": 144.62065,
+          "p95_ms": 341.79793499999994,
+          "max_ms": 369.7587
+        },
+        "control": {
+          "muestras": 1,
+          "p50_ms": 1967.6634,
+          "p95_ms": 1967.6634,
+          "max_ms": 1967.6634
+        },
+        "preparacion": {
+          "muestras": 1,
+          "p50_ms": 369.7587,
+          "p95_ms": 369.7587,
+          "max_ms": 369.7587
+        },
+        "recuperacion": {
+          "muestras": 0,
+          "p50_ms": null,
+          "p95_ms": null,
+          "max_ms": null
+        }
+      },
+      "ram_libre_minima_mib": 5662.0,
+      "cpu_equipo_max_pct": 41.0,
+      "inspectores_simultaneos_muestreados": null,
+      "muestras_vu50": 0,
+      "primera_muestra_vu50": null,
+      "ultima_muestra_vu50": null,
+      "completado": true,
+      "meta_p95_listados_cumplida": true,
+      "perfil": "perfil intermedio, consultar informe",
+      "comando": "tests/Performance/ejecutar-k6.ps1 -Escenario humo -SalidaPrivadaNueva <raiz-privada>/evidencias-privadas/humo-cierre-002"
+    },
+    {
+      "ensayo": "humo-cierre-003",
+      "sha256_resumen": "0934fe123226401cb78db9dc1e334620faf6d8d82b0c3a9f2a221cb26a6c95ab",
+      "sha256_series": "7df40304a447240412443ba0a8a7f057f64ded7da65aa50328155617a99528ed",
+      "solicitudes": 8,
+      "solicitudes_por_segundo": 1.0500154791969423,
+      "errores_http_porcentaje": 0,
+      "checks_correctos": 6,
+      "checks_fallidos": 0,
+      "vu_maximo_real": 1,
+      "iteraciones_completas_stdout": 1,
+      "iteraciones_resumen": 1,
+      "iteraciones_interrumpidas": 0,
+      "latencias": {
+        "listados": {
+          "muestras": 4,
+          "p50_ms": 149.8902,
+          "p95_ms": 342.3364049999999,
+          "max_ms": 370.5327
+        },
+        "control": {
+          "muestras": 1,
+          "p50_ms": 1221.7425,
+          "p95_ms": 1221.7425,
+          "max_ms": 1221.7425
+        },
+        "preparacion": {
+          "muestras": 1,
+          "p50_ms": 370.5327,
+          "p95_ms": 370.5327,
+          "max_ms": 370.5327
+        },
+        "recuperacion": {
+          "muestras": 0,
+          "p50_ms": null,
+          "p95_ms": null,
+          "max_ms": null
+        }
+      },
+      "ram_libre_minima_mib": 5727.0,
+      "cpu_equipo_max_pct": 44.0,
+      "inspectores_simultaneos_muestreados": null,
+      "muestras_vu50": 0,
+      "primera_muestra_vu50": null,
+      "ultima_muestra_vu50": null,
+      "completado": true,
+      "meta_p95_listados_cumplida": true,
+      "perfil": "perfil intermedio, consultar informe",
+      "comando": "tests/Performance/ejecutar-k6.ps1 -Escenario humo -SalidaPrivadaNueva <raiz-privada>/evidencias-privadas/humo-cierre-003"
+    },
+    {
+      "ensayo": "humo-cierre-004",
+      "sha256_resumen": "f7a77e9f3eaff4cedb668d5bc31fda6764b582a9fca45ea266a9315076fd752a",
+      "sha256_series": "35d9e00e99599c7acb63575573e5b7075f5c35193dc257a7f5700e44d3a00327",
+      "solicitudes": 8,
+      "solicitudes_por_segundo": 1.0198514466535404,
+      "errores_http_porcentaje": 0,
+      "checks_correctos": 6,
+      "checks_fallidos": 0,
+      "vu_maximo_real": 1,
+      "iteraciones_completas_stdout": 1,
+      "iteraciones_resumen": 1,
+      "iteraciones_interrumpidas": 0,
+      "latencias": {
+        "listados": {
+          "muestras": 4,
+          "p50_ms": 167.2914,
+          "p95_ms": 378.98479499999996,
+          "max_ms": 408.4653
+        },
+        "control": {
+          "muestras": 1,
+          "p50_ms": 1186.7845,
+          "p95_ms": 1186.7845,
+          "max_ms": 1186.7845
+        },
+        "preparacion": {
+          "muestras": 1,
+          "p50_ms": 408.4653,
+          "p95_ms": 408.4653,
+          "max_ms": 408.4653
+        },
+        "recuperacion": {
+          "muestras": 0,
+          "p50_ms": null,
+          "p95_ms": null,
+          "max_ms": null
+        }
+      },
+      "ram_libre_minima_mib": 5801.0,
+      "cpu_equipo_max_pct": 38.0,
+      "inspectores_simultaneos_muestreados": null,
+      "muestras_vu50": 0,
+      "primera_muestra_vu50": null,
+      "ultima_muestra_vu50": null,
+      "completado": true,
+      "meta_p95_listados_cumplida": true,
+      "perfil": "ocho cupos, cola 60 s, KeepAlive Off",
+      "comando": "tests/Performance/ejecutar-k6.ps1 -Escenario humo -SalidaPrivadaNueva <raiz-privada>/evidencias-privadas/humo-cierre-004"
+    },
+    {
+      "ensayo": "recuperacion-cierre-001",
+      "sha256_resumen": "2d42748b4833f5f399bcb1fc8855d95ee554e79fdc12ac7ec1634545b119f79c",
+      "sha256_series": "0560037b1fff9e1869615c27f5c5ed61eda5dfa96acff8b4e512e29a367b7a95",
+      "solicitudes": 56,
+      "solicitudes_por_segundo": 0.8515559411184589,
+      "errores_http_porcentaje": 0,
+      "checks_correctos": 46,
+      "checks_fallidos": 0,
+      "vu_maximo_real": 1,
+      "iteraciones_completas_stdout": 9,
+      "iteraciones_resumen": 9,
+      "iteraciones_interrumpidas": 0,
+      "latencias": {
+        "listados": {
+          "muestras": 36,
+          "p50_ms": 144.74149999999997,
+          "p95_ms": 386.822,
+          "max_ms": 500.7927
+        },
+        "control": {
+          "muestras": 9,
+          "p50_ms": 1343.3746,
+          "p95_ms": 1560.76708,
+          "max_ms": 1564.5024
+        },
+        "preparacion": {
+          "muestras": 9,
+          "p50_ms": 368.8211,
+          "p95_ms": 455.60438,
+          "max_ms": 500.7927
+        },
+        "recuperacion": {
+          "muestras": 45,
+          "p50_ms": 120.8689,
+          "p95_ms": 384.52324,
+          "max_ms": 500.7927
+        }
+      },
+      "ram_libre_minima_mib": 5911.0,
+      "cpu_equipo_max_pct": 37.0,
+      "inspectores_simultaneos_muestreados": null,
+      "muestras_vu50": 0,
+      "primera_muestra_vu50": null,
+      "ultima_muestra_vu50": null,
+      "completado": true,
+      "meta_p95_listados_cumplida": true,
+      "perfil": "ocho cupos, cola 60 s, KeepAlive Off",
+      "comando": "tests/Performance/ejecutar-k6.ps1 -Escenario recuperacion -SalidaPrivadaNueva <raiz-privada>/evidencias-privadas/recuperacion-cierre-001"
+    }
+  ],
+  "seguridad_http": {
+    "fecha": "2026-10-25T15:16:44-05:00",
+    "origen": "http://127.0.0.1:8089",
+    "casos": [
+      {
+        "caso": "invitado_ruta_protegida",
+        "resultado": "APROBADO",
+        "detalle": []
+      },
+      {
+        "caso": "csrf_login_ausente",
+        "resultado": "APROBADO",
+        "detalle": []
+      },
+      {
+        "caso": "ZAP_10044_cuerpo_redireccion_estandar",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 302,
+          "bytes": 370,
+          "plantilla_framework_exacta": true,
+          "sha256_cuerpo": "5a88c7ebd80641a4ba10f8c71bf602ab822e93a4588252ea5264434b991cc345"
+        }
+      },
+      {
+        "caso": "administrador_dashboard",
+        "resultado": "APROBADO",
+        "detalle": []
+      },
+      {
+        "caso": "lectura_http_/usuarios",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "milisegundos": 92.8157,
+          "alcance": "HTTP sin navegador; no certifica responsive ni JavaScript"
+        }
+      },
+      {
+        "caso": "lectura_http_/roles-permisos",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "milisegundos": 128.0431,
+          "alcance": "HTTP sin navegador; no certifica responsive ni JavaScript"
+        }
+      },
+      {
+        "caso": "lectura_http_/clientes",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "milisegundos": 110.7975,
+          "alcance": "HTTP sin navegador; no certifica responsive ni JavaScript"
+        }
+      },
+      {
+        "caso": "lectura_http_/productos",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "milisegundos": 107.5469,
+          "alcance": "HTTP sin navegador; no certifica responsive ni JavaScript"
+        }
+      },
+      {
+        "caso": "lectura_http_/pedidos",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "milisegundos": 109.5942,
+          "alcance": "HTTP sin navegador; no certifica responsive ni JavaScript"
+        }
+      },
+      {
+        "caso": "lectura_http_/pedidos/nuevo",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "milisegundos": 376.6159,
+          "alcance": "HTTP sin navegador; no certifica responsive ni JavaScript"
+        }
+      },
+      {
+        "caso": "lectura_http_/pedidos/10",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "milisegundos": 118.6805,
+          "alcance": "HTTP sin navegador; no certifica responsive ni JavaScript"
+        }
+      },
+      {
+        "caso": "lectura_http_/pedidos/imprimir-por-fecha?fecha_pedido=2026-10-25",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "milisegundos": 332.1058,
+          "alcance": "HTTP sin navegador; no certifica responsive ni JavaScript"
+        }
+      },
+      {
+        "caso": "lectura_http_/cumplimiento/lista-preparacion",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "milisegundos": 403.4658,
+          "alcance": "HTTP sin navegador; no certifica responsive ni JavaScript"
+        }
+      },
+      {
+        "caso": "lectura_http_/cumplimiento/10",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "milisegundos": 123.7479,
+          "alcance": "HTTP sin navegador; no certifica responsive ni JavaScript"
+        }
+      },
+      {
+        "caso": "lectura_http_/inventario",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "milisegundos": 124.1626,
+          "alcance": "HTTP sin navegador; no certifica responsive ni JavaScript"
+        }
+      },
+      {
+        "caso": "lectura_http_/inventario/movimientos",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "milisegundos": 112.0368,
+          "alcance": "HTTP sin navegador; no certifica responsive ni JavaScript"
+        }
+      },
+      {
+        "caso": "lectura_http_/envasados",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "milisegundos": 103.5622,
+          "alcance": "HTTP sin navegador; no certifica responsive ni JavaScript"
+        }
+      },
+      {
+        "caso": "lectura_http_/envasados/nuevo",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "milisegundos": 289.3219,
+          "alcance": "HTTP sin navegador; no certifica responsive ni JavaScript"
+        }
+      },
+      {
+        "caso": "lectura_http_/presentaciones/1/materiales-envasado",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "milisegundos": 117.4221,
+          "alcance": "HTTP sin navegador; no certifica responsive ni JavaScript"
+        }
+      },
+      {
+        "caso": "lectura_http_/modalidades-surtidas",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "milisegundos": 7279.7472,
+          "alcance": "HTTP sin navegador; no certifica responsive ni JavaScript"
+        }
+      },
+      {
+        "caso": "lectura_http_/seguimiento",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "milisegundos": 95.0502,
+          "alcance": "HTTP sin navegador; no certifica responsive ni JavaScript"
+        }
+      },
+      {
+        "caso": "lectura_http_/indicadores",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "milisegundos": 502.0115,
+          "alcance": "HTTP sin navegador; no certifica responsive ni JavaScript"
+        }
+      },
+      {
+        "caso": "lectura_http_/auditoria",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "milisegundos": 113.4923,
+          "alcance": "HTTP sin navegador; no certifica responsive ni JavaScript"
+        }
+      },
+      {
+        "caso": "csv_http_materiales_resumen",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "bytes": 851
+        }
+      },
+      {
+        "caso": "csv_http_saldos_periodo",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "bytes": 46685
+        }
+      },
+      {
+        "caso": "csv_http_situacion_entregas",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "bytes": 292114
+        }
+      },
+      {
+        "caso": "csv_http_comercial",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "bytes": 703687
+        }
+      },
+      {
+        "caso": "csv_http_preparacion",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "bytes": 7712
+        }
+      },
+      {
+        "caso": "csv_http_fisicas",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "bytes": 228495
+        }
+      },
+      {
+        "caso": "csv_http_pendientes",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "bytes": 12917
+        }
+      },
+      {
+        "caso": "csv_http_composiciones",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "bytes": 757522
+        }
+      },
+      {
+        "caso": "csv_http_entregas",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "bytes": 438485
+        }
+      },
+      {
+        "caso": "csv_http_retornos",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "bytes": 196957
+        }
+      },
+      {
+        "caso": "csv_http_aprobaciones",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "bytes": 84340
+        }
+      },
+      {
+        "caso": "csv_http_envasados",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "bytes": 51804
+        }
+      },
+      {
+        "caso": "csv_http_materiales",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "bytes": 144090
+        }
+      },
+      {
+        "caso": "csv_http_movimientos",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "bytes": 710600
+        }
+      },
+      {
+        "caso": "csv_http_inventario",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "bytes": 105262
+        }
+      },
+      {
+        "caso": "cabeceras",
+        "resultado": "APROBADO",
+        "detalle": {
+          "nosniff": "nosniff",
+          "frame": "SAMEORIGIN",
+          "csp_report_only": true
+        }
+      },
+      {
+        "caso": "cookies_http_only_samesite",
+        "resultado": "APROBADO",
+        "detalle": {
+          "secure_por_https": "NO EVALUADO: origen HTTP local"
+        }
+      },
+      {
+        "caso": "auditoria_Administrador",
+        "resultado": "APROBADO",
+        "detalle": []
+      },
+      {
+        "caso": "dashboard_Administrador",
+        "resultado": "APROBADO",
+        "detalle": []
+      },
+      {
+        "caso": "auditoria_Comercial",
+        "resultado": "APROBADO",
+        "detalle": []
+      },
+      {
+        "caso": "dashboard_Comercial",
+        "resultado": "APROBADO",
+        "detalle": []
+      },
+      {
+        "caso": "auditoria_Produccion",
+        "resultado": "APROBADO",
+        "detalle": []
+      },
+      {
+        "caso": "dashboard_Produccion",
+        "resultado": "APROBADO",
+        "detalle": []
+      },
+      {
+        "caso": "csrf_envasado_invalido",
+        "resultado": "APROBADO",
+        "detalle": []
+      },
+      {
+        "caso": "buscador_entrada_especial",
+        "resultado": "APROBADO",
+        "detalle": []
+      },
+      {
+        "caso": "observacion_html_escapada",
+        "resultado": "APROBADO",
+        "detalle": []
+      },
+      {
+        "caso": "D9A01_sesion_previa",
+        "resultado": "APROBADO",
+        "detalle": []
+      },
+      {
+        "caso": "D9A01_segunda_sesion_json",
+        "resultado": "APROBADO",
+        "detalle": []
+      },
+      {
+        "caso": "D9A01_otro_modulo",
+        "resultado": "APROBADO",
+        "detalle": []
+      },
+      {
+        "caso": "cuenta_inactiva_no_ingresa",
+        "resultado": "APROBADO",
+        "detalle": []
+      },
+      {
+        "caso": "logout_invalida_sesion",
+        "resultado": "APROBADO",
+        "detalle": []
+      },
+      {
+        "caso": "sexto_intento_limitado",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 302,
+          "retry_after_presente": true
+        }
+      }
+    ]
+  },
+  "estado_ficticio_final": {
+    "pedidos": 3001,
+    "pedido_detalles": 3005,
+    "envasados": 181,
+    "movimientos_inventario": 2464,
+    "migrations": 45,
+    "saldo_productos": "4487912",
+    "saldo_insumos": "295224.000"
+  },
+  "datos_comerciales_saldos_conteos_conservados": true,
+  "configuracion_apache_sha256": "544e774415841f766bf4aec8bc92761b5dc8563293cf30ed346b2e98efe417bd",
+  "recursos_limitacion": "CPU y RAM globales incluyen el instrumento. El desglose de procesos no capturó PowerShell detrás de cmd.exe; null no significa cero inspectores. No se inventan mediciones por subproceso.",
+  "validaciones": {
+    "larastan_errores": 0,
+    "composer_vulnerabilidades": 0,
+    "laravel": {
+      "pruebas": 622,
+      "aserciones": 3826,
+      "security": 11,
+      "duracion_ms": 64907,
+      "omitidas": 0,
+      "junit_sha256": "b564165c1e10108f210251c270f5694f25d621961879f0622e9ac06bbddf3432",
+      "feature": 578,
+      "unitarias_puras": 33
+    },
+    "npm_vulnerabilidades": 0,
+    "javascript": 28,
+    "pint": "APROBADO",
+    "vite_segundos": 3.94,
+    "mysql_ci": "Consultar los cinco checks del commit final del PR #43, entorno MySQL efímero de GitHub",
+    "nivel": 5
+  }
+}

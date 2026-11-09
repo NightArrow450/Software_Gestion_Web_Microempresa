@@ -1,0 +1,145 @@
+{
+  "version": "2.17.0",
+  "generado": "Sun, 25 Oct 2026 13:00:18",
+  "origenes": [
+    "http://127.0.0.1:8089"
+  ],
+  "modo": "PASIVO, sin spider ni activeScan, CLI -silent",
+  "sha256_original_json": "0ca360c4ad2453a369d51709fb3d9d6b28e712475b72d864c7e42171a0aa06f8",
+  "codigo_salida": 2,
+  "interpretacion": "Advertencias por alertas de nivel Low o superior. No se declara libre de vulnerabilidades.",
+  "hallazgos": [
+    {
+      "id": "10038",
+      "nombre": "Content Security Policy (CSP) Header Not Set",
+      "riesgo": "Medium (High)",
+      "confianza": "3",
+      "instancias": "5",
+      "rutas": [
+        "/dashboard",
+        "/login",
+        "/pedidos",
+        "/pedidos/3",
+        "/productos"
+      ],
+      "cookie_xsrf_sin_httponly": false
+    },
+    {
+      "id": "90003",
+      "nombre": "Sub Resource Integrity Attribute Missing",
+      "riesgo": "Medium (High)",
+      "confianza": "3",
+      "instancias": "5",
+      "rutas": [
+        "/dashboard",
+        "/login",
+        "/productos"
+      ],
+      "cookie_xsrf_sin_httponly": false
+    },
+    {
+      "id": "10044",
+      "nombre": "Big Redirect Detected (Potential Sensitive Information Leak)",
+      "riesgo": "Low (Medium)",
+      "confianza": "2",
+      "instancias": "1",
+      "rutas": [
+        "/login"
+      ],
+      "cookie_xsrf_sin_httponly": false
+    },
+    {
+      "id": "10010",
+      "nombre": "Cookie No HttpOnly Flag",
+      "riesgo": "Low (Medium)",
+      "confianza": "2",
+      "instancias": "5",
+      "rutas": [
+        "/dashboard",
+        "/login",
+        "/pedidos",
+        "/productos"
+      ],
+      "cookie_xsrf_sin_httponly": true
+    },
+    {
+      "id": "10036",
+      "nombre": "Server Leaks Version Information via \"Server\" HTTP Response Header Field",
+      "riesgo": "Low (High)",
+      "confianza": "3",
+      "instancias": "5",
+      "rutas": [
+        "/dashboard",
+        "/login",
+        "/pedidos",
+        "/productos"
+      ],
+      "cookie_xsrf_sin_httponly": false
+    },
+    {
+      "id": "10111",
+      "nombre": "Authentication Request Identified",
+      "riesgo": "Informational (High)",
+      "confianza": "3",
+      "instancias": "1",
+      "rutas": [
+        "/login"
+      ],
+      "cookie_xsrf_sin_httponly": false
+    },
+    {
+      "id": "10038",
+      "nombre": "Content Security Policy (CSP) Report-Only Header Found",
+      "riesgo": "Informational (High)",
+      "confianza": "3",
+      "instancias": "5",
+      "rutas": [
+        "/dashboard",
+        "/login",
+        "/pedidos",
+        "/pedidos/3",
+        "/productos"
+      ],
+      "cookie_xsrf_sin_httponly": false
+    },
+    {
+      "id": "10109",
+      "nombre": "Modern Web Application",
+      "riesgo": "Informational (Medium)",
+      "confianza": "2",
+      "instancias": "1",
+      "rutas": [
+        "/login"
+      ],
+      "cookie_xsrf_sin_httponly": false
+    },
+    {
+      "id": "10112",
+      "nombre": "Session Management Response Identified",
+      "riesgo": "Informational (Medium)",
+      "confianza": "2",
+      "instancias": "8",
+      "rutas": [
+        "/cumplimiento/lista-preparacion",
+        "/dashboard",
+        "/envasados",
+        "/login",
+        "/pedidos",
+        "/pedidos/3",
+        "/productos"
+      ],
+      "cookie_xsrf_sin_httponly": false
+    },
+    {
+      "id": "10031",
+      "nombre": "User Controllable HTML Element Attribute (Potential XSS)",
+      "riesgo": "Informational (Low)",
+      "confianza": "1",
+      "instancias": "1",
+      "rutas": [
+        "/productos"
+      ],
+      "cookie_xsrf_sin_httponly": false
+    }
+  ]
+}

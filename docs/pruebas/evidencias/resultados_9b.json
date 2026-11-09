@@ -1,0 +1,1141 @@
+{
+  "fecha": "2026-10-25T14:09:38.1915041-05:00",
+  "mysql_version": "8.4.3",
+  "base_ficticia": "dhacer_eco_limp_demo_f9b_001",
+  "k6_version": "2.3.0",
+  "ensayos": [
+    {
+      "ensayo": "humo-001",
+      "sha256": "03ddf5f33df3e161a845fc9dab9391161df9155efc1cd34589a6364ca79fc74e",
+      "solicitudes": 8,
+      "solicitudes_por_segundo": 0.5744070855181864,
+      "errores_http_porcentaje": 0,
+      "errores_consulta_porcentaje": 0,
+      "checks_correctos": 6,
+      "checks_fallidos": 0,
+      "max_vu_muestreados": 1,
+      "p50_listados_ms": 893.09205,
+      "p95_listados_ms": 1820.8297799999996,
+      "maximo_listados_ms": 1949.4747,
+      "iteraciones": 1,
+      "iteraciones_interrumpidas": 0,
+      "ram_libre_minima_mib": 5576,
+      "cpu_equipo_max_pct": 37,
+      "p90_listados_ms": 1692.18486,
+      "promedio_listados_ms": 1078.922,
+      "iteraciones_completas": 1,
+      "duracion_observada_segundos": 13.9,
+      "muestras_listados": 4,
+      "solicitudes_consulta": 5,
+      "max_vu_observados_stdout": 1,
+      "inicio_muestreo_utc": "2026-10-25T17:39:31.62968Z",
+      "fin_muestreo_utc": "2026-10-25T17:39:45.2345897Z",
+      "comando": "tests/Performance/ejecutar-k6.ps1 -Escenario humo -SalidaPrivadaNueva <raiz-privada>/evidencias-privadas/humo-001",
+      "objetivo_vu": 1,
+      "estado": "COMPLETADO_CON_LATENCIA_FUERA_DE_META",
+      "perfil_php": "Sin OPcache web; memory_limit 128M",
+      "dataset_pedidos": 3000,
+      "procesos_muestreados": [
+        {
+          "proceso": "httpd",
+          "working_set_maximo_individual_mib": 52.22,
+          "memoria_privada_maxima_individual_mib": 40.4
+        },
+        {
+          "proceso": "k6",
+          "working_set_maximo_individual_mib": 29.3,
+          "memoria_privada_maxima_individual_mib": 58.73
+        },
+        {
+          "proceso": "mysqld",
+          "working_set_maximo_individual_mib": 517.36,
+          "memoria_privada_maxima_individual_mib": 865.55
+        }
+      ]
+    },
+    {
+      "ensayo": "carga20-001",
+      "sha256": "0cd0fd518e1a6c76bd44fe6355deb5a37d10c91e69050ad04336cdf97d0346f6",
+      "solicitudes": 93,
+      "solicitudes_por_segundo": 4.695131647780736,
+      "errores_http_porcentaje": 1.0752688172043012,
+      "errores_consulta_porcentaje": 0,
+      "checks_correctos": 54,
+      "checks_fallidos": 0,
+      "max_vu_muestreados": 20,
+      "p50_listados_ms": 1224.3254,
+      "p95_listados_ms": 1741.3068199999998,
+      "maximo_listados_ms": 2146.8032,
+      "iteraciones": 1,
+      "iteraciones_interrumpidas": 20,
+      "ram_libre_minima_mib": 3769,
+      "cpu_equipo_max_pct": 100,
+      "p90_listados_ms": 1562.57394,
+      "promedio_listados_ms": 1260.4141111111112,
+      "iteraciones_completas": 0,
+      "duracion_observada_segundos": 19.9,
+      "muestras_listados": 27,
+      "solicitudes_consulta": 35,
+      "max_vu_observados_stdout": 20,
+      "inicio_muestreo_utc": "2026-10-25T17:40:30.1029535Z",
+      "fin_muestreo_utc": "2026-10-25T17:40:49.0857029Z",
+      "comando": "tests/Performance/ejecutar-k6.ps1 -Escenario carga -SalidaPrivadaNueva <raiz-privada>/evidencias-privadas/carga20-001",
+      "objetivo_vu": 20,
+      "estado": "INTERRUMPIDO_CONTROL_IDENTIDAD",
+      "perfil_php": "Sin OPcache web; memory_limit 128M",
+      "dataset_pedidos": 3000,
+      "procesos_muestreados": [
+        {
+          "proceso": "httpd",
+          "working_set_maximo_individual_mib": 491.83,
+          "memoria_privada_maxima_individual_mib": 512.04
+        },
+        {
+          "proceso": "k6",
+          "working_set_maximo_individual_mib": 40.27,
+          "memoria_privada_maxima_individual_mib": 69.19
+        },
+        {
+          "proceso": "mysqld",
+          "working_set_maximo_individual_mib": 528.76,
+          "memoria_privada_maxima_individual_mib": 904.1
+        }
+      ]
+    },
+    {
+      "ensayo": "estres50-001",
+      "sha256": "44b58d94988934854e030e876a653b739fcc60cb480fc1b5e2cb1447d6d4274c",
+      "solicitudes": 9,
+      "solicitudes_por_segundo": 0.9584537457410708,
+      "errores_http_porcentaje": 11.11111111111111,
+      "errores_consulta_porcentaje": 0,
+      "checks_correctos": 4,
+      "checks_fallidos": 0,
+      "max_vu_muestreados": 2,
+      "p50_listados_ms": 494.67655,
+      "p95_listados_ms": 543.7769049999999,
+      "maximo_listados_ms": 549.2325,
+      "iteraciones": 1,
+      "iteraciones_interrumpidas": 3,
+      "ram_libre_minima_mib": 5228,
+      "cpu_equipo_max_pct": 39,
+      "p90_listados_ms": 538.3213099999999,
+      "promedio_listados_ms": 494.67655,
+      "iteraciones_completas": 0,
+      "duracion_observada_segundos": 9.4,
+      "muestras_listados": 2,
+      "solicitudes_consulta": 2,
+      "max_vu_observados_stdout": 2,
+      "inicio_muestreo_utc": "2026-10-25T17:42:46.8693646Z",
+      "fin_muestreo_utc": "2026-10-25T17:42:57.8863521Z",
+      "comando": "tests/Performance/ejecutar-k6.ps1 -Escenario estres -SalidaPrivadaNueva <raiz-privada>/evidencias-privadas/estres50-001",
+      "objetivo_vu": 50,
+      "estado": "INTERRUMPIDO_CONTROL_IDENTIDAD",
+      "perfil_php": "Sin OPcache web; memory_limit 128M",
+      "dataset_pedidos": 3000,
+      "procesos_muestreados": [
+        {
+          "proceso": "httpd",
+          "working_set_maximo_individual_mib": 489.55,
+          "memoria_privada_maxima_individual_mib": 504.31
+        },
+        {
+          "proceso": "k6",
+          "working_set_maximo_individual_mib": 44.46,
+          "memoria_privada_maxima_individual_mib": 74.05
+        },
+        {
+          "proceso": "mysqld",
+          "working_set_maximo_individual_mib": 528.25,
+          "memoria_privada_maxima_individual_mib": 902.1
+        }
+      ]
+    },
+    {
+      "ensayo": "humo-002",
+      "sha256": "b4b971782dd548229a1bafe2dac4365433a8a791f3bc77eba86e610c07a27587",
+      "solicitudes": 8,
+      "solicitudes_por_segundo": 0.6901583037668797,
+      "errores_http_porcentaje": 0,
+      "errores_consulta_porcentaje": 0,
+      "checks_correctos": 6,
+      "checks_fallidos": 0,
+      "max_vu_muestreados": 1,
+      "p50_listados_ms": 480.10185,
+      "p95_listados_ms": 1458.5357549999994,
+      "maximo_listados_ms": 1624.5756,
+      "iteraciones": 1,
+      "iteraciones_interrumpidas": 0,
+      "ram_libre_minima_mib": 5233,
+      "cpu_equipo_max_pct": 44,
+      "p90_listados_ms": 1292.49591,
+      "promedio_listados_ms": 751.7098,
+      "iteraciones_completas": 1,
+      "duracion_observada_segundos": 11.6,
+      "muestras_listados": 4,
+      "solicitudes_consulta": 5,
+      "max_vu_observados_stdout": 1,
+      "inicio_muestreo_utc": "2026-10-25T17:44:24.766745Z",
+      "fin_muestreo_utc": "2026-10-25T17:44:38.3705668Z",
+      "comando": "tests/Performance/ejecutar-k6.ps1 -Escenario humo -SalidaPrivadaNueva <raiz-privada>/evidencias-privadas/humo-002",
+      "objetivo_vu": 1,
+      "estado": "COMPLETADO_CON_LATENCIA_FUERA_DE_META",
+      "perfil_php": "Sin OPcache web; memory_limit 128M",
+      "dataset_pedidos": 3000,
+      "procesos_muestreados": [
+        {
+          "proceso": "httpd",
+          "working_set_maximo_individual_mib": 486.59,
+          "memoria_privada_maxima_individual_mib": 502.62
+        },
+        {
+          "proceso": "k6",
+          "working_set_maximo_individual_mib": 29.57,
+          "memoria_privada_maxima_individual_mib": 58.38
+        },
+        {
+          "proceso": "mysqld",
+          "working_set_maximo_individual_mib": 528.85,
+          "memoria_privada_maxima_individual_mib": 902.57
+        }
+      ]
+    },
+    {
+      "ensayo": "carga20-002",
+      "sha256": "efbabd05de5aa651a80b05b58b7fe8d9f1897760e186c2cba7369c60357484f4",
+      "solicitudes": 524,
+      "solicitudes_por_segundo": 4.316518022151408,
+      "errores_http_porcentaje": 0.19083969465648853,
+      "errores_consulta_porcentaje": 0,
+      "checks_correctos": 420,
+      "checks_fallidos": 0,
+      "max_vu_muestreados": 20,
+      "p50_listados_ms": 1147.3256999999999,
+      "p95_listados_ms": 4598.5606,
+      "maximo_listados_ms": 6238.2756,
+      "iteraciones": 81,
+      "iteraciones_interrumpidas": 20,
+      "ram_libre_minima_mib": 3580,
+      "cpu_equipo_max_pct": 100,
+      "p90_listados_ms": 4171.1363,
+      "promedio_listados_ms": 1824.5671884375001,
+      "iteraciones_completas": 80,
+      "duracion_observada_segundos": 121.5,
+      "muestras_listados": 320,
+      "solicitudes_consulta": 400,
+      "max_vu_observados_stdout": 20,
+      "inicio_muestreo_utc": "2026-10-25T17:45:00.7657588Z",
+      "fin_muestreo_utc": "2026-10-25T17:47:00.6768991Z",
+      "comando": "tests/Performance/ejecutar-k6.ps1 -Escenario carga -SalidaPrivadaNueva <raiz-privada>/evidencias-privadas/carga20-002",
+      "objetivo_vu": 20,
+      "estado": "INTERRUMPIDO_CONTROL_IDENTIDAD",
+      "perfil_php": "Sin OPcache web; memory_limit 128M",
+      "dataset_pedidos": 3000,
+      "procesos_muestreados": [
+        {
+          "proceso": "httpd",
+          "working_set_maximo_individual_mib": 563.88,
+          "memoria_privada_maxima_individual_mib": 566.96
+        },
+        {
+          "proceso": "k6",
+          "working_set_maximo_individual_mib": 49.58,
+          "memoria_privada_maxima_individual_mib": 77.92
+        },
+        {
+          "proceso": "mysqld",
+          "working_set_maximo_individual_mib": 534.11,
+          "memoria_privada_maxima_individual_mib": 917.68
+        }
+      ]
+    },
+    {
+      "ensayo": "estres50-002",
+      "sha256": "00d1c8b6d065f2adca0c8570c0e144b40e7317331bfd991f7906fc3ca962a370",
+      "solicitudes": 232,
+      "solicitudes_por_segundo": 3.417807041925587,
+      "errores_http_porcentaje": 0.43103448275862066,
+      "errores_consulta_porcentaje": 0,
+      "checks_correctos": 179,
+      "checks_fallidos": 0,
+      "max_vu_muestreados": 23,
+      "p50_listados_ms": 863.6279,
+      "p95_listados_ms": 2906.18266,
+      "maximo_listados_ms": 3587.4645,
+      "iteraciones": 30,
+      "iteraciones_interrumpidas": 23,
+      "ram_libre_minima_mib": 4182,
+      "cpu_equipo_max_pct": 100,
+      "p90_listados_ms": 2767.998,
+      "promedio_listados_ms": 1258.113450387597,
+      "iteraciones_completas": 29,
+      "duracion_observada_segundos": 67.9,
+      "muestras_listados": 129,
+      "solicitudes_consulta": 162,
+      "max_vu_observados_stdout": 23,
+      "inicio_muestreo_utc": "2026-10-25T17:47:54.8081676Z",
+      "fin_muestreo_utc": "2026-10-25T17:49:03.4806172Z",
+      "comando": "tests/Performance/ejecutar-k6.ps1 -Escenario estres -SalidaPrivadaNueva <raiz-privada>/evidencias-privadas/estres50-002",
+      "objetivo_vu": 50,
+      "estado": "INTERRUMPIDO_CONTROL_IDENTIDAD",
+      "perfil_php": "Sin OPcache web; memory_limit 128M",
+      "dataset_pedidos": 3000,
+      "procesos_muestreados": [
+        {
+          "proceso": "httpd",
+          "working_set_maximo_individual_mib": 600.73,
+          "memoria_privada_maxima_individual_mib": 608.6
+        },
+        {
+          "proceso": "k6",
+          "working_set_maximo_individual_mib": 53.45,
+          "memoria_privada_maxima_individual_mib": 81.75
+        },
+        {
+          "proceso": "mysqld",
+          "working_set_maximo_individual_mib": 532.92,
+          "memoria_privada_maxima_individual_mib": 911.31
+        }
+      ]
+    },
+    {
+      "ensayo": "recuperacion-001",
+      "sha256": "3b332f82864383822fc8574c67c8fc0d8fa5a918958dd77f32f07f3c88a60f77",
+      "solicitudes": 8,
+      "solicitudes_por_segundo": 0.6279439286888037,
+      "errores_http_porcentaje": 0,
+      "errores_consulta_porcentaje": 0,
+      "checks_correctos": 6,
+      "checks_fallidos": 0,
+      "max_vu_muestreados": 1,
+      "p50_listados_ms": 553.56025,
+      "p95_listados_ms": 1832.5142499999997,
+      "maximo_listados_ms": 2054.2294,
+      "iteraciones": 1,
+      "iteraciones_interrumpidas": 0,
+      "ram_libre_minima_mib": 5068,
+      "cpu_equipo_max_pct": 42,
+      "p90_listados_ms": 1610.7991000000004,
+      "promedio_listados_ms": 903.6499500000001,
+      "iteraciones_completas": 1,
+      "duracion_observada_segundos": 12.7,
+      "muestras_listados": 4,
+      "solicitudes_consulta": 5,
+      "max_vu_observados_stdout": 1,
+      "inicio_muestreo_utc": "2026-10-25T17:50:56.7913871Z",
+      "fin_muestreo_utc": "2026-10-25T17:51:10.5756506Z",
+      "comando": "tests/Performance/ejecutar-k6.ps1 -Escenario humo -SalidaPrivadaNueva <raiz-privada>/evidencias-privadas/recuperacion-001",
+      "objetivo_vu": 1,
+      "estado": "COMPLETADO_CON_LATENCIA_FUERA_DE_META",
+      "perfil_php": "Sin OPcache web; memory_limit 128M",
+      "dataset_pedidos": 3001,
+      "procesos_muestreados": [
+        {
+          "proceso": "httpd",
+          "working_set_maximo_individual_mib": 566.25,
+          "memoria_privada_maxima_individual_mib": 579.77
+        },
+        {
+          "proceso": "k6",
+          "working_set_maximo_individual_mib": 30.3,
+          "memoria_privada_maxima_individual_mib": 59.05
+        },
+        {
+          "proceso": "mysqld",
+          "working_set_maximo_individual_mib": 326.8,
+          "memoria_privada_maxima_individual_mib": 914.28
+        }
+      ]
+    },
+    {
+      "ensayo": "carga20-003",
+      "sha256": "17437d4ff3e6d878798d1b92778ca4fa3015779dcf746fe249fd1d6a1dd285d7",
+      "solicitudes": 640,
+      "solicitudes_por_segundo": 5.013676168760437,
+      "errores_http_porcentaje": 0,
+      "checks_correctos": 520,
+      "checks_fallidos": 0,
+      "max_vu_muestreados": 20,
+      "iteraciones": 100,
+      "ram_libre_minima_mib": 3632,
+      "cpu_equipo_max_pct": 100,
+      "inicio_muestreo_utc": "2026-10-25T18:18:59.5819926Z",
+      "fin_muestreo_utc": "2026-10-25T18:21:06.6669219Z",
+      "objetivo_vu": 20,
+      "comando": "tests/Performance/ejecutar-k6.ps1 -Escenario carga -SalidaPrivadaNueva <raiz-privada>/evidencias-privadas/carga20-003",
+      "inspector": "Agrupado, sin caché ni cambio del timeout de 15 s",
+      "p50_listados_ms": 1151.35095,
+      "p90_listados_ms": 3967.528770000002,
+      "p95_listados_ms": 4805.175355,
+      "promedio_listados_ms": 1825.97161425,
+      "maximo_listados_ms": 6447.623,
+      "muestras_listados": 400,
+      "errores_consulta_porcentaje": 0,
+      "solicitudes_consulta": 500,
+      "iteraciones_completas": 100,
+      "iteraciones_interrumpidas": 0,
+      "duracion_observada_segundos": 127.7,
+      "max_vu_observados_stdout": 20,
+      "estado": "COMPLETADO_CON_LATENCIA_FUERA_DE_META",
+      "perfil_php": "Sin OPcache web; memory_limit 128M",
+      "dataset_pedidos": 3001,
+      "procesos_muestreados": [
+        {
+          "proceso": "httpd",
+          "working_set_maximo_individual_mib": 635.58,
+          "memoria_privada_maxima_individual_mib": 655.03
+        },
+        {
+          "proceso": "k6",
+          "working_set_maximo_individual_mib": 51.35,
+          "memoria_privada_maxima_individual_mib": 79.77
+        },
+        {
+          "proceso": "mysqld",
+          "working_set_maximo_individual_mib": 251.07,
+          "memoria_privada_maxima_individual_mib": 924.59
+        }
+      ]
+    },
+    {
+      "ensayo": "estres50-003",
+      "sha256": "2e277753eaefa9f06cef8d700c4989bb039b15d8f3e0c644c62e840aecede11d",
+      "solicitudes": 298,
+      "solicitudes_por_segundo": 3.7604929757947305,
+      "errores_http_porcentaje": 0.33557046979865773,
+      "checks_correctos": 229,
+      "checks_fallidos": 0,
+      "max_vu_muestreados": 29,
+      "iteraciones": 39,
+      "ram_libre_minima_mib": 4319,
+      "cpu_equipo_max_pct": 100,
+      "inicio_muestreo_utc": "2026-10-25T18:22:10.8191495Z",
+      "fin_muestreo_utc": "2026-10-25T18:23:33.0038571Z",
+      "objetivo_vu": 50,
+      "comando": "tests/Performance/ejecutar-k6.ps1 -Escenario estres -SalidaPrivadaNueva <raiz-privada>/evidencias-privadas/estres50-003",
+      "inspector": "Agrupado, sin caché ni cambio del timeout de 15 s",
+      "p50_listados_ms": 977.1088,
+      "p90_listados_ms": 2731.5145,
+      "p95_listados_ms": 2869.58362,
+      "promedio_listados_ms": 1308.1127365269467,
+      "maximo_listados_ms": 3337.8911,
+      "muestras_listados": 167,
+      "errores_consulta_porcentaje": 0,
+      "solicitudes_consulta": 209,
+      "iteraciones_completas": 38,
+      "iteraciones_interrumpidas": 29,
+      "duracion_observada_segundos": 79.7,
+      "max_vu_observados_stdout": 29,
+      "estado": "INTERRUMPIDO_CONTROL_IDENTIDAD",
+      "perfil_php": "Sin OPcache web; memory_limit 128M",
+      "dataset_pedidos": 3001,
+      "procesos_muestreados": [
+        {
+          "proceso": "httpd",
+          "working_set_maximo_individual_mib": 732.98,
+          "memoria_privada_maxima_individual_mib": 757.72
+        },
+        {
+          "proceso": "k6",
+          "working_set_maximo_individual_mib": 57.29,
+          "memoria_privada_maxima_individual_mib": 84.86
+        },
+        {
+          "proceso": "mysqld",
+          "working_set_maximo_individual_mib": 237.39,
+          "memoria_privada_maxima_individual_mib": 921.55
+        }
+      ]
+    },
+    {
+      "ensayo": "recuperacion-002",
+      "sha256": "bd4c01df513704aa2ca29253b6931c03e0fa07992a23a0bc06fe794d325a95b2",
+      "solicitudes": 8,
+      "solicitudes_por_segundo": 0.6912017721307515,
+      "errores_http_porcentaje": 0,
+      "checks_correctos": 6,
+      "checks_fallidos": 0,
+      "max_vu_muestreados": 1,
+      "iteraciones": 1,
+      "ram_libre_minima_mib": 4964,
+      "cpu_equipo_max_pct": 40,
+      "inicio_muestreo_utc": "2026-10-25T18:25:05.8156334Z",
+      "fin_muestreo_utc": "2026-10-25T18:25:16.8432208Z",
+      "objetivo_vu": 1,
+      "comando": "tests/Performance/ejecutar-k6.ps1 -Escenario humo -SalidaPrivadaNueva <raiz-privada>/evidencias-privadas/recuperacion-002",
+      "inspector": "Agrupado, sin caché ni cambio del timeout de 15 s",
+      "p50_listados_ms": 528.2419,
+      "p90_listados_ms": 1348.8398200000001,
+      "p95_listados_ms": 1523.5911099999998,
+      "promedio_listados_ms": 791.81735,
+      "maximo_listados_ms": 1698.3424,
+      "muestras_listados": 4,
+      "errores_consulta_porcentaje": 0,
+      "solicitudes_consulta": 5,
+      "iteraciones_completas": 1,
+      "iteraciones_interrumpidas": 0,
+      "duracion_observada_segundos": 11.6,
+      "max_vu_observados_stdout": 1,
+      "estado": "COMPLETADO_CON_LATENCIA_FUERA_DE_META",
+      "perfil_php": "Sin OPcache web; memory_limit 128M",
+      "dataset_pedidos": 3001,
+      "procesos_muestreados": [
+        {
+          "proceso": "httpd",
+          "working_set_maximo_individual_mib": 656.06,
+          "memoria_privada_maxima_individual_mib": 686.33
+        },
+        {
+          "proceso": "k6",
+          "working_set_maximo_individual_mib": 29.62,
+          "memoria_privada_maxima_individual_mib": 58.71
+        },
+        {
+          "proceso": "mysqld",
+          "working_set_maximo_individual_mib": 199.26,
+          "memoria_privada_maxima_individual_mib": 919.89
+        }
+      ]
+    },
+    {
+      "ensayo": "humo-opcache-001",
+      "sha256": "ce01b92377b9e02d782080443482d60f0c848f042d90c926d24e86ddf47706c7",
+      "solicitudes": 8,
+      "solicitudes_por_segundo": 0.8863837910187118,
+      "errores_http_porcentaje": 0,
+      "checks_correctos": 6,
+      "checks_fallidos": 0,
+      "max_vu_muestreados": 1,
+      "iteraciones": 1,
+      "ram_libre_minima_mib": 5685,
+      "cpu_equipo_max_pct": 46,
+      "inicio_muestreo_utc": "2026-10-25T18:31:38.1769548Z",
+      "fin_muestreo_utc": "2026-10-25T18:31:49.0864635Z",
+      "objetivo_vu": 1,
+      "comando": "tests/Performance/ejecutar-k6.ps1 -Escenario humo -SalidaPrivadaNueva <raiz-privada>/evidencias-privadas/humo-opcache-001",
+      "inspector": "Agrupado, sin caché ni cambio del timeout de 15 s",
+      "perfil_php": "OPcache privado 64 MiB, cache_id exclusivo, memory_limit 128M",
+      "p50_listados_ms": 172.49585,
+      "p90_listados_ms": 995.76214,
+      "p95_listados_ms": 1165.8671199999994,
+      "promedio_listados_ms": 447.005425,
+      "maximo_listados_ms": 1335.9721,
+      "muestras_listados": 4,
+      "errores_consulta_porcentaje": 0,
+      "solicitudes_consulta": 5,
+      "iteraciones_completas": 1,
+      "iteraciones_interrumpidas": 0,
+      "duracion_observada_segundos": 9,
+      "estado": "COMPLETADO_CON_LATENCIA_FUERA_DE_META",
+      "dataset_pedidos": 3001,
+      "procesos_muestreados": [
+        {
+          "proceso": "httpd",
+          "working_set_maximo_individual_mib": 56.91,
+          "memoria_privada_maxima_individual_mib": 19.25
+        },
+        {
+          "proceso": "k6",
+          "working_set_maximo_individual_mib": 29.67,
+          "memoria_privada_maxima_individual_mib": 58.34
+        },
+        {
+          "proceso": "mysqld",
+          "working_set_maximo_individual_mib": 176.52,
+          "memoria_privada_maxima_individual_mib": 919.96
+        }
+      ]
+    },
+    {
+      "ensayo": "carga20-opcache-001",
+      "sha256": "213ff96bd4b89971d573b00254e99bd97b2ddca0d15a99163aaa325ab7b2e93d",
+      "solicitudes": 946,
+      "solicitudes_por_segundo": 7.109842938263417,
+      "errores_http_porcentaje": 0,
+      "checks_correctos": 775,
+      "checks_fallidos": 0,
+      "max_vu_muestreados": 20,
+      "iteraciones": 151,
+      "ram_libre_minima_mib": 4512,
+      "cpu_equipo_max_pct": 100,
+      "inicio_muestreo_utc": "2026-10-25T18:34:05.7784541Z",
+      "fin_muestreo_utc": "2026-10-25T18:36:17.6861883Z",
+      "objetivo_vu": 20,
+      "comando": "tests/Performance/ejecutar-k6.ps1 -Escenario carga -SalidaPrivadaNueva <raiz-privada>/evidencias-privadas/carga20-opcache-001",
+      "inspector": "Agrupado, sin caché ni cambio del timeout de 15 s",
+      "perfil_php": "OPcache privado 64 MiB, cache_id exclusivo, memory_limit 128M",
+      "p50_listados_ms": 192.3063,
+      "p90_listados_ms": 2903.373320000001,
+      "p95_listados_ms": 3383.964305,
+      "promedio_listados_ms": 848.5125872516551,
+      "maximo_listados_ms": 5271.6049,
+      "muestras_listados": 604,
+      "errores_consulta_porcentaje": 0,
+      "solicitudes_consulta": 755,
+      "iteraciones_completas": 151,
+      "iteraciones_interrumpidas": 0,
+      "duracion_observada_segundos": 133.1,
+      "estado": "COMPLETADO_CON_LATENCIA_FUERA_DE_META",
+      "dataset_pedidos": 3001,
+      "procesos_muestreados": [
+        {
+          "proceso": "httpd",
+          "working_set_maximo_individual_mib": 162.27,
+          "memoria_privada_maxima_individual_mib": 139.09
+        },
+        {
+          "proceso": "k6",
+          "working_set_maximo_individual_mib": 49.72,
+          "memoria_privada_maxima_individual_mib": 78.39
+        },
+        {
+          "proceso": "mysqld",
+          "working_set_maximo_individual_mib": 184.18,
+          "memoria_privada_maxima_individual_mib": 927.34
+        }
+      ]
+    },
+    {
+      "ensayo": "estres50-opcache-001",
+      "sha256": "31d48fba7787e7f70e6f15b859ff59b619e8840993aad5a0337fb052353ab0fc",
+      "solicitudes": 431,
+      "solicitudes_por_segundo": 5.180526977483653,
+      "errores_http_porcentaje": 0.23201856148491878,
+      "checks_correctos": 341,
+      "checks_fallidos": 0,
+      "max_vu_muestreados": 31,
+      "iteraciones": 60,
+      "ram_libre_minima_mib": 4910,
+      "cpu_equipo_max_pct": 100,
+      "inicio_muestreo_utc": "2026-10-25T18:36:42.9177405Z",
+      "fin_muestreo_utc": "2026-10-25T18:38:08.0475519Z",
+      "objetivo_vu": 50,
+      "comando": "tests/Performance/ejecutar-k6.ps1 -Escenario estres -SalidaPrivadaNueva <raiz-privada>/evidencias-privadas/estres50-opcache-001",
+      "inspector": "Agrupado, sin caché ni cambio del timeout de 15 s",
+      "perfil_php": "OPcache privado 64 MiB, cache_id exclusivo, memory_limit 128M",
+      "p50_listados_ms": 224.4193,
+      "p90_listados_ms": 2066.79012,
+      "p95_listados_ms": 2169.5704399999995,
+      "promedio_listados_ms": 658.7408245059289,
+      "maximo_listados_ms": 2325.0069,
+      "muestras_listados": 253,
+      "errores_consulta_porcentaje": 0,
+      "solicitudes_consulta": 318,
+      "iteraciones_completas": 59,
+      "iteraciones_interrumpidas": 31,
+      "duracion_observada_segundos": 83.3,
+      "estado": "INTERRUMPIDO_CONTROL_IDENTIDAD",
+      "dataset_pedidos": 3001,
+      "procesos_muestreados": [
+        {
+          "proceso": "httpd",
+          "working_set_maximo_individual_mib": 198.2,
+          "memoria_privada_maxima_individual_mib": 183.54
+        },
+        {
+          "proceso": "k6",
+          "working_set_maximo_individual_mib": 57.83,
+          "memoria_privada_maxima_individual_mib": 86.02
+        },
+        {
+          "proceso": "mysqld",
+          "working_set_maximo_individual_mib": 183.99,
+          "memoria_privada_maxima_individual_mib": 921.67
+        }
+      ]
+    },
+    {
+      "ensayo": "recuperacion-opcache-001",
+      "sha256": "5180349acca7d499778226d58c46f0f617f23ba183eef0316ede222d2483e91b",
+      "solicitudes": 8,
+      "solicitudes_por_segundo": 0.8665579035399302,
+      "errores_http_porcentaje": 0,
+      "checks_correctos": 6,
+      "checks_fallidos": 0,
+      "max_vu_muestreados": 1,
+      "iteraciones": 1,
+      "ram_libre_minima_mib": 5996,
+      "cpu_equipo_max_pct": 46,
+      "inicio_muestreo_utc": "2026-10-25T18:39:07.3265978Z",
+      "fin_muestreo_utc": "2026-10-25T18:39:18.281686Z",
+      "objetivo_vu": 1,
+      "comando": "tests/Performance/ejecutar-k6.ps1 -Escenario humo -SalidaPrivadaNueva <raiz-privada>/evidencias-privadas/recuperacion-opcache-001",
+      "inspector": "Agrupado, sin caché ni cambio del timeout de 15 s",
+      "perfil_php": "OPcache privado 64 MiB, cache_id exclusivo, memory_limit 128M",
+      "p50_listados_ms": 148.8437,
+      "p90_listados_ms": 1093.6064200000003,
+      "p95_listados_ms": 1290.5220099999995,
+      "promedio_listados_ms": 471.234025,
+      "maximo_listados_ms": 1487.4376,
+      "muestras_listados": 4,
+      "errores_consulta_porcentaje": 0,
+      "solicitudes_consulta": 5,
+      "iteraciones_completas": 1,
+      "iteraciones_interrumpidas": 0,
+      "duracion_observada_segundos": 9.2,
+      "estado": "COMPLETADO_CON_LATENCIA_FUERA_DE_META",
+      "dataset_pedidos": 3001,
+      "procesos_muestreados": [
+        {
+          "proceso": "httpd",
+          "working_set_maximo_individual_mib": 195.41,
+          "memoria_privada_maxima_individual_mib": 170.48
+        },
+        {
+          "proceso": "k6",
+          "working_set_maximo_individual_mib": 29.55,
+          "memoria_privada_maxima_individual_mib": 58.58
+        },
+        {
+          "proceso": "mysqld",
+          "working_set_maximo_individual_mib": 176.46,
+          "memoria_privada_maxima_individual_mib": 919.55
+        }
+      ]
+    }
+  ],
+  "seguridad_http": {
+    "fecha": "2026-10-25T13:48:39-05:00",
+    "origen": "http://127.0.0.1:8089",
+    "casos": [
+      {
+        "caso": "invitado_ruta_protegida",
+        "resultado": "APROBADO",
+        "detalle": []
+      },
+      {
+        "caso": "csrf_login_ausente",
+        "resultado": "APROBADO",
+        "detalle": []
+      },
+      {
+        "caso": "administrador_dashboard",
+        "resultado": "APROBADO",
+        "detalle": []
+      },
+      {
+        "caso": "lectura_http_/usuarios",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "milisegundos": 112.8807,
+          "alcance": "HTTP sin navegador; no certifica responsive ni JavaScript"
+        }
+      },
+      {
+        "caso": "lectura_http_/roles-permisos",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "milisegundos": 107.6339,
+          "alcance": "HTTP sin navegador; no certifica responsive ni JavaScript"
+        }
+      },
+      {
+        "caso": "lectura_http_/clientes",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "milisegundos": 98.9223,
+          "alcance": "HTTP sin navegador; no certifica responsive ni JavaScript"
+        }
+      },
+      {
+        "caso": "lectura_http_/productos",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "milisegundos": 95.3279,
+          "alcance": "HTTP sin navegador; no certifica responsive ni JavaScript"
+        }
+      },
+      {
+        "caso": "lectura_http_/pedidos",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "milisegundos": 110.7025,
+          "alcance": "HTTP sin navegador; no certifica responsive ni JavaScript"
+        }
+      },
+      {
+        "caso": "lectura_http_/pedidos/nuevo",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "milisegundos": 350.2854,
+          "alcance": "HTTP sin navegador; no certifica responsive ni JavaScript"
+        }
+      },
+      {
+        "caso": "lectura_http_/pedidos/10",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "milisegundos": 107.0381,
+          "alcance": "HTTP sin navegador; no certifica responsive ni JavaScript"
+        }
+      },
+      {
+        "caso": "lectura_http_/pedidos/imprimir-por-fecha?fecha_pedido=2026-10-25",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "milisegundos": 311.5829,
+          "alcance": "HTTP sin navegador; no certifica responsive ni JavaScript"
+        }
+      },
+      {
+        "caso": "lectura_http_/cumplimiento/lista-preparacion",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "milisegundos": 1229.7069,
+          "alcance": "HTTP sin navegador; no certifica responsive ni JavaScript"
+        }
+      },
+      {
+        "caso": "lectura_http_/cumplimiento/10",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "milisegundos": 111.4987,
+          "alcance": "HTTP sin navegador; no certifica responsive ni JavaScript"
+        }
+      },
+      {
+        "caso": "lectura_http_/inventario",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "milisegundos": 128.496,
+          "alcance": "HTTP sin navegador; no certifica responsive ni JavaScript"
+        }
+      },
+      {
+        "caso": "lectura_http_/inventario/movimientos",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "milisegundos": 105.3016,
+          "alcance": "HTTP sin navegador; no certifica responsive ni JavaScript"
+        }
+      },
+      {
+        "caso": "lectura_http_/envasados",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "milisegundos": 117.7008,
+          "alcance": "HTTP sin navegador; no certifica responsive ni JavaScript"
+        }
+      },
+      {
+        "caso": "lectura_http_/envasados/nuevo",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "milisegundos": 264.3087,
+          "alcance": "HTTP sin navegador; no certifica responsive ni JavaScript"
+        }
+      },
+      {
+        "caso": "lectura_http_/presentaciones/1/materiales-envasado",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "milisegundos": 121.1435,
+          "alcance": "HTTP sin navegador; no certifica responsive ni JavaScript"
+        }
+      },
+      {
+        "caso": "lectura_http_/modalidades-surtidas",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "milisegundos": 6387.6164,
+          "alcance": "HTTP sin navegador; no certifica responsive ni JavaScript"
+        }
+      },
+      {
+        "caso": "lectura_http_/seguimiento",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "milisegundos": 121.6856,
+          "alcance": "HTTP sin navegador; no certifica responsive ni JavaScript"
+        }
+      },
+      {
+        "caso": "lectura_http_/indicadores",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "milisegundos": 439.1166,
+          "alcance": "HTTP sin navegador; no certifica responsive ni JavaScript"
+        }
+      },
+      {
+        "caso": "lectura_http_/auditoria",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "milisegundos": 114.8136,
+          "alcance": "HTTP sin navegador; no certifica responsive ni JavaScript"
+        }
+      },
+      {
+        "caso": "csv_http_materiales_resumen",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "bytes": 851
+        }
+      },
+      {
+        "caso": "csv_http_saldos_periodo",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "bytes": 46685
+        }
+      },
+      {
+        "caso": "csv_http_situacion_entregas",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "bytes": 292114
+        }
+      },
+      {
+        "caso": "csv_http_comercial",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "bytes": 703687
+        }
+      },
+      {
+        "caso": "csv_http_preparacion",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "bytes": 7712
+        }
+      },
+      {
+        "caso": "csv_http_fisicas",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "bytes": 228495
+        }
+      },
+      {
+        "caso": "csv_http_pendientes",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "bytes": 12917
+        }
+      },
+      {
+        "caso": "csv_http_composiciones",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "bytes": 757522
+        }
+      },
+      {
+        "caso": "csv_http_entregas",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "bytes": 438485
+        }
+      },
+      {
+        "caso": "csv_http_retornos",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "bytes": 196957
+        }
+      },
+      {
+        "caso": "csv_http_aprobaciones",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "bytes": 84340
+        }
+      },
+      {
+        "caso": "csv_http_envasados",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "bytes": 51804
+        }
+      },
+      {
+        "caso": "csv_http_materiales",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "bytes": 144090
+        }
+      },
+      {
+        "caso": "csv_http_movimientos",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "bytes": 710600
+        }
+      },
+      {
+        "caso": "csv_http_inventario",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 200,
+          "bytes": 105262
+        }
+      },
+      {
+        "caso": "cabeceras",
+        "resultado": "APROBADO",
+        "detalle": {
+          "nosniff": "nosniff",
+          "frame": "SAMEORIGIN",
+          "csp_report_only": true
+        }
+      },
+      {
+        "caso": "cookies_http_only_samesite",
+        "resultado": "APROBADO",
+        "detalle": {
+          "secure_por_https": "NO EVALUADO: origen HTTP local"
+        }
+      },
+      {
+        "caso": "auditoria_Administrador",
+        "resultado": "APROBADO",
+        "detalle": []
+      },
+      {
+        "caso": "dashboard_Administrador",
+        "resultado": "APROBADO",
+        "detalle": []
+      },
+      {
+        "caso": "auditoria_Comercial",
+        "resultado": "APROBADO",
+        "detalle": []
+      },
+      {
+        "caso": "dashboard_Comercial",
+        "resultado": "APROBADO",
+        "detalle": []
+      },
+      {
+        "caso": "auditoria_Produccion",
+        "resultado": "APROBADO",
+        "detalle": []
+      },
+      {
+        "caso": "dashboard_Produccion",
+        "resultado": "APROBADO",
+        "detalle": []
+      },
+      {
+        "caso": "csrf_envasado_invalido",
+        "resultado": "APROBADO",
+        "detalle": []
+      },
+      {
+        "caso": "buscador_entrada_especial",
+        "resultado": "APROBADO",
+        "detalle": []
+      },
+      {
+        "caso": "observacion_html_escapada",
+        "resultado": "APROBADO",
+        "detalle": []
+      },
+      {
+        "caso": "D9A01_sesion_previa",
+        "resultado": "APROBADO",
+        "detalle": []
+      },
+      {
+        "caso": "D9A01_segunda_sesion_json",
+        "resultado": "APROBADO",
+        "detalle": []
+      },
+      {
+        "caso": "D9A01_otro_modulo",
+        "resultado": "APROBADO",
+        "detalle": []
+      },
+      {
+        "caso": "cuenta_inactiva_no_ingresa",
+        "resultado": "APROBADO",
+        "detalle": []
+      },
+      {
+        "caso": "logout_invalida_sesion",
+        "resultado": "APROBADO",
+        "detalle": []
+      },
+      {
+        "caso": "sexto_intento_limitado",
+        "resultado": "APROBADO",
+        "detalle": {
+          "http": 302,
+          "retry_after_presente": true
+        }
+      }
+    ]
+  },
+  "usabilidad_http": {
+    "fecha": "2026-10-25T12:50:19-05:00",
+    "pedido_cinco_lineas": {
+      "segundos": 1.1247512,
+      "pedido_id": 3001,
+      "lineas": 5,
+      "tipo": "Automatización HTTP, no trabajador ni medición de tecleo"
+    },
+    "envasado": {
+      "segundos": 2.4248575,
+      "tipo": "Automatización HTTP",
+      "stock_antes": 10010,
+      "stock_despues": 10012,
+      "consumos": {
+        "1": 2,
+        "2": 2,
+        "3": 2
+      },
+      "movimientos_nuevos": 4,
+      "doble_envio_controlado": true
+    }
+  },
+  "compatibilidad_visual": "PENDIENTE DE EJECUCIÓN: control de interfaz detenido al no poder acreditar la URL de Chrome",
+  "limites": {
+    "vu_objetivo_estres": 50,
+    "abortar_bajo_mib": 1024,
+    "vu_real_maximo_estres": 31,
+    "ram_inicial_estres_mib": 3072,
+    "duracion_carga_segundos": 120,
+    "vu_carga": 20,
+    "muestras_bajas": 5,
+    "timeout_control_segundos": 15,
+    "interpretacion_vu_estres": "29 VU iniciaron iteración; consultar pico muestreado y contador de interrupciones por ensayo",
+    "ram_inicial_carga_mib": 4096
+  },
+  "fecha_creacion": "2026-10-25T12:53:52.5058758-05:00",
+  "estado_global": "EJECUTADO CON OBSERVACIONES Y PENDIENTES; no aprobación integral",
+  "usabilidad_perfil": "Medición técnica HTTP anterior a OPcache, no repetida; no tiempo humano"
+}

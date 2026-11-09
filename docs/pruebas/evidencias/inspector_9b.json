@@ -1,0 +1,18 @@
+{
+  "timeout_segundos": 15,
+  "sin_cache": true,
+  "agrupado_ms": [
+    1515.2744,
+    1307.9077,
+    1289.986
+  ],
+  "optimizacion": "Una lectura CIM para ambos procesos y una consulta TCP para ambos puertos; comprobación de padre solo si el dueño difiere. Se conserva validación exacta de todos los procesos, puertos y rutas.",
+  "previo_ms": [
+    1760.6794,
+    1492.4723,
+    1481.9133
+  ],
+  "fecha": "2026-10-25T13:25:13.0137675-05:00",
+  "hashes_identicos_en_tres_muestras": true,
+  "pid_incorrecto_rechazado": true
+}

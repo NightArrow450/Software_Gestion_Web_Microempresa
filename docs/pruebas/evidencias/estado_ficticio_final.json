@@ -1,0 +1,68 @@
+{
+    "fecha": "2026-10-25T13:13:07-05:00",
+    "base": "dhacer_eco_limp_demo_f9b_001",
+    "tablas": 44,
+    "triggers": 12,
+    "conteos": {
+        "auditoria": 4312,
+        "cache": 0,
+        "cache_locks": 0,
+        "categorias": 1,
+        "clientes": 300,
+        "configuraciones_envasado": 150,
+        "entrega_pedido_detalles": 1560,
+        "entregas_pedido": 1260,
+        "envasado_consumos": 543,
+        "envasado_correccion_materiales": 0,
+        "envasado_correcciones": 0,
+        "envasado_reportes": 0,
+        "envasados": 181,
+        "failed_jobs": 0,
+        "formato_surtido_skus": 450,
+        "formatos_surtidos": 150,
+        "incidencia_entrega_eventos": 3540,
+        "incidencias_entrega": 1260,
+        "insumos": 3,
+        "inventarios": 450,
+        "job_batches": 0,
+        "jobs": 0,
+        "materiales_envasado": 450,
+        "migrations": 45,
+        "movimientos_inventario": 2464,
+        "paquete_surtido_componentes": 3150,
+        "paquete_surtido_composiciones": 1200,
+        "password_reset_tokens": 0,
+        "pedido_despacho_componentes": 360,
+        "pedido_detalles": 3005,
+        "pedido_estados_historial": 12331,
+        "pedido_paquetes_surtidos": 1200,
+        "pedidos": 3001,
+        "permisos": 43,
+        "presentaciones_producto": 450,
+        "productos": 150,
+        "retorno_pedido_detalles": 660,
+        "retornos_pedido": 660,
+        "rol_permiso": 92,
+        "roles": 3,
+        "sessions": 0,
+        "solicitudes_idempotentes": 2,
+        "users": 52,
+        "variantes_producto": 450
+    },
+    "movimientos_por_origen": [
+        {
+            "origen_tipo": "despacho",
+            "cantidad": 1380
+        },
+        {
+            "origen_tipo": "envasado",
+            "cantidad": 724
+        },
+        {
+            "origen_tipo": "retorno_pedido",
+            "cantidad": 360
+        }
+    ],
+    "saldo_productos": "4487912",
+    "saldo_insumos": "295224.000"
+}

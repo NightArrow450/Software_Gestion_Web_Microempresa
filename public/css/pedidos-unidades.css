@@ -1,0 +1,32 @@
+[data-pedido-unidades] input:not([type=checkbox]):not([type=radio]),[data-pedido-unidades] select,[data-pedido-unidades] textarea {font-size:16px;min-height:44px}
+.unidades-linea,.unidades-grupo {border:1px solid var(--outline-variant,#d1d5db);border-radius:12px;padding:16px;margin:12px 0;overflow-wrap:anywhere}
+.unidades-campos {display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:12px;align-items:end}
+.unidades-campos label {display:block}
+.unidades-campos>* {min-width:0}
+[data-despacho-unidades] input:not([type=checkbox]):not([type=radio]),[data-despacho-unidades] textarea {font-size:16px;min-height:44px}
+[data-despacho-unidades] input[type=checkbox] {min-width:24px;min-height:24px;margin:10px;vertical-align:middle}
+.cumplimiento-tarjeta p {overflow-wrap:anywhere}
+.unidades-grupo .unidades-campos {grid-template-columns:2fr 1fr auto}
+[data-mensaje] {color:#9f1239}
+[data-pedido-unidades] .btn {min-height:44px}
+@media(max-width:650px){.unidades-campos,.unidades-grupo .unidades-campos,[data-pedido-unidades] .form-grid {grid-template-columns:1fr}[data-pedido-unidades] .btn {width:100%}}
+
+@media screen {
+    .page [data-pedido-unidades] .pedido-ayuda { font-size: 13px; font-weight: 400; color: var(--text-variant); line-height: 1.6; margin: 12px 0; }
+    .unidades-resumen { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 18px 0; }
+    .unidades-resumen > div { min-width: 0; padding: 14px 16px; border: 1px solid #d1e2d7; background: #f5f9f6; border-radius: 10px; }
+    .unidades-resumen dt { font-size: 13px; font-weight: 600; color: var(--text-variant); line-height: 1.5; }
+    .unidades-resumen dd { font-size: 24px; font-weight: 750; color: #24513a; line-height: 1.3; margin: 6px 0 0; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+    .unidades-resumen .unidades-resumen-total { background: #e5f3ea; border-color: #a9d2bb; }
+    .unidades-resumen-total dd { font-size: 30px; color: var(--primary); }
+    .page [data-pedido-unidades] .pedido-guardar { margin-top: 10px; }
+    @media (max-width: 650px) {
+        .unidades-resumen { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+        .unidades-resumen > div { padding: 12px; }
+        .unidades-resumen dt { font-size: 12px; }
+        .unidades-resumen dd { font-size: 22px; }
+        .unidades-resumen .unidades-resumen-total { grid-column: 1 / -1; }
+        .unidades-resumen-total dd { font-size: 30px; }
+        .page [data-pedido-unidades] .pedido-guardar { width: 100%; min-height: 44px; }
+    }
+}

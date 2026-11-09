@@ -1,0 +1,20 @@
+{
+  "fecha": "2026-10-25",
+  "etapa": "preparacion_sin_infraestructura_local",
+  "laravel": {"estado": "EJECUTADO Y APROBADO", "pruebas": 609, "aserciones": 3789, "duracion_ms": 55057, "entorno": "SQLite en memoria"},
+  "controles_php": {"estado": "EJECUTADO Y APROBADO", "casos": 21, "aserciones": 21, "alcance": "metadatos simulados y rechazo previo a DB; no acredita infraestructura positiva"},
+  "javascript": {"estado": "EJECUTADO Y APROBADO", "pruebas": 28, "fallidas": 0, "omitidas": 0, "duracion_ms": 249.7299, "nuevas_sin_trafico": 9},
+  "larastan": {"estado": "EJECUTADO Y APROBADO", "nivel": 5, "errores": 0},
+  "pint": {"estado": "EJECUTADO Y APROBADO", "alcance": "archivos modificados"},
+  "vite": {"estado": "EJECUTADO Y APROBADO", "version": "8.3.4", "segundos": 2.51, "observacion": "aviso opcional previo de fontaine"},
+  "auditorias": {"estado": "EJECUTADO Y APROBADO", "composer_vulnerabilidades": 0, "npm_vulnerabilidades": 0},
+  "sintaxis": {"estado": "EJECUTADO Y APROBADO", "alcance": "parseo PowerShell y Node; no ejecución de lanzadores ni k6"},
+  "carga_seeder": {"estado": "PREPARADO", "ejecucion": "PENDIENTE DE AUTORIZACION Y EJECUCION; no se invoco run()"},
+  "entorno_local": {"estado": "PENDIENTE DE AUTORIZACION Y EJECUCION", "creado": false, "validacion_positiva": false},
+  "k6_humo_carga_estres": {"estado": "PREPARADO", "ejecucion": "PENDIENTE DE EJECUCION"},
+  "zap_pasivo": {"estado": "PREPARADO", "ejecucion": "PENDIENTE DE EJECUCION"},
+  "compatibilidad": {"estado": "PREPARADO", "combinaciones": 180, "ejecutadas": 0},
+  "usabilidad": {"estado": "PREPARADO", "mediciones_ejecutadas": 0},
+  "mysql_local": {"estado": "PENDIENTE DE EJECUCION", "causa": "no se autorizo iniciar infraestructura local"},
+  "ci_github": {"estado": "autorizada separadamente por el propietario", "resultado": "consultar ejecucion del commit final en el PR"}
+}

@@ -1,0 +1,21 @@
+{
+  "autorizacion": "PENDIENTE_DE_AUTORIZACION_DEL_PROPIETARIO",
+  "vence": "PENDIENTE",
+  "checkout": "C:/Users/Stalin/AppData/Local/DhacerRendimiento/f9b_001/checkout",
+  "operativo": "C:/laragon/www/Software_Gestion_Web_Microempresa",
+  "base": "dhacer_eco_limp_demo_f9b_001",
+  "usuario": "demo_f9b_001",
+  "url": "http://127.0.0.1:8089",
+  "mysql_puerto": 3313,
+  "mysql_datadir": "C:/Users/Stalin/AppData/Local/DhacerRendimiento/f9b_001/mysql/datos",
+  "mysql_uuid": "PENDIENTE",
+  "mysql_pid": 0,
+  "mysql_binario": "C:/laragon/bin/mysql/mysql-8.4.3-winx64/bin/mysqld.exe",
+  "mysql_argumentos_sha256": "PENDIENTE",
+  "apache_pid": 0,
+  "apache_binario": "C:/laragon/bin/apache/httpd-2.4.68-260617-Win64-VS18/bin/httpd.exe",
+  "apache_argumentos_sha256": "PENDIENTE",
+  "apache_config": "C:/Users/Stalin/AppData/Local/DhacerRendimiento/f9b_001/httpd.conf",
+  "apache_config_sha256": "PENDIENTE",
+  "operaciones": []
+}

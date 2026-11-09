@@ -1,0 +1,19 @@
+Title:           Notas de pedido - DHACER ECO LIMP
+Creator:         Chromium
+Producer:        Skia/PDF m156
+CreationDate:    Tue Nov  3 19:39:50 2026 UTC
+ModDate:         Tue Nov  3 19:39:50 2026 UTC
+Custom Metadata: no
+Metadata Stream: no
+Tagged:          no
+UserProperties:  no
+Suspects:        no
+Form:            none
+JavaScript:      no
+Pages:           1
+Encrypted:       no
+Page size:       841.92 x 594.96 pts (A4)
+Page rot:        0
+File size:       205330 bytes
+Optimized:       no
+PDF version:     1.4
