@@ -2,9 +2,9 @@ name: Calidad e integridad
 
 on:
   pull_request:
-    branches: [develop]
+    branches: [develop, main]
   push:
-    branches: [develop]
+    branches: [develop, main]
   # GitHub solo habilita este evento si el archivo también existe en la rama predeterminada (main).
   workflow_dispatch:
 

@@ -10,7 +10,7 @@ assert.equal(process.env.VISUAL_DATABASE, path.join(temporal, 'pr49-visual.sqlit
 const motores = require(path.join(temporal, 'navegador/node_modules/playwright'));
 const datos = JSON.parse(fs.readFileSync(path.join(temporal, 'visual-fixture.json'), 'utf8'));
 const salida = path.join(temporal, 'evidencias-pr49');
-fs.mkdirSync(salida, { recursive: false });
+fs.mkdirSync(salida, { recursive: true });
 const resultados = [], capturas = [], errores = [], mediciones = [];
 const base = 'http://127.0.0.1:8099';
 let pagina;

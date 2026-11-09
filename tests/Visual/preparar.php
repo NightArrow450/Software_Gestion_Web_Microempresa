@@ -16,6 +16,7 @@ use Database\Seeders\EnvasadoPermisoSeeder;
 use Database\Seeders\IndicadoresPermisoSeeder;
 use Database\Seeders\PermisoSeeder;
 use Database\Seeders\RoleSeeder;
+use Database\Seeders\RolPermisoSeeder;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
@@ -47,7 +48,7 @@ $escenario = new class
     {
         $e = $this->escenarioUnidades(32);
         config(['envasado.control_materiales_exacto' => false]);
-        foreach ([RoleSeeder::class, PermisoSeeder::class, EntregaRetornoPermisoSeeder::class,
+        foreach ([RoleSeeder::class, PermisoSeeder::class, RolPermisoSeeder::class, EntregaRetornoPermisoSeeder::class,
             IndicadoresPermisoSeeder::class, AuditoriaPermisoSeeder::class, EnvasadoPermisoSeeder::class] as $clase) {
             (new $clase)->run();
         }
