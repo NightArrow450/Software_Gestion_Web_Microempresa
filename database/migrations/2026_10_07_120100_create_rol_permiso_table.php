@@ -22,7 +22,7 @@ return new class extends Migration
 
             $table->unique([
                 'rol_id',
-                'permiso_id'
+                'permiso_id',
             ]);
 
         });

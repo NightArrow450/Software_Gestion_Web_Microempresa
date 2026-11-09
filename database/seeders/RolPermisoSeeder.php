@@ -93,8 +93,8 @@ class RolPermisoSeeder extends Seeder
                 'nombre',
                 $permisosOperaciones
             )
-            ->pluck('id')
-            ->toArray()
+                ->pluck('id')
+                ->toArray()
         );
 
         /*
@@ -137,8 +137,8 @@ class RolPermisoSeeder extends Seeder
                 'nombre',
                 $permisosProduccion
             )
-            ->pluck('id')
-            ->toArray()
+                ->pluck('id')
+                ->toArray()
         );
     }
 }

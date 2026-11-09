@@ -49,11 +49,11 @@ class ClientesTest extends TestCase
         );
 
         $this->assertTrue(
-        $usuario->fresh()
-            ->role
-            ->permisos()
-            ->where('nombre', 'clientes.crear')
-            ->exists(),
+            $usuario->fresh()
+                ->role
+                ->permisos()
+                ->where('nombre', 'clientes.crear')
+                ->exists(),
             'El rol de prueba no tiene clientes.crear'
         );
 

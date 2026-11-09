@@ -22,14 +22,12 @@ Route::middleware(['auth', 'permiso:cumplimiento.preparar'])->group(function () 
         ->whereNumber('pedido')->name('cumplimiento.finalizar-preparacion');
 });
 
-
 Route::post('/cumplimiento/{pedido}/despachar',
     [CumplimientoPedidoController::class, 'despachar'])
-    ->middleware(['auth','permiso:cumplimiento.despachar'])
+    ->middleware(['auth', 'permiso:cumplimiento.despachar'])
     ->whereNumber('pedido')->name('cumplimiento.despachar');
-
 
 Route::post('/cumplimiento/{pedido}/entregar',
     [CumplimientoPedidoController::class, 'entregar'])
-    ->middleware(['auth','permiso:cumplimiento.entregar'])
+    ->middleware(['auth', 'permiso:cumplimiento.entregar'])
     ->whereNumber('pedido')->name('cumplimiento.entregar');

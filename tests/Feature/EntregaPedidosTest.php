@@ -23,6 +23,7 @@ class EntregaPedidosTest extends TestCase
             );
             $rol->permisos()->attach($permiso->id);
         }
+
         return User::create([
             'first_name' => 'Operador', 'last_name' => 'Prueba',
             'email' => 'operador@local.test', 'password' => 'password123',
@@ -45,32 +46,32 @@ class EntregaPedidosTest extends TestCase
             'modalidad' => 'unidad', 'cantidad' => 2,
             'precio_unitario' => '10.50', 'importe' => '21.00',
         ]);
+
         return $pedido;
     }
-
 
     public function test_entrega_registra_fecha_responsable_y_observacion(): void
     {
         $u = $this->usuario(['pedidos.ver', 'cumplimiento.entregar']);
         $p = $this->pedido($u, 'despachado');
         $this->actingAs($u)->post(route('cumplimiento.entregar', $p), [
-            'observacion_entrega'=>'Recibido por el cliente',
+            'observacion_entrega' => 'Recibido por el cliente',
         ])->assertRedirect(route('cumplimiento.show', $p));
         $this->assertDatabaseHas('pedidos', [
-            'id'=>$p->id, 'estado'=>'entregado', 'entregado_por_id'=>$u->id,
-            'observacion_entrega'=>'Recibido por el cliente',
+            'id' => $p->id, 'estado' => 'entregado', 'entregado_por_id' => $u->id,
+            'observacion_entrega' => 'Recibido por el cliente',
         ]);
         $this->assertNotNull($p->fresh()->entregado_en);
         $this->assertDatabaseHas('pedido_estados_historial', [
-            'pedido_id'=>$p->id, 'estado_anterior'=>'despachado',
-            'estado_nuevo'=>'entregado', 'usuario_id'=>$u->id,
+            'pedido_id' => $p->id, 'estado_anterior' => 'despachado',
+            'estado_nuevo' => 'entregado', 'usuario_id' => $u->id,
         ]);
     }
 
     public function test_no_entrega_pedido_sin_despacho(): void
     {
         $u = $this->usuario(['pedidos.ver', 'cumplimiento.entregar']);
-        foreach (['confirmado','cancelado','listo_despacho'] as $estado) {
+        foreach (['confirmado', 'cancelado', 'listo_despacho'] as $estado) {
             $p = $this->pedido($u, $estado);
             $this->actingAs($u)->post(route('cumplimiento.entregar', $p))
                 ->assertSessionHasErrors('estado');
@@ -97,5 +98,4 @@ class EntregaPedidosTest extends TestCase
             ->assertForbidden();
         $this->assertSame('despachado', $p->fresh()->estado);
     }
-
 }

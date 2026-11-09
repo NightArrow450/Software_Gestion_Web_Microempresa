@@ -22,7 +22,6 @@ class PermisoSeeder extends Seeder
                 'descripcion' => 'Permite acceder al panel de control.',
             ],
 
-
             /*
             |--------------------------------------------------------------------------
             | Gestión de Usuarios
@@ -49,7 +48,6 @@ class PermisoSeeder extends Seeder
                 'descripcion' => 'Permite activar o desactivar cuentas de usuario.',
             ],
 
-
             /*
             |--------------------------------------------------------------------------
             | Roles y Permisos
@@ -65,7 +63,6 @@ class PermisoSeeder extends Seeder
                 'nombre' => 'roles.editar',
                 'descripcion' => 'Permite modificar los permisos asignados a los roles.',
             ],
-
 
             /*
             |--------------------------------------------------------------------------
@@ -93,7 +90,6 @@ class PermisoSeeder extends Seeder
                 'descripcion' => 'Permite activar o desactivar productos.',
             ],
 
-
             /*
             |--------------------------------------------------------------------------
             | Pedidos
@@ -119,7 +115,6 @@ class PermisoSeeder extends Seeder
                 'nombre' => 'pedidos.editar',
                 'descripcion' => 'Permite modificar los pedidos registrados.',
             ],
-
 
             /*
             |--------------------------------------------------------------------------
@@ -147,7 +142,6 @@ class PermisoSeeder extends Seeder
                 'descripcion' => 'Permite realizar ajustes manuales de inventario con trazabilidad.',
             ],
 
-
             /*
             |--------------------------------------------------------------------------
             | Cumplimiento de Pedidos
@@ -169,7 +163,6 @@ class PermisoSeeder extends Seeder
                 'descripcion' => 'Permite registrar la entrega de pedidos.',
             ],
 
-
             /*
             |--------------------------------------------------------------------------
             | Seguimiento
@@ -181,7 +174,7 @@ class PermisoSeeder extends Seeder
                 'descripcion' => 'Permite consultar el seguimiento y estado de los pedidos.',
             ],
 
-             /*
+            /*
             |--------------------------------------------------------------------------
             | Gestión de Clientes
             |--------------------------------------------------------------------------
@@ -208,7 +201,6 @@ class PermisoSeeder extends Seeder
             ],
 
         ];
-
 
         foreach ($permisos as $permiso) {
 

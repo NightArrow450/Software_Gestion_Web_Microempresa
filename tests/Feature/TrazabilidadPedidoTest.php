@@ -1,4 +1,5 @@
 <?php
+
 namespace Tests\Feature;
 
 use App\Models\Cliente;
@@ -22,6 +23,7 @@ class TrazabilidadPedidoTest extends TestCase
             );
             $rol->permisos()->attach($permiso->id);
         }
+
         return User::create([
             'first_name' => 'María', 'last_name' => 'Operadora',
             'email' => 'seguimiento_'.uniqid().'@local.test',
@@ -33,6 +35,7 @@ class TrazabilidadPedidoTest extends TestCase
         string $fecha = '2026-10-17', string $estado = 'confirmado'): Pedido
     {
         $cliente = Cliente::create(['nombre' => $nombre, 'estado' => true]);
+
         return Pedido::create([
             'cliente_id' => $cliente->id, 'usuario_id' => $usuario->id,
             'fecha_pedido' => $fecha, 'fecha_entrega' => '2026-10-20',
@@ -46,16 +49,16 @@ class TrazabilidadPedidoTest extends TestCase
         $u = $this->usuario(['seguimiento.ver']);
         $p = $this->pedido($u, 'Elena Díaz', '2026-10-17', 'despachado');
         $p->historialEstados()->create([
-            'usuario_id'=>$u->id, 'estado_anterior'=>null,
-            'estado_nuevo'=>'registrado', 'motivo'=>'Registrado inicialmente',
+            'usuario_id' => $u->id, 'estado_anterior' => null,
+            'estado_nuevo' => 'registrado', 'motivo' => 'Registrado inicialmente',
         ]);
         $p->historialEstados()->create([
-            'usuario_id'=>$u->id, 'estado_anterior'=>'registrado',
-            'estado_nuevo'=>'confirmado', 'motivo'=>'Confirmación comercial',
+            'usuario_id' => $u->id, 'estado_anterior' => 'registrado',
+            'estado_nuevo' => 'confirmado', 'motivo' => 'Confirmación comercial',
         ]);
         $p->historialEstados()->create([
-            'usuario_id'=>$u->id, 'estado_anterior'=>'listo_despacho',
-            'estado_nuevo'=>'despachado', 'motivo'=>'Salida de reparto',
+            'usuario_id' => $u->id, 'estado_anterior' => 'listo_despacho',
+            'estado_nuevo' => 'despachado', 'motivo' => 'Salida de reparto',
         ]);
         $respuesta = $this->actingAs($u)->get(route('seguimiento.trazabilidad', $p));
         $respuesta->assertOk()->assertSee('María')->assertSee('Salida de reparto');
@@ -67,8 +70,8 @@ class TrazabilidadPedidoTest extends TestCase
         $u = $this->usuario(['seguimiento.ver']);
         $p1 = $this->pedido($u, 'Cliente A');
         $p2 = $this->pedido($u, 'Cliente B');
-        $p1->historialEstados()->create(['usuario_id'=>$u->id, 'estado_nuevo'=>'confirmado', 'motivo'=>'Pedido propio']);
-        $p2->historialEstados()->create(['usuario_id'=>$u->id, 'estado_nuevo'=>'observado', 'motivo'=>'SOLO SEGUNDO PEDIDO']);
+        $p1->historialEstados()->create(['usuario_id' => $u->id, 'estado_nuevo' => 'confirmado', 'motivo' => 'Pedido propio']);
+        $p2->historialEstados()->create(['usuario_id' => $u->id, 'estado_nuevo' => 'observado', 'motivo' => 'SOLO SEGUNDO PEDIDO']);
         $this->actingAs($u)->get(route('seguimiento.trazabilidad', $p1))
             ->assertOk()->assertSee('Pedido propio')->assertDontSee('SOLO SEGUNDO PEDIDO');
         $this->assertDatabaseCount('pedido_estados_historial', 2);
@@ -80,8 +83,8 @@ class TrazabilidadPedidoTest extends TestCase
         $p = $this->pedido($u);
         $this->actingAs($u)->get(route('seguimiento.trazabilidad', $p))->assertForbidden();
         // Solo existe ruta GET: un POST no puede alterar el historial.
-        $u->role->permisos()->attach(Permiso::firstOrCreate(['nombre'=>'seguimiento.ver'], ['descripcion'=>'seguimiento.ver'])->id);
-        $this->actingAs($u)->post(route('seguimiento.trazabilidad', $p), ['estado_nuevo'=>'entregado'])
+        $u->role->permisos()->attach(Permiso::firstOrCreate(['nombre' => 'seguimiento.ver'], ['descripcion' => 'seguimiento.ver'])->id);
+        $this->actingAs($u)->post(route('seguimiento.trazabilidad', $p), ['estado_nuevo' => 'entregado'])
             ->assertStatus(405);
         $this->assertDatabaseCount('pedido_estados_historial', 0);
     }

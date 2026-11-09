@@ -21,7 +21,6 @@ return new class extends Migration
                 ->constrained('productos')
                 ->cascadeOnDelete();
 
-
             /*
             |--------------------------------------------------------------------------
             | Variante opcional
@@ -39,7 +38,6 @@ return new class extends Migration
                 ->constrained('variantes_producto')
                 ->nullOnDelete();
 
-
             /*
             |--------------------------------------------------------------------------
             | Código único
@@ -48,7 +46,6 @@ return new class extends Migration
 
             $table->string('codigo_sku', 50)
                 ->unique();
-
 
             /*
             |--------------------------------------------------------------------------
@@ -65,7 +62,6 @@ return new class extends Migration
             $table->string('tipo_envase', 60)
                 ->nullable();
 
-
             /*
             | Ejemplos:
             | 20
@@ -77,7 +73,6 @@ return new class extends Migration
 
             $table->decimal('contenido', 10, 2);
 
-
             /*
             | Ejemplos:
             | L
@@ -87,7 +82,6 @@ return new class extends Migration
             */
 
             $table->string('unidad_medida', 20);
-
 
             /*
             |--------------------------------------------------------------------------
@@ -108,7 +102,6 @@ return new class extends Migration
             $table->string('tipo_empaque', 30)
                 ->nullable();
 
-
             /*
             | Cantidad de unidades individuales dentro
             | del paquete o caja.
@@ -119,7 +112,6 @@ return new class extends Migration
 
             $table->unsignedInteger('unidades_por_empaque')
                 ->nullable();
-
 
             /*
             |--------------------------------------------------------------------------
@@ -132,7 +124,6 @@ return new class extends Migration
 
             $table->boolean('venta_por_empaque')
                 ->default(false);
-
 
             /*
             |--------------------------------------------------------------------------
@@ -149,7 +140,6 @@ return new class extends Migration
             $table->decimal('precio_empaque', 10, 2)
                 ->nullable();
 
-
             /*
             |--------------------------------------------------------------------------
             | Estado
@@ -159,9 +149,7 @@ return new class extends Migration
             $table->boolean('estado')
                 ->default(true);
 
-
             $table->timestamps();
-
 
             /*
             |--------------------------------------------------------------------------

@@ -113,7 +113,7 @@ class CategoriaController extends Controller
     public function toggleStatus(Categoria $categoria): RedirectResponse
     {
         $categoria->update([
-            'estado' => !$categoria->estado,
+            'estado' => ! $categoria->estado,
         ]);
 
         return back()->with(

@@ -1,4 +1,5 @@
 <?php
+
 namespace Tests\Feature;
 
 use App\Models\Cliente;
@@ -22,6 +23,7 @@ class HistorialPedidosTest extends TestCase
             );
             $rol->permisos()->attach($permiso->id);
         }
+
         return User::create([
             'first_name' => 'María', 'last_name' => 'Operadora',
             'email' => 'seguimiento_'.uniqid().'@local.test',
@@ -33,6 +35,7 @@ class HistorialPedidosTest extends TestCase
         string $fecha = '2026-10-17', string $estado = 'confirmado'): Pedido
     {
         $cliente = Cliente::create(['nombre' => $nombre, 'estado' => true]);
+
         return Pedido::create([
             'cliente_id' => $cliente->id, 'usuario_id' => $usuario->id,
             'fecha_pedido' => $fecha, 'fecha_entrega' => '2026-10-20',
@@ -48,8 +51,8 @@ class HistorialPedidosTest extends TestCase
         $this->pedido($u, 'Cliente Otro', '2026-10-18', 'confirmado');
         $this->pedido($u, 'María Cliente', '2026-10-10', 'cancelado');
         $r = $this->actingAs($u)->get(route('seguimiento.historial', [
-            'fecha_desde'=>'2026-10-17','fecha_hasta'=>'2026-10-19',
-            'cliente'=>'María', 'estado'=>'cancelado',
+            'fecha_desde' => '2026-10-17', 'fecha_hasta' => '2026-10-19',
+            'cliente' => 'María', 'estado' => 'cancelado',
         ]));
         $r->assertOk()->assertSee($elegido->numero)->assertSee('Cancelado');
         $r->assertSee('Resultados: 1 pedido(s).');
@@ -59,10 +62,12 @@ class HistorialPedidosTest extends TestCase
     public function test_historial_pagina_resultados_y_sin_coincidencias(): void
     {
         $u = $this->usuario(['seguimiento.ver']);
-        for ($i=0; $i<18; $i++) $this->pedido($u, 'Cliente '.($i+1));
+        for ($i = 0; $i < 18; $i++) {
+            $this->pedido($u, 'Cliente '.($i + 1));
+        }
         $this->actingAs($u)->get(route('seguimiento.historial'))
             ->assertOk()->assertSee('Resultados: 18 pedido(s).')->assertSee('page=2');
-        $this->actingAs($u)->get(route('seguimiento.historial', ['cliente'=>'INEXISTENTE']))
+        $this->actingAs($u)->get(route('seguimiento.historial', ['cliente' => 'INEXISTENTE']))
             ->assertOk()->assertSee('No se encontraron pedidos');
     }
 
@@ -70,7 +75,7 @@ class HistorialPedidosTest extends TestCase
     {
         $u = $this->usuario(['seguimiento.ver']);
         $this->actingAs($u)->get(route('seguimiento.historial', [
-            'fecha_desde'=>'2026-10-18', 'fecha_hasta'=>'2026-10-17',
+            'fecha_desde' => '2026-10-18', 'fecha_hasta' => '2026-10-17',
         ]))->assertSessionHasErrors('fecha_hasta');
     }
 

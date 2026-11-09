@@ -4,7 +4,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::table('pedidos', function (Blueprint $table) {
@@ -22,7 +23,7 @@ return new class extends Migration {
         Schema::table('pedidos', function (Blueprint $table) {
             $table->dropConstrainedForeignId('preparacion_iniciada_por_id');
             $table->dropConstrainedForeignId('preparacion_finalizada_por_id');
-            $table->dropColumn(['preparacion_iniciada_en','preparacion_finalizada_en']);
+            $table->dropColumn(['preparacion_iniciada_en', 'preparacion_finalizada_en']);
         });
     }
 };
