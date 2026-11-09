@@ -12,12 +12,12 @@ Usar con [la guía de recorridos](04_aceptacion_UAT.md). Copiar esta ficha por p
 | Rol que efectivamente utilizó | Sin registrar |
 | Fecha y hora, America/Lima | Sin registrar |
 | Observador o facilitador | Sin registrar |
-| Dirección e identificador del entorno ficticio | Sin registrar |
+| URL HTTPS y proyecto/servicio de demostración en Railway | Sin registrar |
 | Versión/commit comprobado | Sin registrar |
 | Dispositivo, navegador y tamaño aproximado | Sin registrar |
 | Número del pedido ficticio | Sin registrar |
 
-El coordinador debe confirmar el aislamiento antes de cualquier escritura. No usar `software_gestion_web_microempresa`, `ecolimp_respaldo_prueba` ni el servidor operativo 8000. El hecho de tener esta ficha no autoriza inicializar infraestructura o cargar datos en Laragon.
+El coordinador debe confirmar antes de cualquier escritura que la URL HTTPS de Railway utiliza su propia base MySQL y cuentas ficticias, independientes de Laragon. Durante la aceptación se permite crear y modificar esos datos ficticios según el rol; no usar `software_gestion_web_microempresa`, `ecolimp_respaldo_prueba` ni el servidor operativo 8000. No es necesario crear otro checkout, otro Laragon ni una segunda base local. No importar contraseñas, sesiones, secretos, archivos privados o `.env` de Laragon. Esta ficha no autoriza desplegar, crear servicios ni realizar operaciones en la instalación local.
 
 ## Registro inicial de los seis escenarios
 

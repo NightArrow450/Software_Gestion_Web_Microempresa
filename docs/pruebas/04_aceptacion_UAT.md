@@ -6,23 +6,27 @@ Esta guía sirve para que personas de DHACER ECO LIMP prueben el sistema. Los re
 
 ## Antes de invitar a los trabajadores
 
+Las pruebas de aceptación se realizarán en **Railway mediante una URL HTTPS**, con una base MySQL propia y cuentas de demostración independientes de Laragon. No es necesario crear otro checkout local, otro Laragon ni una segunda base local.
+
 El coordinador debe completar esta lista. Si falta una comprobación, no empezar a guardar datos:
 
-- [ ] Existe un checkout de demostración separado de `C:\laragon\www\Software_Gestion_Web_Microempresa`, con su propia configuración, clave, sesiones, cachés y archivos.
-- [ ] La dirección de demostración está anotada y es distinta del operativo `http://127.0.0.1:8000`. No se publicará en Internet.
-- [ ] Un responsable técnico comprobó ejecutable, proceso, directorio de datos, puerto, UUID de MySQL, cuenta efectiva y privilegios de la base temporal. Comprobar solo el nombre no es suficiente.
-- [ ] La base y la cuenta son exclusivas de demostración; no tienen acceso a `software_gestion_web_microempresa`, `ecolimp_respaldo_prueba` ni otras bases empresariales. No se copiaron respaldos ni datos reales.
-- [ ] Hay tres cuentas ficticias con los roles Administrador, Operaciones Comerciales y **Producción/Reparto**. Cada participante recibe únicamente la contraseña de su cuenta de prueba, por un medio privado. No se anotan contraseñas en las fichas.
+- [ ] El despliegue de demostración en Railway fue autorizado y preparado en una etapa posterior. Su URL HTTPS está anotada, responde correctamente y permite iniciar sesión.
+- [ ] Un responsable técnico comprobó que la aplicación de Railway utiliza exclusivamente su propio servicio MySQL, base y credenciales de demostración. No tiene conexiones a `software_gestion_web_microempresa`, `ecolimp_respaldo_prueba` ni al MySQL operativo de Laragon.
+- [ ] Todos los clientes, productos, pedidos, existencias y operaciones de Railway son ficticios. No se importaron respaldos, contraseñas, sesiones, secretos, archivos privados ni archivos `.env` de Laragon.
+- [ ] Railway tiene configuración, clave de aplicación, sesiones, archivos y credenciales propios, generados para ese entorno. No se copian ni reutilizan los secretos locales; no se publican en las fichas, capturas o GitHub.
+- [ ] Hay tres cuentas ficticias con los roles Administrador, Operaciones Comerciales y **Producción/Reparto**. Cada participante recibe únicamente la contraseña de su cuenta de demostración, por un medio privado.
 - [ ] Los permisos proceden de la distribución oficial revisada. No se amplían para conseguir que un escenario termine.
 - [ ] Está deshabilitado el control exacto de materiales. No se exigen configuraciones, existencias ni consumos de insumos.
 - [ ] El coordinador verificó los datos de partida de la tabla siguiente y preparó una ficha por participante.
-- [ ] Se revisaron los recursos disponibles antes de habilitar cualquier servidor independiente. No se detuvo el puerto 8000 ni se modificó Laragon operativo.
+- [ ] Se comprobó que no hay envíos reales de correo ni conexiones a servicios empresariales que puedan generar operaciones o cargos durante las pruebas.
 
-**Esta tarea no crea ese entorno, no inicializa MySQL y no ejecuta migraciones ni seeders.** El responsable técnico deberá preparar y verificar la infraestructura independiente antes de la sesión, con las autorizaciones correspondientes. No usar la base operativa como alternativa si la demostración no está lista.
+**Esta tarea solo actualiza la documentación: no despliega Railway, no crea servicios ni cuentas y no ejecuta migraciones o seeders.** La preparación y verificación del despliegue requerirán su propia etapa autorizada. No usar Laragon como alternativa si Railway todavía no está listo.
 
-Requisitos técnicos mínimos para el responsable: código de la versión indicada; PHP 8.3 y extensiones requeridas por el lockfile; dependencias de Composer y recursos Vite compilados en el checkout independiente; MySQL 8.4.3 temporal con cuenta limitada; navegador actual de escritorio y un teléfono o vista de 360/390 px. Node 22 solo es necesario para compilar los recursos. No se certifica una cantidad de RAM con esta guía: comprobar el equipo antes de iniciar servicios, sin cargarlo con herramientas de estrés. No hacen falta Docker, alojamiento público ni servicios de pago.
+Durante la aceptación, los trabajadores **pueden crear y modificar los datos ficticios de Railway**, registrar pedidos, envasados, preparaciones, despachos, entregas e incidencias y realizar las consultas administrativas permitidas por su rol. Esos cambios son parte de la prueba; no deben afectar datos locales ni reales. Las cuentas y permisos existentes de Laragon permanecen intactos.
 
-Para los controles de identidad, consultar [preparación de demostración](../demostracion.md). Sus ejemplos de datos comerciales son históricos: **no reutilizar las referencias antiguas a surtidos, precios por paquete o consumo obligatorio de materiales**. Los recorridos vigentes son los de esta guía y [Módulos y navegación](../modulos.md).
+Para el trabajador basta un navegador actual, la URL HTTPS y su cuenta de demostración. Utilizar escritorio y, cuando sea posible, teléfono o vista de 360/390 px. No hace falta instalar Laragon, MySQL ni herramientas de desarrollo en el equipo del participante.
+
+El responsable técnico revisará la configuración específica de Railway, su MySQL independiente y la compatibilidad del código antes de habilitar la sesión. **No aplicar el procedimiento de demostración local ni copiar su `.env` a Railway.** Esta guía no sustituye una revisión de despliegue ni autoriza servicios de pago. Los recorridos funcionales vigentes se describen en [Módulos y navegación](../modulos.md).
 
 ## Datos de partida exclusivamente ficticios
 
@@ -31,16 +35,16 @@ Para los controles de identidad, consultar [preparación de demostración](../de
 | Cliente | Cliente Demostración A, activo, sin documentos, teléfonos o direcciones reales. |
 | Producto | Limpiador de demostración, con aromas Alfa y Beta, ambos activos. |
 | Presentación utilizada | Alfa, botella de 1 L, SKU de demostración identificable, precio unitario S/ 2.00. |
-| Stock inicial de ese SKU | 0 unidades terminadas en una base temporal nueva. No poner en cero existencias de una base anterior. |
+| Stock inicial de ese SKU | 0 unidades terminadas para un SKU ficticio nuevo en Railway. No poner en cero existencias con movimientos previos para hacer coincidir el ejemplo. |
 | Pedido a registrar | 54 unidades de ese mismo SKU, con fechas del día de la prueba. |
 | Agrupaciones opcionales | Dos paquetes de capacidad 12: uno contiene 5 unidades y otro 3; ambos expresamente incompletos. Las 46 restantes quedan sueltas. |
 | Producción simulada | 32 unidades terminadas. No se registran litros, químicos ni existencias de materiales. |
 
-Si hay otros pedidos o movimientos ficticios en el entorno, registrar sus saldos y recalcular las expectativas antes de empezar; no borrar ni ajustar saldos para hacerlos coincidir. Para reproducir exactamente los números siguientes, utilizar una base temporal nueva que cumpla los controles anteriores. Si se repite la sesión, el coordinador preparará un escenario nuevo identificado; no se limpia ni reinicia una base automáticamente.
+Si hay otros pedidos o movimientos ficticios en Railway, registrar sus saldos y recalcular las expectativas antes de empezar; no borrar historia ni ajustar saldos para aparentar el resultado esperado. Para reproducir exactamente los números siguientes, preparar un SKU ficticio nuevo con stock inicial 0 y un pedido de prueba identificado dentro de la base propia de Railway; no hace falta crear otra base local. En cada repetición, identificar el escenario y registrar los cambios ficticios realizados. No se limpia ni reinicia ninguna base automáticamente.
 
-Dirección de demostración: ____________________
+URL HTTPS de demostración en Railway: https://____________________
 
-Identificador del entorno y commit comprobados por el coordinador: ____________________
+Proyecto/servicio de Railway y commit comprobados por el coordinador: ____________________
 
 Fecha prevista: __________ Participantes/códigos: __________ Número del pedido de prueba (al registrarlo): __________
 
@@ -61,7 +65,7 @@ Usar [la ficha de evaluación](05_ficha_evaluacion_UAT.md). Cada trabajador comp
 
 ## 1. Registrar un pedido
 
-1. Abrir la **dirección de demostración**, ingresar con la cuenta ficticia de Operaciones Comerciales y comprobar el rol indicado en la cabecera.
+1. Abrir la **URL HTTPS de demostración de Railway**, ingresar con la cuenta ficticia de Operaciones Comerciales y comprobar el rol indicado en la cabecera.
 2. Desde el Panel, pulsar **Registrar pedido**. También puede entrar a Gestión de Pedidos y elegir Nuevo pedido.
 3. En Buscar y seleccionar cliente, escribir parte de «Cliente Demostración A» y seleccionar la coincidencia que aparece debajo. Escribir el nombre sin seleccionar una coincidencia no asocia al cliente.
 4. En Buscar y seleccionar producto, buscar el limpiador ficticio, seleccionar la coincidencia y elegir aroma Alfa y presentación de 1 L. Comprobar el precio S/ 2.00.
