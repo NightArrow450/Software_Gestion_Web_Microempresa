@@ -138,6 +138,23 @@ class IndicadoresTest extends TestCase
         $this->assertSame(7200, $c['importe_cancelado_centimos']);
         $this->assertSame([], $this->filas('preparacion'));
         $this->assertSame(['No'], array_values(array_unique(array_column($this->filas('composiciones'), 'demanda_definitiva'))));
+
+        $otro = $this->pedidoSurtido($e, [$this->paquetesSurtidos($e)[0], ['estado' => 'pendiente', 'componentes' => []]]);
+        $resultado = $this->get(route('indicadores.index'))->assertOk()->viewData('resultado');
+        $this->assertSame($this->filas('comercial', ['economico' => 0]), $resultado['filas']);
+        $this->assertSame(4, $resultado['cantidad']);
+        $this->assertSame(['paquetes_definidos' => 3, 'paquetes_pendientes' => 1], $resultado['totales']);
+        $this->assertSame(2, (int) $resultado['comercial']['pedidos_registrados']);
+        $this->assertSame(1, (int) $resultado['comercial']['pedidos_cancelados']);
+        $this->assertSame(1, (int) $resultado['comercial']['pedidos_activos']);
+        $this->assertSame(1, (int) $resultado['comercial']['paquetes_normales']);
+        $this->assertSame(2, (int) $resultado['comercial']['paquetes_surtidos']);
+        $filtrado = $this->get(route('indicadores.index', ['composicion' => 'pendiente']))->assertOk()->viewData('resultado');
+        $this->assertSame([$otro->id], array_column($filtrado['filas'], 'pedido_id'));
+        $this->assertSame(['paquetes_definidos' => 1, 'paquetes_pendientes' => 1], $filtrado['totales']);
+        $vacio = $this->get(route('indicadores.index', ['estado' => 'observado']))->assertOk()->viewData('resultado');
+        $this->assertSame([[], 0, []], [$vacio['filas'], $vacio['cantidad'], $vacio['totales']]);
+
     }
 
     public function test_exportacion_completa_coincide_con_filas_y_no_con_la_pagina_visible(): void
@@ -159,6 +176,17 @@ class IndicadoresTest extends TestCase
         $this->assertCount(32, array_filter(explode("\r\n", $contenido)));
         $this->assertSame(31000, $pantalla->viewData('resultado')['totales']['importe_centimos']);
         $this->assertStringNotContainsString($e['usuario']->email, $contenido);
+
+        $segunda = $this->get(route('indicadores.index', ['pagina' => 2]))->assertOk()->viewData('resultado');
+        $filasSinImportes = $this->filas('comercial', ['economico' => 0]);
+        $this->assertSame(array_slice($filasSinImportes, 25), $segunda['filas']);
+        $this->assertSame(31, $segunda['cantidad']);
+        $this->assertSame(['paquetes_definidos' => 0, 'paquetes_pendientes' => 0], $segunda['totales']);
+        $this->assertArrayNotHasKey('importe_activo_centimos', $segunda['comercial']);
+        $this->assertSame(155, (int) $segunda['comercial']['unidades_comerciales']);
+        $fuera = $this->get(route('indicadores.index', ['pagina' => 3]))->assertOk()->viewData('resultado');
+        $this->assertSame([], $fuera['filas']);
+        $this->assertSame($segunda['comercial'], $fuera['comercial']);
     }
 
     public function test_exportar_y_ver_importes_exigen_permisos_independientes(): void

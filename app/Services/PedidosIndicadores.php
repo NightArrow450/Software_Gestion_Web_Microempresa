@@ -44,9 +44,13 @@ class PedidosIndicadores
         return $q;
     }
 
-    public function comercial(array $f): \Generator
+    public function comercial(array $f, ?int $limite = null, int $inicio = 0): \Generator
     {
-        foreach ($this->consultaComercial($f)->lazyById(100, 'd.id', 'id') as $d) {
+        $consulta = $this->consultaComercial($f);
+        $lineas = $limite === null
+            ? $consulta->lazyById(100, 'd.id', 'id')
+            : $consulta->orderBy('d.id')->offset($inicio)->limit($limite)->get();
+        foreach ($lineas as $d) {
             yield ['pedido_id' => $d->pedido_id, 'linea_id' => $d->id, 'fecha_pedido' => $d->fecha_pedido, 'fecha_entrega' => $d->fecha_entrega, 'estado_actual' => $d->estado,
                 'tipo_linea' => $d->tipo_linea, 'modalidad' => $d->modalidad, 'descripcion' => $d->descripcion_producto, 'sku' => $d->tipo_linea === 'normal' ? $d->codigo_sku : '',
                 'cantidad_comercial' => (int) $d->cantidad, 'tamano' => $d->unidades_por_empaque, 'paquetes_definidos' => $d->tipo_linea === 'surtido' ? (int) $d->definidos : 0,

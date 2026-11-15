@@ -108,6 +108,15 @@ class IndicadoresMySqlTest extends PruebaEntregaMySql
         $this->assertLessThanOrEqual((int) ceil($cantidad / 100) + 4, $consultaPantalla);
         $this->assertLessThanOrEqual((int) ceil($cantidad / 100) + 1, $consultaCsv);
         $this->assertLessThan(32 * 1024 * 1024, $pico);
+
+        $consultaAntes = $consultas;
+        $sinImportes = app(ResumenIndicadores::class)->pagina(array_replace($f, ['economico' => false]));
+        $this->assertSame(2, $consultas - $consultaAntes);
+        $this->assertSame($pantalla['cantidad'], $sinImportes['cantidad']);
+        $this->assertSame(array_diff_key($pantalla['totales'], ['importe_centimos' => true]), $sinImportes['totales']);
+        $this->assertSame(array_diff_key($pantalla['comercial'], ['importe_activo_centimos' => true, 'importe_cancelado_centimos' => true]), $sinImportes['comercial']);
+        $this->assertSame(array_map(static fn (array $fila): array => array_diff_key($fila, ['importe_centimos' => true]), $pantalla['filas']), $sinImportes['filas']);
+
         $q = app(PedidosIndicadores::class)->consultaComercial($f)->limit(100);
         $plan = DB::select('EXPLAIN '.$q->toSql(), $q->getBindings());
         $this->assertNotEmpty($plan);
