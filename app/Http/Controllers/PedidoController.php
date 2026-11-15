@@ -131,7 +131,7 @@ class PedidoController extends Controller
             );
     }
 
-    public function show(Pedido $pedido): View
+    public function show(Pedido $pedido, GestionarSurtidos $surtidos): View
     {
         $pedido->load([
             'cliente',
@@ -143,7 +143,9 @@ class PedidoController extends Controller
                 ->orderBy('id'),
         ]);
 
-        return view('orders.show', compact('pedido'));
+        $paquetesSurtidosPedido = $surtidos->paquetesPorDetalle($pedido->detalles->where('tipo_linea', 'surtido')->pluck('id')->all());
+
+        return view('orders.show', compact('pedido', 'paquetesSurtidosPedido'));
     }
 
     public function edit(Pedido $pedido): View

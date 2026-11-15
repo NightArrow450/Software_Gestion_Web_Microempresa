@@ -180,11 +180,26 @@ class GestionarSurtidos
 
     public function historial(PedidoDetalle $detalle): array
     {
-        $versiones = DB::table('paquete_surtido_composiciones as c')->join('pedido_paquetes_surtidos as p', 'p.id', '=', 'c.paquete_surtido_id')->join('users as u', 'u.id', '=', 'c.usuario_id')
-            ->where('p.pedido_detalle_id', $detalle->id)->orderBy('c.id')->get(['c.*', 'p.numero', 'u.first_name', 'u.last_name']);
-        $componentes = DB::table('paquete_surtido_componentes')->whereIn('composicion_id', $versiones->pluck('id'))->orderBy('id')->get()->groupBy('composicion_id');
+        return $this->historialPorDetalle([$detalle->id])[$detalle->id] ?? [];
+    }
 
-        return $versiones->map(fn ($v): array => (array) $v + ['componentes' => $componentes->get($v->id, collect())->all()])->all();
+    /** @param array<int, int> $ids */
+    public function historialPorDetalle(array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        $versiones = DB::table('paquete_surtido_composiciones as c')->join('pedido_paquetes_surtidos as p', 'p.id', '=', 'c.paquete_surtido_id')->join('users as u', 'u.id', '=', 'c.usuario_id')
+            ->whereIn('p.pedido_detalle_id', $ids)->orderBy('c.id')->get(['c.*', 'p.numero', 'u.first_name', 'u.last_name', 'p.pedido_detalle_id as detalle_lectura_id']);
+        $componentes = DB::table('paquete_surtido_componentes')->whereIntegerInRaw('composicion_id', $versiones->pluck('id'))->orderBy('id')->get()->groupBy('composicion_id');
+
+        return $versiones->groupBy('detalle_lectura_id')->map(fn ($grupo): array => $grupo->map(function ($v) use ($componentes): array {
+            $datos = (array) $v;
+            unset($datos['detalle_lectura_id']);
+
+            return $datos + ['componentes' => $componentes->get($v->id, collect())->all()];
+        })->all())->all();
     }
 
     /**
@@ -196,26 +211,33 @@ class GestionarSurtidos
     public function precargarLectura(Collection $pedidos): array
     {
         $ids = $pedidos->flatMap(fn (Pedido $pedido) => $pedido->detalles)
-            ->where('tipo_linea', 'surtido')->pluck('id');
-        if ($ids->isEmpty() || ! $this->disponible()) {
-            return ['paquetes' => [], 'skus' => collect()];
+            ->where('tipo_linea', 'surtido')->pluck('id')->all();
+        $porDetalle = $this->paquetesPorDetalle($ids);
+        $idsSku = collect($porDetalle)->collapse()->flatMap(fn (array $paquete): array => $paquete['componentes'])->pluck('presentacion_producto_id')->unique();
+        $skus = $idsSku->isEmpty() ? collect() : PresentacionProducto::with(['producto', 'variante'])->whereIn('id', $idsSku)->get()->keyBy('id');
+
+        return ['paquetes' => $porDetalle, 'skus' => $skus];
+    }
+
+    /** @param array<int, int> $ids IDs de líneas surtidas. */
+    public function paquetesPorDetalle(array $ids): array
+    {
+        if ($ids === [] || ! $this->disponible()) {
+            return [];
         }
         $paquetes = DB::table('pedido_paquetes_surtidos as p')->join('paquete_surtido_composiciones as c', function ($join): void {
             $join->on('c.paquete_surtido_id', '=', 'p.id')->on('c.version', '=', 'p.version');
         })->whereIn('p.pedido_detalle_id', $ids)->where('p.activo', true)->orderBy('p.numero')
             ->get(['p.id', 'p.pedido_detalle_id', 'p.numero', 'p.version', 'c.id as composicion_id', 'c.estado']);
-        $componentes = DB::table('paquete_surtido_componentes')->whereIn('composicion_id', $paquetes->pluck('composicion_id'))
+        $componentes = DB::table('paquete_surtido_componentes')->whereIntegerInRaw('composicion_id', $paquetes->pluck('composicion_id'))
             ->orderBy('presentacion_producto_id')->get()->groupBy('composicion_id');
-        $porDetalle = $paquetes->groupBy('pedido_detalle_id')->map(fn ($grupo): array => $grupo->map(function ($p) use ($componentes): array {
+
+        return $paquetes->groupBy('pedido_detalle_id')->map(fn ($grupo): array => $grupo->map(function ($p) use ($componentes): array {
             $datos = (array) $p;
             unset($datos['pedido_detalle_id']);
 
             return $datos + ['componentes' => $componentes->get($p->composicion_id, collect())->map(fn ($c): array => (array) $c)->all()];
         })->all())->all();
-        $idsSku = $componentes->flatten(1)->pluck('presentacion_producto_id')->unique();
-        $skus = $idsSku->isEmpty() ? collect() : PresentacionProducto::with(['producto', 'variante'])->whereIn('id', $idsSku)->get()->keyBy('id');
-
-        return ['paquetes' => $porDetalle, 'skus' => $skus];
     }
 
     /** @param array{paquetes: array<int, array>, skus: Collection<int, PresentacionProducto>}|null $lectura */

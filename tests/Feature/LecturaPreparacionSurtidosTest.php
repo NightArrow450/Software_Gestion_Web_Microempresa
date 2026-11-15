@@ -36,15 +36,25 @@ class LecturaPreparacionSurtidosTest extends TestCase
             $pedidos->push($pedido->fresh()->load('detalles.presentacion.producto', 'detalles.presentacion.variante'));
         }
         $esperado = $pedidos->map(fn (Pedido $p): array => [$servicio->pendientes($p), $servicio->lineasFisicas($p)->toArray()]);
+        $detalles = $pedidos->map(fn (Pedido $p) => $p->detalles->firstWhere('tipo_linea', 'surtido'));
+        $paquetesIndividuales = $detalles->mapWithKeys(fn ($detalle): array => [$detalle->id => $servicio->paquetes($detalle)]);
         DB::enableQueryLog();
         $lectura = $servicio->precargarLectura($pedidos);
         $consultas = count(DB::getQueryLog());
         DB::flushQueryLog();
         $actual = $pedidos->map(fn (Pedido $p): array => [$servicio->pendientes($p, $lectura), $servicio->lineasFisicas($p, $lectura)->toArray()]);
         $this->assertSame($esperado->all(), $actual->all());
+        $this->assertSame($paquetesIndividuales->all(), $lectura['paquetes']);
         $this->assertLessThanOrEqual(5, $consultas);
         $this->assertCount(0, DB::getQueryLog());
         DB::disableQueryLog();
+        DB::enableQueryLog();
+        $historial = $servicio->historialPorDetalle($detalles->pluck('id')->all());
+        $this->assertCount(2, DB::getQueryLog());
+        DB::disableQueryLog();
+        $this->assertCount(12, $historial);
+        $this->assertSame(['definida', 'definida', 'pendiente'], array_column($historial[$detalles[0]->id], 'estado'));
+        $this->assertContains(2, array_column($historial[$detalles[1]->id], 'numero'));
         $this->assertDatabaseCount('movimientos_inventario', 0);
         $this->assertSame(6, $actual->filter(fn (array $fila): bool => $fila[0] !== [])->count());
         $this->assertSame(264, $pedidos->sum(fn (Pedido $p): int => (int) $servicio->lineasFisicas($p, $lectura)->sum('cantidad')));

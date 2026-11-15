@@ -397,7 +397,7 @@
         'total' => number_format((float) $pedido->total, 2, '.', ''),
         'productos' => $pedido->detalles->map(fn($detalle) => [
             'descripcion' => $detalle->descripcion_producto,
-            'paquetes' => $detalle->tipo_linea === 'surtido' ? app(\App\Services\GestionarSurtidos::class)->paquetes($detalle) : [],
+            'paquetes' => $paquetesSurtidosPedido[$detalle->id] ?? [],
             'modalidad' => $detalle->modalidad,
             'empaque' => $detalle->descripcionModalidad(),
             'cantidad' => $detalle->cantidad,
