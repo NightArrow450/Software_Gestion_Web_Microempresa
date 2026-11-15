@@ -62,13 +62,9 @@ class PedidoController extends Controller
             ->paginate(12)
             ->withQueryString();
 
-        $opcionesImpresion = Pedido::orderByDesc('id')
-            ->limit(200)
-            ->get(['id', 'cliente_nombre']);
-
         return view(
             'orders.index',
-            compact('pedidos', 'opcionesImpresion')
+            compact('pedidos')
         );
     }
 
