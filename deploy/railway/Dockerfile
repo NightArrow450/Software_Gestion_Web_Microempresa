@@ -37,3 +37,4 @@ RUN mkdir -p bootstrap/cache storage/framework/cache/data storage/framework/sess
     && chown -R www-data:www-data bootstrap/cache storage \
     && apache2ctl configtest
 EXPOSE 8080
+CMD ["/bin/sh", "-c", "a2dismod -f mpm_event mpm_worker && a2enmod mpm_prefork && exec apache2-foreground"]
