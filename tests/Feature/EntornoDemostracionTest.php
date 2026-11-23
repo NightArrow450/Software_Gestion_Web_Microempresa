@@ -52,7 +52,7 @@ class EntornoDemostracionTest extends TestCase
     {
         $this->configurar();
         config([$clave => $valor]);
-        DB::shouldReceive('connection')->never();
+        DB::partialMock()->shouldReceive('connection')->never();
 
         $this->expectException(RuntimeException::class);
         app(EntornoDemostracion::class)->verificar();
@@ -62,7 +62,7 @@ class EntornoDemostracionTest extends TestCase
     {
         $this->configurar();
         config(['demostracion.proyecto_operativo' => base_path()]);
-        DB::shouldReceive('connection')->never();
+        DB::partialMock()->shouldReceive('connection')->never();
 
         $this->expectException(RuntimeException::class);
         app(EntornoDemostracion::class)->verificar();
@@ -86,7 +86,7 @@ class EntornoDemostracionTest extends TestCase
     {
         $this->configurar();
         $conexion = Mockery::mock(ConnectionInterface::class);
-        DB::shouldReceive('connection')->once()->andReturn($conexion);
+        DB::partialMock()->shouldReceive('connection')->once()->andReturn($conexion);
         $conexion->shouldReceive('selectOne')->once()->andReturn((object) [
             'base' => 'dhacer_eco_limp_demo_video', 'puerto' => 3313,
             'uuid' => 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', 'cuenta' => 'demo_video@localhost',
@@ -105,7 +105,7 @@ class EntornoDemostracionTest extends TestCase
     public function test_bandera_incorrecta_bloquea_http_antes_de_sesiones_y_no_expone_secretos(): void
     {
         config(['demostracion.activa' => true]);
-        DB::shouldReceive('connection')->never();
+        DB::partialMock()->shouldReceive('connection')->never();
 
         $this->get('/login')->assertStatus(503)->assertSee('Demostración bloqueada')->assertDontSee('DB_PASSWORD');
     }
@@ -114,7 +114,7 @@ class EntornoDemostracionTest extends TestCase
     {
         $this->configurar();
         $conexion = Mockery::mock(ConnectionInterface::class);
-        DB::shouldReceive('connection')->once()->andReturn($conexion);
+        DB::partialMock()->shouldReceive('connection')->once()->andReturn($conexion);
         $conexion->shouldReceive('selectOne')->once()->andReturn((object) [
             'base' => 'dhacer_eco_limp_demo_video', 'puerto' => 3313,
             'uuid' => 'ffffffff-bbbb-cccc-dddd-eeeeeeeeeeee', 'cuenta' => 'demo_video@localhost',
@@ -150,7 +150,7 @@ class EntornoDemostracionTest extends TestCase
 
     public function test_comando_falla_sin_exponer_credenciales_ni_inicializar_datos(): void
     {
-        DB::shouldReceive('connection')->never();
+        DB::partialMock()->shouldReceive('connection')->never();
 
         $this->artisan('demostracion:verificar')->expectsOutputToContain('Verificación rechazada')->assertFailed();
     }

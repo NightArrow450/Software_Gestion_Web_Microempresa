@@ -24,7 +24,7 @@ class SaludTest extends TestCase
         config(['session.driver' => 'database', 'app.debug' => true]);
         $conexion = Mockery::mock(ConnectionInterface::class);
         $conexion->shouldReceive('select')->with('SELECT 1')->once()->andThrow(new PDOException('DB_PASSWORD=secreto-interno; host=privado'));
-        DB::shouldReceive('connection')->andReturn($conexion);
+        DB::partialMock()->shouldReceive('connection')->andReturn($conexion);
         $logger = Mockery::mock(LoggerInterface::class);
         Log::shouldReceive('channel')->with('seguridad')->once()->andReturn($logger);
         $logger->shouldReceive('warning')->with('salud_no_disponible')->once();
