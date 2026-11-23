@@ -31,3 +31,8 @@ Thumbs.db
 !.env.example
 /BD*.sql
 /BD*.sql.sha256
+/.local-dev/
+*.sqlite
+*.sqlite-*
+ACCESO_LOCAL.txt
+ACCESOS_PILOTO_PRIVADO.csv
